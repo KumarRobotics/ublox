@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package>
+  <name>ublox</name>
+  <version>0.0.0</version>
+  <description>Provides a ublox_gps node for uBlox GPS receivers and message and serialization packages for the binary UBX protocol.</description>
+  <maintainer email="nothing@nobody.com">Johannes Meyer</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- You can specify that this package is a metapackage here: -->
+    <metapackage/>
+  </export>
+</package>

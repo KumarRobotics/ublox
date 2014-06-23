@@ -1,0 +1,30 @@
+<package>
+  <name>ublox_gps</name>
+  <version>0.0.0</version>
+  <description>
+
+     Driver for the ublox GPS device.
+
+  </description>
+  <author>Johannes Meyer</author>
+  <maintainer email="nothing@nobody.com">Johannes Meyer</maintainer>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/ublox_gps</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>ublox_serialization</build_depend>
+  <run_depend>ublox_serialization</run_depend>
+
+  <build_depend>ublox_msgs</build_depend>
+  <run_depend>ublox_msgs</run_depend>
+
+  <build_depend>roscpp</build_depend>
+  <run_depend>roscpp</run_depend>
+
+<!--
+  <build_depend>sensor_msgs</build_depend>
+  <run_depend>sensor_msgs</run_depend>
+-->
+
+</package>
