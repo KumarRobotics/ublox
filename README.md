@@ -21,8 +21,7 @@ roslaunch ublox_gps test.launch
 1. What baud rate should I use?
 The `ublox_gps` node will automatically determine the device baud rate, provided it is set to a standardized value between 4800 and 38400. If you have configured your receiver to use a higher baud rate (or a non-standard value), you must specify it with the `baudrate` parameter.
 
-2. The ublox_gps node cannot open my device, even though I have correctly specified the path in `/dev/`!  
-see also [Serial](https://github.com/gareth-cross/Galt/wiki/Serial)
-
+2. The ublox_gps node cannot open my device, even though I have correctly specified the path in `/dev/`! Make sure you are the owner of the device, or a member of `dialout` group.
+ 
 ## Links
 Consult the [official protocol spec](http://www.u-blox.com/images/downloads/Product_Docs/u-blox6_ReceiverDescriptionProtocolSpec_(GPS.G6-SW-10018).pdf) for details  on packets supported by ublox devices.
