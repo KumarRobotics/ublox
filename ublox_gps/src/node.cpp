@@ -38,6 +38,7 @@
 #include <sensor_msgs/NavSatFix.h>
 
 #include <geometry_msgs/Vector3Stamped.h>
+#include <geometry_msgs/TwistWithCovarianceStamped.h>
 
 using namespace ublox_gps;
 
@@ -48,11 +49,11 @@ std::map<std::string,bool> enabled;
 std::string frame_id;
 
 sensor_msgs::NavSatFix fix;
-geometry_msgs::Vector3Stamped velocity;
+geometry_msgs::TwistWithCovarianceStamped velocity;
 
 void publishNavStatus(const ublox_msgs::NavSTATUS& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavSTATUS>("ublox/navstatus", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavSTATUS>("navstatus", 10);
   publisher.publish(m);
 
   status = m;
@@ -60,29 +61,40 @@ void publishNavStatus(const ublox_msgs::NavSTATUS& m)
 
 void publishNavSOL(const ublox_msgs::NavSOL& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavSOL>("ublox/navsol", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavSOL>("navsol", 10);
   publisher.publish(m);
 }
 
 void publishNavVelNED(const ublox_msgs::NavVELNED& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavVELNED>("ublox/navvelned", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavVELNED>("navvelned", 10);
   publisher.publish(m);
 
   // Example geometry message
-  static ros::Publisher velocityPublisher = nh->advertise<geometry_msgs::Vector3Stamped>("fix_velocity",10);
+  static ros::Publisher velocityPublisher = 
+      nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",10);
   velocity.header.stamp = fix.header.stamp.isZero() ? ros::Time::now() : fix.header.stamp;
   velocity.header.frame_id = frame_id;
-  velocity.vector.x = m.velN/100.0;
-  velocity.vector.y = -m.velE/100.0;
-  velocity.vector.z = -m.velD/100.0;
+  
+  //  convert to XYZ linear velocity
+  velocity.twist.twist.linear.x = m.velE/100.0;
+  velocity.twist.twist.linear.y = m.velN/100.0;
+  velocity.twist.twist.linear.z = -m.velD/100.0;
+  
+  const double stdSpeed = (m.sAcc/100.0) / 3;
+  
+  const int cols = 6;
+  velocity.twist.covariance[cols*0 + 0] = stdSpeed*stdSpeed;
+  velocity.twist.covariance[cols*1 + 1] = stdSpeed*stdSpeed;
+  velocity.twist.covariance[cols*2 + 2] = stdSpeed*stdSpeed;
+  
   velocityPublisher.publish(velocity);
 
 }
 
 void publishNavPosLLH(const ublox_msgs::NavPOSLLH& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavPOSLLH>("ublox/navposllh", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavPOSLLH>("navposllh", 10);
   publisher.publish(m);
 
   // Position message
@@ -97,6 +109,16 @@ void publishNavPosLLH(const ublox_msgs::NavPOSLLH& m)
   else
       fix.status.status = fix.status.STATUS_NO_FIX;
 
+  //  calculate covariance (convert from mm to m too)
+  const double stdH = (m.hAcc / 1000.0) / 3.0;
+  const double stdV = (m.vAcc / 1000.0) / 3.0;
+  
+  fix.position_covariance[0] = stdH*stdH;
+  fix.position_covariance[4] = stdH*stdH;
+  fix.position_covariance[8] = stdV*stdV;
+  fix.position_covariance_type = 
+      sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
+  
   fix.status.service = fix.status.SERVICE_GPS;
   fixPublisher.publish(fix);
 
@@ -104,55 +126,55 @@ void publishNavPosLLH(const ublox_msgs::NavPOSLLH& m)
 
 void publishNavSVINFO(const ublox_msgs::NavSVINFO& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavSVINFO>("ublox/navsvinfo", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", 10);
   publisher.publish(m);
 }
 
 void publishNavCLK(const ublox_msgs::NavCLOCK& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavCLOCK>("ublox/navclock", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::NavCLOCK>("navclock", 10);
   publisher.publish(m);
 }
 
 void publishRxmRAW(const ublox_msgs::RxmRAW& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::RxmRAW>("ublox/rxmraw", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::RxmRAW>("rxmraw", 10);
   publisher.publish(m);
 }
 
 void publishRxmSFRB(const ublox_msgs::RxmSFRB& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::RxmSFRB>("ublox/rxmsfrb", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::RxmSFRB>("rxmsfrb", 10);
   publisher.publish(m);
 }
 
 void publishRxmALM(const ublox_msgs::RxmALM& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::RxmALM>("ublox/rxmalm", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::RxmALM>("rxmalm", 10);
   publisher.publish(m);
 }
 
 void publishRxmEPH(const ublox_msgs::RxmEPH& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::RxmEPH>("ublox/rxmeph", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::RxmEPH>("rxmeph", 10);
   publisher.publish(m);
 }
 
 void publishAidALM(const ublox_msgs::AidALM& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::AidALM>("ublox/aidalm", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::AidALM>("aidalm", 10);
   publisher.publish(m);
 }
 
 void publishAidEPH(const ublox_msgs::AidEPH& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::AidEPH>("ublox/aideph", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::AidEPH>("aideph", 10);
   publisher.publish(m);
 }
 
 void publishAidHUI(const ublox_msgs::AidHUI& m)
 {
-  static ros::Publisher publisher = nh->advertise<ublox_msgs::AidHUI>("ublox/aidhui", 10);
+  static ros::Publisher publisher = nh->advertise<ublox_msgs::AidHUI>("aidhui", 10);
   publisher.publish(m);
 }
 
@@ -178,7 +200,7 @@ int main(int argc, char **argv) {
   boost::shared_ptr<void> handle;
 
   ros::init(argc, argv, "ublox_gps");
-  nh = new ros::NodeHandle;
+  nh = new ros::NodeHandle("~");
 
   std::string device;
   int baudrate;
@@ -256,7 +278,7 @@ int main(int argc, char **argv) {
   param.param("aid", enabled["aid"], false);
 
   param.param("nav_sol", enabled["nav_sol"], enabled["all"]);
-  if (enabled["nav_sol"]) gps.subscribe<ublox_msgs::NavSOL>(boost::bind(&publish<ublox_msgs::NavSOL>, _1, "/ublox/navsol"), 1);
+  if (enabled["nav_sol"]) gps.subscribe<ublox_msgs::NavSOL>(boost::bind(&publish<ublox_msgs::NavSOL>, _1, "navsol"), 1);
   param.param("nav_status", enabled["nav_status"], true);
   if (enabled["nav_status"]) gps.subscribe<ublox_msgs::NavSTATUS>(&publishNavStatus, 1);
   param.param("nav_svinfo", enabled["nav_svinfo"], enabled["all"]);
