@@ -13,7 +13,7 @@ The `ublox_gps` node supports the following parameters:
 * `enable_sbas`: Enable satellite-based augmentation system. Defaults to false.
 * `dynamic_model`: See U-blox protocol spec. Defaults to `portable`.
 * `fix_mode`: Type of fixes supported: `2d`, `3d` or `both`.
-* `dr_limit`: Max time in seconds to use dead reckoning after signal is lost. Defaults to 0.
+* `dr_limit`: Max time in seconds to use dead reckoning after signal is lost. Defaults to 0. (Untested as of 28/08/2014).
 
 A sample launch file is provided in `ublox_gps.launch`. The two topics to which you should subscribe are `/ublox_gps/fix` and `/ublox_gps/fix_velocity`. The angular component of `fix_velocity` is unused.
 
