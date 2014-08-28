@@ -1,5 +1,5 @@
 # ublox
-The ublox package provides support for the [u-blox](http://www.u-blox.com) 6-series GPS receivers. Only the _serial_ configuration of the driver is documented here, but TCP communication is also supported by the driver (untested).
+The ublox package provides support for [u-blox](http://www.u-blox.com) GPS receivers. Only the _serial_ configuration of the driver is documented here, but TCP communication is also supported by the driver (untested).
 
 The driver was originally written by Johannes Meyer. Changes made later are detailed in the version history below.
 
@@ -15,7 +15,7 @@ The `ublox_gps` node supports the following parameters:
 * `fix_mode`: Type of fixes supported: `2d`, `3d` or `both`.
 * `dr_limit`: Max time in seconds to use dead reckoning after signal is lost. Defaults to 0.
 
-A sample launch file is provided in `ublox_gps.launch`.
+A sample launch file is provided in `ublox_gps.launch`. The two topics to which you should subscribe are `/ublox_gps/fix` and `/ublox_gps/fix_velocity`. The angular component of `fix_velocity` is unused.
 
 # Version history
 
