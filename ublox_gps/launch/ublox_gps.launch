@@ -1,0 +1,36 @@
+<launch>
+
+  <arg name="device" default="/dev/ttyACM0"/>
+  <arg name="frame_id" default="gps"/>
+  <arg name="baudrate" default="57600"/>
+
+  <!-- Read at 4Hz -->
+  <arg name="meas_rate" default="250"/>
+
+  <!-- SBAS enabled -->
+  <arg name="enable_sbas" default="true"/>
+
+  <!-- See Ublox docs -->
+  <arg name="dynamic_model" default="portable"/>
+
+  <!-- 2D and 3D fixes enabled -->
+  <arg name="fix_mode" default="both"/>
+
+  <!-- No dead reckoning after signal loss -->
+  <arg name="dr_limit" default="0"/>
+
+  <!-- Disconnect after 1 second of silence -->
+  <arg name="navpos_time_limit" default="1"/>
+
+  <node name="ublox_gps" pkg="ublox_gps" type="ublox_gps" output="screen">
+    <param name="device" type="string" value="$(arg device)"/>
+    <param name="frame_id" type="string" value="$(arg frame_id)"/>
+    <param name="baudrate" type="int" value="$(arg baudrate)"/>
+    <param name="meas_rate" type="int" value="$(arg meas_rate)"/>
+    <param name="enable_sbas" type="bool" value="$(arg enable_sbas)"/>
+    <param name="dynamic_model" type="string" value="$(arg dynamic_model)"/>
+    <param name="fix_mode" type="string" value="$(arg fix_mode)"/>
+    <param name="dr_limit" type="int" value="$(arg dr_limit)"/>
+    <param name="navpos_time_limit" type="double" value="$(arg navpos_time_limit)"/>
+  </node>
+</launch>

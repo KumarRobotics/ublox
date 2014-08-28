@@ -39,6 +39,58 @@
 
 namespace ublox_gps {
 
+/**
+ * @brief Dynamic model - consult documentation of CFG-NAV5 for details.
+ * @note These numeric values must match the official protocol spec.
+ */
+enum DynamicModel {
+  DYN_MODEL_PORTABLE = 0,
+  DYN_MODEL_STATIONARY = 2,
+  DYN_MODEL_PEDESTRIAN = 3,
+  DYN_MODEL_AUTOMOTIVE = 4,
+  DYN_MODEL_SEA = 5,
+  DYN_MODEL_AIRBORNE_1G = 6,
+  DYN_MODEL_AIRBORNE_2G = 7,
+  DYN_MODEL_AIRBORNE_4G = 8,
+};
+
+/**
+ * @brief Fix mode - 2D, 3D or both.
+ * @note These numeric values must match the official protocol spec.
+ */
+enum FixMode {
+  FIX_MODE_2D = 1,
+  FIX_MODE_3D = 2,
+  FIX_MODE_BOTH = 3,
+};
+
+/**
+ * @brief Determine dynamic model from human-readable string.
+ * @param model One of the following (case-insensitive):
+ *  - portable
+ *  - stationary
+ *  - pedestrian
+ *  - automotive
+ *  - sea
+ *  - airborne1
+ *  - airborne2
+ *  - airborne4
+ * @return DynamicModel
+ * @throws std::runtime_error on invalid argument.
+ */
+DynamicModel modelFromString(const std::string& model);
+
+/**
+ * @brief Determine fix mode from human-readable string.
+ * @param mode One of the following (case-insensitive):
+ *  - 2d
+ *  - 3d
+ *  - both
+ * @return FixMode
+ * @throws std::runtime_error on invalid argument.
+ */
+FixMode fixModeFromString(const std::string& mode);
+
 class Gps
 {
 public:
@@ -49,11 +101,38 @@ public:
   void initialize(const boost::shared_ptr<Worker> &worker);
   void close();
 
-  bool configure();
+  /**
+   * @brief Set the device measurement rate.
+   * @param measRate Period in milliseconds between subsequent measurements.
+   * @return true on ACK, false on other conditions.
+   */
+  bool setMeasRate(uint16_t measRate);
+  
   bool setBaudrate(unsigned int baudrate);
   bool setRate(uint8_t class_id, uint8_t message_id, unsigned int rate);
-
-  bool enableSBAS(bool onoff);
+  
+  /**
+   * @brief Set the device dynamic model.
+   * @param model Dynamic model to use. Consult ublox protocol spec for details.
+   * @return true on ACK, false on other conditions.
+   */
+  bool setDynamicModel(DynamicModel model);
+  
+  /**
+   * @brief Set the device fix mode.
+   * @param mode 2D, 3D or both.
+   * @return true on ACK, false on other conditions.
+   */
+  bool setFixMode(FixMode mode);
+  
+  /**
+   * @brief Set the dead reckoning time limit
+   * @param limit Time limit in seconds.
+   * @return true on ACK, false on other conditions.
+   */
+  bool setDeadReckonLimit(uint8_t limit);
+  
+  bool enableSBAS(bool enabled);
 
   template <typename T> Callbacks::iterator subscribe(typename CallbackHandler_<T>::Callback callback, unsigned int rate);
   template <typename T> Callbacks::iterator subscribe(typename CallbackHandler_<T>::Callback callback);
@@ -61,7 +140,8 @@ public:
 
   bool isInitialized() const { return worker_ != 0; }
   bool isConfigured() const { return isInitialized() && configured_; }
-
+  bool isOpen() const { return worker_->isOpen(); }
+  
   template <typename ConfigT> bool poll(ConfigT& message, const boost::posix_time::time_duration& timeout = default_timeout_);
   bool poll(uint8_t class_id, uint8_t message_id, const std::vector<uint8_t>& payload = std::vector<uint8_t>());
   template <typename ConfigT> bool configure(const ConfigT& message, bool wait = true);
