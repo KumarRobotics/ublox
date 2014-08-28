@@ -34,17 +34,24 @@
 
 #include <ros/ros.h>
 #include <ublox_msgs/ublox_msgs.h>
+#include <ublox_msgs/NavSTATUS.h>
+#include <ublox_msgs/NavPOSLLH.h>
+#include <ublox_msgs/NavVELNED.h>
 
 #include <sensor_msgs/NavSatFix.h>
-
 #include <geometry_msgs/Vector3Stamped.h>
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
+
+#include <diagnostic_updater/diagnostic_updater.h>
+#include <diagnostic_updater/publisher.h>
 
 const static uint32_t kROSQueueSize = 1;
 
 using namespace ublox_gps;
 
 boost::shared_ptr<ros::NodeHandle> nh;
+boost::shared_ptr<diagnostic_updater::Updater> updater;
+boost::shared_ptr<diagnostic_updater::TopicDiagnostic> freq_diag;
 Gps gps;
 ublox_msgs::NavSTATUS status;
 std::map<std::string,bool> enabled;
@@ -52,8 +59,6 @@ std::string frame_id;
 
 ublox_msgs::NavPOSLLH last_nav_pos;
 ublox_msgs::NavVELNED last_nav_vel;
-ros::Time last_navpos_time;
-double navpos_time_limit=0;
 
 sensor_msgs::NavSatFix fix;
 geometry_msgs::TwistWithCovarianceStamped velocity;
@@ -142,7 +147,9 @@ void publishNavPosLLH(const ublox_msgs::NavPOSLLH& m)
   fix.status.service = fix.status.SERVICE_GPS;
   fixPublisher.publish(fix);
   last_nav_pos = m;
-  last_navpos_time = ros::Time::now();
+  //  update diagnostics
+  freq_diag->tick(fix.header.stamp);
+  updater->update();
 }
 
 void publishNavSVINFO(const ublox_msgs::NavSVINFO& m)
@@ -221,14 +228,43 @@ void pollMessages(const ros::TimerEvent& event)
   if (payload[0] > 32) { 
     payload[0] = 1;
   }
-  
-  if (navpos_time_limit != 0) {
-    //  check if we should shutdown
-    if ((ros::Time::now() - last_navpos_time).toSec() > navpos_time_limit) {
-      ROS_ERROR("Exceeded navpos_time_limit, U-blox device likely disconnected.");
-      ros::shutdown();
-    }
+}
+
+void fix_diagnostic(diagnostic_updater::DiagnosticStatusWrapper &stat) {
+  //  check the last message, convert to diagnostic
+  if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_NO_FIX) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+    stat.message = "No fix";
   }
+  else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_DEAD_RECKONING_ONLY) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+    stat.message = "Dead reckoning only";
+  }
+  else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_2D_FIX) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+    stat.message = "2D fix";
+  }
+  else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_3D_FIX) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+    stat.message = "3D fix";
+  }
+  else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_GPS_DEAD_RECKONING_COMBINED) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+    stat.message = "GPS and dead reckoning combined";
+  }
+  else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_TIME_ONLY_FIX) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+    stat.message = "Time fix only";
+  }
+ 
+  //  append last fix position
+  stat.add("iTOW", last_nav_pos.iTOW);
+  stat.add("lon", last_nav_pos.lon);
+  stat.add("lat", last_nav_pos.lat);
+  stat.add("height", last_nav_pos.height);
+  stat.add("hMSL", last_nav_pos.hMSL);
+  stat.add("hAcc", last_nav_pos.hAcc);
+  stat.add("vAcc", last_nav_pos.vAcc);
 }
 
 int main(int argc, char **argv) {
@@ -240,7 +276,12 @@ int main(int argc, char **argv) {
   
   ros::init(argc, argv, "ublox_gps");
   nh.reset(new ros::NodeHandle("~"));
-
+  if (!nh->hasParam("diagnostic_period")) {
+    nh->setParam("diagnostic_period", 0.2); //  5Hz diagnostic period 
+  }
+  updater.reset(new diagnostic_updater::Updater());
+  updater->setHardwareID("ublox");
+  
   std::string device;
   int baudrate;
   int meas_rate;
@@ -257,17 +298,12 @@ int main(int argc, char **argv) {
   param.param("dynamic_model", dynamic_model, std::string("portable"));
   param.param("fix_mode", fix_mode, std::string("both"));
   param.param("dr_limit", dr_limit, 0);
-  param.param("navpos_time_limit", navpos_time_limit, 0.0);
   if (meas_rate <= 0) {
     ROS_ERROR("Invalid settings: meas_rate must be > 0");
     return 1;
   }
   if (dr_limit < 0 || dr_limit > 255) {
     ROS_ERROR("Invalid settings: dr_limit must be between 0 and 255");
-    return 1;
-  }
-  if (navpos_time_limit < 0) {
-    ROS_ERROR("Invalid settings: navpos_time_limit must be >= 0");
     return 1;
   }
   
@@ -280,6 +316,20 @@ int main(int argc, char **argv) {
     ROS_ERROR("Invalid settings: %s", e.what());
     return 1;
   }
+  
+  //  configure diagnostic updater for frequency
+  updater->add("fix", &fix_diagnostic);
+  updater->force_update();
+  
+  const double target_freq = 1000.0 / meas_rate;
+  double min_freq = target_freq;
+  double max_freq = target_freq;
+  diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq, 0.05, 10);
+  diagnostic_updater::TimeStampStatusParam time_param(0,meas_rate * 1e-3 * 1.05);
+  freq_diag.reset(new diagnostic_updater::TopicDiagnostic(std::string("fix"), 
+                                                          *updater, 
+                                                          freq_param,
+                                                          time_param));
   
   boost::smatch match;
   if (boost::regex_match(device, match, boost::regex("(tcp|udp)://(.+):(\\d+)"))) {

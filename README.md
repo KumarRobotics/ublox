@@ -1,7 +1,7 @@
 # ublox
 The ublox package provides support for the [u-blox](http://www.u-blox.com) 6-series GPS receivers. Only the _serial_ configuration of the driver is documented here, but TCP communication is also supported by the driver (untested).
 
-The driver was originally written by Johannes Meyer. Changes made later are detailed in the version history below. 
+The driver was originally written by Johannes Meyer. Changes made later are detailed in the version history below.
 
 ## Options
 
@@ -14,7 +14,6 @@ The `ublox_gps` node supports the following parameters:
 * `dynamic_model`: See U-blox protocol spec. Defaults to `portable`.
 * `fix_mode`: Type of fixes supported: `2d`, `3d` or `both`.
 * `dr_limit`: Max time in seconds to use dead reckoning after signal is lost. Defaults to 0.
-* `navpos_time_limit`: Kill the node if no `navposllh` messages are received for this number of seconds. 0 (default) means this behaviour is disabled.
 
 A sample launch file is provided in `ublox_gps.launch`.
 
@@ -28,7 +27,7 @@ A sample launch file is provided in `ublox_gps.launch`.
   - 2D **or** 3D fix correspond to `STATUS_FIX` (previously only 3D).
   - `fix` and `fix_velocity` are time-stamped synchronously, using the `iTOW` to check arrival times.
   - Added options for changing the CFG-NAV5 settings (see above).
-  - Added automatic exit after `navposllh` messages are not received for some amount of time.
+  - Added support for `diagnostic_updater`.
   - _"received ACK"_ messages are elevated to debug level 2.
   - Corrected issue where baudrate was not set correctly using rosparam.
   - Corrected issue where socket destructors were not called.
