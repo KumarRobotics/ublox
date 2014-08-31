@@ -44,6 +44,8 @@ public:
 
   virtual bool send(const unsigned char *data, const unsigned int size) = 0;
   virtual void wait(const boost::posix_time::time_duration& timeout) = 0;
+  
+  virtual bool isOpen() const = 0;
 };
 
 } // namespace ublox_gps

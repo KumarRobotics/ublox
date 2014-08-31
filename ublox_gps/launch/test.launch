@@ -1,6 +1,0 @@
-<launch>
-  <node name="ublox_gps" pkg="ublox_gps" type="ublox_gps">
-    <!-- Make sure permissions on this device allow the ROS user to read -->
-    <param name="device" value="/dev/ttyUSB0"/>
-  </node>
-</launch>

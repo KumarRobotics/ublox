@@ -28,10 +28,52 @@
 //=================================================================================================
 
 #include <ublox_gps/gps.h>
+#include <stdexcept>
+#include <locale>
+#include <ublox_msgs/CfgRATE.h>
+#include <ublox_msgs/CfgNAV5.h>
+#include <ublox_msgs/CfgPRT.h>
 
 namespace ublox_gps {
 
 using namespace ublox_msgs;
+
+DynamicModel modelFromString(const std::string& model) {
+  std::string lower = model;
+  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+
+  std::map <std::string, ublox_gps::DynamicModel> models;
+  models["portable"] = ublox_gps::DYN_MODEL_PORTABLE;
+  models["stationary"] = ublox_gps::DYN_MODEL_STATIONARY;
+  models["pedestrian"] = ublox_gps::DYN_MODEL_PEDESTRIAN;
+  models["automotive"] = ublox_gps::DYN_MODEL_AUTOMOTIVE;
+  models["sea"] = ublox_gps::DYN_MODEL_SEA;
+  models["airborne1"] = ublox_gps::DYN_MODEL_AIRBORNE_1G;
+  models["airborne2"] = ublox_gps::DYN_MODEL_AIRBORNE_2G;
+  models["airborne4"] = ublox_gps::DYN_MODEL_AIRBORNE_4G;
+  
+  std::map<std::string, ublox_gps::DynamicModel>::iterator I = models.find(lower);
+  if (I == models.end()) {
+    throw std::runtime_error(lower + " is not a valid dynamic model.");
+  }
+  return I->second;
+}
+
+FixMode fixModeFromString(const std::string& mode) {
+  std::string lower = mode;
+  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+  if (lower == "2d") {
+    return FIX_MODE_2D;
+  } else if (lower == "3d") {
+    return FIX_MODE_3D;
+  } else if (lower == "both") {
+    return FIX_MODE_BOTH;
+  }
+  
+  throw std::runtime_error(mode + " is not a valid fix mode.");
+  //  unreachable
+  return FIX_MODE_BOTH;
+}
 
 boost::posix_time::time_duration Gps::default_timeout_(boost::posix_time::seconds(1.0));
 Gps::Gps()
@@ -54,9 +96,12 @@ bool Gps::setBaudrate(unsigned int baudrate)
   port.baudRate = baudrate_;
   port.mode = CfgPRT::MODE_RESERVED1 | CfgPRT::MODE_CHAR_LEN_8BIT | CfgPRT::MODE_PARITY_NO | CfgPRT::MODE_STOP_BITS_1;
   port.inProtoMask = CfgPRT::PROTO_UBX | CfgPRT::PROTO_NMEA | CfgPRT::PROTO_RTCM;
-  port.outProtoMask = CfgPRT::PROTO_UBX | CfgPRT::PROTO_NMEA;
+  port.outProtoMask = CfgPRT::PROTO_UBX;
   port.portID = CfgPRT::PORT_ID_UART1;
 
+  if (debug) {
+    std::cout << "Changing baudrate to " << baudrate << std::endl;
+  }
   return configure(port);
 }
 
@@ -120,16 +165,37 @@ void Gps::close()
 
 bool Gps::setRate(uint8_t class_id, uint8_t message_id, unsigned int rate)
 {
-  CfgMSG msg;
+  ublox_msgs::CfgMSG msg;
   msg.msgClass = class_id;
   msg.msgID = message_id;
   msg.rate = rate;
   return configure(msg);
 }
 
-bool Gps::enableSBAS(bool onoff) {
-  CfgSBAS msg;
-  msg.mode = (onoff ? CfgSBAS::MODE_ENABLED : 0);
+bool Gps::setDynamicModel(DynamicModel model) {
+  ublox_msgs::CfgNAV5 msg;
+  msg.dynModel = static_cast<uint8_t>(model);
+  msg.mask = 1; //  first bit is the mask bit for dynModel
+  return configure(msg);
+}
+
+bool Gps::setFixMode(FixMode mode) {
+  ublox_msgs::CfgNAV5 msg;
+  msg.fixMode = static_cast<uint8_t>(mode);
+  msg.mask = 4; //  third bit for mode
+  return configure(msg);
+}
+
+bool Gps::setDeadReckonLimit(uint8_t limit) {
+  ublox_msgs::CfgNAV5 msg;
+  msg.drLimit = limit;
+  msg.mask = 8; //  fourth bit
+  return configure(msg);
+}
+
+bool Gps::enableSBAS(bool enabled) {
+  ublox_msgs::CfgSBAS msg;
+  msg.mode = (enabled ? CfgSBAS::MODE_ENABLED : 0);
   msg.usage = 255;
   msg.maxSBAS = 3;
   return configure(msg);
@@ -146,32 +212,12 @@ bool Gps::poll(uint8_t class_id, uint8_t message_id, const std::vector<uint8_t>&
   return true;
 }
 
-bool Gps::configure()
-{
-  configured_ = false;
-
-  // unconfigure all messages
-//  for(unsigned int id = 0; id < 256; ++id) {
-//    CfgMSG msg;
-//    msg.msgClass = Class::NAV;
-//    msg.msgID = id;
-//    msg.rate = 0;
-//    configure(msg, false);
-
-//    msg.msgClass = Class::RXM;
-//    msg.msgID = id;
-//    msg.rate = 0;
-//    configure(msg, false);
-//  }
-
+bool Gps::setMeasRate(uint16_t measRate) {
   CfgRATE rate;
-  rate.measRate = 250;
-  rate.navRate = 1;
+  rate.measRate = measRate;
+  rate.navRate = 1; //  must be fixed at 1 for ublox 5 and 6
   rate.timeRef = CfgRATE::TIME_REF_GPS;
-  if (!configure(rate)) return false;
-
-  configured_ = true;
-  return true;
+  return configure(rate);
 }
 
 void Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout) {
@@ -199,7 +245,7 @@ void Gps::readCallback(unsigned char *data, std::size_t& size) {
 
     if (reader.classId() == 0x05) {
       acknowledge_ = (reader.messageId() == 0x00) ? NACK : ACK;
-      if (debug) std::cout << "received " << (acknowledge_ == ACK ? "ACK" : "NACK") << std::endl;
+      if (debug >= 2) std::cout << "received " << (acknowledge_ == ACK ? "ACK" : "NACK") << std::endl;
     }
   }
 

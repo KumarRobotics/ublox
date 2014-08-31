@@ -40,7 +40,7 @@
 
 namespace ublox_gps {
 
-static const int debug = 3;
+static const int debug = 1;
 
 template <typename StreamT>
 class AsyncWorker : public Worker
@@ -54,6 +54,8 @@ public:
   bool send(const unsigned char *data, const unsigned int size);
   void wait(const boost::posix_time::time_duration& timeout);
 
+  bool isOpen() const { return stream_.is_open(); }
+  
 protected:
   void doRead();
   void readEnd(const boost::system::error_code&, std::size_t);

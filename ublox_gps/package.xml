@@ -1,6 +1,6 @@
 <package>
   <name>ublox_gps</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>
 
      Driver for the ublox GPS device.
@@ -8,6 +8,7 @@
   </description>
   <author>Johannes Meyer</author>
   <maintainer email="nothing@nobody.com">Johannes Meyer</maintainer>
+  <maintainer email="gcross.code@icloud.com">Gareth Cross</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/ublox_gps</url>
 
@@ -22,9 +23,7 @@
   <build_depend>roscpp</build_depend>
   <run_depend>roscpp</run_depend>
 
-<!--
-  <build_depend>sensor_msgs</build_depend>
-  <run_depend>sensor_msgs</run_depend>
--->
+  <build_depend>diagnostic_updater</build_depend>
+  <run_depend>diagnostic_updater</run_depend>
 
 </package>
