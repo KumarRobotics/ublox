@@ -325,7 +325,7 @@ int main(int argc, char **argv) {
   double min_freq = target_freq;
   double max_freq = target_freq;
   diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq, 0.05, 10);
-  diagnostic_updater::TimeStampStatusParam time_param(0,meas_rate * 1e-3 * 1.05);
+  diagnostic_updater::TimeStampStatusParam time_param(0,meas_rate * 1e-3 * 0.05);
   freq_diag.reset(new diagnostic_updater::TopicDiagnostic(std::string("fix"), 
                                                           *updater, 
                                                           freq_param,
