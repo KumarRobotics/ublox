@@ -99,7 +99,7 @@ void publishNavVelNED(const ublox_msgs::NavVELNED& m)
   velocity.twist.twist.linear.y = m.velN/100.0;
   velocity.twist.twist.linear.z = -m.velD/100.0;
   
-  const double stdSpeed = (m.sAcc/100.0) / 3;
+  const double stdSpeed = (m.sAcc/100.0) * 3;
   
   const int cols = 6;
   velocity.twist.covariance[cols*0 + 0] = stdSpeed*stdSpeed;
@@ -135,8 +135,8 @@ void publishNavPosLLH(const ublox_msgs::NavPOSLLH& m)
       fix.status.status = fix.status.STATUS_NO_FIX;
 
   //  calculate covariance (convert from mm to m too)
-  const double stdH = (m.hAcc / 1000.0) / 3.0;
-  const double stdV = (m.vAcc / 1000.0) / 3.0;
+  const double stdH = (m.hAcc / 1000.0) * 3.0;
+  const double stdV = (m.vAcc / 1000.0) * 3.0;
   
   fix.position_covariance[0] = stdH*stdH;
   fix.position_covariance[4] = stdH*stdH;
