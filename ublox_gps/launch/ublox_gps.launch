@@ -1,5 +1,5 @@
 <launch>
-
+  <arg anme="output" default="screen"/>
   <arg name="device" default="/dev/ttyACM0"/>
   <arg name="frame_id" default="gps"/>
   <arg name="baudrate" default="57600"/>
@@ -19,7 +19,7 @@
   <!-- No dead reckoning after signal loss -->
   <arg name="dr_limit" default="30"/>
 
-  <node name="ublox_gps" pkg="ublox_gps" type="ublox_gps" output="screen">
+  <node name="ublox_gps" pkg="ublox_gps" type="ublox_gps" output="$(arg output)">
     <param name="device" type="string" value="$(arg device)"/>
     <param name="frame_id" type="string" value="$(arg frame_id)"/>
     <param name="baudrate" type="int" value="$(arg baudrate)"/>
