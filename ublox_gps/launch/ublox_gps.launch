@@ -1,5 +1,5 @@
 <launch>
-  <arg anme="output" default="screen"/>
+  <arg name="output" default="screen"/>
   <arg name="device" default="/dev/ttyACM0"/>
   <arg name="frame_id" default="gps"/>
   <arg name="baudrate" default="57600"/>
