@@ -24,7 +24,7 @@
         <param name="device" type="string" value="$(arg device)"/>
         <param name="frame_id" type="string" value="$(arg frame_id)"/>
         <param name="baudrate" type="int" value="$(arg baudrate)"/>
-        <param name="meas_rate" type="int" value="$(arg meas_rate)"/>
+        <param name="rate" type="int" value="$(arg rate)"/>
         <param name="enable_sbas" type="bool" value="$(arg enable_sbas)"/>
         <param name="dynamic_model" type="string" value="$(arg dynamic_model)"/>
         <param name="fix_mode" type="string" value="$(arg fix_mode)"/>
