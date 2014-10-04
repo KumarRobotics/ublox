@@ -9,7 +9,7 @@ The `ublox_gps` node supports the following parameters:
 * `device`: Path to the device in `/dev`. Defaults to `/dev/ttyUSB0`.
 * `baudrate`: Bit rate of the serial communication. Defaults to 9600.
 * `frame_id`: ROS name prepended to frames produced by the node. Defaults to `gps`.
-* `meas_rate`: Period in **ms** beween measurements. Defaults to 250.
+* `rate`: Rate in Hz of measurements. Defaults to 4.
 * `enable_sbas`: Enable satellite-based augmentation system. Defaults to false.
 * `dynamic_model`: See U-blox protocol spec. Defaults to `portable`.
 * `fix_mode`: Type of fixes supported: `2d`, `3d` or `both`.
@@ -18,6 +18,9 @@ The `ublox_gps` node supports the following parameters:
 A sample launch file is provided in `ublox_gps.launch`. The two topics to which you should subscribe are `/ublox_gps/fix` and `/ublox_gps/fix_velocity`. The angular component of `fix_velocity` is unused.
 
 # Version history
+
+* **0.0.2**:
+  - Changed `meas_rate` to simply `rate`, which is in Hz. `meas_rate` is computed automatically.
 
 * **0.0.1**:
   - All topics are now published on a private node handle.

@@ -5,8 +5,8 @@
     <arg name="baudrate" default="57600"/>
     <arg name="output" default="screen"/>
 
-    <!-- Read at 5Hz -->
-    <arg name="meas_rate" default="200"/>
+    <!-- Read at 4Hz -->
+    <arg name="rate" default="4"/>
 
     <!-- SBAS enabled -->
     <arg name="enable_sbas" default="true"/>
@@ -18,13 +18,13 @@
     <arg name="fix_mode" default="both"/>
 
     <!-- No dead reckoning after signal loss -->
-    <arg name="dr_limit" default="30"/>
+    <arg name="dr_limit" default="0"/>
 
     <node name="$(arg gps)" pkg="ublox_gps" type="ublox_gps" output="$(arg output)">
         <param name="device" type="string" value="$(arg device)"/>
         <param name="frame_id" type="string" value="$(arg frame_id)"/>
         <param name="baudrate" type="int" value="$(arg baudrate)"/>
-        <param name="meas_rate" type="int" value="$(arg meas_rate)"/>
+        <param name="rate" type="int" value="$(arg rate)"/>
         <param name="enable_sbas" type="bool" value="$(arg enable_sbas)"/>
         <param name="dynamic_model" type="string" value="$(arg dynamic_model)"/>
         <param name="fix_mode" type="string" value="$(arg fix_mode)"/>
