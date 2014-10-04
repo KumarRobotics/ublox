@@ -284,7 +284,7 @@ int main(int argc, char **argv) {
   
   std::string device;
   int baudrate;
-  int meas_rate;
+  int rate, meas_rate;
   bool enable_sbas;
   std::string dynamic_model, fix_mode;
   int dr_limit;
@@ -293,15 +293,18 @@ int main(int argc, char **argv) {
   param.param("device", device, std::string("/dev/ttyUSB0"));
   param.param("frame_id", frame_id, std::string("gps"));
   param.param("baudrate", baudrate, 9600);
-  param.param("meas_rate", meas_rate, 250);        //  default to 4Hz
+  param.param("rate", rate, 4); //  in Hz
   param.param("enable_sbas", enable_sbas, false);
   param.param("dynamic_model", dynamic_model, std::string("portable"));
   param.param("fix_mode", fix_mode, std::string("both"));
   param.param("dr_limit", dr_limit, 0);
-  if (meas_rate <= 0) {
-    ROS_ERROR("Invalid settings: meas_rate must be > 0");
+  if (rate <= 0) {
+    ROS_ERROR("Invalid settings: rate must be > 0");
     return 1;
   }
+  //  measurement rate param for ublox, units of ms
+  meas_rate = 1000 / rate;
+  
   if (dr_limit < 0 || dr_limit > 255) {
     ROS_ERROR("Invalid settings: dr_limit must be between 0 and 255");
     return 1;
@@ -321,7 +324,7 @@ int main(int argc, char **argv) {
   updater->add("fix", &fix_diagnostic);
   updater->force_update();
   
-  const double target_freq = 1000.0 / meas_rate;
+  const double target_freq = 1000.0 / meas_rate;  //  actual update frequency
   double min_freq = target_freq;
   double max_freq = target_freq;
   diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq, 0.05, 10);
@@ -389,7 +392,7 @@ int main(int argc, char **argv) {
     }
     if (!gps.setMeasRate(meas_rate)) {
       std::stringstream ss;
-      ss << "Failed to set measurement rate " << meas_rate << ".";
+      ss << "Failed to set measurement rate to " << meas_rate << "ms.";
       throw std::runtime_error(ss.str());
     }
     if (!gps.enableSBAS(enable_sbas)) {
@@ -422,7 +425,7 @@ int main(int argc, char **argv) {
     param.param("rxm", enabled["rxm"], false);
     param.param("aid", enabled["aid"], false);
     
-    param.param("nav_sol", enabled["nav_sol"], enabled["all"]);
+    param.param("nav_sol", enabled["nav_sol"], true);
     if (enabled["nav_sol"]) gps.subscribe<ublox_msgs::NavSOL>(boost::bind(&publish<ublox_msgs::NavSOL>, _1, "navsol"), 1);
     param.param("nav_status", enabled["nav_status"], true);
     if (enabled["nav_status"]) gps.subscribe<ublox_msgs::NavSTATUS>(&publishNavStatus, 1);
