@@ -5,8 +5,8 @@
     <arg name="baudrate" default="57600"/>
     <arg name="output" default="screen"/>
 
-    <!-- Read at 5Hz -->
-    <arg name="meas_rate" default="200"/>
+    <!-- Read at 4Hz -->
+    <arg name="rate" default="4"/>
 
     <!-- SBAS enabled -->
     <arg name="enable_sbas" default="true"/>
