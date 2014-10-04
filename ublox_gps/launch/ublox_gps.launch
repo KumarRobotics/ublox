@@ -18,7 +18,7 @@
     <arg name="fix_mode" default="both"/>
 
     <!-- No dead reckoning after signal loss -->
-    <arg name="dr_limit" default="30"/>
+    <arg name="dr_limit" default="0"/>
 
     <node name="$(arg gps)" pkg="ublox_gps" type="ublox_gps" output="$(arg output)">
         <param name="device" type="string" value="$(arg device)"/>
