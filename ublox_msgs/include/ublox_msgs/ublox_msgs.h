@@ -61,6 +61,7 @@
 #include <ublox_msgs/CfgPRT.h>
 #include <ublox_msgs/CfgRATE.h>
 #include <ublox_msgs/CfgSBAS.h>
+#include <ublox_msgs/CfgGNSS.h>
 
 namespace ublox_msgs {
 
@@ -115,6 +116,7 @@ namespace Message {
     static const uint8_t PRT  = CfgPRT::MESSAGE_ID;
     static const uint8_t RATE = CfgRATE::MESSAGE_ID;
     static const uint8_t SBAS = CfgSBAS::MESSAGE_ID;
+    static const uint8_t GNSS = CfgGNSS::MESSAGE_ID;
   }
 }
 

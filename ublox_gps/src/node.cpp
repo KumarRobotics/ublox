@@ -33,10 +33,12 @@
 #include <boost/regex.hpp>
 
 #include <ros/ros.h>
+#include <ros/serialization.h>
 #include <ublox_msgs/ublox_msgs.h>
 #include <ublox_msgs/NavSTATUS.h>
 #include <ublox_msgs/NavPOSLLH.h>
 #include <ublox_msgs/NavVELNED.h>
+#include <ublox_msgs/CfgGNSS.h>
 
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Vector3Stamped.h>
@@ -285,19 +287,24 @@ int main(int argc, char **argv) {
   std::string device;
   int baudrate;
   int rate, meas_rate;
-  bool enable_sbas;
+  bool enable_sbas, gps_only;
   std::string dynamic_model, fix_mode;
   int dr_limit;
-
   ros::NodeHandle param("~");
   param.param("device", device, std::string("/dev/ttyUSB0"));
   param.param("frame_id", frame_id, std::string("gps"));
   param.param("baudrate", baudrate, 9600);
   param.param("rate", rate, 4); //  in Hz
   param.param("enable_sbas", enable_sbas, false);
+  param.param("gps_only", gps_only, false);
   param.param("dynamic_model", dynamic_model, std::string("portable"));
   param.param("fix_mode", fix_mode, std::string("both"));
   param.param("dr_limit", dr_limit, 0);
+    
+  if (gps_only) {
+    ROS_WARN("Warning: u-blox launched w/ gps_only = true");
+  }
+  
   if (rate <= 0) {
     ROS_ERROR("Invalid settings: rate must be > 0");
     return 1;
@@ -412,6 +419,23 @@ int main(int argc, char **argv) {
       throw std::runtime_error(ss.str());
     }
     
+    ublox_msgs::CfgGNSS cfgGNSS;
+    cfgGNSS.numConfigBlocks = 1;  //  do services one by one
+    cfgGNSS.msgVer = 0;
+    cfgGNSS.flags = 0;            //  0 = disabled
+    if (gps_only) {
+      //  disable GLONASS, BeiDou
+      cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_GLONASS;
+      cfgGNSS.numTrkChUse = 24; //  number of russian satellites
+      if (!gps.configure(cfgGNSS)) {
+        throw std::runtime_error("Failed to disable GLONASS");
+      }
+      cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_BEIDOU;
+      cfgGNSS.numTrkChUse = 27; //  number of chinese satellites
+      if (!gps.configure(cfgGNSS)) {
+        throw std::runtime_error("Failed to disable BeiDou");
+      }
+    }
   } catch (std::exception& e) {
     setup_ok = false;
     ROS_ERROR("Error configuring device: %s", e.what());

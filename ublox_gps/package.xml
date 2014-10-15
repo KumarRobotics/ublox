@@ -23,6 +23,9 @@
   <build_depend>roscpp</build_depend>
   <run_depend>roscpp</run_depend>
 
+  <build_depend>roscpp_serialization</build_depend>
+  <run_depend>roscpp_serialization</run_depend>
+
   <build_depend>diagnostic_updater</build_depend>
   <run_depend>diagnostic_updater</run_depend>
 

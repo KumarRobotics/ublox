@@ -64,6 +64,8 @@ enum FixMode {
   FIX_MODE_BOTH = 3,
 };
 
+enum 
+
 /**
  * @brief Determine dynamic model from human-readable string.
  * @param model One of the following (case-insensitive):
