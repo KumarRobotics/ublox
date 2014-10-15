@@ -2,9 +2,18 @@
 # Navigation Engine Expert Settings
 # Warning: Refer to u-blox protocol spec before changing these settings.
 
+uint8 CLASS_ID = 6
+uint8 MESSAGE_ID = 35
+
 uint16 version        # Message version (set to 0)
 
-uint16 mask1          # First parameters bitmask
+uint16 mask1          # First parameters bitmask (possible values below)
+uint16 MASK_MIN_MAX        = 4
+uint16 MASK_MIN_CNO        = 8
+uint16 MASK_INITIAL_FIX_3D = 64
+uint16 MASK_WKN_ROLL       = 512
+uint16 MASK_PPP            = 8192
+uint16 MASK_AOP            = 16384
 
 uint32 reserved0      # Always set to zero
 uint8 reserved1       # Always set to zero
