@@ -38,6 +38,7 @@
 #include <ublox_msgs/NavSTATUS.h>
 #include <ublox_msgs/NavPOSLLH.h>
 #include <ublox_msgs/NavVELNED.h>
+#include <ublox_msgs/NavSOL.h>
 #include <ublox_msgs/CfgGNSS.h>
 
 #include <sensor_msgs/NavSatFix.h>
@@ -58,6 +59,7 @@ Gps gps;
 ublox_msgs::NavSTATUS status;
 std::map<std::string,bool> enabled;
 std::string frame_id;
+int num_svs_used=0;
 
 ublox_msgs::NavPOSLLH last_nav_pos;
 ublox_msgs::NavVELNED last_nav_vel;
@@ -76,6 +78,7 @@ void publishNavStatus(const ublox_msgs::NavSTATUS& m)
 void publishNavSOL(const ublox_msgs::NavSOL& m)
 {
   static ros::Publisher publisher = nh->advertise<ublox_msgs::NavSOL>("navsol", kROSQueueSize);
+  num_svs_used = m.numSV; //  number of satellites used
   publisher.publish(m);
 }
 
@@ -267,6 +270,7 @@ void fix_diagnostic(diagnostic_updater::DiagnosticStatusWrapper &stat) {
   stat.add("hMSL", last_nav_pos.hMSL);
   stat.add("hAcc", last_nav_pos.hAcc);
   stat.add("vAcc", last_nav_pos.vAcc);
+  stat.add("numSV", num_svs_used);
 }
 
 int main(int argc, char **argv) {
@@ -287,7 +291,7 @@ int main(int argc, char **argv) {
   std::string device;
   int baudrate;
   int rate, meas_rate;
-  bool enable_sbas, gps_only;
+  bool enable_sbas, enable_glonass, enable_beidou;
   std::string dynamic_model, fix_mode;
   int dr_limit;
   ros::NodeHandle param("~");
@@ -296,15 +300,12 @@ int main(int argc, char **argv) {
   param.param("baudrate", baudrate, 9600);
   param.param("rate", rate, 4); //  in Hz
   param.param("enable_sbas", enable_sbas, false);
-  param.param("gps_only", gps_only, false);
+  param.param("enable_glonass", enable_glonass, false);
+  param.param("enable_beidou", enable_beidou, false);
   param.param("dynamic_model", dynamic_model, std::string("portable"));
   param.param("fix_mode", fix_mode, std::string("both"));
   param.param("dr_limit", dr_limit, 0);
     
-  if (gps_only) {
-    ROS_WARN("Warning: u-blox launched w/ gps_only = true");
-  }
-  
   if (rate <= 0) {
     ROS_ERROR("Invalid settings: rate must be > 0");
     return 1;
@@ -421,20 +422,23 @@ int main(int argc, char **argv) {
     
     ublox_msgs::CfgGNSS cfgGNSS;
     cfgGNSS.numConfigBlocks = 1;  //  do services one by one
-    cfgGNSS.msgVer = 0;
-    cfgGNSS.flags = 0;            //  0 = disabled
-    if (gps_only) {
-      //  disable GLONASS, BeiDou
-      cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_GLONASS;
-      cfgGNSS.numTrkChUse = 24; //  number of russian satellites
-      if (!gps.configure(cfgGNSS)) {
-        throw std::runtime_error("Failed to disable GLONASS");
-      }
-      cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_BEIDOU;
-      cfgGNSS.numTrkChUse = 27; //  number of chinese satellites
-      if (!gps.configure(cfgGNSS)) {
-        throw std::runtime_error("Failed to disable BeiDou");
-      }
+    cfgGNSS.msgVer = 0;           //  these are the default settings...
+    cfgGNSS.resTrkCh = 8;
+    cfgGNSS.maxTrkCh = 16;
+    cfgGNSS.numTrkChHw = 32;
+    cfgGNSS.numTrkChUse = 32;
+    
+    //  configure glonass
+    cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_GLONASS;
+    cfgGNSS.flags = enable_glonass;
+    if (!gps.configure(cfgGNSS)) {
+      throw std::runtime_error("Failed to enable/disable GLONASS");
+    }
+    //  configure beidou
+    cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_BEIDOU;
+    cfgGNSS.flags = enable_beidou;
+    if (!gps.configure(cfgGNSS)) {
+      throw std::runtime_error("Failed to enable/disable BeiDou");
     }
   } catch (std::exception& e) {
     setup_ok = false;

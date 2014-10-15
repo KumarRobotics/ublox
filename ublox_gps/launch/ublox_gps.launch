@@ -20,8 +20,9 @@
     <!-- No dead reckoning after signal loss -->
     <arg name="dr_limit" default="0"/>
 
-    <!-- Set to true to disable GLONASS,BeiDou and Galileo -->
-    <arg name="gps_only" default="true"/>
+    <!-- Manage use of GLONASS and BeiDou -->
+    <arg name="enable_beidou" default="false"/>
+    <arg name="enable_glonass" default="true"/>
 
     <node name="$(arg gps)" pkg="ublox_gps" type="ublox_gps" output="$(arg output)">
         <param name="device" type="string" value="$(arg device)"/>
@@ -32,6 +33,7 @@
         <param name="dynamic_model" type="string" value="$(arg dynamic_model)"/>
         <param name="fix_mode" type="string" value="$(arg fix_mode)"/>
         <param name="dr_limit" type="int" value="$(arg dr_limit)"/>
-        <param name="gps_only" type="bool" value="$(arg gps_only)"/>
+        <param name="enable_beidou" type="bool" value="$(arg enable_beidou)"/>
+        <param name="enable_glonass" type="bool" value="$(arg enable_glonass)"/>
     </node>
 </launch>
