@@ -134,6 +134,16 @@ public:
    */
   bool setDeadReckonLimit(uint8_t limit);
   
+  /**
+   * @brief Enable or disable PPP (precise-point-positioning).
+   * @param enabled If true, PPP is enabled.
+   * @return true on ACK, false on other conditions.
+   * 
+   * @note This is part of the expert settings. It is recommended you check
+   * the ublox manual first.
+   */
+  bool setPPPEnabled(bool enabled);
+  
   bool enableSBAS(bool enabled);
 
   template <typename T> Callbacks::iterator subscribe(typename CallbackHandler_<T>::Callback callback, unsigned int rate);
