@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
   std::string device;
   int baudrate;
   int rate, meas_rate;
-  bool enable_sbas, enable_glonass, enable_beidou;
+  bool enable_sbas, enable_glonass, enable_beidou, enable_ppp;
   std::string dynamic_model, fix_mode;
   int dr_limit;
   ros::NodeHandle param("~");
@@ -302,10 +302,15 @@ int main(int argc, char **argv) {
   param.param("enable_sbas", enable_sbas, false);
   param.param("enable_glonass", enable_glonass, false);
   param.param("enable_beidou", enable_beidou, false);
+  param.param("enable_ppp", enable_ppp, false);
   param.param("dynamic_model", dynamic_model, std::string("portable"));
   param.param("fix_mode", fix_mode, std::string("both"));
   param.param("dr_limit", dr_limit, 0);
     
+  if (enable_ppp) {
+    ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
+  }
+  
   if (rate <= 0) {
     ROS_ERROR("Invalid settings: rate must be > 0");
     return 1;
@@ -406,6 +411,10 @@ int main(int argc, char **argv) {
     if (!gps.enableSBAS(enable_sbas)) {
       throw std::runtime_error(std::string("Failed to ") + 
                                ((enable_sbas) ? "enable" : "disable") + " SBAS.");
+    }
+    if (!gps.setPPPEnabled(enable_ppp)) {
+      throw std::runtime_error(std::string("Failed to ") +
+                               ((enable_ppp) ? "enable" : "disable") + " PPP.");
     }
     if (!gps.setDynamicModel(dmodel)) {
       throw std::runtime_error("Failed to set model: " + 

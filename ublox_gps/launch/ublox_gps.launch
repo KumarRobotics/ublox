@@ -24,6 +24,9 @@
     <arg name="enable_beidou" default="false"/>
     <arg name="enable_glonass" default="true"/>
 
+    <!-- Manage use of PPP -->
+    <arg name="enable_ppp" default="true"/>
+
     <node name="$(arg gps)" pkg="ublox_gps" type="ublox_gps" output="$(arg output)">
         <param name="device" type="string" value="$(arg device)"/>
         <param name="frame_id" type="string" value="$(arg frame_id)"/>
@@ -35,5 +38,6 @@
         <param name="dr_limit" type="int" value="$(arg dr_limit)"/>
         <param name="enable_beidou" type="bool" value="$(arg enable_beidou)"/>
         <param name="enable_glonass" type="bool" value="$(arg enable_glonass)"/>
+        <param name="enable_ppp" type="bool" value="$(arg enable_ppp)"/>
     </node>
 </launch>
