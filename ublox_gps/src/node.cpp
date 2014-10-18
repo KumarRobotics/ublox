@@ -40,7 +40,6 @@
 #include <ublox_msgs/NavVELNED.h>
 #include <ublox_msgs/NavSOL.h>
 #include <ublox_msgs/CfgGNSS.h>
-#include <ublox_msgs/MonVER.h>
 
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Vector3Stamped.h>
@@ -295,6 +294,7 @@ int main(int argc, char **argv) {
   bool enable_sbas, enable_glonass, enable_beidou, enable_ppp;
   std::string dynamic_model, fix_mode;
   int dr_limit;
+  int ublox_version;
   ros::NodeHandle param("~");
   param.param("device", device, std::string("/dev/ttyUSB0"));
   param.param("frame_id", frame_id, std::string("gps"));
@@ -307,6 +307,7 @@ int main(int argc, char **argv) {
   param.param("dynamic_model", dynamic_model, std::string("portable"));
   param.param("fix_mode", fix_mode, std::string("both"));
   param.param("dr_limit", dr_limit, 0);
+  param.param("ublox_version", ublox_version, 6); /// @todo: temporary workaround
     
   if (enable_ppp) {
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
@@ -430,33 +431,41 @@ int main(int argc, char **argv) {
       throw std::runtime_error(ss.str());
     }
     
-    ublox_msgs::MonVER ver;
-    if (gps.poll(ver)) {
-      ROS_INFO("Device software version: %s", &ver.swVersion[0]);
-      ROS_INFO("Device hardware version: %s", &ver.hwVersion[0]);
-    }
-    
-    ublox_msgs::CfgGNSS cfgGNSS;
-    cfgGNSS.numConfigBlocks = 1;  //  do services one by one
-    cfgGNSS.msgVer = 0;           //  these are the default settings...
-    cfgGNSS.resTrkCh = 8;
-    cfgGNSS.maxTrkCh = 16;
-    cfgGNSS.numTrkChHw = 32;
-    cfgGNSS.numTrkChUse = 32;
-    
-    //  configure glonass
-    cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_GLONASS;
-    cfgGNSS.flags = enable_glonass;
-    if (!gps.configure(cfgGNSS)) {
-      throw std::runtime_error(std::string("Failed to ") +
-                               ((enable_glonass) ? "enable" : "disable") + " GLONASS.");
-    }
-    //  configure beidou
-    cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_BEIDOU;
-    cfgGNSS.flags = enable_beidou;
-    if (!gps.configure(cfgGNSS)) {
-      throw std::runtime_error(std::string("Failed to ") +
-                               ((enable_beidou) ? "enable" : "disable") + " BeiDou.");
+    if (ublox_version >= 7) {
+      ublox_msgs::CfgGNSS cfgGNSS;
+      if (gps.poll(cfgGNSS)) {
+        ROS_INFO("Read GNSS config.");
+        ROS_INFO("Num. tracking channels in hardware: %i",cfgGNSS.numTrkChHw);
+        ROS_INFO("Num. tracking channels to use: %i",cfgGNSS.numTrkChUse);
+      } else {
+        throw std::runtime_error("Failed to read the GNSS config.");
+      }
+      
+      cfgGNSS.numConfigBlocks = 1;  //  do services one by one
+      cfgGNSS.msgVer = 0;
+      cfgGNSS.resTrkCh = 8;   //  taken as defaults from ublox manual
+      cfgGNSS.maxTrkCh = 16;
+      
+      //  configure glonass
+      cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_GLONASS;
+      cfgGNSS.flags = enable_glonass;
+      if (!gps.configure(cfgGNSS)) {
+        throw std::runtime_error(std::string("Failed to ") +
+                                 ((enable_glonass) ? "enable" : "disable") + " GLONASS.");
+      }
+      if (ublox_version >= 8) {
+        //  configure beidou
+        cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_BEIDOU;
+        cfgGNSS.flags = enable_beidou;
+        if (!gps.configure(cfgGNSS)) {
+          throw std::runtime_error(std::string("Failed to ") +
+                                   ((enable_beidou) ? "enable" : "disable") + " BeiDou.");
+        }
+      } else {
+        ROS_WARN("ublox_version < 8, ignoring BeiDou Settings");
+      }
+    } else {
+      ROS_WARN("ublox_version < 7, ignoring GNSS settings");
     }
   } catch (std::exception& e) {
     setup_ok = false;
