@@ -26,6 +26,7 @@ A sample launch file is provided in `ublox_gps.launch`. The two topics to which 
 * **0.0.3**:
   - Added the `enable_glonass`, `enable_beidou` and `enable_ppp` options.
   - Added the `ublox_version` option. Consult known issues for important details.
+  - Added `numSVs` field to the RQT monitor.
 
 * **0.0.2**:
   - Changed `meas_rate` to simply `rate`, which is in Hz. `meas_rate` is computed automatically.
