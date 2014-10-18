@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(ublox_gps)
 find_package(catkin REQUIRED
   roscpp
+  roscpp_serialization
   ublox_msgs
   ublox_serialization
   diagnostic_updater
@@ -22,8 +23,9 @@ include_directories(${Boost_INCLUDE_DIR})
 
 # include other ublox packages
 include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(${ublox_msgs_INCLUDE_DIRS})
-include_directories(${ublox_serialization_INCLUDE_DIRS})
+#include_directories(${ublox_msgs_INCLUDE_DIRS})
+#include_directories(${ublox_serialization_INCLUDE_DIRS})
+include_directories(${catkin_INCLUDE_DIRS})
 
 # link pthread
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -lrt -pthread")
@@ -32,15 +34,24 @@ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -lrt -pthread")
 add_library(ublox_gps src/gps.cpp)
 
 # fix msg compile order bug
-add_dependencies(ublox_gps ${ublox_msgs_EXPORTED_TARGETS})
+add_dependencies(ublox_gps ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(ublox_gps boost_system boost_regex boost_thread)
-target_link_libraries(ublox_gps ${roscpp_LIBRARIES} ${ublox_msgs_LIBRARIES})
+target_link_libraries(ublox_gps
+  boost_system
+  boost_regex
+  boost_thread
+)
+
+target_link_libraries(ublox_gps
+  ${catkin_LIBRARIES}
+)
 
 # build node
-add_executable(ublox_gps_node src/node.cpp)
+add_executable(ublox_gps_node
+  src/node.cpp
+)
 set_target_properties(ublox_gps_node PROPERTIES OUTPUT_NAME ublox_gps)
 
 target_link_libraries(ublox_gps_node boost_system boost_regex boost_thread)
-target_link_libraries(ublox_gps_node ${roscpp_LIBRARIES} ${ublox_msgs_LIBRARIES})
+target_link_libraries(ublox_gps_node ${catkin_LIBRARIES})
 target_link_libraries(ublox_gps_node ublox_gps)

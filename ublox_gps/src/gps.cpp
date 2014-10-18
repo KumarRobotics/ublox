@@ -32,6 +32,7 @@
 #include <locale>
 #include <ublox_msgs/CfgRATE.h>
 #include <ublox_msgs/CfgNAV5.h>
+#include <ublox_msgs/CfgNAVX5.h>
 #include <ublox_msgs/CfgPRT.h>
 
 namespace ublox_gps {
@@ -175,21 +176,28 @@ bool Gps::setRate(uint8_t class_id, uint8_t message_id, unsigned int rate)
 bool Gps::setDynamicModel(DynamicModel model) {
   ublox_msgs::CfgNAV5 msg;
   msg.dynModel = static_cast<uint8_t>(model);
-  msg.mask = 1; //  first bit is the mask bit for dynModel
+  msg.mask = ublox_msgs::CfgNAV5::MASK_DYN;
   return configure(msg);
 }
 
 bool Gps::setFixMode(FixMode mode) {
   ublox_msgs::CfgNAV5 msg;
   msg.fixMode = static_cast<uint8_t>(mode);
-  msg.mask = 4; //  third bit for mode
+  msg.mask = ublox_msgs::CfgNAV5::MASK_FIX_MODE;
   return configure(msg);
 }
 
 bool Gps::setDeadReckonLimit(uint8_t limit) {
   ublox_msgs::CfgNAV5 msg;
   msg.drLimit = limit;
-  msg.mask = 8; //  fourth bit
+  msg.mask = ublox_msgs::CfgNAV5::MASK_DR_LIM;
+  return configure(msg);
+}
+
+bool Gps::setPPPEnabled(bool enabled) {
+  ublox_msgs::CfgNAVX5 msg;
+  msg.usePPP = enabled;
+  msg.mask1 = ublox_msgs::CfgNAVX5::MASK_PPP;
   return configure(msg);
 }
 

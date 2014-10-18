@@ -64,6 +64,8 @@ enum FixMode {
   FIX_MODE_BOTH = 3,
 };
 
+enum 
+
 /**
  * @brief Determine dynamic model from human-readable string.
  * @param model One of the following (case-insensitive):
@@ -131,6 +133,16 @@ public:
    * @return true on ACK, false on other conditions.
    */
   bool setDeadReckonLimit(uint8_t limit);
+  
+  /**
+   * @brief Enable or disable PPP (precise-point-positioning).
+   * @param enabled If true, PPP is enabled.
+   * @return true on ACK, false on other conditions.
+   * 
+   * @note This is part of the expert settings. It is recommended you check
+   * the ublox manual first.
+   */
+  bool setPPPEnabled(bool enabled);
   
   bool enableSBAS(bool enabled);
 
