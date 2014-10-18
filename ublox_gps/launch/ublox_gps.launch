@@ -28,7 +28,7 @@
     <arg name="enable_ppp" default="false"/>
 
     <!-- Specify ublox version (6,7,8) -->
-    <arg name="ublox_version" default="7"/>
+    <arg name="ublox_version" default="6"/>
 
     <node name="$(arg gps)" pkg="ublox_gps" type="ublox_gps" output="$(arg output)">
         <param name="device" type="string" value="$(arg device)"/>
