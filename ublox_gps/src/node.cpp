@@ -40,6 +40,7 @@
 #include <ublox_msgs/NavVELNED.h>
 #include <ublox_msgs/NavSOL.h>
 #include <ublox_msgs/CfgGNSS.h>
+#include <ublox_msgs/MonVER.h>
 
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Vector3Stamped.h>
@@ -429,6 +430,12 @@ int main(int argc, char **argv) {
       throw std::runtime_error(ss.str());
     }
     
+    ublox_msgs::MonVER ver;
+    if (gps.poll(ver)) {
+      ROS_INFO("Device software version: %s", &ver.swVersion[0]);
+      ROS_INFO("Device hardware version: %s", &ver.hwVersion[0]);
+    }
+    
     ublox_msgs::CfgGNSS cfgGNSS;
     cfgGNSS.numConfigBlocks = 1;  //  do services one by one
     cfgGNSS.msgVer = 0;           //  these are the default settings...
@@ -441,13 +448,15 @@ int main(int argc, char **argv) {
     cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_GLONASS;
     cfgGNSS.flags = enable_glonass;
     if (!gps.configure(cfgGNSS)) {
-      throw std::runtime_error("Failed to enable/disable GLONASS");
+      throw std::runtime_error(std::string("Failed to ") +
+                               ((enable_glonass) ? "enable" : "disable") + " GLONASS.");
     }
     //  configure beidou
     cfgGNSS.gnssId = ublox_msgs::CfgGNSS::GNSS_ID_BEIDOU;
     cfgGNSS.flags = enable_beidou;
     if (!gps.configure(cfgGNSS)) {
-      throw std::runtime_error("Failed to enable/disable BeiDou");
+      throw std::runtime_error(std::string("Failed to ") +
+                               ((enable_beidou) ? "enable" : "disable") + " BeiDou.");
     }
   } catch (std::exception& e) {
     setup_ok = false;

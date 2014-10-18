@@ -64,6 +64,8 @@
 #include <ublox_msgs/CfgSBAS.h>
 #include <ublox_msgs/CfgGNSS.h>
 
+#include <ublox_msgs/MonVER.h>
+
 namespace ublox_msgs {
 
 namespace Class {
@@ -119,6 +121,10 @@ namespace Message {
     static const uint8_t RATE  = CfgRATE::MESSAGE_ID;
     static const uint8_t SBAS  = CfgSBAS::MESSAGE_ID;
     static const uint8_t GNSS  = CfgGNSS::MESSAGE_ID;
+  }
+  
+  namespace MON {
+    static const uint8_t VER   = MonVER::MESSAGE_ID;
   }
 }
 

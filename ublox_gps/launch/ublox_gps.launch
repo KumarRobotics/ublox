@@ -25,7 +25,7 @@
     <arg name="enable_glonass" default="true"/>
 
     <!-- Manage use of PPP -->
-    <arg name="enable_ppp" default="true"/>
+    <arg name="enable_ppp" default="false"/>
 
     <node name="$(arg gps)" pkg="ublox_gps" type="ublox_gps" output="$(arg output)">
         <param name="device" type="string" value="$(arg device)"/>
