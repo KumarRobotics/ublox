@@ -55,3 +55,14 @@ set_target_properties(ublox_gps_node PROPERTIES OUTPUT_NAME ublox_gps)
 target_link_libraries(ublox_gps_node boost_system boost_regex boost_thread)
 target_link_libraries(ublox_gps_node ${catkin_LIBRARIES})
 target_link_libraries(ublox_gps_node ublox_gps)
+
+install(TARGETS ublox_gps ublox_gps_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  PATTERN ".svn" EXCLUDE
+)
