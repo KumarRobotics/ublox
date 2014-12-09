@@ -23,6 +23,8 @@ A sample launch file is provided in `ublox_gps.launch`. The two topics to which 
 
 # Version history
 
+* **0.0.4**:
+  - Added install targets.
 * **0.0.3**:
   - Added the `enable_glonass`, `enable_beidou` and `enable_ppp` options.
   - Added the `ublox_version` option. Consult known issues for important details.
