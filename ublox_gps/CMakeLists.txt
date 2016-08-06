@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ublox_gps)
-find_package(catkin REQUIRED
+find_package(catkin REQUIRED COMPONENTS
   roscpp
   roscpp_serialization
   ublox_msgs
@@ -13,9 +13,6 @@ catkin_package(
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS roscpp ublox_msgs ublox_serialization)
 
-#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-
 # include boost
 find_package(Boost REQUIRED COMPONENTS system regex thread)
 link_directories(${Boost_LIBRARY_DIR})
@@ -23,8 +20,6 @@ include_directories(${Boost_INCLUDE_DIR})
 
 # include other ublox packages
 include_directories(${PROJECT_SOURCE_DIR}/include)
-#include_directories(${ublox_msgs_INCLUDE_DIRS})
-#include_directories(${ublox_serialization_INCLUDE_DIRS})
 include_directories(${catkin_INCLUDE_DIRS})
 
 # link pthread
@@ -47,9 +42,7 @@ target_link_libraries(ublox_gps
 )
 
 # build node
-add_executable(ublox_gps_node
-  src/node.cpp
-)
+add_executable(ublox_gps_node src/node.cpp)
 set_target_properties(ublox_gps_node PROPERTIES OUTPUT_NAME ublox_gps)
 
 target_link_libraries(ublox_gps_node boost_system boost_regex boost_thread)

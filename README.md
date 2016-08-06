@@ -19,12 +19,28 @@ The `ublox_gps` node supports the following parameters:
 * `fix_mode`: Type of fixes supported: `2d`, `3d` or `both`.
 * `dr_limit`: Max time in seconds to use dead reckoning after signal is lost. Defaults to 0. (Untested as of 28/08/2014).
 
-A sample launch file is provided in `ublox_gps.launch`. The two topics to which you should subscribe are `/ublox_gps/fix` and `/ublox_gps/fix_velocity`. The angular component of `fix_velocity` is unused.
+## Topics
+
+`~fix`([sensor_msgs/NavSatFix](http://docs.ros.org/api/sensor_msgs/html/msg/NavSatFix.html))
+
+Navigation Satellite fix.
+
+`~fix_velocity`([geometry_msgs/TwistWithCovarianceStamped](http://docs.ros.org/jade/api/geometry_msgs/html/msg/TwistWithCovarianceStamped.html))
+
+Velocity in local ENU frame.
+
+## Launch
+
+A sample launch file is provided in `ublox_gps.launch`. The two topics to which you should subscribe are `/gps/fix` and `/gps/fix_velocity`. The angular component of `fix_velocity` is unused.
 
 # Version history
 
+* **0.0.5**:
+  - Reformat files under `ublox_gps`
+
 * **0.0.4**:
   - Added install targets.
+
 * **0.0.3**:
   - Added the `enable_glonass`, `enable_beidou` and `enable_ppp` options.
   - Added the `ublox_version` option. Consult known issues for important details.
@@ -35,7 +51,7 @@ A sample launch file is provided in `ublox_gps.launch`. The two topics to which 
 
 * **0.0.1**:
   - All topics are now published on a private node handle.
-  - Velocities are published as stamped twist messages with covariance. Angular components are unsused.
+  - Velocities are published as stamped twist messages with covariance. Angular components are unused.
   - `hAcc`, `vAcc` and `sAcc` are used to generate diagonal covariances.
   - Velocities use the correct convention: X-Y-Z = East-North-Up.
   - 2D **or** 3D fix correspond to `STATUS_FIX` (previously only 3D).
@@ -45,6 +61,7 @@ A sample launch file is provided in `ublox_gps.launch`. The two topics to which 
   - _"received ACK"_ messages are elevated to debug level 2.
   - Corrected issue where baudrate was not set correctly using rosparam.
   - Corrected issue where socket destructors were not called.
+
 * **0.0.0**:
   - Forked from https://github.com/tu-darmstadt-ros-pkg/ublox
   - Updated to use catkin.

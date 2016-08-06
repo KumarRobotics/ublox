@@ -6,7 +6,7 @@
     <arg name="output" default="screen"/>
 
     <!-- Read at 4Hz -->
-    <arg name="rate" default="4"/>
+    <arg name="rate" default="10"/>
 
     <!-- SBAS enabled -->
     <arg name="enable_sbas" default="true"/>
@@ -28,7 +28,7 @@
     <arg name="enable_ppp" default="false"/>
 
     <!-- Specify ublox version (6,7,8) -->
-    <arg name="ublox_version" default="6"/>
+    <arg name="ublox_version" default="8"/>
 
     <node name="$(arg gps)" pkg="ublox_gps" type="ublox_gps" output="$(arg output)">
         <param name="device" type="string" value="$(arg device)"/>

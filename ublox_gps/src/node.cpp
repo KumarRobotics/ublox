@@ -294,19 +294,19 @@ int main(int argc, char** argv) {
   std::string dynamic_model, fix_mode;
   int dr_limit;
   int ublox_version;
-  ros::NodeHandle param("~");
-  param.param("device", device, std::string("/dev/ttyUSB0"));
-  param.param("frame_id", frame_id, std::string("gps"));
-  param.param("baudrate", baudrate, 9600);
-  param.param("rate", rate, 4);  //  in Hz
-  param.param("enable_sbas", enable_sbas, false);
-  param.param("enable_glonass", enable_glonass, false);
-  param.param("enable_beidou", enable_beidou, false);
-  param.param("enable_ppp", enable_ppp, false);
-  param.param("dynamic_model", dynamic_model, std::string("portable"));
-  param.param("fix_mode", fix_mode, std::string("both"));
-  param.param("dr_limit", dr_limit, 0);
-  param.param("ublox_version", ublox_version, 6);
+  ros::NodeHandle param_nh("~");
+  param_nh.param("device", device, std::string("/dev/ttyACM0"));
+  param_nh.param("frame_id", frame_id, std::string("gps"));
+  param_nh.param("baudrate", baudrate, 9600);
+  param_nh.param("rate", rate, 4);  //  in Hz
+  param_nh.param("enable_sbas", enable_sbas, false);
+  param_nh.param("enable_glonass", enable_glonass, false);
+  param_nh.param("enable_beidou", enable_beidou, false);
+  param_nh.param("enable_ppp", enable_ppp, false);
+  param_nh.param("dynamic_model", dynamic_model, std::string("portable"));
+  param_nh.param("fix_mode", fix_mode, std::string("both"));
+  param_nh.param("dr_limit", dr_limit, 0);
+  param_nh.param("ublox_version", ublox_version, 6);
 
   if (enable_ppp) {
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
@@ -485,45 +485,45 @@ int main(int argc, char** argv) {
     ROS_INFO("U-Blox configured successfully.");
 
     // subscribe messages
-    param.param("all", enabled["all"], false);
-    param.param("rxm", enabled["rxm"], false);
-    param.param("aid", enabled["aid"], false);
+    param_nh.param("all", enabled["all"], false);
+    param_nh.param("rxm", enabled["rxm"], false);
+    param_nh.param("aid", enabled["aid"], false);
 
-    param.param("nav_sol", enabled["nav_sol"], true);
+    param_nh.param("nav_sol", enabled["nav_sol"], true);
     if (enabled["nav_sol"])
       gps.subscribe<ublox_msgs::NavSOL>(
           boost::bind(&publish<ublox_msgs::NavSOL>, _1, "navsol"), 1);
-    param.param("nav_status", enabled["nav_status"], true);
+    param_nh.param("nav_status", enabled["nav_status"], true);
     if (enabled["nav_status"])
       gps.subscribe<ublox_msgs::NavSTATUS>(&publishNavStatus, 1);
-    param.param("nav_svinfo", enabled["nav_svinfo"], enabled["all"]);
+    param_nh.param("nav_svinfo", enabled["nav_svinfo"], enabled["all"]);
     if (enabled["nav_svinfo"])
       gps.subscribe<ublox_msgs::NavSVINFO>(&publishNavSVINFO, 20);
-    param.param("nav_clk", enabled["nav_clk"], enabled["all"]);
+    param_nh.param("nav_clk", enabled["nav_clk"], enabled["all"]);
     if (enabled["nav_clk"])
       gps.subscribe<ublox_msgs::NavCLOCK>(&publishNavCLK, 1);
-    param.param("rxm_raw", enabled["rxm_raw"],
-                enabled["all"] || enabled["rxm"]);
+    param_nh.param("rxm_raw", enabled["rxm_raw"],
+                   enabled["all"] || enabled["rxm"]);
     if (enabled["rxm_raw"])
       gps.subscribe<ublox_msgs::RxmRAW>(&publishRxmRAW, 1);
-    param.param("rxm_sfrb", enabled["rxm_sfrb"],
-                enabled["all"] || enabled["rxm"]);
+    param_nh.param("rxm_sfrb", enabled["rxm_sfrb"],
+                   enabled["all"] || enabled["rxm"]);
     if (enabled["rxm_sfrb"])
       gps.subscribe<ublox_msgs::RxmSFRB>(&publishRxmSFRB, 1);
-    param.param("nav_posllh", enabled["nav_posllh"], true);
+    param_nh.param("nav_posllh", enabled["nav_posllh"], true);
     if (enabled["nav_posllh"])
       gps.subscribe<ublox_msgs::NavPOSLLH>(&publishNavPosLLH, 1);
-    param.param("nav_velned", enabled["nav_velned"], true);
+    param_nh.param("nav_velned", enabled["nav_velned"], true);
     if (enabled["nav_velned"])
       gps.subscribe<ublox_msgs::NavVELNED>(&publishNavVelNED, 1);
-    param.param("aid_alm", enabled["aid_alm"],
-                enabled["all"] || enabled["aid"]);
+    param_nh.param("aid_alm", enabled["aid_alm"],
+                   enabled["all"] || enabled["aid"]);
     if (enabled["aid_alm"]) gps.subscribe<ublox_msgs::AidALM>(&publishAidALM);
-    param.param("aid_eph", enabled["aid_eph"],
-                enabled["all"] || enabled["aid"]);
+    param_nh.param("aid_eph", enabled["aid_eph"],
+                   enabled["all"] || enabled["aid"]);
     if (enabled["aid_eph"]) gps.subscribe<ublox_msgs::AidEPH>(&publishAidEPH);
-    param.param("aid_hui", enabled["aid_hui"],
-                enabled["all"] || enabled["aid"]);
+    param_nh.param("aid_hui", enabled["aid_hui"],
+                   enabled["all"] || enabled["aid"]);
     if (enabled["aid_hui"]) gps.subscribe<ublox_msgs::AidHUI>(&publishAidHUI);
 
     poller = nh->createTimer(ros::Duration(1.0), &pollMessages);

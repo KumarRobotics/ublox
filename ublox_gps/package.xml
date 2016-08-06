@@ -1,32 +1,21 @@
-<package>
+<package format='2'>
   <name>ublox_gps</name>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
   <description>
-
      Driver for the ublox GPS device.
-
   </description>
   <author>Johannes Meyer</author>
-  <maintainer email="nothing@nobody.com">Johannes Meyer</maintainer>
   <maintainer email="gcross.code@icloud.com">Gareth Cross</maintainer>
+  <maintainer email="quchao@seas.upenn.edu">Chao Qu</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/ublox_gps</url>
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>ublox_serialization</build_depend>
-  <run_depend>ublox_serialization</run_depend>
-
-  <build_depend>ublox_msgs</build_depend>
-  <run_depend>ublox_msgs</run_depend>
-
-  <build_depend>roscpp</build_depend>
-  <run_depend>roscpp</run_depend>
-
-  <build_depend>roscpp_serialization</build_depend>
-  <run_depend>roscpp_serialization</run_depend>
-
-  <build_depend>diagnostic_updater</build_depend>
-  <run_depend>diagnostic_updater</run_depend>
+  <depend>ublox_serialization</depend>
+  <depend>ublox_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>roscpp_serialization</depend>
+  <depend>diagnostic_updater</depend>
 
 </package>
