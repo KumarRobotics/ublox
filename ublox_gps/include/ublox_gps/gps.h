@@ -13,8 +13,9 @@
 //       TU Darmstadt, nor the names of its contributors may be used to
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
-
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 // DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
@@ -30,8 +31,8 @@
 #define UBLOX_GPS_H
 
 #include <boost/asio/io_service.hpp>
-#include <vector>
 #include <map>
+#include <vector>
 
 #include <ublox/serialization/ublox_msgs.h>
 #include <ublox_gps/async_worker.h>
@@ -64,23 +65,24 @@ enum FixMode {
   FIX_MODE_BOTH = 3,
 };
 
-enum 
+enum
 
-/**
- * @brief Determine dynamic model from human-readable string.
- * @param model One of the following (case-insensitive):
- *  - portable
- *  - stationary
- *  - pedestrian
- *  - automotive
- *  - sea
- *  - airborne1
- *  - airborne2
- *  - airborne4
- * @return DynamicModel
- * @throws std::runtime_error on invalid argument.
- */
-DynamicModel modelFromString(const std::string& model);
+    /**
+     * @brief Determine dynamic model from human-readable string.
+     * @param model One of the following (case-insensitive):
+     *  - portable
+     *  - stationary
+     *  - pedestrian
+     *  - automotive
+     *  - sea
+     *  - airborne1
+     *  - airborne2
+     *  - airborne4
+     * @return DynamicModel
+     * @throws std::runtime_error on invalid argument.
+     */
+    DynamicModel
+    modelFromString(const std::string& model);
 
 /**
  * @brief Determine fix mode from human-readable string.
@@ -93,14 +95,14 @@ DynamicModel modelFromString(const std::string& model);
  */
 FixMode fixModeFromString(const std::string& mode);
 
-class Gps
-{
-public:
+class Gps {
+ public:
   Gps();
   virtual ~Gps();
 
-  template <typename StreamT> void initialize(StreamT& stream, boost::asio::io_service& io_service);
-  void initialize(const boost::shared_ptr<Worker> &worker);
+  template <typename StreamT>
+  void initialize(StreamT& stream, boost::asio::io_service& io_service);
+  void initialize(const boost::shared_ptr<Worker>& worker);
   void close();
 
   /**
@@ -109,60 +111,70 @@ public:
    * @return true on ACK, false on other conditions.
    */
   bool setMeasRate(uint16_t measRate);
-  
+
   bool setBaudrate(unsigned int baudrate);
   bool setRate(uint8_t class_id, uint8_t message_id, unsigned int rate);
-  
+
   /**
    * @brief Set the device dynamic model.
    * @param model Dynamic model to use. Consult ublox protocol spec for details.
    * @return true on ACK, false on other conditions.
    */
   bool setDynamicModel(DynamicModel model);
-  
+
   /**
    * @brief Set the device fix mode.
    * @param mode 2D, 3D or both.
    * @return true on ACK, false on other conditions.
    */
   bool setFixMode(FixMode mode);
-  
+
   /**
    * @brief Set the dead reckoning time limit
    * @param limit Time limit in seconds.
    * @return true on ACK, false on other conditions.
    */
   bool setDeadReckonLimit(uint8_t limit);
-  
+
   /**
    * @brief Enable or disable PPP (precise-point-positioning).
    * @param enabled If true, PPP is enabled.
    * @return true on ACK, false on other conditions.
-   * 
+   *
    * @note This is part of the expert settings. It is recommended you check
    * the ublox manual first.
    */
   bool setPPPEnabled(bool enabled);
-  
+
   bool enableSBAS(bool enabled);
 
-  template <typename T> Callbacks::iterator subscribe(typename CallbackHandler_<T>::Callback callback, unsigned int rate);
-  template <typename T> Callbacks::iterator subscribe(typename CallbackHandler_<T>::Callback callback);
-  template <typename T> bool read(T& message, const boost::posix_time::time_duration& timeout = default_timeout_);
+  template <typename T>
+  Callbacks::iterator subscribe(typename CallbackHandler_<T>::Callback callback,
+                                unsigned int rate);
+  template <typename T>
+  Callbacks::iterator subscribe(
+      typename CallbackHandler_<T>::Callback callback);
+  template <typename T>
+  bool read(T& message,
+            const boost::posix_time::time_duration& timeout = default_timeout_);
 
   bool isInitialized() const { return worker_ != 0; }
   bool isConfigured() const { return isInitialized() && configured_; }
   bool isOpen() const { return worker_->isOpen(); }
-  
-  template <typename ConfigT> bool poll(ConfigT& message, const boost::posix_time::time_duration& timeout = default_timeout_);
-  bool poll(uint8_t class_id, uint8_t message_id, const std::vector<uint8_t>& payload = std::vector<uint8_t>());
-  template <typename ConfigT> bool configure(const ConfigT& message, bool wait = true);
+
+  template <typename ConfigT>
+  bool poll(ConfigT& message,
+            const boost::posix_time::time_duration& timeout = default_timeout_);
+  bool poll(uint8_t class_id, uint8_t message_id,
+            const std::vector<uint8_t>& payload = std::vector<uint8_t>());
+  template <typename ConfigT>
+  bool configure(const ConfigT& message, bool wait = true);
   void waitForAcknowledge(const boost::posix_time::time_duration& timeout);
 
-private:
-  void readCallback(unsigned char *data, std::size_t& size);
+ private:
+  void readCallback(unsigned char* data, std::size_t& size);
 
-private:
+ private:
   boost::shared_ptr<Worker> worker_;
   bool configured_;
   enum { WAIT, ACK, NACK } acknowledge_;
@@ -174,41 +186,55 @@ private:
 };
 
 template <typename StreamT>
-void Gps::initialize(StreamT& stream, boost::asio::io_service& io_service)
-{
+void Gps::initialize(StreamT& stream, boost::asio::io_service& io_service) {
   if (worker_) return;
-  initialize(boost::shared_ptr<Worker>(new AsyncWorker<StreamT>(stream, io_service)));
+  initialize(
+      boost::shared_ptr<Worker>(new AsyncWorker<StreamT>(stream, io_service)));
 }
 
-template <> void Gps::initialize(boost::asio::serial_port& serial_port, boost::asio::io_service& io_service);
-extern template void Gps::initialize<boost::asio::ip::tcp::socket>(boost::asio::ip::tcp::socket& stream, boost::asio::io_service& io_service);
-// extern template void Gps::initialize<boost::asio::ip::udp::socket>(boost::asio::ip::udp::socket& stream, boost::asio::io_service& io_service);
+template <>
+void Gps::initialize(boost::asio::serial_port& serial_port,
+                     boost::asio::io_service& io_service);
+extern template void Gps::initialize<boost::asio::ip::tcp::socket>(
+    boost::asio::ip::tcp::socket& stream, boost::asio::io_service& io_service);
+// extern template void
+// Gps::initialize<boost::asio::ip::udp::socket>(boost::asio::ip::udp::socket&
+// stream, boost::asio::io_service& io_service);
 
 template <typename T>
-Callbacks::iterator Gps::subscribe(typename CallbackHandler_<T>::Callback callback, unsigned int rate)
-{
+Callbacks::iterator Gps::subscribe(
+    typename CallbackHandler_<T>::Callback callback, unsigned int rate) {
   if (!setRate(T::CLASS_ID, T::MESSAGE_ID, rate)) return Callbacks::iterator();
   return subscribe<T>(callback);
 }
 
 template <typename T>
-Callbacks::iterator Gps::subscribe(typename CallbackHandler_<T>::Callback callback)
-{
+Callbacks::iterator Gps::subscribe(
+    typename CallbackHandler_<T>::Callback callback) {
   boost::mutex::scoped_lock lock(callback_mutex_);
-  CallbackHandler_<T> *handler = new CallbackHandler_<T>(callback);
-  return callbacks_.insert(std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID), boost::shared_ptr<CallbackHandler>(handler)));
+  CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
+  return callbacks_.insert(
+      std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
+                     boost::shared_ptr<CallbackHandler>(handler)));
 }
 
 template <typename T>
-void CallbackHandler_<T>::handle(ublox::Reader &reader) {
+void CallbackHandler_<T>::handle(ublox::Reader& reader) {
   boost::mutex::scoped_lock(mutex_);
   try {
     if (!reader.read<T>(message_)) {
-      std::cout << "Decoder error for " << static_cast<unsigned int>(reader.classId()) << "/" << static_cast<unsigned int>(reader.messageId()) << " (" << reader.length() << " bytes)" << std::endl;
+      std::cout << "Decoder error for "
+                << static_cast<unsigned int>(reader.classId()) << "/"
+                << static_cast<unsigned int>(reader.messageId()) << " ("
+                << reader.length() << " bytes)" << std::endl;
       return;
     }
-  } catch(std::runtime_error& e) {
-    std::cout << "Decoder error for " << static_cast<unsigned int>(reader.classId()) << "/" << static_cast<unsigned int>(reader.messageId()) << " (" << reader.length() << " bytes): " << std::string(e.what()) << std::endl;
+  } catch (std::runtime_error& e) {
+    std::cout << "Decoder error for "
+              << static_cast<unsigned int>(reader.classId()) << "/"
+              << static_cast<unsigned int>(reader.messageId()) << " ("
+              << reader.length() << " bytes): " << std::string(e.what())
+              << std::endl;
     return;
   }
 
@@ -216,18 +242,23 @@ void CallbackHandler_<T>::handle(ublox::Reader &reader) {
   condition_.notify_all();
 }
 
-template <typename ConfigT> bool Gps::poll(ConfigT& message, const boost::posix_time::time_duration& timeout) {
+template <typename ConfigT>
+bool Gps::poll(ConfigT& message,
+               const boost::posix_time::time_duration& timeout) {
   if (!poll(ConfigT::CLASS_ID, ConfigT::MESSAGE_ID)) return false;
   return read(message, timeout);
 }
 
-template <typename T> bool Gps::read(T& message, const boost::posix_time::time_duration& timeout) {
+template <typename T>
+bool Gps::read(T& message, const boost::posix_time::time_duration& timeout) {
   bool result = false;
   if (!worker_) return false;
 
   callback_mutex_.lock();
-  CallbackHandler_<T> *handler = new CallbackHandler_<T>();
-  Callbacks::iterator callback = callbacks_.insert((std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID), boost::shared_ptr<CallbackHandler>(handler))));
+  CallbackHandler_<T>* handler = new CallbackHandler_<T>();
+  Callbacks::iterator callback = callbacks_.insert(
+      (std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
+                      boost::shared_ptr<CallbackHandler>(handler))));
   callback_mutex_.unlock();
 
   if (handler->wait(timeout)) {
@@ -241,7 +272,8 @@ template <typename T> bool Gps::read(T& message, const boost::posix_time::time_d
   return result;
 }
 
-template <typename ConfigT> bool Gps::configure(const ConfigT& message, bool wait) {
+template <typename ConfigT>
+bool Gps::configure(const ConfigT& message, bool wait) {
   if (!worker_) return false;
 
   acknowledge_ = WAIT;
@@ -257,6 +289,6 @@ template <typename ConfigT> bool Gps::configure(const ConfigT& message, bool wai
   return (acknowledge_ == ACK);
 }
 
-} // namespace ublox_gps
+}  // namespace ublox_gps
 
-#endif // UBLOX_GPS_H
+#endif  // UBLOX_GPS_H

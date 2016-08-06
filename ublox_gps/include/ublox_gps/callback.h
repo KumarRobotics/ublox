@@ -13,8 +13,9 @@
 //       TU Darmstadt, nor the names of its contributors may be used to
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
-
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 // DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
@@ -29,15 +30,15 @@
 #ifndef UBLOX_GPS_CALLBACK_H
 #define UBLOX_GPS_CALLBACK_H
 
+#include <ublox/serialization/ublox_msgs.h>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
-#include <ublox/serialization/ublox_msgs.h>
 
 namespace ublox_gps {
 
 class CallbackHandler {
-public:
-  virtual void handle(ublox::Reader &reader) = 0;
+ public:
+  virtual void handle(ublox::Reader& reader) = 0;
   virtual bool wait(const boost::posix_time::time_duration& timeout);
   boost::mutex mutex_;
   boost::condition_variable condition_;
@@ -45,19 +46,21 @@ public:
 
 template <typename T>
 class CallbackHandler_ : public CallbackHandler {
-public:
+ public:
   typedef boost::function<void(const T&)> Callback;
   CallbackHandler_(const Callback& func = Callback()) : func_(func) {}
-  virtual void handle(ublox::Reader &reader);
+  virtual void handle(ublox::Reader& reader);
   virtual const T& get() { return message_; }
 
-private:
+ private:
   Callback func_;
   T message_;
 };
 
-typedef std::multimap<std::pair<uint8_t,uint8_t>, boost::shared_ptr<CallbackHandler> > Callbacks;
+typedef std::multimap<std::pair<uint8_t, uint8_t>,
+                      boost::shared_ptr<CallbackHandler> >
+    Callbacks;
 
-} // namespace ublox_gps
+}  // namespace ublox_gps
 
-#endif // UBLOX_GPS_CALLBACK_H
+#endif  // UBLOX_GPS_CALLBACK_H

@@ -15,7 +15,8 @@
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 // DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
@@ -28,12 +29,12 @@
 //=================================================================================================
 
 #include <ublox_gps/gps.h>
-#include <stdexcept>
-#include <locale>
-#include <ublox_msgs/CfgRATE.h>
 #include <ublox_msgs/CfgNAV5.h>
 #include <ublox_msgs/CfgNAVX5.h>
 #include <ublox_msgs/CfgPRT.h>
+#include <ublox_msgs/CfgRATE.h>
+#include <locale>
+#include <stdexcept>
 
 namespace ublox_gps {
 
@@ -43,7 +44,7 @@ DynamicModel modelFromString(const std::string& model) {
   std::string lower = model;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
 
-  std::map <std::string, ublox_gps::DynamicModel> models;
+  std::map<std::string, ublox_gps::DynamicModel> models;
   models["portable"] = ublox_gps::DYN_MODEL_PORTABLE;
   models["stationary"] = ublox_gps::DYN_MODEL_STATIONARY;
   models["pedestrian"] = ublox_gps::DYN_MODEL_PEDESTRIAN;
@@ -52,8 +53,9 @@ DynamicModel modelFromString(const std::string& model) {
   models["airborne1"] = ublox_gps::DYN_MODEL_AIRBORNE_1G;
   models["airborne2"] = ublox_gps::DYN_MODEL_AIRBORNE_2G;
   models["airborne4"] = ublox_gps::DYN_MODEL_AIRBORNE_4G;
-  
-  std::map<std::string, ublox_gps::DynamicModel>::iterator I = models.find(lower);
+
+  std::map<std::string, ublox_gps::DynamicModel>::iterator I =
+      models.find(lower);
   if (I == models.end()) {
     throw std::runtime_error(lower + " is not a valid dynamic model.");
   }
@@ -70,33 +72,28 @@ FixMode fixModeFromString(const std::string& mode) {
   } else if (lower == "both") {
     return FIX_MODE_BOTH;
   }
-  
+
   throw std::runtime_error(mode + " is not a valid fix mode.");
   //  unreachable
   return FIX_MODE_BOTH;
 }
 
-boost::posix_time::time_duration Gps::default_timeout_(boost::posix_time::seconds(1.0));
-Gps::Gps()
-  : configured_(false)
-  , baudrate_(57600)
-{
-}
+boost::posix_time::time_duration Gps::default_timeout_(
+    boost::posix_time::seconds(1.0));
+Gps::Gps() : configured_(false), baudrate_(57600) {}
 
-Gps::~Gps()
-{
-  close();
-}
+Gps::~Gps() { close(); }
 
-bool Gps::setBaudrate(unsigned int baudrate)
-{
+bool Gps::setBaudrate(unsigned int baudrate) {
   baudrate_ = baudrate;
   if (!worker_) return true;
 
   CfgPRT port;
   port.baudRate = baudrate_;
-  port.mode = CfgPRT::MODE_RESERVED1 | CfgPRT::MODE_CHAR_LEN_8BIT | CfgPRT::MODE_PARITY_NO | CfgPRT::MODE_STOP_BITS_1;
-  port.inProtoMask = CfgPRT::PROTO_UBX | CfgPRT::PROTO_NMEA | CfgPRT::PROTO_RTCM;
+  port.mode = CfgPRT::MODE_RESERVED1 | CfgPRT::MODE_CHAR_LEN_8BIT |
+              CfgPRT::MODE_PARITY_NO | CfgPRT::MODE_STOP_BITS_1;
+  port.inProtoMask =
+      CfgPRT::PROTO_UBX | CfgPRT::PROTO_NMEA | CfgPRT::PROTO_RTCM;
   port.outProtoMask = CfgPRT::PROTO_UBX;
   port.portID = CfgPRT::PORT_ID_UART1;
 
@@ -106,22 +103,24 @@ bool Gps::setBaudrate(unsigned int baudrate)
   return configure(port);
 }
 
-void Gps::initialize(const boost::shared_ptr<Worker> &worker)
-{
+void Gps::initialize(const boost::shared_ptr<Worker>& worker) {
   if (worker_) return;
   worker_ = worker;
   worker_->setCallback(boost::bind(&Gps::readCallback, this, _1, _2));
   configured_ = worker;
 }
 
-template void Gps::initialize(boost::asio::ip::tcp::socket& stream, boost::asio::io_service& io_service);
-// template void Gps::initialize(boost::asio::ip::udp::socket& stream, boost::asio::io_service& io_service);
+template void Gps::initialize(boost::asio::ip::tcp::socket& stream,
+                              boost::asio::io_service& io_service);
+// template void Gps::initialize(boost::asio::ip::udp::socket& stream,
+// boost::asio::io_service& io_service);
 
 template <>
-void Gps::initialize(boost::asio::serial_port& serial_port, boost::asio::io_service& io_service)
-{
+void Gps::initialize(boost::asio::serial_port& serial_port,
+                     boost::asio::io_service& io_service) {
   if (worker_) return;
-  initialize(boost::shared_ptr<Worker>(new AsyncWorker<boost::asio::serial_port>(serial_port, io_service)));
+  initialize(boost::shared_ptr<Worker>(
+      new AsyncWorker<boost::asio::serial_port>(serial_port, io_service)));
 
   configured_ = false;
 
@@ -129,43 +128,56 @@ void Gps::initialize(boost::asio::serial_port& serial_port, boost::asio::io_serv
 
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(4800));
   boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-  if (debug) { serial_port.get_option(current_baudrate); std::cout << "Set baudrate " << current_baudrate.value() << std::endl; }
+  if (debug) {
+    serial_port.get_option(current_baudrate);
+    std::cout << "Set baudrate " << current_baudrate.value() << std::endl;
+  }
   configured_ = setBaudrate(baudrate_);
   if (configured_) return;
 
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(9600));
   boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-  if (debug) { serial_port.get_option(current_baudrate); std::cout << "Set baudrate " << current_baudrate.value() << std::endl; }
+  if (debug) {
+    serial_port.get_option(current_baudrate);
+    std::cout << "Set baudrate " << current_baudrate.value() << std::endl;
+  }
   configured_ = setBaudrate(baudrate_);
   if (configured_) return;
 
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(19200));
   boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-  if (debug) { serial_port.get_option(current_baudrate); std::cout << "Set baudrate " << current_baudrate.value() << std::endl; }
+  if (debug) {
+    serial_port.get_option(current_baudrate);
+    std::cout << "Set baudrate " << current_baudrate.value() << std::endl;
+  }
   configured_ = setBaudrate(baudrate_);
   if (configured_) return;
 
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(38400));
   boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-  if (debug) { serial_port.get_option(current_baudrate); std::cout << "Set baudrate " << current_baudrate.value() << std::endl; }
+  if (debug) {
+    serial_port.get_option(current_baudrate);
+    std::cout << "Set baudrate " << current_baudrate.value() << std::endl;
+  }
   configured_ = setBaudrate(baudrate_);
   if (configured_) return;
 
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(baudrate_));
   boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-  if (debug) { serial_port.get_option(current_baudrate); std::cout << "Set baudrate " << current_baudrate.value() << std::endl; }
+  if (debug) {
+    serial_port.get_option(current_baudrate);
+    std::cout << "Set baudrate " << current_baudrate.value() << std::endl;
+  }
   configured_ = setBaudrate(baudrate_);
   if (configured_) return;
 }
 
-void Gps::close()
-{
+void Gps::close() {
   worker_.reset();
   configured_ = false;
 }
 
-bool Gps::setRate(uint8_t class_id, uint8_t message_id, unsigned int rate)
-{
+bool Gps::setRate(uint8_t class_id, uint8_t message_id, unsigned int rate) {
   ublox_msgs::CfgMSG msg;
   msg.msgClass = class_id;
   msg.msgID = message_id;
@@ -209,12 +221,14 @@ bool Gps::enableSBAS(bool enabled) {
   return configure(msg);
 }
 
-bool Gps::poll(uint8_t class_id, uint8_t message_id, const std::vector<uint8_t>& payload) {
+bool Gps::poll(uint8_t class_id, uint8_t message_id,
+               const std::vector<uint8_t>& payload) {
   if (!worker_) return false;
 
   std::vector<unsigned char> out(1024);
   ublox::Writer writer(out.data(), out.size());
-  if (!writer.write(payload.data(), payload.size(), class_id, message_id)) return false;
+  if (!writer.write(payload.data(), payload.size(), class_id, message_id))
+    return false;
   worker_->send(out.data(), writer.end() - out.data());
 
   return true;
@@ -223,37 +237,47 @@ bool Gps::poll(uint8_t class_id, uint8_t message_id, const std::vector<uint8_t>&
 bool Gps::setMeasRate(uint16_t measRate) {
   CfgRATE rate;
   rate.measRate = measRate;
-  rate.navRate = 1; //  must be fixed at 1 for ublox 5 and 6
+  rate.navRate = 1;  //  must be fixed at 1 for ublox 5 and 6
   rate.timeRef = CfgRATE::TIME_REF_GPS;
   return configure(rate);
 }
 
 void Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout) {
-  boost::posix_time::ptime wait_until(boost::posix_time::second_clock::local_time() + timeout);
+  boost::posix_time::ptime wait_until(
+      boost::posix_time::second_clock::local_time() + timeout);
 
-  while(acknowledge_ == WAIT && boost::posix_time::second_clock::local_time() < wait_until) {
+  while (acknowledge_ == WAIT &&
+         boost::posix_time::second_clock::local_time() < wait_until) {
     worker_->wait(timeout);
   }
 }
 
-void Gps::readCallback(unsigned char *data, std::size_t& size) {
+void Gps::readCallback(unsigned char* data, std::size_t& size) {
   ublox::Reader reader(data, size);
 
-  while(reader.search() != reader.end() && reader.found()) {
+  while (reader.search() != reader.end() && reader.found()) {
     if (debug >= 3) {
-      std::cout << "received ublox " << reader.length() + 8 << " bytes" << std::endl;
-      for(ublox::Reader::iterator it = reader.pos(); it != reader.pos() + reader.length() + 8; ++it) std::cout << std::hex << static_cast<unsigned int>(*it) << " ";
+      std::cout << "received ublox " << reader.length() + 8 << " bytes"
+                << std::endl;
+      for (ublox::Reader::iterator it = reader.pos();
+           it != reader.pos() + reader.length() + 8; ++it)
+        std::cout << std::hex << static_cast<unsigned int>(*it) << " ";
       std::cout << std::dec << std::endl;
     }
 
     callback_mutex_.lock();
-    Callbacks::key_type key = std::make_pair(reader.classId(), reader.messageId());
-    for(Callbacks::iterator callback = callbacks_.lower_bound(key); callback != callbacks_.upper_bound(key); ++callback) callback->second->handle(reader);
+    Callbacks::key_type key =
+        std::make_pair(reader.classId(), reader.messageId());
+    for (Callbacks::iterator callback = callbacks_.lower_bound(key);
+         callback != callbacks_.upper_bound(key); ++callback)
+      callback->second->handle(reader);
     callback_mutex_.unlock();
 
     if (reader.classId() == 0x05) {
       acknowledge_ = (reader.messageId() == 0x00) ? NACK : ACK;
-      if (debug >= 2) std::cout << "received " << (acknowledge_ == ACK ? "ACK" : "NACK") << std::endl;
+      if (debug >= 2)
+        std::cout << "received " << (acknowledge_ == ACK ? "ACK" : "NACK")
+                  << std::endl;
     }
   }
 
@@ -262,9 +286,9 @@ void Gps::readCallback(unsigned char *data, std::size_t& size) {
   size -= reader.pos() - data;
 }
 
-bool CallbackHandler::wait(const boost::posix_time::time_duration &timeout) {
+bool CallbackHandler::wait(const boost::posix_time::time_duration& timeout) {
   boost::mutex::scoped_lock lock(mutex_);
   return condition_.timed_wait(lock, timeout);
 }
 
-} // namespace ublox_gps
+}  // namespace ublox_gps

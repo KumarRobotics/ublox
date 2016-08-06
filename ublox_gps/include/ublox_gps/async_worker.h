@@ -13,8 +13,9 @@
 //       TU Darmstadt, nor the names of its contributors may be used to
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
-
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 // DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
@@ -31,10 +32,10 @@
 
 #include <ublox_gps/gps.h>
 
-#include <boost/thread.hpp>
-#include <boost/thread/condition.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <boost/thread.hpp>
+#include <boost/thread/condition.hpp>
 
 #include "worker.h"
 
@@ -43,20 +44,20 @@ namespace ublox_gps {
 static const int debug = 1;
 
 template <typename StreamT>
-class AsyncWorker : public Worker
-{
-public:
-  AsyncWorker(StreamT& stream, boost::asio::io_service& io_service, std::size_t buffer_size = 8192);
+class AsyncWorker : public Worker {
+ public:
+  AsyncWorker(StreamT& stream, boost::asio::io_service& io_service,
+              std::size_t buffer_size = 8192);
   virtual ~AsyncWorker();
 
   void setCallback(const Callback& callback) { read_callback_ = callback; }
 
-  bool send(const unsigned char *data, const unsigned int size);
+  bool send(const unsigned char* data, const unsigned int size);
   void wait(const boost::posix_time::time_duration& timeout);
 
   bool isOpen() const { return stream_.is_open(); }
-  
-protected:
+
+ protected:
   void doRead();
   void readEnd(const boost::system::error_code&, std::size_t);
   void doWrite();
@@ -81,30 +82,30 @@ protected:
 };
 
 template <typename StreamT>
-AsyncWorker<StreamT>::AsyncWorker(StreamT& stream, boost::asio::io_service& io_service, std::size_t buffer_size)
-  : stream_(stream)
-  , io_service_(io_service)
-  , stopping_(false)
-{
+AsyncWorker<StreamT>::AsyncWorker(StreamT& stream,
+                                  boost::asio::io_service& io_service,
+                                  std::size_t buffer_size)
+    : stream_(stream), io_service_(io_service), stopping_(false) {
   in_.resize(buffer_size);
   in_buffer_size_ = 0;
 
   out_.reserve(buffer_size);
 
   io_service_.post(boost::bind(&AsyncWorker<StreamT>::doRead, this));
-  background_thread_.reset(new boost::thread(boost::bind(&boost::asio::io_service::run, &io_service_)));
+  background_thread_.reset(new boost::thread(
+      boost::bind(&boost::asio::io_service::run, &io_service_)));
 }
 
 template <typename StreamT>
-AsyncWorker<StreamT>::~AsyncWorker()
-{
+AsyncWorker<StreamT>::~AsyncWorker() {
   io_service_.post(boost::bind(&AsyncWorker<StreamT>::doClose, this));
   background_thread_->join();
   io_service_.reset();
 }
 
 template <typename StreamT>
-bool AsyncWorker<StreamT>::send(const unsigned char *data, const unsigned int size) {
+bool AsyncWorker<StreamT>::send(const unsigned char* data,
+                                const unsigned int size) {
   boost::mutex::scoped_lock lock(write_mutex_);
 
   if (out_.capacity() - out_.size() < size) return false;
@@ -115,15 +116,19 @@ bool AsyncWorker<StreamT>::send(const unsigned char *data, const unsigned int si
 }
 
 template <typename StreamT>
-void AsyncWorker<StreamT>::doRead()
-{
+void AsyncWorker<StreamT>::doRead() {
   // read_mutex_.lock();
-  stream_.async_read_some(boost::asio::buffer(in_.data() + in_buffer_size_, in_.size() - in_buffer_size_), boost::bind(&AsyncWorker<StreamT>::readEnd, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+  stream_.async_read_some(
+      boost::asio::buffer(in_.data() + in_buffer_size_,
+                          in_.size() - in_buffer_size_),
+      boost::bind(&AsyncWorker<StreamT>::readEnd, this,
+                  boost::asio::placeholders::error,
+                  boost::asio::placeholders::bytes_transferred));
 }
 
 template <typename StreamT>
-void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error, std::size_t bytes_transfered)
-{
+void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
+                                   std::size_t bytes_transfered) {
   if (error) {
     // do something
 
@@ -132,7 +137,10 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error, std::
 
     if (debug >= 4) {
       std::cout << "received " << bytes_transfered << " bytes" << std::endl;
-      for(std::vector<unsigned char>::iterator it = in_.begin() + in_buffer_size_ - bytes_transfered; it != in_.begin() + in_buffer_size_; ++it) std::cout << std::hex << static_cast<unsigned int>(*it) << " ";
+      for (std::vector<unsigned char>::iterator it =
+               in_.begin() + in_buffer_size_ - bytes_transfered;
+           it != in_.begin() + in_buffer_size_; ++it)
+        std::cout << std::hex << static_cast<unsigned int>(*it) << " ";
       std::cout << std::dec << std::endl;
     }
 
@@ -142,12 +150,12 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error, std::
   }
 
   // read_mutex_.unlock();
-  if (!stopping_) io_service_.post(boost::bind(&AsyncWorker<StreamT>::doRead, this));
+  if (!stopping_)
+    io_service_.post(boost::bind(&AsyncWorker<StreamT>::doRead, this));
 }
 
 template <typename StreamT>
-void AsyncWorker<StreamT>::doWrite()
-{
+void AsyncWorker<StreamT>::doWrite() {
   boost::mutex::scoped_lock lock(write_mutex_);
   if (out_.size() == 0) return;
 
@@ -155,7 +163,9 @@ void AsyncWorker<StreamT>::doWrite()
 
   if (debug >= 2) {
     std::cout << "sent " << out_.size() << " bytes:" << std::endl;
-    for(std::vector<unsigned char>::iterator it = out_.begin(); it != out_.end(); ++it) std::cout << std::hex << static_cast<unsigned int>(*it) << " ";
+    for (std::vector<unsigned char>::iterator it = out_.begin();
+         it != out_.end(); ++it)
+      std::cout << std::hex << static_cast<unsigned int>(*it) << " ";
     std::cout << std::dec << std::endl;
   }
   out_.clear();
@@ -163,20 +173,19 @@ void AsyncWorker<StreamT>::doWrite()
 }
 
 template <typename StreamT>
-void AsyncWorker<StreamT>::doClose()
-{
+void AsyncWorker<StreamT>::doClose() {
   stopping_ = true;
   boost::system::error_code error;
   stream_.cancel(error);
 }
 
 template <typename StreamT>
-void AsyncWorker<StreamT>::wait(const boost::posix_time::time_duration &timeout)
-{
+void AsyncWorker<StreamT>::wait(
+    const boost::posix_time::time_duration& timeout) {
   boost::mutex::scoped_lock lock(read_mutex_);
   read_condition_.timed_wait(lock, timeout);
 }
 
-} // namespace ublox_gps
+}  // namespace ublox_gps
 
-#endif // UBLOX_GPS_ASYNC_WORKER_H
+#endif  // UBLOX_GPS_ASYNC_WORKER_H
