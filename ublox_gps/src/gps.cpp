@@ -107,7 +107,7 @@ void Gps::initialize(const boost::shared_ptr<Worker>& worker) {
   if (worker_) return;
   worker_ = worker;
   worker_->setCallback(boost::bind(&Gps::readCallback, this, _1, _2));
-  configured_ = worker;
+  configured_ = static_cast<bool>(worker);
 }
 
 template void Gps::initialize(boost::asio::ip::tcp::socket& stream,
