@@ -178,6 +178,13 @@ void publishRxmRAW(const ublox_msgs::RxmRAW& m) {
   publisher.publish(m);
 }
 
+void publishRxmRAWX(const ublox_msgs::RxmRAWX& m) {
+  static ros::Publisher publisher =
+      nh->advertise<ublox_msgs::RxmRAWX>("rxmrawx", kROSQueueSize);
+  //std::cout<<"yeah"<<std::endl;
+  publisher.publish(m);
+}
+
 void publishRxmSFRB(const ublox_msgs::RxmSFRB& m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::RxmSFRB>("rxmsfrb", kROSQueueSize);
@@ -417,11 +424,11 @@ int main(int argc, char** argv) {
       ss << "Failed to set measurement rate to " << meas_rate << "ms.";
       throw std::runtime_error(ss.str());
     }
-    if (!gps.enableSBAS(enable_sbas)) {
+    /*if (!gps.enableSBAS(enable_sbas)) {
       throw std::runtime_error(std::string("Failed to ") +
                                ((enable_sbas) ? "enable" : "disable") +
                                " SBAS.");
-    }
+    }*/
     if (!gps.setPPPEnabled(enable_ppp)) {
       throw std::runtime_error(std::string("Failed to ") +
                                ((enable_ppp) ? "enable" : "disable") + " PPP.");
@@ -490,9 +497,9 @@ int main(int argc, char** argv) {
     param_nh.param("aid", enabled["aid"], false);
 
     param_nh.param("nav_sol", enabled["nav_sol"], true);
-    if (enabled["nav_sol"])
+    if (enabled["nav_sol"]){
       gps.subscribe<ublox_msgs::NavSOL>(
-          boost::bind(&publish<ublox_msgs::NavSOL>, _1, "navsol"), 1);
+          boost::bind(&publish<ublox_msgs::NavSOL>, _1, "navsol"), 1);}
     param_nh.param("nav_status", enabled["nav_status"], true);
     if (enabled["nav_status"])
       gps.subscribe<ublox_msgs::NavSTATUS>(&publishNavStatus, 1);
@@ -506,6 +513,9 @@ int main(int argc, char** argv) {
                    enabled["all"] || enabled["rxm"]);
     if (enabled["rxm_raw"])
       gps.subscribe<ublox_msgs::RxmRAW>(&publishRxmRAW, 1);
+    param_nh.param("rxm_rawx", enabled["rxm_rawx"],true);
+    if (enabled["rxm_rawx"]){
+      gps.subscribe<ublox_msgs::RxmRAWX>(&publishRxmRAWX, 1);}
     param_nh.param("rxm_sfrb", enabled["rxm_sfrb"],
                    enabled["all"] || enabled["rxm"]);
     if (enabled["rxm_sfrb"])
