@@ -1,3 +1,9 @@
+# ublox M8P
+
+This is the ROS driver changed form [KumarRobotics/ublox](https://github.com/KumarRobotics/ublox) to adapt the new NEO-M8 serial, especially t out put the raw data form "RAWX" message. The following is the original README but **No Longer** applied. All the options has been moved to t he `*.yaml` file under `/ublox_gps/config`. This version now is buggy and tatty, but it DO output the message of RAWX from M8P module.
+
+Below is the original readme.
+---------------------------
 # ublox
 The ublox package provides support for [u-blox](http://www.u-blox.com) GPS receivers. Only the _serial_ configuration of the driver is documented here, but TCP communication is also supported by the driver (untested).
 
