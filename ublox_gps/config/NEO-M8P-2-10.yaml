@@ -1,0 +1,16 @@
+gnss_baudrate: 115200
+gnss_aquire_rate: 4
+gnss_enable_sbas: false
+gnss_enable_glonass: false
+gnss_enable_beidou: false
+gnss_enable_ppp: flase
+gnss_dynamic_model: "portable"
+gnss_fix_mode: "both"
+gnss_dr_limit: 0
+gnss_ublox_version: 8
+
+# massages allowed in M8P. See "u-blox8-M8_ReceiverDescrProtSpec_(UBX-13003221)_Public"
+all: true
+rxm: false
+aid: false
+rxm_rawx: true

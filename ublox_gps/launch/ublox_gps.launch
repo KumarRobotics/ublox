@@ -1,47 +1,12 @@
 <launch>
-    <arg name="device" default="/dev/ttyACM0"/>
-    <arg name="gps" default="gps"/>
-    <arg name="frame_id" default="$(arg gps)"/>
-    <arg name="baudrate" default="115200"/>
-    <arg name="output" default="screen"/>
+    <arg name="gnss_module" default="NEO-M8P-2-10"/>
+    <arg name="gnss_port" default="/dev/ttyACM0"/>
+    <arg name="gnss_frame_id" default="gnss"/>
+    
+    <node name="$(arg gnss_frame_id)" pkg="ublox_gps" type="ublox_gps" output="screen">
+	<rosparam command="load" file="$(find ublox_gps)/config/$(arg gnss_module).yaml"/>
+        <param name="gnss_port" type="string" value="$(arg gnss_port)"/>
+        <param name="gnss_frame_id" type="string" value="$(arg gnss_frame_id)"/>
 
-    <!-- Read at 4Hz -->
-    <arg name="rate" default="10"/>
-
-    <!-- SBAS enabled -->
-    <arg name="enable_sbas" default="false"/>
-
-    <!-- See Ublox docs -->
-    <arg name="dynamic_model" default="portable"/>
-
-    <!-- 2D and 3D fixes enabled -->
-    <arg name="fix_mode" default="both"/>
-
-    <!-- No dead reckoning after signal loss -->
-    <arg name="dr_limit" default="0"/>
-
-    <!-- Manage use of GLONASS and BeiDou -->
-    <arg name="enable_beidou" default="false"/>
-    <arg name="enable_glonass" default="false"/>
-
-    <!-- Manage use of PPP -->
-    <arg name="enable_ppp" default="false"/>
-
-    <!-- Specify ublox version (6,7,8) -->
-    <arg name="ublox_version" default="8"/>
-
-    <node name="$(arg gps)" pkg="ublox_gps" type="ublox_gps" output="$(arg output)">
-        <param name="device" type="string" value="$(arg device)"/>
-        <param name="frame_id" type="string" value="$(arg frame_id)"/>
-        <param name="baudrate" type="int" value="$(arg baudrate)"/>
-        <param name="rate" type="int" value="$(arg rate)"/>
-        <param name="enable_sbas" type="bool" value="$(arg enable_sbas)"/>
-        <param name="dynamic_model" type="string" value="$(arg dynamic_model)"/>
-        <param name="fix_mode" type="string" value="$(arg fix_mode)"/>
-        <param name="dr_limit" type="int" value="$(arg dr_limit)"/>
-        <param name="enable_beidou" type="bool" value="$(arg enable_beidou)"/>
-        <param name="enable_glonass" type="bool" value="$(arg enable_glonass)"/>
-        <param name="enable_ppp" type="bool" value="$(arg enable_ppp)"/>
-        <param name="ublox_version" type="int" value="$(arg ublox_version)"/>
     </node>
 </launch>

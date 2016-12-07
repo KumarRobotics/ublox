@@ -294,7 +294,7 @@ int main(int argc, char** argv) {
   updater.reset(new diagnostic_updater::Updater());
   updater->setHardwareID("ublox");
 
-  std::string device;
+  std::string port;
   int baudrate;
   int rate, meas_rate;
   bool enable_sbas, enable_glonass, enable_beidou, enable_ppp;
@@ -302,18 +302,18 @@ int main(int argc, char** argv) {
   int dr_limit;
   int ublox_version;
   ros::NodeHandle param_nh("~");
-  param_nh.param("device", device, std::string("/dev/ttyACM0"));
-  param_nh.param("frame_id", frame_id, std::string("gps"));
-  param_nh.param("baudrate", baudrate, 9600);
-  param_nh.param("rate", rate, 4);  //  in Hz
-  param_nh.param("enable_sbas", enable_sbas, false);
-  param_nh.param("enable_glonass", enable_glonass, false);
-  param_nh.param("enable_beidou", enable_beidou, false);
-  param_nh.param("enable_ppp", enable_ppp, false);
-  param_nh.param("dynamic_model", dynamic_model, std::string("portable"));
-  param_nh.param("fix_mode", fix_mode, std::string("both"));
-  param_nh.param("dr_limit", dr_limit, 0);
-  param_nh.param("ublox_version", ublox_version, 6);
+  param_nh.param("gnss_port", port, std::string("/dev/ttyACM0"));
+  param_nh.param("gnss_frame_id", frame_id, std::string("gps"));
+  param_nh.param("gnss_baudrate", baudrate, 9600);
+  param_nh.param("gnss_aquire_rate", rate, 4);  //  in Hz
+  param_nh.param("gnss_enable_sbas", enable_sbas, false);
+  param_nh.param("gnss_enable_glonass", enable_glonass, false);
+  param_nh.param("gnss_enable_beidou", enable_beidou, false);
+  param_nh.param("gnss_enable_ppp", enable_ppp, false);
+  param_nh.param("gnss_dynamic_model", dynamic_model, std::string("portable"));
+  param_nh.param("gnss_fix_mode", fix_mode, std::string("both"));
+  param_nh.param("gnss_dr_limit", dr_limit, 0);
+  param_nh.param("gnss_ublox_version", ublox_version, 6);
 
   if (enable_ppp) {
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
@@ -356,7 +356,7 @@ int main(int argc, char** argv) {
       std::string("fix"), *updater, freq_param, time_param));
 
   boost::smatch match;
-  if (boost::regex_match(device, match,
+  if (boost::regex_match(port, match,
                          boost::regex("(tcp|udp)://(.+):(\\d+)"))) {
     std::string proto(match[1]);
     std::string host(match[2]);
@@ -403,13 +403,13 @@ int main(int argc, char** argv) {
 
     // open serial port
     try {
-      serial->open(device);
+      serial->open(port);
     } catch (std::runtime_error& e) {
-      ROS_ERROR("Could not open serial port %s: %s", device.c_str(), e.what());
+      ROS_ERROR("Could not open serial port %s: %s", port.c_str(), e.what());
       return 1;  //  exit
     }
 
-    ROS_INFO("Opened serial port %s", device.c_str());
+    ROS_INFO("Opened serial port %s", port.c_str());
     gps.setBaudrate(baudrate);
     gps.initialize(*serial, io_service);
   }
@@ -485,7 +485,7 @@ int main(int argc, char** argv) {
     }
   } catch (std::exception& e) {
     setup_ok = false;
-    ROS_ERROR("Error configuring device: %s", e.what());
+    ROS_ERROR("Error configuring port: %s", e.what());
   }
 
   if (setup_ok) {
@@ -513,7 +513,8 @@ int main(int argc, char** argv) {
                    enabled["all"] || enabled["rxm"]);
     if (enabled["rxm_raw"])
       gps.subscribe<ublox_msgs::RxmRAW>(&publishRxmRAW, 1);
-    param_nh.param("rxm_rawx", enabled["rxm_rawx"],true);
+    param_nh.param("rxm_rawx", enabled["rxm_rawx"],
+                   enabled["all"] || enabled["rxm"]);
     if (enabled["rxm_rawx"]){
       gps.subscribe<ublox_msgs::RxmRAWX>(&publishRxmRAWX, 1);}
     param_nh.param("rxm_sfrb", enabled["rxm_sfrb"],
@@ -543,7 +544,7 @@ int main(int argc, char** argv) {
 
   if (gps.isInitialized()) {
     gps.close();
-    ROS_INFO("Closed connection to %s.", device.c_str());
+    ROS_INFO("Closed connection to %s.", port.c_str());
   }
   return 0;
 }
