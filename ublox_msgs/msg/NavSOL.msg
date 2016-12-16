@@ -19,7 +19,7 @@ uint8 GPS_DEAD_RECKONING_ONLY = 1
 uint8 GPS_2D_FIX = 2
 uint8 GPS_3D_FIX = 3
 uint8 GPS_GPS_DEAD_RECKONING_COMBINED = 4
-uint8 GPS_TIME_ONLY_FIX = 6
+uint8 GPS_TIME_ONLY_FIX = 5
 
 uint8 flags             # Fix Status Flags
 uint8 FLAGS_GPSFIXOK = 1      # i.e. within DOP & ACC Masks
