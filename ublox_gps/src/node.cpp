@@ -40,6 +40,7 @@
 #include <ublox_msgs/NavSOL.h>
 #include <ublox_msgs/NavSTATUS.h>
 #include <ublox_msgs/NavVELNED.h>
+#include <ublox_msgs/NavORB.h>
 #include <ublox_msgs/ublox_msgs.h>
 
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
@@ -169,6 +170,12 @@ void publishNavSVINFO(const ublox_msgs::NavSVINFO& m) {
 void publishNavCLK(const ublox_msgs::NavCLOCK& m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::NavCLOCK>("navclock", kROSQueueSize);
+  publisher.publish(m);
+}
+
+void publishNavORB(const ublox_msgs::NavORB& m) {
+  static ros::Publisher publisher =
+      nh->advertise<ublox_msgs::NavORB>("navorb", kROSQueueSize);
   publisher.publish(m);
 }
 
@@ -500,7 +507,7 @@ int main(int argc, char** argv) {
     if (enabled["nav_sol"]){
       gps.subscribe<ublox_msgs::NavSOL>(
           boost::bind(&publish<ublox_msgs::NavSOL>, _1, "navsol"), 1);}
-    param_nh.param("nav_status", enabled["nav_status"], true);
+    param_nh.param("nav_status", enabled["nav_status"], enabled["all"]);
     if (enabled["nav_status"])
       gps.subscribe<ublox_msgs::NavSTATUS>(&publishNavStatus, 1);
     param_nh.param("nav_svinfo", enabled["nav_svinfo"], enabled["all"]);
@@ -509,6 +516,16 @@ int main(int argc, char** argv) {
     param_nh.param("nav_clk", enabled["nav_clk"], enabled["all"]);
     if (enabled["nav_clk"])
       gps.subscribe<ublox_msgs::NavCLOCK>(&publishNavCLK, 1);
+    param_nh.param("nav_posllh", enabled["nav_posllh"], enabled["all"]);
+    if (enabled["nav_posllh"])
+      gps.subscribe<ublox_msgs::NavPOSLLH>(&publishNavPosLLH, 1);
+    param_nh.param("nav_velned", enabled["nav_velned"], enabled["all"]);
+    if (enabled["nav_velned"])
+      gps.subscribe<ublox_msgs::NavVELNED>(&publishNavVelNED, 1);
+    param_nh.param("nav_orb", enabled["nav_orb"], enabled["all"]);
+    if (enabled["nav_orb"])
+      gps.subscribe<ublox_msgs::NavORB>(&publishNavORB, 1);
+
     param_nh.param("rxm_raw", enabled["rxm_raw"],
                    enabled["all"] || enabled["rxm"]);
     if (enabled["rxm_raw"])
@@ -521,12 +538,8 @@ int main(int argc, char** argv) {
                    enabled["all"] || enabled["rxm"]);
     if (enabled["rxm_sfrb"])
       gps.subscribe<ublox_msgs::RxmSFRB>(&publishRxmSFRB, 1);
-    param_nh.param("nav_posllh", enabled["nav_posllh"], true);
-    if (enabled["nav_posllh"])
-      gps.subscribe<ublox_msgs::NavPOSLLH>(&publishNavPosLLH, 1);
-    param_nh.param("nav_velned", enabled["nav_velned"], true);
-    if (enabled["nav_velned"])
-      gps.subscribe<ublox_msgs::NavVELNED>(&publishNavVelNED, 1);
+
+
     param_nh.param("aid_alm", enabled["aid_alm"],
                    enabled["all"] || enabled["aid"]);
     if (enabled["aid_alm"]) gps.subscribe<ublox_msgs::AidALM>(&publishAidALM);

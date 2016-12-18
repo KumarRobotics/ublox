@@ -10,7 +10,22 @@ gnss_dr_limit: 0
 gnss_ublox_version: 8
 
 # massages allowed in M8P. See "u-blox8-M8_ReceiverDescrProtSpec_(UBX-13003221)_Public"
-all: true
+all: false
 rxm: false
 aid: false
+
+nav_sol: true
+nav_status: true
+nav_svinfo: true
+nav_clk: true
+nav_posllh: true
+nav_velned: true
+nav_orb: true
+
+#rxm_raw: false
 rxm_rawx: true
+rxm_sfrb: true
+
+aid_alm: true
+aid_eph: true
+aid_hui: true

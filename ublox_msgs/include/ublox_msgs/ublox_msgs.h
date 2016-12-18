@@ -42,6 +42,8 @@
 #include <ublox_msgs/NavTIMEUTC.h>
 #include <ublox_msgs/NavVELECEF.h>
 #include <ublox_msgs/NavVELNED.h>
+#include <ublox_msgs/NavORB.h>
+#include <ublox_msgs/NavORB_SV.h>
 
 #include <ublox_msgs/RxmALM.h>
 #include <ublox_msgs/RxmEPH.h>
@@ -97,6 +99,7 @@ namespace Message {
     static const uint8_t TIMEUTC = NavTIMEUTC::MESSAGE_ID;
     static const uint8_t VELECEF = NavVELECEF::MESSAGE_ID;
     static const uint8_t VELNED = NavVELNED::MESSAGE_ID;
+		static const uint8_t ORB = NavORB::MESSAGE_ID;
   }
 
   namespace RXM {
