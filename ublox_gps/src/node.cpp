@@ -198,6 +198,18 @@ void publishRxmSFRB(const ublox_msgs::RxmSFRB& m) {
   publisher.publish(m);
 }
 
+void publishRxmSFRBX(const ublox_msgs::RxmSFRBX& m) {
+  static ros::Publisher publisher =
+      nh->advertise<ublox_msgs::RxmSFRBX>("rxmsfrbx", kROSQueueSize);
+  publisher.publish(m);
+}
+
+void publishRxmSVSI(const ublox_msgs::RxmSVSI& m) {
+  static ros::Publisher publisher =
+      nh->advertise<ublox_msgs::RxmSVSI>("rxmsvsi", kROSQueueSize);
+  publisher.publish(m);
+}
+
 void publishRxmALM(const ublox_msgs::RxmALM& m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::RxmALM>("rxmalm", kROSQueueSize);
@@ -538,6 +550,14 @@ int main(int argc, char** argv) {
                    enabled["all"] || enabled["rxm"]);
     if (enabled["rxm_sfrb"])
       gps.subscribe<ublox_msgs::RxmSFRB>(&publishRxmSFRB, 1);
+    param_nh.param("rxm_sfrbx", enabled["rxm_sfrbx"],
+                   enabled["all"] || enabled["rxm"]);
+    if (enabled["rxm_sfrbx"])
+      gps.subscribe<ublox_msgs::RxmSFRBX>(&publishRxmSFRBX, 1);
+    param_nh.param("rxm_svsi", enabled["rxm_svsi"],
+                   enabled["all"] || enabled["rxm"]);
+    if (enabled["rxm_svsi"])
+      gps.subscribe<ublox_msgs::RxmSVSI>(&publishRxmSVSI, 1);
 
 
     param_nh.param("aid_alm", enabled["aid_alm"],

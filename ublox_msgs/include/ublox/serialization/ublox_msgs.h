@@ -152,7 +152,7 @@ struct Serializer<ublox_msgs::NavORB_<ContainerAllocator> >
 
   static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::NavORB_<ContainerAllocator> >::param_type m)
   {
-    return 8 + 12 * m.numSv;
+    return 8 + 6 * m.numSv;
   }
 
   static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::NavORB_<ContainerAllocator> >::param_type m)
@@ -227,6 +227,52 @@ struct Serializer<ublox_msgs::RxmRAWX_<ContainerAllocator> >
     for(std::size_t i = 0; i < m.meas.size(); ++i) ros::serialization::serialize(stream, m.meas[i]);
   }
 };
+
+
+template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::RxmSFRBX_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::RxmSFRBX_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.gnssid);
+    stream.next(m.svid);
+    stream.next(m.reserved1);
+    stream.next(m.numWords);
+    stream.next(m.chn);
+    stream.next(m.version);
+    m.dwrd.clear();
+    try {
+      typename ublox_msgs::RxmSFRBX_<ContainerAllocator>::_dwrd_type::value_type temp1;
+
+      for(std::size_t i = 0; i < 8; ++i) {
+        stream.next(temp1);
+        m.dwrd.push_back(temp1);
+      }
+
+    } catch(ros::serialization::StreamOverrunException& e) {
+    }
+  }
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::RxmSFRBX_<ContainerAllocator> >::param_type m)
+  {
+    return 8 + (4 * m.dwrd.size());
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmSFRBX_<ContainerAllocator> >::param_type m)
+  {
+    ros::serialization::OStream stream(data, size);
+    stream.next(m.gnssid);
+    stream.next(m.svid);
+    stream.next(m.reserved1);
+    stream.next(m.numWords);
+    stream.next(m.chn);
+    stream.next(m.version);
+
+    for(std::size_t i = 0; i < m.dwrd.size(); ++i) ros::serialization::serialize(stream, m.dwrd[i]);
+  }
+};
+
 
 template <typename ContainerAllocator>
 struct Serializer<ublox_msgs::RxmSVSI_<ContainerAllocator> >

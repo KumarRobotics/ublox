@@ -11,10 +11,16 @@ catkin_package(
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS message_runtime ublox_serialization std_msgs sensor_msgs)
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(
+    ${PROJECT_SOURCE_DIR}/include
+    )
 include_directories(${ublox_serialization_INCLUDE_DIRS})
 
-add_library(${PROJECT_NAME} src/ublox_msgs.cpp)
+add_library(
+    ${PROJECT_NAME} src/ublox_msgs.cpp
+    include/ublox_msgs/ublox_msgs.h
+    include/ublox/serialization/ublox_msgs.h
+    )
 
 add_dependencies(${PROJECT_NAME}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}

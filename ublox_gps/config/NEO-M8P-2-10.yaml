@@ -24,7 +24,8 @@ nav_orb: true
 
 #rxm_raw: false
 rxm_rawx: true
-rxm_sfrb: true
+rxm_sfrbx: true
+rxm_svsi: true
 
 aid_alm: true
 aid_eph: true
