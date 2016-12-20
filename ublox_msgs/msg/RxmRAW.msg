@@ -3,7 +3,7 @@
 #
 # This message contains all information needed to be able to generate a RINEX file.
 #
-
+std_msgs/Header header
 uint8 CLASS_ID = 2
 uint8 MESSAGE_ID = 16
 

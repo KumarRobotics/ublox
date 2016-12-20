@@ -3,7 +3,7 @@
 #
 # This message outputs the status of the SBAS sub system
 #
-
+# std_msgs/Header header
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 50
 

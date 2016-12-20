@@ -5,7 +5,7 @@
 # single signal. The number of data words reported in each message depends on the nature
 # of the signal. See the section on Broadcast Navigation Data for further details.
 #
-
+std_msgs/Header header
 uint8 CLASS_ID = 2
 uint8 MESSAGE_ID = 19
 

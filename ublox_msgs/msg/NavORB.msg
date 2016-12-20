@@ -3,7 +3,7 @@
 #
 # Status of the GNSS orbit database knowledge.
 #
-
+std_msgs/Header header
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 52
 

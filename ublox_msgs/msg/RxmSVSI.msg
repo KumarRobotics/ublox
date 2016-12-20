@@ -3,7 +3,7 @@
 #
 # Status of the receiver manager knowledge about GPS Orbit Validity
 #
-
+std_msgs/Header header
 uint8 CLASS_ID = 2
 uint8 MESSAGE_ID = 32
 

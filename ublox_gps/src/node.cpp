@@ -41,6 +41,9 @@
 #include <ublox_msgs/NavSTATUS.h>
 #include <ublox_msgs/NavVELNED.h>
 #include <ublox_msgs/NavORB.h>
+#include <ublox_msgs/NavCLOCK.h>
+#include <ublox_msgs/RxmRAWX.h>
+#include <ublox_msgs/RxmRAWX_Meas.h>
 #include <ublox_msgs/ublox_msgs.h>
 
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
@@ -188,7 +191,6 @@ void publishRxmRAW(const ublox_msgs::RxmRAW& m) {
 void publishRxmRAWX(const ublox_msgs::RxmRAWX& m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::RxmRAWX>("rxmrawx", kROSQueueSize);
-  //std::cout<<"yeah"<<std::endl;
   publisher.publish(m);
 }
 

@@ -5,7 +5,7 @@
 # - All DOP values are scaled by a factor of 100. If the unit transmits a value of e.g. 156, the
 #   DOP value is 1.56.
 #
-
+# std_msgs/Header header
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 4
 

@@ -4,7 +4,7 @@
 # This message outputs the Correction data as it has been applied to the current NAV
 # Solution. See also the notes on the RTCM protocol.
 #
-
+# std_msgs/Header header
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 31
 

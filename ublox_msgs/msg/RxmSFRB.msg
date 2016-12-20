@@ -13,7 +13,7 @@
 # data bits, and Bits 23 down to 0 are the parity bits. For more information on SBAS data
 # format, please refer to RTCA/DO-229C (MOPS), Appendix A.
 #
-
+std_msgs/Header header
 uint8 CLASS_ID = 2
 uint8 MESSAGE_ID = 17
 
