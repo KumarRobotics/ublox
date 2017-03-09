@@ -1,0 +1,38 @@
+gnss_baudrate: 115200
+gnss_aquire_rate: 4
+gnss_enable_sbas: false
+gnss_enable_glonass: false
+gnss_enable_beidou: false
+gnss_enable_ppp: flase
+gnss_dynamic_model: "portable"
+gnss_fix_mode: "both"
+gnss_dr_limit: 0
+gnss_ublox_version: 8
+
+# massages allowed in M8P. See "u-blox8-M8_ReceiverDescrProtSpec_(UBX-13003221)_Public"
+all: false
+#mga: false
+rxm: false
+nav: flase
+aid: false
+
+#mga_gps_eph: true
+
+nav_timegps: true
+nav_timeutc: true
+nav_sol: true
+nav_status: true
+nav_svinfo: true
+nav_clk: true
+nav_posllh: true
+nav_velned: true
+nav_orb: true
+
+#rxm_raw: false
+rxm_rawx: true
+rxm_sfrbx: true
+rxm_svsi: true
+
+aid_alm: true
+aid_eph: true
+aid_hui: true

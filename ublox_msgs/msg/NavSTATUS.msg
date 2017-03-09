@@ -4,7 +4,7 @@
 # See important comments concerning validity of position and velocity given in
 # section Navigation Output Filters.
 #
-
+#std_msgs/Header header
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 3
 

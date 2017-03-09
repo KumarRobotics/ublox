@@ -16,7 +16,7 @@
 #   ephemeris broadcast. Some fields that are irrelevant to u-blox receivers may be missing.
 #   The week number in Subframe 1 has already been modified to match the Time Of
 #   Ephemeris (TOE).
-
+std_msgs/Header header
 uint8 CLASS_ID = 11
 uint8 MESSAGE_ID = 49
 

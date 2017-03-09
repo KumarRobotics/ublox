@@ -3,7 +3,7 @@
 #
 # This message contains a health bit mask, UTC time and Klobuchar parameters. For more
 # information on these parameters, please see the ICD-GPS-200 documentation.
-
+# std_msgs/Header header
 uint8 CLASS_ID = 11
 uint8 MESSAGE_ID = 2
 

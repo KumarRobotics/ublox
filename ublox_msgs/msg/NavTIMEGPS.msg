@@ -1,7 +1,7 @@
 # NAV-TIMEGPS (0x01 0x20)
 # GPS Time Solution
 #
-
+#std_msgs/Header header
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 32
 

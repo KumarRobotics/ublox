@@ -42,12 +42,17 @@
 #include <ublox_msgs/NavTIMEUTC.h>
 #include <ublox_msgs/NavVELECEF.h>
 #include <ublox_msgs/NavVELNED.h>
+#include <ublox_msgs/NavORB.h>
+#include <ublox_msgs/NavORB_SV.h>
 
 #include <ublox_msgs/RxmALM.h>
 #include <ublox_msgs/RxmEPH.h>
 #include <ublox_msgs/RxmRAW.h>
 #include <ublox_msgs/RxmRAW_SV.h>
+#include <ublox_msgs/RxmRAWX.h>
+#include <ublox_msgs/RxmRAWX_Meas.h>
 #include <ublox_msgs/RxmSFRB.h>
+#include <ublox_msgs/RxmSFRBX.h>
 #include <ublox_msgs/RxmSVSI.h>
 
 #include <ublox_msgs/AidALM.h>
@@ -95,13 +100,16 @@ namespace Message {
     static const uint8_t TIMEUTC = NavTIMEUTC::MESSAGE_ID;
     static const uint8_t VELECEF = NavVELECEF::MESSAGE_ID;
     static const uint8_t VELNED = NavVELNED::MESSAGE_ID;
+    static const uint8_t ORB = NavORB::MESSAGE_ID;
   }
 
   namespace RXM {
     static const uint8_t ALM = RxmALM::MESSAGE_ID;
     static const uint8_t EPH = RxmEPH::MESSAGE_ID;
     static const uint8_t RAW = RxmRAW::MESSAGE_ID;
+    static const uint8_t RAWX = RxmRAWX::MESSAGE_ID;
     static const uint8_t SFRB = RxmSFRB::MESSAGE_ID;
+    static const uint8_t SFRBX = RxmSFRBX::MESSAGE_ID;
     static const uint8_t SVSI = RxmSVSI::MESSAGE_ID;
   }
 

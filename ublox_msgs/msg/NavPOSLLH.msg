@@ -6,7 +6,7 @@
 # This message outputs the Geodetic position in the currently selected Ellipsoid. The default is
 # the WGS84 Ellipsoid, but can be changed with the message CFG-DAT.
 #
-
+# std_msgs/Header header
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 2
 

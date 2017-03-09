@@ -13,7 +13,7 @@
 # - Example: Parameter e (Eccentricity) from Almanach Subframe 4/5, Word 3, Bits 69-84
 #   within the subframe can be found in DWRD0, Bits 15-0 whereas Bit 0 is the LSB.
 #
-
+std_msgs/Header header
 uint8 CLASS_ID = 2
 uint8 MESSAGE_ID = 48
 

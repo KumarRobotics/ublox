@@ -11,7 +11,7 @@
 # - In SF1D0 to SF3D7, the parity bits have been removed, and the 24 bits of data are
 #   located in Bits 0 to 23. Bits 24 to 31 shall be ignored.
 #
-
+std_msgs/Header header
 uint8 CLASS_ID = 2
 uint8 MESSAGE_ID = 49
 
