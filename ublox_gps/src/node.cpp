@@ -182,6 +182,18 @@ void publishNavORB(const ublox_msgs::NavORB& m) {
   publisher.publish(m);
 }
 
+void publishNavTIMEGPS(const ublox_msgs::NavTIMEGPS& m) {
+  static ros::Publisher publisher =
+      nh->advertise<ublox_msgs::NavTIMEGPS>("navtimegps", kROSQueueSize);
+  publisher.publish(m);
+}
+
+void publishNavTIMEUTC(const ublox_msgs::NavTIMEUTC& m) {
+  static ros::Publisher publisher =
+      nh->advertise<ublox_msgs::NavTIMEUTC>("navtimeutc", kROSQueueSize);
+  publisher.publish(m);
+}
+
 void publishRxmRAW(const ublox_msgs::RxmRAW& m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::RxmRAW>("rxmraw", kROSQueueSize);
@@ -515,6 +527,7 @@ int main(int argc, char** argv) {
     // subscribe messages
     param_nh.param("all", enabled["all"], false);
     param_nh.param("rxm", enabled["rxm"], false);
+    param_nh.param("nav", enabled["nav"], false);
     param_nh.param("aid", enabled["aid"], false);
 
     param_nh.param("nav_sol", enabled["nav_sol"], true);
@@ -530,6 +543,14 @@ int main(int argc, char** argv) {
     param_nh.param("nav_clk", enabled["nav_clk"], enabled["all"]);
     if (enabled["nav_clk"])
       gps.subscribe<ublox_msgs::NavCLOCK>(&publishNavCLK, 1);
+
+    param_nh.param("nav_timegps", enabled["nav_timegps"], enabled["all"] || enabled["nav"]);
+    if (enabled["nav_timegps"])
+      gps.subscribe<ublox_msgs::NavTIMEGPS>(&publishNavTIMEGPS, 1);
+    param_nh.param("nav_timeutc", enabled["nav_timeutc"], enabled["all"] || enabled["nav"]);
+    if (enabled["nav_timeutc"])
+      gps.subscribe<ublox_msgs::NavTIMEUTC>(&publishNavTIMEUTC, 1);
+
     param_nh.param("nav_posllh", enabled["nav_posllh"], enabled["all"]);
     if (enabled["nav_posllh"])
       gps.subscribe<ublox_msgs::NavPOSLLH>(&publishNavPosLLH, 1);

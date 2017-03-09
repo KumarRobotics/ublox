@@ -11,9 +11,15 @@ gnss_ublox_version: 8
 
 # massages allowed in M8P. See "u-blox8-M8_ReceiverDescrProtSpec_(UBX-13003221)_Public"
 all: false
+#mga: false
 rxm: false
+nav: flase
 aid: false
 
+#mga_gps_eph: true
+
+nav_timegps: true
+nav_timeutc: true
 nav_sol: true
 nav_status: true
 nav_svinfo: true
