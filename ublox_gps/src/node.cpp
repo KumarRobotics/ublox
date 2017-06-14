@@ -160,6 +160,12 @@ void publishNavPosLLH(const ublox_msgs::NavPOSLLH& m) {
   updater->update();
 }
 
+void publishNavPosECEF(const ublox_msgs::NavPOSECEF& m) {
+  static ros::Publisher publisher =
+      nh->advertise<ublox_msgs::NavPOSECEF>("navposecef", kROSQueueSize);
+  publisher.publish(m);
+}
+
 void publishNavSVINFO(const ublox_msgs::NavSVINFO& m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", kROSQueueSize);
@@ -417,11 +423,11 @@ int main(int argc, char** argv) {
       ss << "Failed to set measurement rate to " << meas_rate << "ms.";
       throw std::runtime_error(ss.str());
     }
-    if (!gps.enableSBAS(enable_sbas)) {
-      throw std::runtime_error(std::string("Failed to ") +
-                               ((enable_sbas) ? "enable" : "disable") +
-                               " SBAS.");
-    }
+    // if (!gps.enableSBAS(enable_sbas)) {
+    //   throw std::runtime_error(std::string("Failed to ") +
+    //                            ((enable_sbas) ? "enable" : "disable") +
+    //                            " SBAS.");
+    // }
     if (!gps.setPPPEnabled(enable_ppp)) {
       throw std::runtime_error(std::string("Failed to ") +
                                ((enable_ppp) ? "enable" : "disable") + " PPP.");
@@ -493,6 +499,10 @@ int main(int argc, char** argv) {
     if (enabled["nav_sol"])
       gps.subscribe<ublox_msgs::NavSOL>(
           boost::bind(&publish<ublox_msgs::NavSOL>, _1, "navsol"), 1);
+    param_nh.param("nav_pvt", enabled["nav_pvt"], true);
+    if (enabled["nav_pvt"])
+      gps.subscribe<ublox_msgs::NavPVT>(
+          boost::bind(&publish<ublox_msgs::NavPVT>, _1, "navpvt"), 1);
     param_nh.param("nav_status", enabled["nav_status"], true);
     if (enabled["nav_status"])
       gps.subscribe<ublox_msgs::NavSTATUS>(&publishNavStatus, 1);
@@ -513,6 +523,9 @@ int main(int argc, char** argv) {
     param_nh.param("nav_posllh", enabled["nav_posllh"], true);
     if (enabled["nav_posllh"])
       gps.subscribe<ublox_msgs::NavPOSLLH>(&publishNavPosLLH, 1);
+    param_nh.param("nav_posecef", enabled["nav_posecef"], true);
+    if (enabled["nav_posecef"])
+      gps.subscribe<ublox_msgs::NavPOSECEF>(&publishNavPosECEF, 1);
     param_nh.param("nav_velned", enabled["nav_velned"], true);
     if (enabled["nav_velned"])
       gps.subscribe<ublox_msgs::NavVELNED>(&publishNavVelNED, 1);
