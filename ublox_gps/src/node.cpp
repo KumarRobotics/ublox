@@ -28,6 +28,7 @@
 //==============================================================================
 
 #include <ublox_gps/gps.h>
+#include <ublox_gps/utils.h>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/serial_port.hpp>
 
@@ -61,63 +62,22 @@ std::map<std::string, bool> enabled;
 std::string frame_id;
 
 ublox_msgs::NavPVT last_nav_pos;
-ublox_msgs::NavVELNED last_nav_vel;
 
-sensor_msgs::NavSatFix fix;
-geometry_msgs::TwistWithCovarianceStamped velocity;
 
 int fix_status_service;
-
-void publishNavVelNED(const ublox_msgs::NavVELNED& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::NavVELNED>("navvelned", kROSQueueSize);
-  publisher.publish(m);
-
-  // Example geometry message
-  static ros::Publisher velocityPublisher =
-      nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
-                                                               kROSQueueSize);
-  if (m.iTOW == last_nav_pos.iTOW) {
-    //  use same time as las navposllh message
-    velocity.header.stamp = fix.header.stamp;
-  } else {
-    //  create a new timestamp
-    velocity.header.stamp = ros::Time::now();
-  }
-  velocity.header.frame_id = frame_id;
-
-  //  convert to XYZ linear velocity
-  velocity.twist.twist.linear.x = m.velE / 100.0;
-  velocity.twist.twist.linear.y = m.velN / 100.0;
-  velocity.twist.twist.linear.z = -m.velD / 100.0;
-
-  const double stdSpeed = (m.sAcc / 100.0) * 3;
-
-  const int cols = 6;
-  velocity.twist.covariance[cols * 0 + 0] = stdSpeed * stdSpeed;
-  velocity.twist.covariance[cols * 1 + 1] = stdSpeed * stdSpeed;
-  velocity.twist.covariance[cols * 2 + 2] = stdSpeed * stdSpeed;
-  velocity.twist.covariance[cols * 3 + 3] = -1;  //  angular rate unsupported
-
-  velocityPublisher.publish(velocity);
-  last_nav_vel = m;
-}
 
 void publishNavPVT(const ublox_msgs::NavPVT& m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::NavPVT>("navpvt", kROSQueueSize);
   publisher.publish(m);
 
-  // Fix message
+  /** Fix message */
   static ros::Publisher fixPublisher =
       nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
-  if (m.iTOW == last_nav_vel.iTOW) {
-    //  use last timestamp
-    fix.header.stamp = velocity.header.stamp;
-  } else {
-    //  new timestamp
-    fix.header.stamp = ros::Time::now();
-  }
+  // timestamp
+  sensor_msgs::NavSatFix fix;
+  fix.header.stamp.sec = toUtcSeconds(m);
+  fix.header.stamp.nsec = m.nano;
 
   bool fixOk = m.flags & m.FLAGS_GPS_FIX_OK;
   uint8_t cpSoln = m.flags & m.CARRIER_PHASE_FIXED;
@@ -146,7 +106,30 @@ void publishNavPVT(const ublox_msgs::NavPVT& m) {
   fix.status.service = fix_status_service;
   fixPublisher.publish(fix);
 
-  //  update diagnostics
+  /** Fix Velocity */
+  static ros::Publisher velocityPublisher =
+      nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
+                                                               kROSQueueSize);
+  geometry_msgs::TwistWithCovarianceStamped velocity;
+  velocity.header.stamp = fix.header.stamp;
+  velocity.header.frame_id = frame_id;
+
+  // convert to XYZ linear velocity in ENU
+  velocity.twist.twist.linear.x = m.velE * 1e-3;
+  velocity.twist.twist.linear.y = m.velN * 1e-3;
+  velocity.twist.twist.linear.z = -m.velD * 1e-3;
+
+  const double covSpeed = pow(m.sAcc * 1e-3, 2);
+
+  const int cols = 6;
+  velocity.twist.covariance[cols * 0 + 0] = covSpeed;
+  velocity.twist.covariance[cols * 1 + 1] = covSpeed;
+  velocity.twist.covariance[cols * 2 + 2] = covSpeed;
+  velocity.twist.covariance[cols * 3 + 3] = -1;  //  angular rate unsupported
+
+  velocityPublisher.publish(velocity);
+
+  /** Update diagnostics **/
   last_nav_pos = m;
   freq_diag->tick(fix.header.stamp);
   updater->update();
@@ -247,9 +230,9 @@ int main(int argc, char** argv) {
   param_nh.param("dr_limit", dr_limit, 0);
   param_nh.param("ublox_version", ublox_version, 6);
 
-  fix_status_service = fix.status.SERVICE_GPS 
-                       + (enable_glonass ? 1 : 0) * fix.status.SERVICE_GLONASS
-                       + (enable_beidou ? 1 : 0) * fix.status.SERVICE_COMPASS;
+  fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS 
+       + (enable_glonass ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GLONASS
+       + (enable_beidou ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_COMPASS;
 
   if (enable_ppp) {
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
@@ -492,7 +475,8 @@ int main(int argc, char** argv) {
     
     param_nh.param("nav_velned", enabled["nav_velned"], true);
     if (enabled["nav_velned"])
-      gps.subscribe<ublox_msgs::NavVELNED>(&publishNavVelNED, 1);
+      gps.subscribe<ublox_msgs::NavVELNED>(
+          boost::bind(&publish<ublox_msgs::NavVELNED>, _1, "navvelned"), 1);
     
     param_nh.param("aid_alm", enabled["aid_alm"],
                    enabled["all"] || enabled["aid"]);
