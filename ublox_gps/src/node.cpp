@@ -1,4 +1,4 @@
-//=================================================================================================
+//==============================================================================
 // Copyright (c) 2012, Johannes Meyer, TU Darmstadt
 // All rights reserved.
 
@@ -25,7 +25,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//=================================================================================================
+//==============================================================================
 
 #include <ublox_gps/gps.h>
 #include <boost/asio/ip/tcp.hpp>
@@ -57,31 +57,16 @@ boost::shared_ptr<ros::NodeHandle> nh;
 boost::shared_ptr<diagnostic_updater::Updater> updater;
 boost::shared_ptr<diagnostic_updater::TopicDiagnostic> freq_diag;
 Gps gps;
-ublox_msgs::NavSTATUS status;
 std::map<std::string, bool> enabled;
 std::string frame_id;
-int num_svs_used = 0;
 
-ublox_msgs::NavPOSLLH last_nav_pos;
+ublox_msgs::NavPVT last_nav_pos;
 ublox_msgs::NavVELNED last_nav_vel;
 
 sensor_msgs::NavSatFix fix;
 geometry_msgs::TwistWithCovarianceStamped velocity;
 
-void publishNavStatus(const ublox_msgs::NavSTATUS& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::NavSTATUS>("navstatus", kROSQueueSize);
-  publisher.publish(m);
-
-  status = m;
-}
-
-void publishNavSOL(const ublox_msgs::NavSOL& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::NavSOL>("navsol", kROSQueueSize);
-  num_svs_used = m.numSV;  //  number of satellites used
-  publisher.publish(m);
-}
+int fix_status_service;
 
 void publishNavVelNED(const ublox_msgs::NavVELNED& m) {
   static ros::Publisher publisher =
@@ -118,12 +103,12 @@ void publishNavVelNED(const ublox_msgs::NavVELNED& m) {
   last_nav_vel = m;
 }
 
-void publishNavPosLLH(const ublox_msgs::NavPOSLLH& m) {
+void publishNavPVT(const ublox_msgs::NavPVT& m) {
   static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::NavPOSLLH>("navposllh", kROSQueueSize);
+      nh->advertise<ublox_msgs::NavPVT>("navpvt", kROSQueueSize);
   publisher.publish(m);
 
-  // Position message
+  // Fix message
   static ros::Publisher fixPublisher =
       nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
   if (m.iTOW == last_nav_vel.iTOW) {
@@ -133,91 +118,38 @@ void publishNavPosLLH(const ublox_msgs::NavPOSLLH& m) {
     //  new timestamp
     fix.header.stamp = ros::Time::now();
   }
+
+  bool fixOk = m.flags & m.FLAGS_GPS_FIX_OK;
+  uint8_t cpSoln = m.flags & m.CARRIER_PHASE_FIXED;
+
   fix.header.frame_id = frame_id;
   fix.latitude = m.lat * 1e-7;
   fix.longitude = m.lon * 1e-7;
   fix.altitude = m.height * 1e-3;
-  if (status.gpsFix >= status.GPS_2D_FIX)
-    fix.status.status = fix.status.STATUS_FIX;
-  else
-    fix.status.status = fix.status.STATUS_NO_FIX;
-
+  if (fixOk && m.gpsFix >= m.GPS_2D_FIX) {
+      fix.status.status = fix.status.STATUS_FIX;
+      if(cpSoln == m.CARRIER_PHASE_FIXED)
+        fix.status.status = fix.status.STATUS_GBAS_FIX;
+  }
+  else {
+      fix.status.status = fix.status.STATUS_NO_FIX;
+  }
   //  calculate covariance (convert from mm to m too)
-  const double stdH = (m.hAcc / 1000.0) * 3.0;
-  const double stdV = (m.vAcc / 1000.0) * 3.0;
-
+  const double stdH = (m.hAcc / 1000.0);
+  const double stdV = (m.vAcc / 1000.0);
   fix.position_covariance[0] = stdH * stdH;
   fix.position_covariance[4] = stdH * stdH;
   fix.position_covariance[8] = stdV * stdV;
   fix.position_covariance_type =
       sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
 
-  fix.status.service = fix.status.SERVICE_GPS;
+  fix.status.service = fix_status_service;
   fixPublisher.publish(fix);
-  last_nav_pos = m;
+
   //  update diagnostics
+  last_nav_pos = m;
   freq_diag->tick(fix.header.stamp);
   updater->update();
-}
-
-void publishNavPosECEF(const ublox_msgs::NavPOSECEF& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::NavPOSECEF>("navposecef", kROSQueueSize);
-  publisher.publish(m);
-}
-
-void publishNavSVINFO(const ublox_msgs::NavSVINFO& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", kROSQueueSize);
-  publisher.publish(m);
-}
-
-void publishNavCLK(const ublox_msgs::NavCLOCK& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::NavCLOCK>("navclock", kROSQueueSize);
-  publisher.publish(m);
-}
-
-void publishRxmRAW(const ublox_msgs::RxmRAW& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::RxmRAW>("rxmraw", kROSQueueSize);
-  publisher.publish(m);
-}
-
-void publishRxmSFRB(const ublox_msgs::RxmSFRB& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::RxmSFRB>("rxmsfrb", kROSQueueSize);
-  publisher.publish(m);
-}
-
-void publishRxmALM(const ublox_msgs::RxmALM& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::RxmALM>("rxmalm", kROSQueueSize);
-  publisher.publish(m);
-}
-
-void publishRxmEPH(const ublox_msgs::RxmEPH& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::RxmEPH>("rxmeph", kROSQueueSize);
-  publisher.publish(m);
-}
-
-void publishAidALM(const ublox_msgs::AidALM& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::AidALM>("aidalm", kROSQueueSize);
-  publisher.publish(m);
-}
-
-void publishAidEPH(const ublox_msgs::AidEPH& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::AidEPH>("aideph", kROSQueueSize);
-  publisher.publish(m);
-}
-
-void publishAidHUI(const ublox_msgs::AidHUI& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::AidHUI>("aidhui", kROSQueueSize);
-  publisher.publish(m);
 }
 
 template <typename MessageT>
@@ -246,23 +178,24 @@ void pollMessages(const ros::TimerEvent& event) {
 
 void fix_diagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) {
   //  check the last message, convert to diagnostic
-  if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_NO_FIX) {
+  if (last_nav_pos.gpsFix == ublox_msgs::NavSTATUS::GPS_NO_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
     stat.message = "No fix";
-  } else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_DEAD_RECKONING_ONLY) {
+  } else if (last_nav_pos.gpsFix == 
+             ublox_msgs::NavSTATUS::GPS_DEAD_RECKONING_ONLY) {
     stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
     stat.message = "Dead reckoning only";
-  } else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_2D_FIX) {
+  } else if (last_nav_pos.gpsFix == ublox_msgs::NavSTATUS::GPS_2D_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "2D fix";
-  } else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_3D_FIX) {
+  } else if (last_nav_pos.gpsFix == ublox_msgs::NavSTATUS::GPS_3D_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "3D fix";
-  } else if (status.gpsFix ==
+  } else if (last_nav_pos.gpsFix ==
              ublox_msgs::NavSTATUS::GPS_GPS_DEAD_RECKONING_COMBINED) {
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "GPS and dead reckoning combined";
-  } else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_TIME_ONLY_FIX) {
+  } else if (last_nav_pos.gpsFix == ublox_msgs::NavSTATUS::GPS_TIME_ONLY_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
     stat.message = "Time fix only";
   }
@@ -275,7 +208,7 @@ void fix_diagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) {
   stat.add("hMSL", last_nav_pos.hMSL);
   stat.add("hAcc", last_nav_pos.hAcc);
   stat.add("vAcc", last_nav_pos.vAcc);
-  stat.add("numSV", num_svs_used);
+  stat.add("numSV", last_nav_pos.numSV);
 }
 
 int main(int argc, char** argv) {
@@ -313,6 +246,10 @@ int main(int argc, char** argv) {
   param_nh.param("fix_mode", fix_mode, std::string("both"));
   param_nh.param("dr_limit", dr_limit, 0);
   param_nh.param("ublox_version", ublox_version, 6);
+
+  fix_status_service = fix.status.SERVICE_GPS 
+                       + (enable_glonass ? 1 : 0) * fix.status.SERVICE_GLONASS
+                       + (enable_beidou ? 1 : 0) * fix.status.SERVICE_COMPASS;
 
   if (enable_ppp) {
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
@@ -499,45 +436,81 @@ int main(int argc, char** argv) {
     if (enabled["nav_sol"])
       gps.subscribe<ublox_msgs::NavSOL>(
           boost::bind(&publish<ublox_msgs::NavSOL>, _1, "navsol"), 1);
+    
     param_nh.param("nav_pvt", enabled["nav_pvt"], true);
     if (enabled["nav_pvt"])
-      gps.subscribe<ublox_msgs::NavPVT>(
-          boost::bind(&publish<ublox_msgs::NavPVT>, _1, "navpvt"), 1);
+      gps.subscribe<ublox_msgs::NavPVT>(&publishNavPVT, 1);
+    
     param_nh.param("nav_status", enabled["nav_status"], true);
     if (enabled["nav_status"])
-      gps.subscribe<ublox_msgs::NavSTATUS>(&publishNavStatus, 1);
+      gps.subscribe<ublox_msgs::NavSTATUS>(
+          boost::bind(&publish<ublox_msgs::NavSTATUS>, _1, "navstatus"), 1);
+    
     param_nh.param("nav_svinfo", enabled["nav_svinfo"], enabled["all"]);
     if (enabled["nav_svinfo"])
-      gps.subscribe<ublox_msgs::NavSVINFO>(&publishNavSVINFO, 20);
+      gps.subscribe<ublox_msgs::NavSVINFO>(
+          boost::bind(&publish<ublox_msgs::NavSVINFO>, _1, "navsvinfo"), 20);
+    
     param_nh.param("nav_clk", enabled["nav_clk"], enabled["all"]);
     if (enabled["nav_clk"])
-      gps.subscribe<ublox_msgs::NavCLOCK>(&publishNavCLK, 1);
+      gps.subscribe<ublox_msgs::NavCLOCK>(
+          boost::bind(&publish<ublox_msgs::NavCLOCK>, _1, "navclock"), 1);
+    
     param_nh.param("rxm_raw", enabled["rxm_raw"],
                    enabled["all"] || enabled["rxm"]);
     if (enabled["rxm_raw"])
-      gps.subscribe<ublox_msgs::RxmRAW>(&publishRxmRAW, 1);
+      gps.subscribe<ublox_msgs::RxmRAW>(
+          boost::bind(&publish<ublox_msgs::RxmRAW>, _1, "rxmraw"), 1);
+    
     param_nh.param("rxm_sfrb", enabled["rxm_sfrb"],
                    enabled["all"] || enabled["rxm"]);
     if (enabled["rxm_sfrb"])
-      gps.subscribe<ublox_msgs::RxmSFRB>(&publishRxmSFRB, 1);
+      gps.subscribe<ublox_msgs::RxmSFRB>(
+          boost::bind(&publish<ublox_msgs::RxmSFRB>, _1, "rxmsfrb"), 1);
+
+    param_nh.param("rxm_eph", enabled["rxm_eph"],
+                   enabled["all"] || enabled["rxm"]);
+    if (enabled["rxm_eph"])
+      gps.subscribe<ublox_msgs::RxmEPH>(
+          boost::bind(&publish<ublox_msgs::RxmEPH>, _1, "rxmeph"), 1);
+
+    param_nh.param("rxm_alm", enabled["rxm_alm"],
+                   enabled["all"] || enabled["rxm"]);
+    if (enabled["rxm_alm"])
+      gps.subscribe<ublox_msgs::RxmALM>(
+          boost::bind(&publish<ublox_msgs::RxmALM>, _1, "rxmalm"), 1);
+    
     param_nh.param("nav_posllh", enabled["nav_posllh"], true);
     if (enabled["nav_posllh"])
-      gps.subscribe<ublox_msgs::NavPOSLLH>(&publishNavPosLLH, 1);
+      gps.subscribe<ublox_msgs::NavPOSLLH>(
+          boost::bind(&publish<ublox_msgs::NavPOSLLH>, _1, "navposllh"), 1);
+    
     param_nh.param("nav_posecef", enabled["nav_posecef"], true);
     if (enabled["nav_posecef"])
-      gps.subscribe<ublox_msgs::NavPOSECEF>(&publishNavPosECEF, 1);
+      gps.subscribe<ublox_msgs::NavPOSECEF>(
+          boost::bind(&publish<ublox_msgs::NavPOSECEF>, _1, "navposecef"), 1);
+    
     param_nh.param("nav_velned", enabled["nav_velned"], true);
     if (enabled["nav_velned"])
       gps.subscribe<ublox_msgs::NavVELNED>(&publishNavVelNED, 1);
+    
     param_nh.param("aid_alm", enabled["aid_alm"],
                    enabled["all"] || enabled["aid"]);
-    if (enabled["aid_alm"]) gps.subscribe<ublox_msgs::AidALM>(&publishAidALM);
+    if (enabled["aid_alm"]) 
+      gps.subscribe<ublox_msgs::AidALM>(
+          boost::bind(&publish<ublox_msgs::AidALM>, _1, "aidalm"), 1);
+    
     param_nh.param("aid_eph", enabled["aid_eph"],
                    enabled["all"] || enabled["aid"]);
-    if (enabled["aid_eph"]) gps.subscribe<ublox_msgs::AidEPH>(&publishAidEPH);
+    if (enabled["aid_eph"]) 
+      gps.subscribe<ublox_msgs::AidEPH>(
+          boost::bind(&publish<ublox_msgs::AidEPH>, _1, "aideph"), 1);
+    
     param_nh.param("aid_hui", enabled["aid_hui"],
                    enabled["all"] || enabled["aid"]);
-    if (enabled["aid_hui"]) gps.subscribe<ublox_msgs::AidHUI>(&publishAidHUI);
+    if (enabled["aid_hui"]) 
+      gps.subscribe<ublox_msgs::AidHUI>(
+          boost::bind(&publish<ublox_msgs::AidHUI>, _1, "aidhui"), 1);
 
     poller = nh->createTimer(ros::Duration(1.0), &pollMessages);
     poller.start();
