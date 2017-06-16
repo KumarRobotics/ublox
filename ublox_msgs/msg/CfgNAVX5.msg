@@ -33,7 +33,7 @@ uint8 reserved2       # Always set to zero
 
 uint8 iniFix3D        # If set to 1, initial fix must be 3D
 
-uint8 reserved3[2]    # Always set to zero
+uint8[2] reserved3    # Always set to zero
 
 uint8 ackAiding       # If set to 1, issue acknowledgments for assistance
 uint16 wknRollover    # GPS week rollover number, GPS week numbers will be set 
@@ -43,18 +43,18 @@ uint8 sigAttenCompMode # Permanently attenuated signal compensation [dBHz]
                        # 0 = disabled, 255 = automatic
                        # 1..63 = maximum expected C/N0 value
 
-uint8 reserved4[5]    # Always set to zero
+uint8[5] reserved4    # Always set to zero
 
 uint8 usePPP          # Enable/disable PPP (on supported units)
 uint8 aopCfg          # AssistNow Autonomous configuration, 1: enabled
 
-uint8 reserved5[2]    # Always set to zero
+uint8[2] reserved5    # Always set to zero
 
 uint16 aopOrbMaxErr   # Maximum acceptable (modeled) autonomous orbit error [m]
                       # valid range = 5..1000, or 0 = reset to firmware default
 
-uint8 reserved6[7]      # Always set to zero
+uint8[7] reserved6    # Always set to zero
 
-uint8 useAdr            # Enable/disable ADR sensor fusion 
-                        # 1: enabled, 0: disabled
-                        # Only supported on certain products 
+uint8 useAdr          # Enable/disable ADR sensor fusion 
+                      # 1: enabled, 0: disabled
+                      # Only supported on certain products 

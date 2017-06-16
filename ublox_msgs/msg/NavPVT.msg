@@ -38,9 +38,8 @@ uint8 flags             # Fix Status Flags
 # Defines bit positions
 uint8 FLAGS_GPS_FIX_OK = 1            # i.e. within DOP & accuracy masks
 uint8 FLAGS_DIFF_SOLN = 2            # DGPS used
-uint8 FLAGS_PSM_0 = 4               # Power Save Mode state flags
-uint8 FLAGS_PSM_1 = 8
-uint8 FLAGS_PSM_2 = 16
+uint8 FLAGS_PSM_MASK = 28            # Power Save Mode
+uint8 FLAGS_PSM_SHIFT = 2            
 uint8 FLAGS_HEAD_VEH_VALID = 32     # heading of vehicle is valid
 uint8 FLAGS_CARRIER_PHASE_FLOAT = 64    # carrier phase float solution (no fixed 
                                         # integer measurements have been used to 

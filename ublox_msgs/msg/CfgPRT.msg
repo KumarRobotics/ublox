@@ -59,7 +59,15 @@ uint16 outProtoMask       # A mask describing which output protocols are active.
 
 uint16 PROTO_UBX = 1
 uint16 PROTO_NMEA = 2
-uint16 PROTO_RTCM = 4
+uint16 PROTO_RTCM = 4     # only for inProtoMask
+uint16 PROTO_RTCM3 = 32
 
-uint16 reserved4          # Always set to zero
-uint16 reserved5          # Always set to zero
+uint16 flags
+uint16 FLAGS_EXTENDED_TX_TIMEOUT = 2  # if set, the port will timeout if 
+                                      # allocated TX memory >=4 kB and no 
+                                      # activity for 1.5s. If not set the port 
+                                      # will timoout if no activity for 1.5s 
+                                      # regardless on the amount of allocated 
+                                      # TX memory.
+
+uint16 reserved1          # Always set to zero

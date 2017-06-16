@@ -51,7 +51,7 @@ uint8 cnoThreshNumSvs   # Number of satellites required to have C/N0 above
                         # cnoThresh for a fix to be attempted
 uint8 cnoThresh         # C/N0 threshold for deciding whether to attempt a fix
                         # [dBHz]
-uint8 reserved1[2]      # Reserved
+uint8[2] reserved1      # Reserved
 
 uint16 staticHoldMaxDist  # Static hold distance threshold (before quitting 
                           # static hold) [m]

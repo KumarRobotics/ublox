@@ -1,5 +1,5 @@
 # CFG-CFG (0x06 0x09)
-# Antenna Control Settings
+# Clear, Save and Load configurations
 #
 
 uint8 CLASS_ID = 6
@@ -20,8 +20,12 @@ uint32 MASK_MSG_CONF = 2      # Message Configuration
 uint32 MASK_INF_MSG = 4       # INF Message Configuration
 uint32 MASK_NAV_CONF = 8      # Navigation Configuration
 uint32 MASK_RXM_CONF = 16     # Receiver Manager Configuration
+uint32 MASK_SEN_CONF = 256    # Sensor Interface Configuration, protocol >= 19
 uint32 MASK_RINV_CONF = 512   # Remote Inventory Configuration
 uint32 MASK_ANT_CONF = 1024   # Antenna Configuration
+uint32 MASK_LOG_CONF = 2048   # Logging Configuration
+uint32 MASK_FTS_CONF = 4096   # FTS Configuration, n. Only applicable to the 
+                              # FTS product variant.
 
 uint8 deviceMask          # Mask which selects the devices for this command
 uint8 DEV_BBR = 1             # device battery backed RAM

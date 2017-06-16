@@ -1,6 +1,7 @@
 # CFG-MSG (0x06 0x01)
 # Message Rate(s)
-#
+# 
+# Set message rate for the current port
 
 uint8 CLASS_ID = 6
 uint8 MESSAGE_ID = 1
