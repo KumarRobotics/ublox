@@ -43,11 +43,12 @@ uint8 FLAGS_PSM_1 = 8
 uint8 FLAGS_PSM_2 = 16
 uint8 FLAGS_HEAD_VEH_VALID = 32     # heading of vehicle is valid
 uint8 FLAGS_CARRIER_PHASE_FLOAT = 64    # carrier phase float solution (no fixed 
-                                        # integer measurements have been used to calculate the solution)
+                                        # integer measurements have been used to 
+                                        # calculate the solution)
 uint8 FLAGS_CARRIER_PHASE_FIXED = 128   # carrier phase fixed solution
 # Power save mode flags, flags bits 2-4
 uint8 PSM_OFF = 0                       # PSM is off
-uint8 PSM_ENABLED = 1                   # Enabled (an intermediate state before Acquisition state
+uint8 PSM_ENABLED = 1                   # Enabled (state before acquisition)
 uint8 PSM_ACQUIRED = 2                  # Acquisition
 uint8 PSM_TRACKING = 3                  # Tracking
 uint8 PSM_POWER_OPTIMIZED_TRACKING = 4  # Power Optimized Tracking
@@ -55,8 +56,9 @@ uint8 PSM_INACTIVE = 5                  # Inactive
 # Carrier Phase Range solution flags
 uint8 CARRIER_PHASE_NO_SOLUTION = 0 # no carrier phase range solution
 uint8 CARRIER_PHASE_FLOAT = 1 # float solution 
-uint8 CARRIER_PHASE_FIXED = 2 # fixed solution (>=1 fixed integer carrier phase range measurements have been used to calculate the
-                              # solution)
+uint8 CARRIER_PHASE_FIXED = 2 # fixed solution (>=1 fixed integer carrier phase 
+                              # range measurements have been used to calculate 
+                              # the solution)
 
 uint8 flags2            # Additional Flags
 uint8 FLAGS2_CONFIRMED_AVAILABLE = 32   # information about UTC Date and Time of 
