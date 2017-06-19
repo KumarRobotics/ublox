@@ -209,7 +209,7 @@ bool Gps::setDeadReckonLimit(uint8_t limit) {
 bool Gps::setPPPEnabled(bool enabled) {
   ublox_msgs::CfgNAVX5 msg;
   msg.usePPP = enabled;
-  msg.mask1 = ublox_msgs::CfgNAVX5::MASK_PPP;
+  msg.mask1 = ublox_msgs::CfgNAVX5::MASK1_PPP;
   return configure(msg);
 }
 

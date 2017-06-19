@@ -8,19 +8,19 @@ uint8 MESSAGE_ID = 35
 uint16 version        # Message version (set to 0)
 
 uint16 mask1          # First parameters bitmask (possible values below)
-uint16 MASK_MIN_MAX        = 4        # apply min/max SVs settings
-uint16 MASK_MIN_CNO        = 8        # apply minimum C/N0 setting
-uint16 MASK_INITIAL_FIX_3D = 64       # apply initial 3D fix settings
-uint16 MASK_WKN_ROLL       = 512      # apply GPS week number rollover settings
-uint16 MASK_ACK_AID        = 1024     # apply assistance acknowledgment settings
-uint16 MASK_PPP            = 8192     # apply usePPP flag
-uint16 MASK_AOP            = 16384    # apply aopCfg (useAOP flag) and 
+uint16 MASK1_MIN_MAX        = 4        # apply min/max SVs settings
+uint16 MASK1_MIN_CNO        = 8        # apply minimum C/N0 setting
+uint16 MASK1_INITIAL_FIX_3D = 64       # apply initial 3D fix settings
+uint16 MASK1_WKN_ROLL       = 512      # apply GPS week number rollover settings
+uint16 MASK1_ACK_AID        = 1024     # apply assistance acknowledgment settings
+uint16 MASK1_PPP            = 8192     # apply usePPP flag
+uint16 MASK1_AOP            = 16384    # apply aopCfg (useAOP flag) and 
                                       # aopOrbMaxErr settings
                                       # (AssistNow Autonomous)
 
 uint32 mask2          # Second parameters bitmask (possible values below)
-uint32 MASK_ADR = 64                    # Apply ADR sensor fusion on/off setting
-uint32 MASK_SIG_ATTEN_COMP_MODE = 128   # Apply signal attenuation 
+uint32 MASK2_ADR = 64                    # Apply ADR sensor fusion on/off setting
+uint32 MASK2_SIG_ATTEN_COMP_MODE = 128   # Apply signal attenuation 
                                         # compensation feature settings
 
 uint8[2] reserved1    # Always set to zero

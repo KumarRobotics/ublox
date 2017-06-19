@@ -12,8 +12,8 @@ uint8 MESSAGE_ID = 2
 
 uint32 iTOW             # GPS Millisecond Time of Week [ms]
 
-int32 lon               # Longitude [deg/1e-7]
-int32 lat               # Latitude [deg/1e-7]
+int32 lon               # Longitude [deg / 1e-7]
+int32 lat               # Latitude [deg / 1e-7]
 int32 height            # Height above Ellipsoid [mm]
 int32 hMSL              # Height above mean sea level [mm]
 uint32 hAcc             # Horizontal Accuracy Estimate [mm]

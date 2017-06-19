@@ -79,14 +79,14 @@ void publishNavPVT(const ublox_msgs::NavPVT& m) {
   fix.header.stamp.sec = toUtcSeconds(m);
   fix.header.stamp.nsec = m.nano;
 
-  bool fixOk = m.flags & m.FLAGS_GPS_FIX_OK;
+  bool fixOk = m.flags & m.FLAGS_GNSS_FIX_OK;
   uint8_t cpSoln = m.flags & m.CARRIER_PHASE_FIXED;
 
   fix.header.frame_id = frame_id;
   fix.latitude = m.lat * 1e-7;
   fix.longitude = m.lon * 1e-7;
   fix.altitude = m.height * 1e-3;
-  if (fixOk && m.gpsFix >= m.GPS_2D_FIX) {
+  if (fixOk && m.fixType >= m.FIX_TYPE_2D) {
       fix.status.status = fix.status.STATUS_FIX;
       if(cpSoln == m.CARRIER_PHASE_FIXED)
         fix.status.status = fix.status.STATUS_GBAS_FIX;
@@ -161,24 +161,24 @@ void pollMessages(const ros::TimerEvent& event) {
 
 void fix_diagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) {
   //  check the last message, convert to diagnostic
-  if (last_nav_pos.gpsFix == ublox_msgs::NavSTATUS::GPS_NO_FIX) {
+  if (last_nav_pos.fixType == ublox_msgs::NavSTATUS::GPS_NO_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
     stat.message = "No fix";
-  } else if (last_nav_pos.gpsFix == 
+  } else if (last_nav_pos.fixType == 
              ublox_msgs::NavSTATUS::GPS_DEAD_RECKONING_ONLY) {
     stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
     stat.message = "Dead reckoning only";
-  } else if (last_nav_pos.gpsFix == ublox_msgs::NavSTATUS::GPS_2D_FIX) {
+  } else if (last_nav_pos.fixType == ublox_msgs::NavSTATUS::GPS_2D_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "2D fix";
-  } else if (last_nav_pos.gpsFix == ublox_msgs::NavSTATUS::GPS_3D_FIX) {
+  } else if (last_nav_pos.fixType == ublox_msgs::NavSTATUS::GPS_3D_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "3D fix";
-  } else if (last_nav_pos.gpsFix ==
+  } else if (last_nav_pos.fixType ==
              ublox_msgs::NavSTATUS::GPS_GPS_DEAD_RECKONING_COMBINED) {
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "GPS and dead reckoning combined";
-  } else if (last_nav_pos.gpsFix == ublox_msgs::NavSTATUS::GPS_TIME_ONLY_FIX) {
+  } else if (last_nav_pos.fixType == ublox_msgs::NavSTATUS::GPS_TIME_ONLY_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
     stat.message = "Time fix only";
   }

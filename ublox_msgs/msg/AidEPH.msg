@@ -1,7 +1,7 @@
 # AID-EPH (0x0B 0x31)
 # GPS Aiding Ephemeris Input/Output Message
 #
-# This message is provided considered obsolete, please use AID-EPH instead!
+# All UBX-AID messages are deprecated; use UBX-MGA messages instead
 # - SF1D0 to SF3D7 is only sent if ephemeris is available for this SV. If not, the payload may
 #   be reduced to 8 Bytes, or all bytes are set to zero, indicating that this SV Number does
 #   not have valid ephemeris for the moment. This may happen even if NAV-SVINFO and
