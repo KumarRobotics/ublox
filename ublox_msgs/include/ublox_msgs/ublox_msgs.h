@@ -1,4 +1,4 @@
-//=================================================================================================
+//==============================================================================
 // Copyright (c) 2012, Johannes Meyer, TU Darmstadt
 // All rights reserved.
 
@@ -14,17 +14,17 @@
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
 // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//=================================================================================================
+//==============================================================================
 
 #ifndef UBLOX_MSGS_H
 #define UBLOX_MSGS_H
@@ -73,15 +73,28 @@
 namespace ublox_msgs {
 
 namespace Class {
-  static const uint8_t NAV = 0x01; // Navigation Results: Position, Speed, Time, Acc, Heading, DOP, SVs used
-  static const uint8_t RXM = 0x02; // Receiver Manager Messages: Satellite Status, RTC Status
-  static const uint8_t INF = 0x04; // Information Messages: Printf-Style Messages, with IDs such as Error, Warning, Notice
-  static const uint8_t ACK = 0x05; // Ack/Nack Messages: as replies to CFG Input Messages
-  static const uint8_t CFG = 0x06; // Configuration Input Messages: Set Dynamic Model, Set DOP Mask, Set Baud Rate, etc.
-  static const uint8_t MON = 0x0A; // Monitoring Messages: Comunication Status, CPU Load, Stack Usage, Task Status
-  static const uint8_t AID = 0x0B; // AssistNow Aiding Messages: Ephemeris, Almanac, other A-GPS data input
-  static const uint8_t TIM = 0x0D; // Timing Messages: Timepulse Output, Timemark Results
-  static const uint8_t ESF = 0x10; // External Sensor Fusion Messages: External sensor measurements and status information
+  // Navigation Results: Position, Speed, Time, Acc, Heading, DOP, SVs used
+  static const uint8_t NAV = 0x01; 
+  // Receiver Manager Messages: Satellite Status, RTC Status
+  static const uint8_t RXM = 0x02; 
+  // Information Messages: Printf-Style Messages, with IDs such as Error, 
+  // Warning, Notice
+  static const uint8_t INF = 0x04; 
+  // Ack/Nack Messages: as replies to CFG Input Messages
+  static const uint8_t ACK = 0x05; 
+  // Configuration Input Messages: Set Dynamic Model, Set DOP Mask, Set Baud 
+  // Rate, etc.
+  static const uint8_t CFG = 0x06; 
+  // Monitoring Messages: Comunication Status, CPU Load, Stack Usage, Task 
+  // Status
+  static const uint8_t MON = 0x0A; 
+  // AssistNow Aiding Messages: Ephemeris, Almanac, other A-GPS data input
+  static const uint8_t AID = 0x0B; 
+  // Timing Messages: Timepulse Output, Timemark Results
+  static const uint8_t TIM = 0x0D; 
+  // External Sensor Fusion Messages: External sensor measurements and status 
+  // information
+  static const uint8_t ESF = 0x10; 
 }
 
 namespace Message {

@@ -1,4 +1,4 @@
-//=================================================================================================
+//==============================================================================
 // Copyright (c) 2012, Johannes Meyer, TU Darmstadt
 // All rights reserved.
 
@@ -14,17 +14,18 @@
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
 // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//=================================================================================================
+//==============================================================================
+
 
 #ifndef UBLOX_SERIALIZATION_UBLOX_MSGS_H
 #define UBLOX_SERIALIZATION_UBLOX_MSGS_H
@@ -48,7 +49,8 @@ struct Serializer<ublox_msgs::NavDGPS_<ContainerAllocator> >
     stream.next(m.status);
     stream.next(m.reserved1);
     m.sv.resize(m.numCh);
-    for(std::size_t i = 0; i < m.sv.size(); ++i) ros::serialization::deserialize(stream, m.sv[i]);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::deserialize(stream, m.sv[i]);
   }
 
   static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::NavDGPS_<ContainerAllocator> >::param_type m)
@@ -66,7 +68,8 @@ struct Serializer<ublox_msgs::NavDGPS_<ContainerAllocator> >
     stream.next(static_cast<typename ublox_msgs::NavDGPS_<ContainerAllocator>::_numCh_type>(m.sv.size()));
     stream.next(m.status);
     stream.next(m.reserved1);
-    for(std::size_t i = 0; i < m.sv.size(); ++i) ros::serialization::serialize(stream, m.sv[i]);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::serialize(stream, m.sv[i]);
   }
 };
 
@@ -84,7 +87,8 @@ struct Serializer<ublox_msgs::NavSBAS_<ContainerAllocator> >
     stream.next(m.cnt);
     stream.next(m.reserved0);
     m.sv.resize(m.cnt);
-    for(std::size_t i = 0; i < m.sv.size(); ++i) ros::serialization::deserialize(stream, m.sv[i]);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::deserialize(stream, m.sv[i]);
   }
 
   static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::NavSBAS_<ContainerAllocator> >::param_type m)
@@ -102,7 +106,8 @@ struct Serializer<ublox_msgs::NavSBAS_<ContainerAllocator> >
     stream.next(m.service);
     stream.next(static_cast<typename ublox_msgs::NavSBAS_<ContainerAllocator>::_cnt_type>(m.sv.size()));
     stream.next(m.reserved0);
-    for(std::size_t i = 0; i < m.sv.size(); ++i) ros::serialization::serialize(stream, m.sv[i]);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::serialize(stream, m.sv[i]);
   }
 };
 
@@ -117,7 +122,8 @@ struct Serializer<ublox_msgs::NavSVINFO_<ContainerAllocator> >
     stream.next(m.globalFlags);
     stream.next(m.reserved2);
     m.sv.resize(m.numCh);
-    for(std::size_t i = 0; i < m.sv.size(); ++i) ros::serialization::deserialize(stream, m.sv[i]);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::deserialize(stream, m.sv[i]);
   }
 
   static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::NavSVINFO_<ContainerAllocator> >::param_type m)
@@ -132,7 +138,8 @@ struct Serializer<ublox_msgs::NavSVINFO_<ContainerAllocator> >
     stream.next(static_cast<typename ublox_msgs::NavSVINFO_<ContainerAllocator>::_numCh_type>(m.sv.size()));
     stream.next(m.globalFlags);
     stream.next(m.reserved2);
-    for(std::size_t i = 0; i < m.sv.size(); ++i) ros::serialization::serialize(stream, m.sv[i]);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::serialize(stream, m.sv[i]);
   }
 };
 
@@ -147,7 +154,8 @@ struct Serializer<ublox_msgs::RxmRAW_<ContainerAllocator> >
     stream.next(m.numSV);
     stream.next(m.reserved1);
     m.sv.resize(m.numSV);
-    for(std::size_t i = 0; i < m.sv.size(); ++i) ros::serialization::deserialize(stream, m.sv[i]);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::deserialize(stream, m.sv[i]);
   }
 
   static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::RxmRAW_<ContainerAllocator> >::param_type m)
@@ -162,7 +170,8 @@ struct Serializer<ublox_msgs::RxmRAW_<ContainerAllocator> >
     stream.next(m.week);
     stream.next(static_cast<typename ublox_msgs::RxmRAW_<ContainerAllocator>::_numSV_type>(m.sv.size()));
     stream.next(m.reserved1);
-    for(std::size_t i = 0; i < m.sv.size(); ++i) ros::serialization::serialize(stream, m.sv[i]);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::serialize(stream, m.sv[i]);
   }
 };
 
@@ -180,12 +189,13 @@ struct Serializer<ublox_msgs::RxmRAWX_<ContainerAllocator> >
     stream.next(m.version);
     stream.next(m.reserved1);
     m.meas.resize(m.numMeas);
-    for(std::size_t i = 0; i < m.meas.size(); ++i) ros::serialization::deserialize(stream, m.meas[i]);
+    for(std::size_t i = 0; i < m.meas.size(); ++i) 
+      ros::serialization::deserialize(stream, m.meas[i]);
   }
 
   static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::RxmRAWX_<ContainerAllocator> >::param_type m)
   {
-    return 8 + 24 * m.numMeas;
+    return 16 + 32 * m.numMeas;
   }
 
   static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmRAWX_<ContainerAllocator> >::param_type m)
@@ -198,10 +208,50 @@ struct Serializer<ublox_msgs::RxmRAWX_<ContainerAllocator> >
     stream.next(m.recStat);
     stream.next(m.version);
     stream.next(m.reserved1);
-    for(std::size_t i = 0; i < m.meas.size(); ++i) ros::serialization::serialize(stream, m.meas[i]);
+    for(std::size_t i = 0; i < m.meas.size(); ++i) 
+      ros::serialization::serialize(stream, m.meas[i]);
   }
 };
 
+template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::RxmSFRBX_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::RxmSFRBX_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.gnssId);
+    stream.next(m.svId);
+    stream.next(m.reserved0);
+    stream.next(m.freqId);
+    stream.next(m.numWords);
+    stream.next(m.chn);
+    stream.next(m.version);
+    stream.next(m.reserved1);
+    m.dwrd.resize(m.numWords);
+    for(std::size_t i = 0; i < m.dwrd.size(); ++i) 
+      ros::serialization::deserialize(stream, m.dwrd[i]);
+  }
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::RxmSFRBX_<ContainerAllocator> >::param_type m)
+  {
+    return 8 + 4 * m.numWords;
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmSFRBX_<ContainerAllocator> >::param_type m)
+  {
+    ros::serialization::OStream stream(data, size);
+    stream.next(m.gnssId);
+    stream.next(m.svId);
+    stream.next(m.reserved0);
+    stream.next(m.freqId);
+    stream.next(static_cast<typename ublox_msgs::RxmSFRBX_<ContainerAllocator>::_numWords_type>(m.dwrd.size()));
+    stream.next(m.chn);
+    stream.next(m.version);
+    stream.next(m.reserved1);
+    for(std::size_t i = 0; i < m.dwrd.size(); ++i) 
+      ros::serialization::serialize(stream, m.dwrd[i]);
+  }
+};
 
 template <typename ContainerAllocator>
 struct Serializer<ublox_msgs::RxmSVSI_<ContainerAllocator> >
@@ -214,7 +264,8 @@ struct Serializer<ublox_msgs::RxmSVSI_<ContainerAllocator> >
     stream.next(m.numVis);
     stream.next(m.numSV);
     m.sv.resize(m.numSV);
-    for(std::size_t i = 0; i < m.sv.size(); ++i) ros::serialization::deserialize(stream, m.sv[i]);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::deserialize(stream, m.sv[i]);
   }
 
   static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::RxmSVSI_<ContainerAllocator> >::param_type m)
@@ -229,7 +280,8 @@ struct Serializer<ublox_msgs::RxmSVSI_<ContainerAllocator> >
     stream.next(m.week);
     stream.next(m.numVis);
     stream.next(static_cast<typename ublox_msgs::RxmSVSI_<ContainerAllocator>::_numSV_type>(m.sv.size()));
-    for(std::size_t i = 0; i < m.sv.size(); ++i) ros::serialization::serialize(stream, m.sv[i]);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::serialize(stream, m.sv[i]);
   }
 };
 
@@ -264,7 +316,8 @@ struct Serializer<ublox_msgs::RxmALM_<ContainerAllocator> >
     ros::serialization::OStream stream(data, size);
     stream.next(m.svid);
     stream.next(m.week);
-    for(std::size_t i = 0; i < m.dwrd.size(); ++i) ros::serialization::serialize(stream, m.dwrd[i]);
+    for(std::size_t i = 0; i < m.dwrd.size(); ++i) 
+      ros::serialization::serialize(stream, m.dwrd[i]);
   }
 };
 
@@ -311,9 +364,12 @@ struct Serializer<ublox_msgs::RxmEPH_<ContainerAllocator> >
     ros::serialization::OStream stream(data, size);
     stream.next(m.svid);
     stream.next(m.how);
-    for(std::size_t i = 0; i < m.sf1d.size(); ++i) ros::serialization::serialize(stream, m.sf1d[i]);
-    for(std::size_t i = 0; i < m.sf2d.size(); ++i) ros::serialization::serialize(stream, m.sf2d[i]);
-    for(std::size_t i = 0; i < m.sf3d.size(); ++i) ros::serialization::serialize(stream, m.sf3d[i]);
+    for(std::size_t i = 0; i < m.sf1d.size(); ++i) 
+      ros::serialization::serialize(stream, m.sf1d[i]);
+    for(std::size_t i = 0; i < m.sf2d.size(); ++i) 
+      ros::serialization::serialize(stream, m.sf2d[i]);
+    for(std::size_t i = 0; i < m.sf3d.size(); ++i) 
+      ros::serialization::serialize(stream, m.sf3d[i]);
   }
 };
 
@@ -350,7 +406,8 @@ struct Serializer<ublox_msgs::AidALM_<ContainerAllocator> >
     ros::serialization::OStream stream(data, size);
     stream.next(m.svid);
     stream.next(m.week);
-    for(std::size_t i = 0; i < m.dwrd.size(); ++i) ros::serialization::serialize(stream, m.dwrd[i]);
+    for(std::size_t i = 0; i < m.dwrd.size(); ++i) 
+      ros::serialization::serialize(stream, m.dwrd[i]);
   }
 };
 
@@ -397,9 +454,12 @@ struct Serializer<ublox_msgs::AidEPH_<ContainerAllocator> >
     ros::serialization::OStream stream(data, size);
     stream.next(m.svid);
     stream.next(m.how);
-    for(std::size_t i = 0; i < m.sf1d.size(); ++i) ros::serialization::serialize(stream, m.sf1d[i]);
-    for(std::size_t i = 0; i < m.sf2d.size(); ++i) ros::serialization::serialize(stream, m.sf2d[i]);
-    for(std::size_t i = 0; i < m.sf3d.size(); ++i) ros::serialization::serialize(stream, m.sf3d[i]);
+    for(std::size_t i = 0; i < m.sf1d.size(); ++i) 
+      ros::serialization::serialize(stream, m.sf1d[i]);
+    for(std::size_t i = 0; i < m.sf2d.size(); ++i) 
+      ros::serialization::serialize(stream, m.sf2d[i]);
+    for(std::size_t i = 0; i < m.sf3d.size(); ++i) 
+      ros::serialization::serialize(stream, m.sf3d[i]);
   }
 };
 
