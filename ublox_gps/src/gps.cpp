@@ -1,5 +1,4 @@
-
-//=================================================================================================
+//==============================================================================
 // Copyright (c) 2012, Johannes Meyer, TU Darmstadt
 // All rights reserved.
 
@@ -26,7 +25,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//=================================================================================================
+//==============================================================================
 
 #include <ublox_gps/gps.h>
 #include <ublox_msgs/CfgNAV5.h>
@@ -98,7 +97,7 @@ bool Gps::setBaudrate(unsigned int baudrate) {
   port.portID = CfgPRT::PORT_ID_UART1;
 
   if (debug) {
-    std::cout << "Changing baudrate to " << baudrate << std::endl;
+    ROS_INFO("Changing baudrate to %u", baudrate);
   }
   return configure(port);
 }
@@ -130,7 +129,7 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   boost::this_thread::sleep(boost::posix_time::milliseconds(500));
   if (debug) {
     serial_port.get_option(current_baudrate);
-    std::cout << "Set baudrate " << current_baudrate.value() << std::endl;
+    ROS_INFO("Set baudrate %u", current_baudrate.value());
   }
   configured_ = setBaudrate(baudrate_);
   if (configured_) return;
@@ -139,7 +138,7 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   boost::this_thread::sleep(boost::posix_time::milliseconds(500));
   if (debug) {
     serial_port.get_option(current_baudrate);
-    std::cout << "Set baudrate " << current_baudrate.value() << std::endl;
+    ROS_INFO("Set baudrate %u", current_baudrate.value());
   }
   configured_ = setBaudrate(baudrate_);
   if (configured_) return;
@@ -148,7 +147,7 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   boost::this_thread::sleep(boost::posix_time::milliseconds(500));
   if (debug) {
     serial_port.get_option(current_baudrate);
-    std::cout << "Set baudrate " << current_baudrate.value() << std::endl;
+    ROS_INFO("Set baudrate %u", current_baudrate.value());
   }
   configured_ = setBaudrate(baudrate_);
   if (configured_) return;
@@ -157,7 +156,7 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   boost::this_thread::sleep(boost::posix_time::milliseconds(500));
   if (debug) {
     serial_port.get_option(current_baudrate);
-    std::cout << "Set baudrate " << current_baudrate.value() << std::endl;
+    ROS_INFO("Set baudrate %u", current_baudrate.value());
   }
   configured_ = setBaudrate(baudrate_);
   if (configured_) return;
@@ -166,7 +165,7 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   boost::this_thread::sleep(boost::posix_time::milliseconds(500));
   if (debug) {
     serial_port.get_option(current_baudrate);
-    std::cout << "Set baudrate " << current_baudrate.value() << std::endl;
+    ROS_INFO("Set baudrate %u", current_baudrate.value());
   }
   configured_ = setBaudrate(baudrate_);
   if (configured_) return;
@@ -257,8 +256,7 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
 
   while (reader.search() != reader.end() && reader.found()) {
     if (debug >= 3) {
-      std::cout << "received ublox " << reader.length() + 8 << " bytes"
-                << std::endl;
+      ROS_INFO("received ublox %d bytes", reader.length() + 8);
       for (ublox::Reader::iterator it = reader.pos();
            it != reader.pos() + reader.length() + 8; ++it)
         std::cout << std::hex << static_cast<unsigned int>(*it) << " ";
@@ -274,10 +272,11 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
     callback_mutex_.unlock();
 
     if (reader.classId() == 0x05) {
+      const uint8_t * data = reader.data();
       acknowledge_ = (reader.messageId() == 0x00) ? NACK : ACK;
       if (debug >= 2)
-        std::cout << "received " << (acknowledge_ == ACK ? "ACK" : "NACK")
-                  << std::endl;
+        ROS_INFO("received ublox %s: %x / %x", 
+                 (acknowledge_ == ACK ? "ACK" : "NACK"), data[0], data[1]);
     }
   }
 

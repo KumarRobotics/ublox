@@ -34,6 +34,7 @@
 #include <map>
 #include <vector>
 
+#include <ros/console.h>
 #include <ublox/serialization/ublox_msgs.h>
 #include <ublox_gps/async_worker.h>
 #include <ublox_gps/callback.h>
@@ -223,18 +224,17 @@ void CallbackHandler_<T>::handle(ublox::Reader& reader) {
   boost::mutex::scoped_lock(mutex_);
   try {
     if (!reader.read<T>(message_)) {
-      std::cout << "Decoder error for "
-                << static_cast<unsigned int>(reader.classId()) << "/"
-                << static_cast<unsigned int>(reader.messageId()) << " ("
-                << reader.length() << " bytes)" << std::endl;
+      ROS_ERROR("Decoder error for %u / %u (%d bytes)", 
+                static_cast<unsigned int>(reader.classId()),
+                static_cast<unsigned int>(reader.messageId()),
+                reader.length());
       return;
     }
   } catch (std::runtime_error& e) {
-    std::cout << "Decoder error for "
-              << static_cast<unsigned int>(reader.classId()) << "/"
-              << static_cast<unsigned int>(reader.messageId()) << " ("
-              << reader.length() << " bytes): " << std::string(e.what())
-              << std::endl;
+    ROS_ERROR("Decoder error for %u / %u (%d bytes)", 
+                static_cast<unsigned int>(reader.classId()),
+                static_cast<unsigned int>(reader.messageId()),
+                reader.length());
     return;
   }
 
@@ -280,12 +280,14 @@ bool Gps::configure(const ConfigT& message, bool wait) {
 
   std::vector<unsigned char> out(1024);
   ublox::Writer writer(out.data(), out.size());
-  if (!writer.write(message)) return false;
+  if (!writer.write(message))
+    return false;
   worker_->send(out.data(), writer.end() - out.data());
 
   if (!wait) return true;
 
   waitForAcknowledge(default_timeout_);
+  bool temp = acknowledge_ == ACK;
   return (acknowledge_ == ACK);
 }
 

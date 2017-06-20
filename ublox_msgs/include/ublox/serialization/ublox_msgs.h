@@ -30,10 +30,86 @@
 #ifndef UBLOX_SERIALIZATION_UBLOX_MSGS_H
 #define UBLOX_SERIALIZATION_UBLOX_MSGS_H
 
+#include <ros/console.h>
 #include <ublox/serialization.h>
 #include <ublox_msgs/ublox_msgs.h>
 
 namespace ublox {
+
+template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::CfgGNSS_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::CfgGNSS_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.msgVer);
+    stream.next(m.numTrkChHw);
+    stream.next(m.numTrkChUse);
+    stream.next(m.numConfigBlocks);
+    m.blocks.resize(m.numConfigBlocks);
+    for(std::size_t i = 0; i < m.blocks.size(); ++i) 
+      ros::serialization::deserialize(stream, m.blocks[i]);
+  }
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::CfgGNSS_<ContainerAllocator> >::param_type m)
+  {
+    return 4 + 8 * m.numConfigBlocks;
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::CfgGNSS_<ContainerAllocator> >::param_type m)
+  {
+    if(m.blocks.size() != m.numConfigBlocks) {
+      ROS_ERROR("CfgGNSS numConfigBlocks must equal blocks size");
+    }
+    ros::serialization::OStream stream(data, size);
+    stream.next(m.msgVer);
+    stream.next(m.numTrkChHw);
+    stream.next(m.numTrkChUse);
+    stream.next(static_cast<typename ublox_msgs::CfgGNSS_<ContainerAllocator>::_numConfigBlocks_type>(m.blocks.size()));
+    for(std::size_t i = 0; i < m.blocks.size(); ++i) 
+      ros::serialization::serialize(stream, m.blocks[i]);
+  }
+};
+
+template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::MonVER_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, 
+      typename boost::call_traits<ublox_msgs::MonVER_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.swVersion);
+    stream.next(m.hwVersion);
+
+    m.extension.clear();
+    try {
+      typename ublox_msgs::MonVER_<ContainerAllocator>::_extension_type::value_type temp;
+      while(true) {
+        // Read each extension string, will throw exception when end is reached
+        stream.next(temp);
+        m.extension.push_back(temp);
+      }
+    } catch(ros::serialization::StreamOverrunException& e) {
+      // This is expected once the end of the extension array is reached
+    }
+  }
+
+  static uint32_t serializedLength(
+      typename boost::call_traits<ublox_msgs::MonVER_<ContainerAllocator> >::param_type m)
+  {
+    return 40 + (30 * m.extension.size());
+  }
+
+  static void write(uint8_t *data, uint32_t size, 
+      typename boost::call_traits<ublox_msgs::MonVER_<ContainerAllocator> >::param_type m)
+  {
+    ros::serialization::OStream stream(data, size);
+    stream.next(m.swVersion);
+    stream.next(m.hwVersion);
+    for(std::size_t i = 0; i < m.extension.size(); ++i) 
+      ros::serialization::serialize(stream, m.extension[i]);
+  }
+};
 
 template <typename ContainerAllocator>
 struct Serializer<ublox_msgs::NavDGPS_<ContainerAllocator> >
@@ -60,6 +136,9 @@ struct Serializer<ublox_msgs::NavDGPS_<ContainerAllocator> >
 
   static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::NavDGPS_<ContainerAllocator> >::param_type m)
   {
+    if(m.sv.size() != m.numCh) {
+      ROS_ERROR("NavDGPS numCh must equal sv size");
+    }
     ros::serialization::OStream stream(data, size);
     stream.next(m.iTOW);
     stream.next(m.age);
@@ -98,6 +177,9 @@ struct Serializer<ublox_msgs::NavSBAS_<ContainerAllocator> >
 
   static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::NavSBAS_<ContainerAllocator> >::param_type m)
   {
+    if(m.sv.size() != m.cnt) {
+      ROS_ERROR("NavSBAS cnt must equal sv size");
+    }
     ros::serialization::OStream stream(data, size);
     stream.next(m.iTOW);
     stream.next(m.geo);
@@ -133,6 +215,9 @@ struct Serializer<ublox_msgs::NavSVINFO_<ContainerAllocator> >
 
   static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::NavSVINFO_<ContainerAllocator> >::param_type m)
   {
+    if(m.sv.size() != m.numCh) {
+      ROS_ERROR("NavSVINFO numCh must equal sv size");
+    }
     ros::serialization::OStream stream(data, size);
     stream.next(m.iTOW);
     stream.next(static_cast<typename ublox_msgs::NavSVINFO_<ContainerAllocator>::_numCh_type>(m.sv.size()));
@@ -165,6 +250,9 @@ struct Serializer<ublox_msgs::RxmRAW_<ContainerAllocator> >
 
   static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmRAW_<ContainerAllocator> >::param_type m)
   {
+    if(m.sv.size() != m.numSV) {
+      ROS_ERROR("RxmRAW numSV must equal sv size");
+    }
     ros::serialization::OStream stream(data, size);
     stream.next(m.rcvTOW);
     stream.next(m.week);
@@ -200,6 +288,9 @@ struct Serializer<ublox_msgs::RxmRAWX_<ContainerAllocator> >
 
   static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmRAWX_<ContainerAllocator> >::param_type m)
   {
+    if(m.meas.size() != m.numMeas) {
+      ROS_ERROR("RxmRAWX numMeas must equal meas size");
+    }
     ros::serialization::OStream stream(data, size);
     stream.next(m.rcvTOW);
     stream.next(m.week);
@@ -239,6 +330,9 @@ struct Serializer<ublox_msgs::RxmSFRBX_<ContainerAllocator> >
 
   static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmSFRBX_<ContainerAllocator> >::param_type m)
   {
+    if(m.dwrd.size() != m.numWords) {
+      ROS_ERROR("RxmSFRBX numWords must equal dwrd size");
+    }
     ros::serialization::OStream stream(data, size);
     stream.next(m.gnssId);
     stream.next(m.svId);
@@ -275,6 +369,9 @@ struct Serializer<ublox_msgs::RxmSVSI_<ContainerAllocator> >
 
   static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmSVSI_<ContainerAllocator> >::param_type m)
   {
+    if(m.sv.size() != m.numSV) {
+      ROS_ERROR("RxmSVSI numSV must equal sv size");
+    }
     ros::serialization::OStream stream(data, size);
     stream.next(m.iTOW);
     stream.next(m.week);
