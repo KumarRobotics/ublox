@@ -13,8 +13,7 @@ float64 cpMes             # Carrier phase measurement [L1 cycles]. The carrier
                           # with the RINEX specification.
 float32 doMes             # Doppler measurement [Hz] (positive sign for
                           # approaching satellites)
-uint8 gnssId              # GNSS identifier (see Satellite Numbering for a list
-                          # of identifiers)
+uint8 gnssId              # GNSS identifier (see CfgGNSS for constants)
 
 uint8 svId                # Satellite identifier (see Satellite Numbering)
 

@@ -10,8 +10,9 @@
 uint8 CLASS_ID = 2
 uint8 MESSAGE_ID = 19
 
-uint8 gnssId            # GNSS identifier (see Satellite Numbering)
-uint8 svId              # Satellite identifier
+uint8 gnssId            # GNSS identifier (see Cfg GNSS for constants)
+
+uint8 svId              # Satellite identifier within corresponding GNSS system
 uint8 reserved0         # Reserved
 uint8 freqId            # Only used for GLONASS: This is the frequency
                         # slot + 7 (range from 0 to 13)
