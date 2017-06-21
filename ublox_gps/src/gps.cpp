@@ -80,7 +80,7 @@ uint8_t fixModeFromString(const std::string& mode) {
 }
 
 boost::posix_time::time_duration Gps::default_timeout_(
-    boost::posix_time::seconds(1.0));
+    boost::posix_time::seconds(Gps::kDefaultAckTimeout));
 
 Gps::Gps() : configured_(false) {}
 
@@ -133,7 +133,7 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   boost::asio::serial_port_base::baud_rate current_baudrate;
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
   // TODO: 500 --> Constant
-  boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+  boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
   if (debug) {
     serial_port.get_option(current_baudrate);
     ROS_INFO("Set baudrate %u", current_baudrate.value());
@@ -238,7 +238,7 @@ bool Gps::poll(uint8_t class_id, uint8_t message_id,
                const std::vector<uint8_t>& payload) {
   if (!worker_) return false;
 
-  std::vector<unsigned char> out(1024);
+  std::vector<unsigned char> out(kWriterSize);
   ublox::Writer writer(out.data(), out.size());
   if (!writer.write(payload.data(), payload.size(), class_id, message_id))
     return false;

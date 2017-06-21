@@ -72,6 +72,10 @@ uint8_t fixModeFromString(const std::string& mode);
 
 class Gps {
  public:
+  const static int kSetBaudrateSleepMs = 500;
+  const static double kDefaultAckTimeout = 1.0;
+  const static int kWriterSize = 1024;
+
   Gps();
   virtual ~Gps();
 
@@ -341,7 +345,7 @@ bool Gps::configure(const ConfigT& message, bool wait) {
 
   acknowledge_ = WAIT;
 
-  std::vector<unsigned char> out(1024);
+  std::vector<unsigned char> out(kWriterSize);
   ublox::Writer writer(out.data(), out.size());
   if (!writer.write(message))
     return false;
