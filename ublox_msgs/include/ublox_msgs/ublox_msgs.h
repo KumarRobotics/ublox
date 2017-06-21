@@ -95,6 +95,8 @@ namespace Class {
   // External Sensor Fusion Messages: External sensor measurements and status 
   // information
   static const uint8_t ESF = 0x10; 
+  // RTCM Configuration Messages
+  static const uint8_t RTCM = 0xF5;
 }
 
 namespace Message {
@@ -129,6 +131,11 @@ namespace Message {
     static const uint8_t ALM = AidALM::MESSAGE_ID;
     static const uint8_t EPH = AidEPH::MESSAGE_ID;
     static const uint8_t HUI = AidHUI::MESSAGE_ID;
+  }
+
+  namespace ACK {
+    static const uint8_t NACK = 0x00; 
+    static const uint8_t ACK = 0x01; 
   }
 
   namespace CFG {
