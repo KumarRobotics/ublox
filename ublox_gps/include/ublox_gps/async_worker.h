@@ -1,4 +1,4 @@
-//=================================================================================================
+//==============================================================================
 // Copyright (c) 2012, Johannes Meyer, TU Darmstadt
 // All rights reserved.
 
@@ -13,19 +13,18 @@
 //       TU Darmstadt, nor the names of its contributors may be used to
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
 // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//=================================================================================================
+//==============================================================================
 
 #ifndef UBLOX_GPS_ASYNC_WORKER_H
 #define UBLOX_GPS_ASYNC_WORKER_H
@@ -136,12 +135,12 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
     in_buffer_size_ += bytes_transfered;
 
     if (debug >= 4) {
-      std::cout << "received " << bytes_transfered << " bytes" << std::endl;
+      std::ostringstream oss;
       for (std::vector<unsigned char>::iterator it =
                in_.begin() + in_buffer_size_ - bytes_transfered;
            it != in_.begin() + in_buffer_size_; ++it)
-        std::cout << std::hex << static_cast<unsigned int>(*it) << " ";
-      std::cout << std::dec << std::endl;
+        oss << std::hex << static_cast<unsigned int>(*it) << " ";
+      ROS_INFO("received %li bytes \n%s", bytes_transfered, oss.str().c_str());
     }
 
     if (read_callback_) read_callback_(in_.data(), in_buffer_size_);
@@ -162,11 +161,12 @@ void AsyncWorker<StreamT>::doWrite() {
   boost::asio::write(stream_, boost::asio::buffer(out_.data(), out_.size()));
 
   if (debug >= 2) {
-    std::cout << "sent " << out_.size() << " bytes:" << std::endl;
+    std::ostringstream oss;
     for (std::vector<unsigned char>::iterator it = out_.begin();
          it != out_.end(); ++it)
-      std::cout << std::hex << static_cast<unsigned int>(*it) << " ";
-    std::cout << std::dec << std::endl;
+      oss << std::hex << static_cast<unsigned int>(*it) << " ";
+    oss << std::dec;
+    ROS_INFO("sent %li bytes: \n%s", out_.size(), oss.str().c_str());
   }
   out_.clear();
   write_condition_.notify_all();
