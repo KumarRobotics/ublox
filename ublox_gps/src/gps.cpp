@@ -81,13 +81,13 @@ uint8_t fixModeFromString(const std::string& mode) {
 
 boost::posix_time::time_duration Gps::default_timeout_(
     boost::posix_time::seconds(1.0));
-// TODO: baudrate
-Gps::Gps() : configured_(false), baudrate_(57600) {}
+
+Gps::Gps() : configured_(false) {}
 
 Gps::~Gps() { close(); }
 
 bool Gps::configUart1(unsigned int baudrate, int16_t inProtoMask, 
-                   int16_t outProtoMask) {
+                      int16_t outProtoMask) {
   baudrate_ = baudrate;
   if (!worker_) return true;
 
@@ -113,11 +113,17 @@ void Gps::initialize(const boost::shared_ptr<Worker>& worker) {
 }
 
 template void Gps::initialize(boost::asio::ip::tcp::socket& stream,
-                              boost::asio::io_service& io_service);
+                              boost::asio::io_service& io_service,
+                              unsigned int baudrate,
+                              uint16_t uart_in,
+                              uint16_t uart_out);
 
 template <>
 void Gps::initialize(boost::asio::serial_port& serial_port,
-                     boost::asio::io_service& io_service) {
+                     boost::asio::io_service& io_service,
+                     unsigned int baudrate,
+                     uint16_t uart_in,
+                     uint16_t uart_out) {
   if (worker_) return;
   initialize(boost::shared_ptr<Worker>(
       new AsyncWorker<boost::asio::serial_port>(serial_port, io_service)));
@@ -125,52 +131,14 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   configured_ = false;
 
   boost::asio::serial_port_base::baud_rate current_baudrate;
-  // TODO
-  // serial_port.set_option(boost::asio::serial_port_base::baud_rate(4800));
-  // boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-  // if (debug) {
-  //   serial_port.get_option(current_baudrate);
-  //   ROS_INFO("Set baudrate %u", current_baudrate.value());
-  // }
-  // configured_ = setUart1(baudrate_);
-  // if (configured_) return;
-
-  // serial_port.set_option(boost::asio::serial_port_base::baud_rate(9600));
-  // boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-  // if (debug) {
-  //   serial_port.get_option(current_baudrate);
-  //   ROS_INFO("Set baudrate %u", current_baudrate.value());
-  // }
-  // configured_ = setUart1(baudrate_);
-  // if (configured_) return;
-
-  // serial_port.set_option(boost::asio::serial_port_base::baud_rate(19200));
-  // boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-  // if (debug) {
-  //   serial_port.get_option(current_baudrate);
-  //   ROS_INFO("Set baudrate %u", current_baudrate.value());
-  // }
-  // configured_ = setUart1(baudrate_);
-  // if (configured_) return;
-
-  // serial_port.set_option(boost::asio::serial_port_base::baud_rate(38400));
-  // boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-  // if (debug) {
-  //   serial_port.get_option(current_baudrate);
-  //   ROS_INFO("Set baudrate %u", current_baudrate.value());
-  // }
-  // configured_ = setUart1(baudrate_);
-  // if (configured_) return;
-
-  serial_port.set_option(boost::asio::serial_port_base::baud_rate(baudrate_));
+  serial_port.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
   // TODO: 500 --> Constant
   boost::this_thread::sleep(boost::posix_time::milliseconds(500));
   if (debug) {
     serial_port.get_option(current_baudrate);
     ROS_INFO("Set baudrate %u", current_baudrate.value());
   }
-  // TODO: 35 & 1 to Constants
-  configured_ = configUart1(baudrate_, 35, 1);
+  configured_ = configUart1(baudrate, uart_in, uart_out);
   if (configured_) return;
 }
 

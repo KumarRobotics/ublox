@@ -67,7 +67,6 @@ std::string frame_id;
 
 ublox_msgs::NavPVT last_nav_pos;
 
-
 int fix_status_service;
 
 void publishNavPVT(const ublox_msgs::NavPVT& m) {
@@ -260,7 +259,6 @@ int main(int argc, char** argv) {
   param_nh.param("ublox_version", ublox_version, 6);
   // const uint8_t default_num_trk_ch_use = 0xFF;
   // param_nh.param("num_trk_ch_use", num_trk_ch_use, default_num_trk_ch_use);
-
   if (enable_ppp) {
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
   }
@@ -345,7 +343,7 @@ int main(int argc, char** argv) {
 
       ROS_INFO("Connected to %s:%s.", endpoint->host_name().c_str(),
                endpoint->service_name().c_str());
-      gps.initialize(*socket, io_service);
+      gps.initialize(*socket, io_service, baudrate, uart_in, uart_out);
     } else {
       ROS_ERROR("Protocol '%s' is unsupported", proto.c_str());
       return 1;  //  exit
@@ -364,7 +362,9 @@ int main(int argc, char** argv) {
 
     ROS_INFO("Opened serial port %s", device.c_str());
     gps.configUart1(baudrate, uart_in, uart_out);
-    gps.initialize(*serial, io_service);
+    gps.initialize(*serial, io_service, baudrate,
+                     uart_in,
+                     uart_out);
   }
 
   //  apply all requested settings

@@ -76,7 +76,10 @@ class Gps {
   virtual ~Gps();
 
   template <typename StreamT>
-  void initialize(StreamT& stream, boost::asio::io_service& io_service);
+  void initialize(StreamT& stream, boost::asio::io_service& io_service, 
+                  unsigned int baudrate,
+                  uint16_t uart_in,
+                  uint16_t uart_out);
   void initialize(const boost::shared_ptr<Worker>& worker);
   void close();
 
@@ -215,20 +218,31 @@ class Gps {
  private:
   void readCallback(unsigned char* data, std::size_t& size);
 
- private:
   boost::shared_ptr<Worker> worker_;
   bool configured_;
   // TODO: this variable is not thread safe :'(
   enum { WAIT, ACK, NACK } acknowledge_; 
   unsigned int baudrate_;
+  uint16_t uart_in_;
+  uint16_t uart_out_;
   static boost::posix_time::time_duration default_timeout_;
 
   Callbacks callbacks_;
   boost::mutex callback_mutex_;
+
 };
 
+/**
+ * @brief Initialize the worker and configure the Serial port.
+ * @param baudrate the baud rate of the port in Hz
+ * @param uart_in the ublox UART 1 port in protocol (see Cfg PRT message)
+ * @param uart_out the ublox UART 1 port out protocol (see Cfg PRT message)
+ */
 template <typename StreamT>
-void Gps::initialize(StreamT& stream, boost::asio::io_service& io_service) {
+void Gps::initialize(StreamT& stream, boost::asio::io_service& io_service,
+                     unsigned int baudrate,
+                     uint16_t uart_in,
+                     uint16_t uart_out) {
   if (worker_) return;
   initialize(
       boost::shared_ptr<Worker>(new AsyncWorker<StreamT>(stream, io_service)));
@@ -236,9 +250,17 @@ void Gps::initialize(StreamT& stream, boost::asio::io_service& io_service) {
 
 template <>
 void Gps::initialize(boost::asio::serial_port& serial_port,
-                     boost::asio::io_service& io_service);
+                     boost::asio::io_service& io_service,
+                     unsigned int baudrate,
+                     uint16_t uart_in,
+                     uint16_t uart_out);
+
 extern template void Gps::initialize<boost::asio::ip::tcp::socket>(
-    boost::asio::ip::tcp::socket& stream, boost::asio::io_service& io_service);
+    boost::asio::ip::tcp::socket& stream, 
+    boost::asio::io_service& io_service,
+    unsigned int baudrate,
+    uint16_t uart_in,
+    uint16_t uart_out);
 // extern template void
 // Gps::initialize<boost::asio::ip::udp::socket>(boost::asio::ip::udp::socket&
 // stream, boost::asio::io_service& io_service);

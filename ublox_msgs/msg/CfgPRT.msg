@@ -76,6 +76,8 @@ uint32 MODE_SPI_FF_COUNT_MASK = 16128     # Number of bytes containing 0xFF to
 
 uint32 baudRate           # UART Baudrate in bits/second [bits/s]
                           # Reserved for USB, SPI, DDC
+                          # Possible values: 4800, 9600, 19200, 38400, 57600, 
+                          #                  115200, 230400, 460800
 
 uint16 inProtoMask        # A mask describing which input protocols are active.
                           # Each bit of this mask is used for a protocol.
