@@ -1,6 +1,10 @@
 # CFG-SBAS (0x06 0x16)
 # SBAS Configuration
 #
+# This message configures the SBAS receiver subsystem (i.e. WAAS, EGNOS, MSAS).
+# See the SBAS Configuration Settings Description for a detailed description of
+# how these settings affect receiver operation
+#
 
 uint8 CLASS_ID = 6
 uint8 MESSAGE_ID = 22
