@@ -37,6 +37,7 @@
 #include <ros/ros.h>
 #include <ros/serialization.h>
 #include <ublox_msgs/CfgGNSS.h>
+#include <ublox_msgs/CfgPRT.h>
 #include <ublox_msgs/NavPOSLLH.h>
 #include <ublox_msgs/NavSOL.h>
 #include <ublox_msgs/NavSTATUS.h>
@@ -51,6 +52,9 @@
 #include <diagnostic_updater/publisher.h>
 
 const static uint32_t kROSQueueSize = 1;
+const static double kTolerance = 0.05;
+const static double kWindow = 10;
+const static double kTimeStampStatusMin = 0;
 
 using namespace ublox_gps;
 
@@ -159,7 +163,7 @@ void pollMessages(const ros::TimerEvent& event) {
   }
 }
 
-void fix_diagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) {
+void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) {
   //  check the last message, convert to diagnostic
   if (last_nav_pos.fixType == ublox_msgs::NavSTATUS::GPS_NO_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
@@ -211,23 +215,37 @@ int main(int argc, char** argv) {
 
   std::string device;
   int baudrate;
-  int rate, meas_rate;
+  int rate, meas_rate, nav_rate, rtcm_rate;
   bool enable_gps, enable_sbas, enable_galileo, enable_beidou, enable_imes; 
   bool enable_qzss, enable_glonass, enable_ppp;
 
+  std::vector<int> rtcm_ids;
   std::string dynamic_model, fix_mode;
   int dr_limit;
   int ublox_version;
   uint8_t num_trk_ch_use;
   int qzss_sig_cfg;
+  int uart_in, uart_out; // UART in out protocol
+  int sbas_usage, max_sbas;
   int qzss_sig_cfg_default = ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA;
+  int uart_in_default = ublox_msgs::CfgPRT::PROTO_UBX 
+                        | ublox_msgs::CfgPRT::PROTO_NMEA 
+                        | ublox_msgs::CfgPRT::PROTO_RTCM;
+  int uart_out_default = ublox_msgs::CfgPRT::PROTO_UBX;
   ros::NodeHandle param_nh("~");
   param_nh.param("device", device, std::string("/dev/ttyACM0"));
   param_nh.param("frame_id", frame_id, std::string("gps"));
   param_nh.param("baudrate", baudrate, 9600);
-  param_nh.param("rate", rate, 4);  //  in Hz
+  param_nh.param("rate", rate, 4);  // in Hz
+  param_nh.param("nav_rate", nav_rate, 1);  // number of measurement rate cycles
+  param_nh.param("rtcm_ids", rtcm_ids, rtcm_ids);  // RTCM IDs to configure
+  param_nh.param("rtcm_rate", rtcm_rate, 1);  // in Hz, same for all RTCM IDs
+  param_nh.param("uart_in", uart_in, uart_in_default);
+  param_nh.param("uart_out", uart_out, uart_out_default); 
   param_nh.param("enable_gps", enable_gps, true);
   param_nh.param("enable_sbas", enable_sbas, false);
+  param_nh.param("max_sbas", max_sbas, 0);
+  param_nh.param("sbas_usage", sbas_usage, 0);
   param_nh.param("enable_galileo", enable_galileo, false);
   param_nh.param("enable_beidou", enable_beidou, false);
   param_nh.param("enable_imes", enable_imes, false);
@@ -237,16 +255,11 @@ int main(int argc, char** argv) {
   param_nh.param("enable_glonass", enable_glonass, false);
   param_nh.param("enable_ppp", enable_ppp, false);
   param_nh.param("dynamic_model", dynamic_model, std::string("portable"));
-  param_nh.param("fix_mode", fix_mode, std::string("both"));
+  param_nh.param("fix_mode", fix_mode, std::string("auto"));
   param_nh.param("dr_limit", dr_limit, 0);
   param_nh.param("ublox_version", ublox_version, 6);
   // const uint8_t default_num_trk_ch_use = 0xFF;
   // param_nh.param("num_trk_ch_use", num_trk_ch_use, default_num_trk_ch_use);
-
-  fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS 
-       + (enable_glonass ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GLONASS
-       + (enable_beidou ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_COMPASS
-       + (enable_galileo ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GALILEO;
 
   if (enable_ppp) {
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
@@ -256,6 +269,12 @@ int main(int argc, char** argv) {
     ROS_ERROR("Invalid settings: rate must be > 0");
     return 1;
   }
+
+  fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS 
+       + (enable_glonass ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GLONASS
+       + (enable_beidou ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_COMPASS
+       + (enable_galileo ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GALILEO;
+  
   //  measurement rate param for ublox, units of ms
   meas_rate = 1000 / rate;
 
@@ -264,8 +283,8 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  DynamicModel dmodel;
-  FixMode fmode;
+  uint8_t dmodel;
+  uint8_t fmode;
   try {
     dmodel = ublox_gps::modelFromString(dynamic_model);
     fmode = ublox_gps::fixModeFromString(fix_mode);
@@ -275,16 +294,17 @@ int main(int argc, char** argv) {
   }
 
   //  configure diagnostic updater for frequency
-  updater->add("fix", &fix_diagnostic);
+  updater->add("fix", &fixDiagnostic);
   updater->force_update();
 
-  const double target_freq = 1000.0 / meas_rate;  //  actual update frequency
+  const double target_freq = rate;  //  actual update frequency
   double min_freq = target_freq;
   double max_freq = target_freq;
+  double timeStampStatusMax = meas_rate * 1e-3 * 0.05;
   diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
-                                                      0.05, 10);
-  diagnostic_updater::TimeStampStatusParam time_param(0,
-                                                      meas_rate * 1e-3 * 0.05);
+                                                      kWindow, kTolerance);
+  diagnostic_updater::TimeStampStatusParam time_param(kTimeStampStatusMin,
+                                                      timeStampStatusMax);
   freq_diag.reset(new diagnostic_updater::TopicDiagnostic(
       std::string("fix"), *updater, freq_param, time_param));
 
@@ -343,7 +363,7 @@ int main(int argc, char** argv) {
     }
 
     ROS_INFO("Opened serial port %s", device.c_str());
-    gps.setBaudrate(baudrate);
+    gps.configUart1(baudrate, uart_in, uart_out);
     gps.initialize(*serial, io_service);
   }
 
@@ -354,24 +374,31 @@ int main(int argc, char** argv) {
     }
     ublox_msgs::MonVER monVer;
     if (gps.poll(monVer)) {
-      ROS_INFO("Mon VER %s, %s", &(monVer.swVersion), &(monVer.hwVersion));
+      ROS_INFO("%s, HW VER: %s", monVer.swVersion.c_array(), 
+               monVer.hwVersion.c_array());
       for(std::size_t i = 0; i < monVer.extension.size(); ++i) {
-        // TODO print in way that doesn't cause warning
-        ROS_INFO("Mon VER %s, %s", &(monVer.extension[i]));
+        ROS_INFO("%s", monVer.extension[i].field.c_array());
       }
     } else {
-      ROS_WARN("failed to poll MonVER");
+      ROS_WARN("Failed to poll MonVER");
     }
-    if (!gps.setMeasRate(meas_rate)) {
+    if (!gps.configRate(meas_rate, nav_rate)) {
       std::stringstream ss;
-      ss << "Failed to set measurement rate to " << meas_rate << "ms.";
+      ss << "Failed to set measurement rate to " << meas_rate 
+         << "ms and navigation rate to " << nav_rate;
       throw std::runtime_error(ss.str());
     }
-    // if (!gps.enableSBAS(enable_sbas)) {
-    //   throw std::runtime_error(std::string("Failed to ") +
-    //                            ((enable_sbas) ? "enable" : "disable") +
-    //                            " SBAS.");
-    // }
+    if(!gps.configRtcm(rtcm_ids, rtcm_rate)) {
+      throw std::runtime_error("Failed to set RTCM rates");
+    }
+    // If device doesn't have SBAS, will receive NACK (causes exception)
+    if(enable_sbas) {
+      if (!gps.enableSBAS(enable_sbas, sbas_usage, max_sbas)) {
+        throw std::runtime_error(std::string("Failed to ") +
+                                 ((enable_sbas) ? "enable" : "disable") +
+                                 " SBAS.");
+      }
+    }
     if (!gps.setPPPEnabled(enable_ppp)) {
       throw std::runtime_error(std::string("Failed to ") +
                                ((enable_ppp) ? "enable" : "disable") + " PPP.");
@@ -422,19 +449,19 @@ int main(int argc, char** argv) {
         ROS_INFO("Read GNSS config.");
         ROS_INFO("Num. tracking channels in hardware: %i", cfgGNSSRead.numTrkChHw);
         ROS_INFO("Num. tracking channels to use: %i", cfgGNSSRead.numTrkChUse);
-        for(std::size_t i = 0; i < cfgGNSSRead.blocks.size(); ++i) {
-          bool enabled = cfgGNSSRead.blocks[i].flags 
-                         &  ublox_msgs::CfgGNSS_Block::FLAGS_ENABLE;
-          uint32_t sigCfg = cfgGNSSRead.blocks[i].flags 
-                        & ublox_msgs::CfgGNSS_Block::FLAGS_SIG_CFG_MASK;
-          ROS_INFO("gnssId, enabled, resTrkCh, maxTrkCh: %u, %u, %u, %u, %u",
-                   cfgGNSSRead.blocks[i].gnssId,
-                   enabled,
-                   cfgGNSSRead.blocks[i].resTrkCh,
-                   cfgGNSSRead.blocks[i].maxTrkCh,
-                   sigCfg
-                   );
-        }
+        // for(std::size_t i = 0; i < cfgGNSSRead.blocks.size(); ++i) {
+        //   bool enabled = cfgGNSSRead.blocks[i].flags 
+        //                  &  ublox_msgs::CfgGNSS_Block::FLAGS_ENABLE;
+        //   uint32_t sigCfg = cfgGNSSRead.blocks[i].flags 
+        //                 & ublox_msgs::CfgGNSS_Block::FLAGS_SIG_CFG_MASK;
+        //   ROS_INFO("gnssId, enabled, resTrkCh, maxTrkCh: %u, %u, %u, %u, %u",
+        //            cfgGNSSRead.blocks[i].gnssId,
+        //            enabled,
+        //            cfgGNSSRead.blocks[i].resTrkCh,
+        //            cfgGNSSRead.blocks[i].maxTrkCh,
+        //            sigCfg
+        //            );
+        // }
       } else {
         throw std::runtime_error("Failed to read the GNSS config.");
       }
