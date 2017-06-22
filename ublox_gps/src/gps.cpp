@@ -131,13 +131,51 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   configured_ = false;
 
   boost::asio::serial_port_base::baud_rate current_baudrate;
-  serial_port.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
-  // TODO: 500 --> Constant
+  // TODO
+  serial_port.set_option(boost::asio::serial_port_base::baud_rate(4800));
   boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
   if (debug) {
     serial_port.get_option(current_baudrate);
     ROS_INFO("Set baudrate %u", current_baudrate.value());
   }
+  configured_ = configUart1(baudrate, uart_in, uart_out);
+  if (configured_) return;
+
+  serial_port.set_option(boost::asio::serial_port_base::baud_rate(9600));
+  boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
+  if (debug) {
+    serial_port.get_option(current_baudrate);
+    ROS_INFO("Set baudrate %u", current_baudrate.value());
+  }
+  configured_ = configUart1(baudrate, uart_in, uart_out);
+  if (configured_) return;
+
+  serial_port.set_option(boost::asio::serial_port_base::baud_rate(19200));
+  boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
+  if (debug) {
+    serial_port.get_option(current_baudrate);
+    ROS_INFO("Set baudrate %u", current_baudrate.value());
+  }
+  configured_ = configUart1(baudrate, uart_in, uart_out);
+  if (configured_) return;
+
+  serial_port.set_option(boost::asio::serial_port_base::baud_rate(38400));
+  boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
+  if (debug) {
+    serial_port.get_option(current_baudrate);
+    ROS_INFO("Set baudrate %u", current_baudrate.value());
+  }
+  configured_ = configUart1(baudrate, uart_in, uart_out);
+  if (configured_) return;
+
+  serial_port.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
+  // TODO: kSetBaudrateSleepMs --> Constant
+  boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
+  if (debug) {
+    serial_port.get_option(current_baudrate);
+    ROS_INFO("Set baudrate %u", current_baudrate.value());
+  }
+  // TODO: uart_in &uart_out1 to Constants
   configured_ = configUart1(baudrate, uart_in, uart_out);
   if (configured_) return;
 }

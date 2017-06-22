@@ -300,7 +300,7 @@ int main(int argc, char** argv) {
   double max_freq = target_freq;
   double timeStampStatusMax = meas_rate * 1e-3 * 0.05;
   diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
-                                                      kWindow, kTolerance);
+                                                      kTolerance, kWindow);
   diagnostic_updater::TimeStampStatusParam time_param(kTimeStampStatusMin,
                                                       timeStampStatusMax);
   freq_diag.reset(new diagnostic_updater::TopicDiagnostic(
