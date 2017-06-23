@@ -42,7 +42,8 @@ class UbloxNode {
   int setParams();
   
   /**
-   * @brief Publish a ROS message of type MessageT.
+   * @brief Publish a ROS message of type MessageT. Should be used to publish
+   * all messages which are simply read from U-blox and published.
    * @param m the message to publish
    * @param topic the topic to publish the message on
    */
@@ -77,9 +78,9 @@ class UbloxNode {
   void configureUblox();
 
   /*
-   * @brief Subscribe to U-blox messages available on all firmware versions.
+   * @brief Subscribe to all requested U-Blox messages. Call subscribe version.
    */
-  void subscribe();
+  void subscribeAll();
 
   /**
    * @brief Handle to send fix status to ROS diagnostics.
@@ -173,7 +174,8 @@ class UbloxNode7Plus : public UbloxNode {
   void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat);
 
   /**
-   * Publish a NavPVT message and update the fix diagnostics.
+   * Publish a NavPVT message. Also publishes Fix and Twist messages and
+   * updates the fix diagnostics.
    */
   void publishNavPVT(const ublox_msgs::NavPVT& m);
   
