@@ -22,12 +22,8 @@ namespace ublox_node {
  */
 class UbloxNode {
  public:
+  // Queue size for ROS publishers
   const static uint32_t kROSQueueSize = 1;
-  // Constants used for diagnostic frequency updater
-  const static double kTolerance = 0.05;
-  const static double kWindow = 10;
-  const static double kTimeStampStatusMin = 0;
-
   /**
    * @brief Set the node handle parameter.
    */ 
@@ -36,12 +32,6 @@ class UbloxNode {
   }
 
   /**
-   * @brief Set class parameters from the ROS node parameters.
-   * @return 0 if successful
-   */
-  int setParams();
-  
-  /**
    * @brief Publish a ROS message of type MessageT. Should be used to publish
    * all messages which are simply read from U-blox and published.
    * @param m the message to publish
@@ -49,55 +39,6 @@ class UbloxNode {
    */
   template <typename MessageT>
   void publish(const MessageT& m, const std::string& topic);
-
-  /**
-   * @brief Poll messages from the U-Blox device.
-   */
-  void pollMessages(const ros::TimerEvent& event);
-
-  /**
-   * @brief Initialize the U-blox node. Configure the U-blox and subscribe to 
-   * messages.
-   * @return 0 if successful
-   */
-  int initialize();
-
-  /**
-   * @brief Initialize the Serial / TCP IO.
-   */
-  int initializeIo();
-  
-  /**
-   * @brief Initialize the diagnostic updater and add the fix diagnostic.
-   */
-  void initDiagnostics();
-
-  /**
-   * @brief Configure Ublox device based on requested settings.
-   */
-  void configureUblox();
-
-  /*
-   * @brief Subscribe to all requested U-Blox messages. Call subscribe version.
-   */
-  void subscribeAll();
-
-  /**
-   * @brief Handle to send fix status to ROS diagnostics.
-   */
-  virtual void fixDiagnostic(
-      diagnostic_updater::DiagnosticStatusWrapper& stat) = 0;
-
-  /**
-   * @brief Configure the U-Blox GNSS settings.
-   */
-  virtual void configureGnss() = 0;
-
-  /* 
-   * @brief Subscribe to ublox messages available on this version. 
-   * (e.g. NavPVT, RxmRAWX)
-   */
-  virtual void subscribeVersion() = 0; 
 
   // Asynchronous IO objects
   boost::asio::io_service io_service;
@@ -125,8 +66,70 @@ class UbloxNode {
   int dr_limit_, qzss_sig_cfg_;
   int fix_status_service_;
   int sbas_usage_, max_sbas_;
-  // Used during initialization
-  bool setup_ok_;
+ 
+ protected:
+  /**
+   * @brief Initialize the U-blox node. Configure the U-blox and subscribe to 
+   * messages.
+   */
+  void initialize();
+
+  /**
+   * @brief Handle to send fix status to ROS diagnostics.
+   */
+  virtual void fixDiagnostic(
+      diagnostic_updater::DiagnosticStatusWrapper& stat) = 0;
+
+  /**
+   * @brief Configure the U-Blox GNSS settings.
+   */
+  virtual void configureGnss() = 0;
+
+  /* 
+   * @brief Subscribe to ublox messages available on this version. 
+   * (e.g. NavPVT, RxmRAWX)
+   */
+  virtual void subscribeVersion() = 0; 
+
+ private:
+  // how often (in seconds) to call poll messages
+  const static double kPollDuration = 1.0;
+  // Constants used for diagnostic frequency updater
+  const static double kTolerance = 0.05;
+  const static double kWindow = 10;
+  const static double kTimeStampStatusMin = 0;
+
+  /**
+   * @brief Set class parameters from the ROS node parameters.
+   * @return 0 if successful
+   */
+  int setParams();
+
+  /**
+   * @brief Poll messages from the U-Blox device.
+   */
+  void pollMessages(const ros::TimerEvent& event);
+
+  /**
+   * @brief Initialize the Serial / TCP IO.
+   */
+  void initializeIo();
+  
+  /**
+   * @brief Initialize the diagnostic updater and add the fix diagnostic.
+   */
+  void initDiagnostics();
+
+  /**
+   * @brief Configure Ublox device based on requested settings.
+   * @return true if configured succesfully
+   */
+  bool configureUblox();
+
+  /*
+   * @brief Subscribe to all requested U-Blox messages. Call subscribe version.
+   */
+  void subscribeAll();
 };
 
 /**
@@ -135,10 +138,6 @@ class UbloxNode {
 class UbloxNode6 : public UbloxNode {
  public:
   UbloxNode6(boost::shared_ptr<ros::NodeHandle> _nh);
-
-  void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat);
-  void configureGnss();
-  void subscribeVersion();
 
   /*
    * @brief Publish a NavPOSLLh message & update the fix diagnostics & 
@@ -156,13 +155,33 @@ class UbloxNode6 : public UbloxNode {
    * fix.
    */
   void publishNavSOL(const ublox_msgs::NavSOL& m);
- 
+ protected:
+  /**
+   * @brief Updates fix diagnostic from NavPOSLLH, NavVELNED, and NavSOL 
+   * messages.
+   */
+  void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat);
+  /**
+   * @brief Prints a warning, GNSS configuration not available in this version.
+   */
+  void configureGnss();
+    /**
+   * @brief Subscribes to NavPVT, RxmRAW, and RxmSFRB messages. 
+   */
+  void subscribeVersion();
+
  private:
+  // The last received navigation position
   ublox_msgs::NavPOSLLH last_nav_pos_;
+  // The last received navigation velocity
   ublox_msgs::NavVELNED last_nav_vel_;
+  // The last received num svs used
   int num_svs_used_;
+  // The last Nav Sat fix based on last_nav_pos_
   sensor_msgs::NavSatFix fix;
+  // The last Twist based on last_nav_vel_
   geometry_msgs::TwistWithCovarianceStamped velocity;
+  // The last received nav status
   ublox_msgs::NavSTATUS status;
 };
 
@@ -171,19 +190,18 @@ class UbloxNode6 : public UbloxNode {
  */
 class UbloxNode7Plus : public UbloxNode {
  public:
-  void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat);
-
   /**
    * Publish a NavPVT message. Also publishes Fix and Twist messages and
    * updates the fix diagnostics.
    */
   void publishNavPVT(const ublox_msgs::NavPVT& m);
   
+ 
+ protected:
+  void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat);
   /* Implement these in version specific classes */
   virtual void configureGnss() = 0;
   virtual void subscribeVersion() = 0; 
- 
- protected:
   ublox_msgs::NavPVT last_nav_pvt_; 
 };
 
@@ -194,7 +212,14 @@ class UbloxNode7 : public UbloxNode7Plus {
  public:
   UbloxNode7(boost::shared_ptr<ros::NodeHandle> _nh);
 
+ protected:
+  /**
+   * @brief Subscribes to NavPVT, RxmRAW, and RxmSFRB messages. 
+   */
   void subscribeVersion();
+  /**
+   * @brief Configures GNSS individually. Only configures GLONASS.
+   */
   void configureGnss();
 };
 
@@ -204,8 +229,15 @@ class UbloxNode7 : public UbloxNode7Plus {
 class UbloxNode8 : public UbloxNode7Plus {
  public:
   UbloxNode8(boost::shared_ptr<ros::NodeHandle> _nh);
-  
+
+ protected:
+  /**
+   * @brief Subscribes to NavPVT, RxmRAWX, and RxmSFRBX messages. 
+   */
   void subscribeVersion();
+  /**
+   * @brief Configures all GNSS systems in 1 message based on ROS params.
+   */
   void configureGnss();
 };
 

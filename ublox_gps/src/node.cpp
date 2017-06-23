@@ -95,21 +95,18 @@ int UbloxNode::setParams() {
   }
 
   if (rate_ <= 0) {
-    ROS_ERROR("Invalid settings: rate must be > 0");
-    return 1;
+    throw std::runtime_error("Invalid settings: rate must be > 0");
   }
 
   if (dr_limit_ < 0 || dr_limit_ > 255) {
-    ROS_ERROR("Invalid settings: dr_limit must be between 0 and 255");
-    return 1;
+    throw std::runtime_error("Invalid settings: dr_limit must be between 0 and 255");
   }
 
   try {
     dmodel = ublox_gps::modelFromString(dynamic_model_);
     fmode = ublox_gps::fixModeFromString(fix_mode_);
   } catch (std::exception& e) {
-    ROS_ERROR("Invalid settings: %s", e.what());
-    return 1;
+    throw std::runtime_error("Invalid dynamic model or fix mode settings");
   }
   
   // Fix Service type, used when publishing fix status messages
@@ -131,7 +128,7 @@ void UbloxNode::publish(const MessageT& m, const std::string& topic) {
   publisher.publish(m);
 }
 
-int UbloxNode::initializeIo() {
+void UbloxNode::initializeIo() {
   boost::smatch match;
 
   if (boost::regex_match(device_, match,
@@ -150,9 +147,8 @@ int UbloxNode::initializeIo() {
         endpoint =
             resolver.resolve(boost::asio::ip::tcp::resolver::query(host, port));
       } catch (std::runtime_error& e) {
-        ROS_ERROR("Could not resolve %s:%s: %s", host.c_str(), port.c_str(),
-                  e.what());
-        return 1;  //  exit
+        throw std::runtime_error("Could not resolve" + host + " " +
+                                 port + " " + e.what());
       }
 
       boost::asio::ip::tcp::socket* socket =
@@ -162,18 +158,16 @@ int UbloxNode::initializeIo() {
       try {
         socket->connect(*endpoint);
       } catch (std::runtime_error& e) {
-        ROS_ERROR("Could not connect to %s:%s: %s",
-                  endpoint->host_name().c_str(),
-                  endpoint->service_name().c_str(), e.what());
-        return 1;  //  exit
+        throw std::runtime_error("Could not connect to " + 
+                                 endpoint->host_name() + ":" + 
+                                 endpoint->service_name() + ": " + e.what());
       }
 
       ROS_INFO("Connected to %s:%s.", endpoint->host_name().c_str(),
                endpoint->service_name().c_str());
       gps.initialize(*socket, io_service, baudrate_, uart_in_, uart_out_);
     } else {
-      ROS_ERROR("Protocol '%s' is unsupported", proto.c_str());
-      return 1;  //  exit
+      throw std::runtime_error("Protocol '" + proto + "' is unsupported");
     }
   } else {
     boost::asio::serial_port* serial = new boost::asio::serial_port(io_service);
@@ -183,15 +177,14 @@ int UbloxNode::initializeIo() {
     try {
       serial->open(device_);
     } catch (std::runtime_error& e) {
-      ROS_ERROR("Could not open serial port %s: %s", device_.c_str(), e.what());
-      return 1;  //  exit
+      throw std::runtime_error("Could not open serial port :" 
+                               + device_ + " " + e.what());
     }
 
     ROS_INFO("Opened serial port %s", device_.c_str());
     gps.configUart1(baudrate_, uart_in_, uart_out_);
     gps.initialize(*serial, io_service, baudrate_, uart_in_, uart_out_);
   }
-  return 0;
 }
 
 void UbloxNode::pollMessages(const ros::TimerEvent& event) {
@@ -311,7 +304,7 @@ void UbloxNode::initDiagnostics() {
   updater->force_update();
 }
 
-void UbloxNode::configureUblox() {
+bool UbloxNode::configureUblox() {
   try {
     if (!gps.isInitialized()) {
       throw std::runtime_error("Failed to initialize.");
@@ -362,30 +355,26 @@ void UbloxNode::configureUblox() {
 
     configureGnss();
   } catch (std::exception& e) {
-    setup_ok_ = false;
     ROS_ERROR("Error configuring device: %s", e.what());
+    return false;
   }
+  return true;
 }
 
 
-int UbloxNode::initialize() {
-  setup_ok_ = true;
-
+void UbloxNode::initialize() {
   setParams();
   initDiagnostics();
+  initializeIo();
 
-  int io_result = initializeIo();
-  if(io_result != 0) return io_result; //TODO just throw exception w/ msg
-
-  configureUblox();
-
-  if (setup_ok_) {
+  if (configureUblox()) {
     ROS_INFO("U-Blox configured successfully.");
     // Subscribe to all U-Blox messages
     subscribeAll();
     
     ros::Timer poller; 
-    poller = nh->createTimer(ros::Duration(1.0), &UbloxNode::pollMessages, 
+    poller = nh->createTimer(ros::Duration(kPollDuration), 
+                             &UbloxNode::pollMessages, 
                              this);
     poller.start();
     ros::spin();
@@ -395,8 +384,6 @@ int UbloxNode::initialize() {
     gps.close();
     ROS_INFO("Closed connection to %s.", device_.c_str());
   }
-
-  return 0;
 }
 
 /** Ublox Version 6 **/

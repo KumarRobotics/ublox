@@ -169,13 +169,11 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   if (configured_) return;
 
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
-  // TODO: kSetBaudrateSleepMs --> Constant
   boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
   if (debug) {
     serial_port.get_option(current_baudrate);
     ROS_INFO("Set baudrate %u", current_baudrate.value());
   }
-  // TODO: uart_in &uart_out1 to Constants
   configured_ = configUart1(baudrate, uart_in, uart_out);
   if (configured_) return;
 }
@@ -263,7 +261,9 @@ bool Gps::disableUart(CfgPRT initialCfg) {
 
 bool Gps::configRtcm(std::vector<int> ids, unsigned int rate) {
   for(size_t i = 0; i < ids.size(); ++i) {
-    ROS_INFO("Setting RTCM %d Rate %u", ids[i], rate);
+    if(debug) {
+      ROS_INFO("Setting RTCM %d Rate %u", ids[i], rate);
+    }
     if(!setRate(ublox_msgs::Class::RTCM, (uint8_t)ids[i], rate)) {
       ROS_ERROR("Could not set RTCM %d to rate %u", ids[i], rate);
       return false;
