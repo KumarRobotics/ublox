@@ -38,7 +38,10 @@ namespace ublox_gps {
 class CallbackHandler {
  public:
   virtual void handle(ublox::Reader& reader) = 0;
-  virtual bool wait(const boost::posix_time::time_duration& timeout);
+  bool wait(const boost::posix_time::time_duration& timeout) {
+    boost::mutex::scoped_lock lock(mutex_);
+    return condition_.timed_wait(lock, timeout);
+  }
   boost::mutex mutex_;
   boost::condition_variable condition_;
 };
@@ -48,8 +51,31 @@ class CallbackHandler_ : public CallbackHandler {
  public:
   typedef boost::function<void(const T&)> Callback;
   CallbackHandler_(const Callback& func = Callback()) : func_(func) {}
-  virtual void handle(ublox::Reader& reader);
   virtual const T& get() { return message_; }
+
+  void handle(ublox::Reader& reader) {
+    boost::mutex::scoped_lock(mutex_);
+    try {
+      if (!reader.read<T>(message_)) {
+        ROS_ERROR("Decoder error for %u / %u (%d bytes)", 
+                  static_cast<unsigned int>(reader.classId()),
+                  static_cast<unsigned int>(reader.messageId()),
+                  reader.length());
+        return;
+      }
+    } catch (std::runtime_error& e) {
+      ROS_ERROR("Decoder error for %u / %u (%d bytes)", 
+                  static_cast<unsigned int>(reader.classId()),
+                  static_cast<unsigned int>(reader.messageId()),
+                  reader.length());
+      return;
+    }
+
+    if (func_) func_(message_);
+    condition_.notify_all();
+  }
+  
+
 
  private:
   Callback func_;

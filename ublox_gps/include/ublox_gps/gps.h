@@ -286,29 +286,6 @@ Callbacks::iterator Gps::subscribe(
                      boost::shared_ptr<CallbackHandler>(handler)));
 }
 
-template <typename T>
-void CallbackHandler_<T>::handle(ublox::Reader& reader) {
-  boost::mutex::scoped_lock(mutex_);
-  try {
-    if (!reader.read<T>(message_)) {
-      ROS_ERROR("Decoder error for %u / %u (%d bytes)", 
-                static_cast<unsigned int>(reader.classId()),
-                static_cast<unsigned int>(reader.messageId()),
-                reader.length());
-      return;
-    }
-  } catch (std::runtime_error& e) {
-    ROS_ERROR("Decoder error for %u / %u (%d bytes)", 
-                static_cast<unsigned int>(reader.classId()),
-                static_cast<unsigned int>(reader.messageId()),
-                reader.length());
-    return;
-  }
-
-  if (func_) func_(message_);
-  condition_.notify_all();
-}
-
 template <typename ConfigT>
 bool Gps::poll(ConfigT& message,
                const boost::posix_time::time_duration& timeout) {

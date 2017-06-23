@@ -331,9 +331,4 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
   size -= reader.pos() - data;
 }
 
-bool CallbackHandler::wait(const boost::posix_time::time_duration& timeout) {
-  boost::mutex::scoped_lock lock(mutex_);
-  return condition_.timed_wait(lock, timeout);
-}
-
 }  // namespace ublox_gps
