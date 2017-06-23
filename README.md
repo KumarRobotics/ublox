@@ -35,6 +35,29 @@ A sample launch file is provided in `ublox_gps.launch`. The two topics to which 
 
 # Version history
 
+* **1.0.0**:
+  - Added messages for firmware 8: NavPVT, RxmRAWX, RxmSFRBX.
+  - Modified ConfigGNSS and MonVER to include repeated blocks and added 
+    ConfigGNSS_Block (configures all GNSS at once) and MonVER_Extension 
+    (for MonVER_Char blocks).
+  - MonVER info is now published upon initialization.
+  - Fixed SBAS crashing issue (node crashed if device didn't have SBAS 
+    capabilities)
+  - Modified remaining messages to update to firmware 8
+  - Added UBloxNode abstract class which does all previous node functions which 
+    are the same for all firmware versions. Added subclasses which do functions
+    specific to a given firmware version (e.g. subscribing to NavPVT messages).
+  - Added a read lock to AsyncWorker
+  - Removed hard-coded values from GPS and Node classes specific to a certain 
+    device and changed them to configurable parameters. Modified example
+    launch file accordingly.
+  - Added example parameter yaml files and launch file to load parameters from
+    this file.
+  - Moved implementations of Callback functions into callback.h (from gps.h 
+    and gps.cpp)
+  - Updated formatting of some files per google style guide spec (e.g. 80 chars
+    per line).
+
 * **0.0.5**:
   - Reformat files under `ublox_gps`
 
