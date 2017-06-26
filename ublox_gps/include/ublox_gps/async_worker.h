@@ -165,6 +165,7 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
                                    std::size_t bytes_transfered) {
   ReadLock lock(read_mutex_);
   if (error) {
+    ROS_ERROR("Buffer read error");
     // do something
 
   } else if (bytes_transfered > 0) {
@@ -179,14 +180,8 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
       ROS_INFO("received %li bytes \n%s", bytes_transfered, oss.str().c_str());
     }
 
-    if (read_callback_) {
+    if (read_callback_)
       read_callback_(in_.data(), in_buffer_size_);
-      // in_buffer_size_ -= bytes_transfered;
-    }
-
-    // TODO: delete read bytes from input buffer
-    // std::copy(reader.pos(), reader.end(), data);
-    // size -= reader.pos() - data;
 
     read_condition_.notify_all();
   }

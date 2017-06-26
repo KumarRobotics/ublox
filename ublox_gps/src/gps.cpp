@@ -100,6 +100,7 @@ bool Gps::configUart1(unsigned int baudrate, int16_t inProtoMask,
   port.outProtoMask = outProtoMask;
 
   if (debug) {
+    ROS_INFO("Setting In/Out Protocol: %i / %i", inProtoMask, outProtoMask);
     ROS_INFO("Changing baudrate to %u", baudrate);
   }
   return configure(port);
@@ -297,7 +298,6 @@ void Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout) {
 
 void Gps::readCallback(unsigned char* data, std::size_t& size) {
   ublox::Reader reader(data, size);
-
   while (reader.search() != reader.end() && reader.found()) {
     if (debug >= 3) {
       std::ostringstream oss;
