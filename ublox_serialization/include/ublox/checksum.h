@@ -1,4 +1,4 @@
-//=================================================================================================
+//==============================================================================
 // Copyright (c) 2012, Johannes Meyer, TU Darmstadt
 // All rights reserved.
 
@@ -14,17 +14,17 @@
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
 // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//=================================================================================================
+//==============================================================================
 
 #ifndef UBLOX_MSGS_CHECKSUM_H
 #define UBLOX_MSGS_CHECKSUM_H
@@ -33,7 +33,10 @@
 
 namespace ublox {
 
-static inline void calculateChecksum(const uint8_t *data, uint32_t size, uint8_t &ck_a, uint8_t &ck_b) {
+static inline void calculateChecksum(const uint8_t *data, 
+                                     uint32_t size, 
+                                     uint8_t &ck_a, 
+                                     uint8_t &ck_b) {
   ck_a = 0; ck_b = 0;
   for(uint32_t i = 0; i < size; ++i)
   {
@@ -42,7 +45,9 @@ static inline void calculateChecksum(const uint8_t *data, uint32_t size, uint8_t
   }
 }
 
-static inline uint16_t calculateChecksum(const uint8_t *data, uint32_t size, uint16_t &checksum) {
+static inline uint16_t calculateChecksum(const uint8_t *data, 
+                                         uint32_t size, 
+                                         uint16_t &checksum) {
   uint8_t *byte = reinterpret_cast<uint8_t *>(&checksum);
   calculateChecksum(data, size, byte[0], byte[1]);
   return checksum;

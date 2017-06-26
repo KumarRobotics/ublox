@@ -7,13 +7,13 @@ uint8 svFlag          # Information Flags
 uint8 FLAG_URA_MASK = 15      # Figure of Merit (URA) range 0..15
 uint8 FLAG_HEALTHY = 16       # SV healthy flag
 uint8 FLAG_EPH_VAL = 32       # Ephemeris valid
-uint8 FLAG_ALM_VAL = 64       # Almanach valid
+uint8 FLAG_ALM_VAL = 64       # Almanac valid
 uint8 FLAG_NOT_AVAIL = 128    # SV not available
 
-int16 azi             # Azimuth
+int16 azim            # Azimuth
 int8 elev             # Elevation
 
-uint8 age             # Age of Almanach and Ephemeris
+uint8 age             # Age of Almanac and Ephemeris
 uint8 AGE_ALM_MASK = 15       # Age of ALM in days offset by 4
                               # i.e. the reference time may be in the future:
                               # ageOfAlm = (age & 0x0f) - 4

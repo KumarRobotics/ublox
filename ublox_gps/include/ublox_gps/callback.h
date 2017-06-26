@@ -1,4 +1,4 @@
-//=================================================================================================
+//==============================================================================
 // Copyright (c) 2012, Johannes Meyer, TU Darmstadt
 // All rights reserved.
 
@@ -13,23 +13,23 @@
 //       TU Darmstadt, nor the names of its contributors may be used to
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
 // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//=================================================================================================
+//==============================================================================
 
 #ifndef UBLOX_GPS_CALLBACK_H
 #define UBLOX_GPS_CALLBACK_H
 
+#include <ros/console.h>
 #include <ublox/serialization/ublox_msgs.h>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
@@ -39,7 +39,10 @@ namespace ublox_gps {
 class CallbackHandler {
  public:
   virtual void handle(ublox::Reader& reader) = 0;
-  virtual bool wait(const boost::posix_time::time_duration& timeout);
+  bool wait(const boost::posix_time::time_duration& timeout) {
+    boost::mutex::scoped_lock lock(mutex_);
+    return condition_.timed_wait(lock, timeout);
+  }
   boost::mutex mutex_;
   boost::condition_variable condition_;
 };
@@ -49,8 +52,31 @@ class CallbackHandler_ : public CallbackHandler {
  public:
   typedef boost::function<void(const T&)> Callback;
   CallbackHandler_(const Callback& func = Callback()) : func_(func) {}
-  virtual void handle(ublox::Reader& reader);
   virtual const T& get() { return message_; }
+
+  void handle(ublox::Reader& reader) {
+    boost::mutex::scoped_lock(mutex_);
+    try {
+      if (!reader.read<T>(message_)) {
+        ROS_ERROR("Decoder error for %u / %u (%d bytes)", 
+                  static_cast<unsigned int>(reader.classId()),
+                  static_cast<unsigned int>(reader.messageId()),
+                  reader.length());
+        return;
+      }
+    } catch (std::runtime_error& e) {
+      ROS_ERROR("Decoder error for %u / %u (%d bytes)", 
+                  static_cast<unsigned int>(reader.classId()),
+                  static_cast<unsigned int>(reader.messageId()),
+                  reader.length());
+      return;
+    }
+
+    if (func_) func_(message_);
+    condition_.notify_all();
+  }
+  
+
 
  private:
   Callback func_;
