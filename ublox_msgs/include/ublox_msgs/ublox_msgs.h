@@ -34,10 +34,12 @@
 #include <ublox_msgs/NavDOP.h>
 #include <ublox_msgs/NavPOSECEF.h>
 #include <ublox_msgs/NavPOSLLH.h>
+#include <ublox_msgs/NavRELPOSNED.h>
 #include <ublox_msgs/NavSBAS.h>
 #include <ublox_msgs/NavSOL.h>
 #include <ublox_msgs/NavPVT.h>
 #include <ublox_msgs/NavSTATUS.h>
+#include <ublox_msgs/NavSVIN.h>
 #include <ublox_msgs/NavSVINFO.h>
 #include <ublox_msgs/NavTIMEGPS.h>
 #include <ublox_msgs/NavTIMEUTC.h>
@@ -50,6 +52,7 @@
 #include <ublox_msgs/RxmRAW_SV.h>
 #include <ublox_msgs/RxmRAWX.h>
 #include <ublox_msgs/RxmRAWX_Meas.h>
+#include <ublox_msgs/RxmRTCM.h>
 #include <ublox_msgs/RxmSFRB.h>
 #include <ublox_msgs/RxmSFRBX.h>
 #include <ublox_msgs/RxmSVSI.h>
@@ -60,13 +63,15 @@
 
 #include <ublox_msgs/CfgANT.h>
 #include <ublox_msgs/CfgCFG.h>
+#include <ublox_msgs/CfgDGNSS.h>
+#include <ublox_msgs/CfgGNSS.h>
 #include <ublox_msgs/CfgMSG.h>
 #include <ublox_msgs/CfgNAV5.h>
 #include <ublox_msgs/CfgNAVX5.h>
 #include <ublox_msgs/CfgPRT.h>
 #include <ublox_msgs/CfgRATE.h>
 #include <ublox_msgs/CfgSBAS.h>
-#include <ublox_msgs/CfgGNSS.h>
+#include <ublox_msgs/CfgTMODE3.h>
 
 #include <ublox_msgs/MonVER.h>
 
@@ -106,11 +111,13 @@ namespace Message {
     static const uint8_t DOP = NavDOP::MESSAGE_ID;
     static const uint8_t POSECEF = NavPOSECEF::MESSAGE_ID;
     static const uint8_t POSLLH = NavPOSLLH::MESSAGE_ID;
+    static const uint8_t RELPOSNED = NavRELPOSNED::MESSAGE_ID;
     static const uint8_t SBAS = NavSBAS::MESSAGE_ID;
     static const uint8_t SOL = NavSOL::MESSAGE_ID;
     static const uint8_t PVT = NavPVT::MESSAGE_ID;
     static const uint8_t STATUS = NavSTATUS::MESSAGE_ID;
     static const uint8_t SVINFO = NavSVINFO::MESSAGE_ID;
+    static const uint8_t SVIN = NavSVIN::MESSAGE_ID;
     static const uint8_t TIMEGPS = NavTIMEGPS::MESSAGE_ID;
     static const uint8_t TIMEUTC = NavTIMEUTC::MESSAGE_ID;
     static const uint8_t VELECEF = NavVELECEF::MESSAGE_ID;
@@ -122,6 +129,7 @@ namespace Message {
     static const uint8_t EPH = RxmEPH::MESSAGE_ID;
     static const uint8_t RAW = RxmRAW::MESSAGE_ID;
     static const uint8_t RAWX = RxmRAWX::MESSAGE_ID;
+    static const uint8_t RTCM = RxmRTCM::MESSAGE_ID;
     static const uint8_t SFRB = RxmSFRB::MESSAGE_ID;
     static const uint8_t SFRBX = RxmSFRBX::MESSAGE_ID;
     static const uint8_t SVSI = RxmSVSI::MESSAGE_ID;
@@ -141,13 +149,15 @@ namespace Message {
   namespace CFG {
     static const uint8_t ANT   = CfgANT::MESSAGE_ID;
     static const uint8_t CFG   = CfgCFG::MESSAGE_ID;
+    static const uint8_t GNSS  = CfgGNSS::MESSAGE_ID;
+    static const uint8_t DGNSS  = CfgDGNSS::MESSAGE_ID;
     static const uint8_t MSG   = CfgMSG::MESSAGE_ID;
     static const uint8_t NAV5  = CfgNAV5::MESSAGE_ID;
     static const uint8_t NAVX5 = CfgNAVX5::MESSAGE_ID;
     static const uint8_t PRT   = CfgPRT::MESSAGE_ID;
     static const uint8_t RATE  = CfgRATE::MESSAGE_ID;
     static const uint8_t SBAS  = CfgSBAS::MESSAGE_ID;
-    static const uint8_t GNSS  = CfgGNSS::MESSAGE_ID;
+    static const uint8_t TMODE3  = CfgTMODE3::MESSAGE_ID;
   }
   
   namespace MON {

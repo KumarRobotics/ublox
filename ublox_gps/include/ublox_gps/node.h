@@ -1,20 +1,57 @@
+//==============================================================================
+// Copyright (c) 2012, Johannes Meyer, TU Darmstadt
+// All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the Flight Systems and Automatic Control group,
+//       TU Darmstadt, nor the names of its contributors may be used to
+//       endorse or promote products derived from this software without
+//       specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//==============================================================================
+
 #ifndef UBLOX_GPS_NODE_H
 #define UBLOX_GPS_NODE_H
 
+// STL
 #include <vector>
-
+#include <set>
+// Boost
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/serial_port.hpp>
+#include <boost/regex.hpp>
+#include <boost/algorithm/string.hpp>
+// ROS includes
 #include <ros/ros.h>
-#include <sensor_msgs/NavSatFix.h>
+#include <ros/serialization.h>
+#include <diagnostic_updater/diagnostic_updater.h>
+#include <diagnostic_updater/publisher.h>
+// ROS messages
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
-
+#include <geometry_msgs/Vector3Stamped.h>
+#include <sensor_msgs/NavSatFix.h>
+// Other U-Blox package includes
+#include <ublox_msgs/ublox_msgs.h>
+// Ublox GPS includes
 #include <ublox_gps/gps.h>
-#include <ublox_msgs/NavPOSLLH.h>
-#include <ublox_msgs/NavVELNED.h>
-#include <ublox_msgs/NavPVT.h>
-#include <ublox_msgs/NavSTATUS.h>
-#include <ublox_msgs/NavSOL.h>
-#include <ublox_msgs/CfgGNSS_Block.h>
-#include <ublox_msgs/CfgPRT.h>
+#include <ublox_gps/utils.h>
 
 namespace ublox_node {
 /**
@@ -27,8 +64,36 @@ class UbloxNode {
   /**
    * @brief Set the node handle parameter.
    */ 
-  void setNh(boost::shared_ptr<ros::NodeHandle> _nh) {
-    nh = _nh;
+  void setNh(boost::shared_ptr<ros::NodeHandle> nh) {
+    nh_ = nh;
+  }
+
+  void setProtocolVersion(float protocol_version) {
+    protocol_version_ = protocol_version;
+  }
+
+  float getProtocolVersion() {
+    return protocol_version_;
+  }
+
+  void setProductCategory(std::string product_category) {
+    product_category_ = product_category;
+  }
+
+  /**
+   * Whether or not this device is a High Precision GNSS.
+   */
+  bool isHighPrecision() {
+    return product_category_.compare("HPG") == 0;
+  }
+
+  /**
+   * @gnss The string representing the GNSS. Refer MonVER message protocol.
+   * i.e. GPS, GLO, GAL, BDS, QZSS, SBAS, IMES
+   * @return true if the device supports the given GNSS
+   */
+  bool supportsGnss(std::string gnss) {
+    return supported_.count(gnss) > 0;
   }
 
   /**
@@ -40,39 +105,57 @@ class UbloxNode {
   template <typename MessageT>
   void publish(const MessageT& m, const std::string& topic);
 
-  // Asynchronous IO objects
-  boost::asio::io_service io_service;
-  boost::shared_ptr<boost::asio::serial_port> serial_handle;
-  boost::shared_ptr<boost::asio::ip::tcp::socket> tcp_handle;
-
+ protected:
   // ROS objects
-  boost::shared_ptr<ros::NodeHandle> nh;
-  boost::shared_ptr<diagnostic_updater::Updater> updater;
-  boost::shared_ptr<diagnostic_updater::TopicDiagnostic> freq_diag;
+  boost::shared_ptr<ros::NodeHandle> nh_;
+  boost::shared_ptr<diagnostic_updater::Updater> updater_;
+  boost::shared_ptr<diagnostic_updater::TopicDiagnostic> freq_diag_;
 
-  ublox_gps::Gps gps;
+  ublox_gps::Gps gps_;
 
-  // Variables set from parameter server
-  std::map<std::string, bool> enabled;
+  /* Variables set from parameter server */
+  // Whether the message subscribers are enabled
+  std::map<std::string, bool> enabled_;
   std::string frame_id_, device_, dynamic_model_, fix_mode_;
   // Set from dynamic model & fix mode strings
   uint8_t dmodel, fmode;
   // UART in out protocol
   int baudrate_, uart_in_, uart_out_; 
   int rate_, meas_rate_, nav_rate_, rtcm_rate_;
+  // Settings for High Precision GNSS
+  int tmode3_, dgnss_mode_;
+  // Fixed mode settings
+  bool lla_flag_;
+  std::vector<float> arp_position_;
+  std::vector<float> arp_position_hp_;
+  float fixed_pos_acc_;
+  // Survey in settings
+  int sv_in_min_dur_;
+  float sv_in_acc_lim_;
   std::vector<int> rtcm_ids_;
   bool enable_gps_, enable_sbas_, enable_galileo_, enable_beidou_, enable_imes_; 
   bool enable_qzss_, enable_glonass_, enable_ppp_;
-  int dr_limit_, qzss_sig_cfg_;
+  int qzss_sig_cfg_, sbas_usage_, max_sbas_, dr_limit_;
   int fix_status_service_;
-  int sbas_usage_, max_sbas_;
- 
- protected:
+
+  // From Mon VER
+  float protocol_version_;
+  // Product Category, e.g. SPG, HPG
+  std::string product_category_;
+  // Which GNSS are supported by the device
+  std::set<std::string> supported_;
+
   /**
    * @brief Initialize the U-blox node. Configure the U-blox and subscribe to 
    * messages.
    */
   void initialize();
+
+  /**
+   * Process the MonVer message. Find the protocol version, hardware type and 
+   * supported GNSS.
+   */
+  void processMonVer(ublox_msgs::MonVER monVer);
 
   /**
    * @brief Handle to send fix status to ROS diagnostics.
@@ -92,6 +175,10 @@ class UbloxNode {
   virtual void subscribeVersion() = 0; 
 
  private:
+  // Asynchronous IO objects
+  boost::asio::io_service io_service_;
+  boost::shared_ptr<boost::asio::serial_port> serial_handle_;
+  boost::shared_ptr<boost::asio::ip::tcp::socket> tcp_handle_;
   // how often (in seconds) to call poll messages
   const static double kPollDuration = 1.0;
   // Constants used for diagnostic frequency updater
@@ -161,6 +248,7 @@ class UbloxNode6 : public UbloxNode {
    * messages.
    */
   void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat);
+
   /**
    * @brief Prints a warning, GNSS configuration not available in this version.
    */
@@ -236,7 +324,8 @@ class UbloxNode8 : public UbloxNode7Plus {
    */
   void subscribeVersion();
   /**
-   * @brief Configures all GNSS systems in 1 message based on ROS params.
+   * @brief Configures all GNSS systems in 1 message based on ROS params and
+   * configure DGNSS.
    */
   void configureGnss();
 };

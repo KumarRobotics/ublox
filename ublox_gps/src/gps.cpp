@@ -28,12 +28,6 @@
 //==============================================================================
 
 #include <ublox_gps/gps.h>
-#include <ublox_msgs/CfgNAV5.h>
-#include <ublox_msgs/CfgNAVX5.h>
-#include <ublox_msgs/CfgPRT.h>
-#include <ublox_msgs/CfgRATE.h>
-#include <locale>
-#include <stdexcept>
 
 namespace ublox_gps {
 
@@ -134,7 +128,8 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   boost::asio::serial_port_base::baud_rate current_baudrate;
   // TODO
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(4800));
-  boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
+  boost::this_thread::sleep(
+      boost::posix_time::milliseconds(kSetBaudrateSleepMs));
   if (debug) {
     serial_port.get_option(current_baudrate);
     ROS_INFO("Set baudrate %u", current_baudrate.value());
@@ -143,7 +138,8 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   if (configured_) return;
 
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(9600));
-  boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
+  boost::this_thread::sleep(
+      boost::posix_time::milliseconds(kSetBaudrateSleepMs));
   if (debug) {
     serial_port.get_option(current_baudrate);
     ROS_INFO("Set baudrate %u", current_baudrate.value());
@@ -152,7 +148,8 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   if (configured_) return;
 
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(19200));
-  boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
+  boost::this_thread::sleep(
+      boost::posix_time::milliseconds(kSetBaudrateSleepMs));
   if (debug) {
     serial_port.get_option(current_baudrate);
     ROS_INFO("Set baudrate %u", current_baudrate.value());
@@ -161,7 +158,8 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   if (configured_) return;
 
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(38400));
-  boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
+  boost::this_thread::sleep(
+      boost::posix_time::milliseconds(kSetBaudrateSleepMs));
   if (debug) {
     serial_port.get_option(current_baudrate);
     ROS_INFO("Set baudrate %u", current_baudrate.value());
@@ -170,7 +168,8 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   if (configured_) return;
 
   serial_port.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
-  boost::this_thread::sleep(boost::posix_time::milliseconds(kSetBaudrateSleepMs));
+  boost::this_thread::sleep(
+      boost::posix_time::milliseconds(kSetBaudrateSleepMs));
   if (debug) {
     serial_port.get_option(current_baudrate);
     ROS_INFO("Set baudrate %u", current_baudrate.value());
@@ -271,6 +270,77 @@ bool Gps::configRtcm(std::vector<int> ids, unsigned int rate) {
     }
   }
   return true;
+}
+
+bool Gps::disableTmode3() {
+  if(debug) {
+    ROS_INFO("Disabling TMODE3");
+  }
+
+  CfgTMODE3 tmode3;
+  tmode3.flags = tmode3.FLAGS_MODE_DISABLED & tmode3.FLAGS_MODE_MASK;
+  return configure(tmode3);
+}
+
+bool Gps::configTmode3Fixed(bool lla_flag,
+                            std::vector<float> arp_position, 
+                            std::vector<float> arp_position_hp,
+                            float fixed_pos_acc) {
+  if(arp_position.size() != 3 || arp_position_hp.size() != 3) {
+    ROS_ERROR("Configuring TMODE3 to Fixed: size of position & arp_position_hp args must be 3");
+    return false;
+  }
+
+  if(debug) {
+    ROS_INFO("Configuring TMODE3 to Fixed");
+  }
+
+  CfgTMODE3 tmode3;
+  tmode3.flags = tmode3.FLAGS_MODE_FIXED & tmode3.FLAGS_MODE_MASK;
+  tmode3.flags |= lla_flag & tmode3.FLAGS_LLA;
+  // Set position
+  if(lla_flag) {
+    // Convert from deg to deg / 1e-7
+    tmode3.ecefXOrLat = (int)round(arp_position[0] * 1e7);
+    tmode3.ecefYOrLon = (int)round(arp_position[1] * 1e7);
+    tmode3.ecefZOrAlt = (int)round(arp_position[2] * 1e7);
+    tmode3.ecefXOrLatHP = (int)round(arp_position_hp[0] * 1e7);
+    tmode3.ecefYOrLonHP = (int)round(arp_position_hp[1] * 1e7);
+    tmode3.ecefZOrAltHP = (int)round(arp_position_hp[2] * 1e7);
+  } else {
+    // Convert from m to cm
+    tmode3.ecefXOrLat = (int)round(arp_position[0] * 1e2);
+    tmode3.ecefYOrLon = (int)round(arp_position[1] * 1e2);
+    tmode3.ecefZOrAlt = (int)round(arp_position[2] * 1e2);
+    tmode3.ecefXOrLatHP = (int)round(arp_position_hp[0] * 1e2);
+    tmode3.ecefYOrLonHP = (int)round(arp_position_hp[1] * 1e2);
+    tmode3.ecefZOrAltHP = (int)round(arp_position_hp[2] * 1e2);
+  }
+  // Convert from m to [0.1 mm]
+  tmode3.fixedPosAcc = (int)round(fixed_pos_acc * 1e4);
+  return configure(tmode3);
+}
+
+bool Gps::configTmode3SurveyIn(unsigned int svinMinDur, 
+                               float svinAccLimit) {
+  CfgTMODE3 tmode3;
+  if(debug) {
+    ROS_INFO("Setting TMODE3 to Survey In");
+  }
+  tmode3.flags = tmode3.FLAGS_MODE_SURVEY_IN & tmode3.FLAGS_MODE_MASK;
+  tmode3.svinMinDur = svinMinDur;
+  // Convert from m to [0.1 mm]
+  tmode3.svinAccLimit = (int)round(svinAccLimit * 1e4);
+  return configure(tmode3);
+}
+
+bool Gps::configDgnss(uint8_t mode) {
+  CfgDGNSS cfg;
+  if(debug) {
+    ROS_INFO("Setting DGNSS mode to %u", mode);
+  }
+  cfg.dgnssMode = mode;
+  return configure(cfg);
 }
 
 bool Gps::poll(uint8_t class_id, uint8_t message_id,
