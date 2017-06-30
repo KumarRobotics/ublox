@@ -68,14 +68,24 @@ class UbloxNode {
     nh_ = nh;
   }
 
+  /**
+   * @brief Set the protocol version from the device information.
+   */
   void setProtocolVersion(float protocol_version) {
     protocol_version_ = protocol_version;
   }
 
+  /**
+   * @brief Get the protocol version of the device.
+   */
   float getProtocolVersion() {
     return protocol_version_;
   }
 
+  /**
+   * @brief Set product category (e.g. SPG, HPG, ADR, FTS, etc.) from the 
+   * device information.
+   */
   void setProductCategory(std::string product_category) {
     product_category_ = product_category;
   }
@@ -106,6 +116,8 @@ class UbloxNode {
   void publish(const MessageT& m, const std::string& topic);
 
  protected:
+  // Current mode of U-Blox
+  enum {INIT, FIXED, SURVEY_IN, TIME} mode_;
   // ROS objects
   boost::shared_ptr<ros::NodeHandle> nh_;
   boost::shared_ptr<diagnostic_updater::Updater> updater_;
@@ -328,6 +340,13 @@ class UbloxNode8 : public UbloxNode7Plus {
    * configure DGNSS.
    */
   void configureGnss();
+  /**
+   * @brief Only for High Precision GNSS Devices. Publishes received Nav SVIN
+   * messages. When the survey in finishes,  it changes the measurement & 
+   * navigation rate to the user configured values and enables the user
+   * configured RTCM messages.
+   */
+  void publishNavSvin(ublox_msgs::NavSVIN msg);
 };
 
 }

@@ -388,9 +388,6 @@ bool UbloxNode::configureUblox() {
          << "ms and navigation rate to " << nav_rate_;
       throw std::runtime_error(ss.str());
     }
-    if(!gps_.configRtcm(rtcm_ids_, rtcm_rate_)) {
-      throw std::runtime_error("Failed to set RTCM rates");
-    }
     configureGnss();
     // If device doesn't have SBAS, will receive NACK (causes exception)
     if(supportsGnss("SBAS")) {
@@ -424,10 +421,28 @@ bool UbloxNode::configureUblox() {
       } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_FIXED) {
         if(!gps_.configTmode3Fixed(lla_flag_, arp_position_, arp_position_hp_, 
                                    fixed_pos_acc_))
-          throw std::runtime_error("Failed to set fixed TMODE3.");
-      } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
+          throw std::runtime_error("Failed to set TMODE3 to fixed.");
+        if(!gps_.configRtcm(rtcm_ids_, rtcm_rate_)) {
+          throw std::runtime_error("Failed to set RTCM rates");
+      }
+    } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
+        mode_ = SURVEY_IN;
+        uint16_t meas_rate = meas_rate_;
+        if(meas_rate > 1000) { 
+          // set measurement rate to at least 1 Hz
+          meas_rate = 1000;
+        } else if(1000 % meas_rate != 0) {
+          // If measurement period isn't a factor of 1000, set to 4 Hz
+          meas_rate = 50;
+        }
+        ros::Duration(0.5).sleep();
+        // set meas rate and set nav Rate to 1 Hz during survey in
+        gps_.configRate(meas_rate, (int) 1000 / meas_rate);
+        // First disable, then set to survey in
+        if(!gps_.disableTmode3())
+          throw std::runtime_error("Failed to disable TMODE3 before setting to survey-in.");
         if(!gps_.configTmode3SurveyIn(sv_in_min_dur_, sv_in_acc_lim_))
-          throw std::runtime_error("Failed to set survey-in TMODE3.");
+          throw std::runtime_error("Failed to set TMODE3 to survey-in.");
       }
     }
   } catch (std::exception& e) {
@@ -765,7 +780,6 @@ void UbloxNode7::configureGnss() {
                              ((enable_glonass_) ? "enable" : "disable") +
                              " GLONASS.");
   }
-  ROS_WARN("ublox_version < 8, ignoring BeiDou Settings");
 }
 
 void UbloxNode7::subscribeVersion() {
@@ -788,7 +802,7 @@ void UbloxNode7::subscribeVersion() {
   param_nh.param("nav_pvt", enabled_["nav_pvt"], true);
   if (enabled_["nav_pvt"])
     gps_.subscribe<ublox_msgs::NavPVT>(boost::bind(
-        &UbloxNode7::publishNavPVT, this, _1), 1);
+        &UbloxNode7Plus::publishNavPVT, this, _1), 1);
 }
 
 /** Ublox Version 8 **/
@@ -893,13 +907,14 @@ void UbloxNode8::subscribeVersion() {
 
   // Subscribe to RawX messages
   param_nh.param("rxm_raw", enabled_["rxm_raw"],
-               enabled_["all"] || enabled_["rxm"]);
+                 enabled_["all"] || enabled_["rxm"]);
   if (enabled_["rxm_raw"])
     gps_.subscribe<ublox_msgs::RxmRAWX>(boost::bind(
         &UbloxNode::publish<ublox_msgs::RxmRAWX>, this, _1, "rxmraw"), 1);
 
   // Subscribe to RTCM messages
-  param_nh.param("rxm_rtcm", enabled_["rxm_rtcm"], enabled_["rxm"]);
+  param_nh.param("rxm_rtcm", enabled_["rxm_rtcm"], 
+                 enabled_["all"] || enabled_["rxm"]);
   if (enabled_["rxm_rtcm"])
     gps_.subscribe<ublox_msgs::RxmRTCM>(boost::bind(
         &UbloxNode::publish<ublox_msgs::RxmRTCM>, this, _1, "rxmrtcm"), 1);
@@ -915,7 +930,7 @@ void UbloxNode8::subscribeVersion() {
   param_nh.param("nav_pvt", enabled_["nav_pvt"], true);
   if (enabled_["nav_pvt"])
     gps_.subscribe<ublox_msgs::NavPVT>(boost::bind(
-        &UbloxNode7::publishNavPVT, this, _1), 1);
+        &UbloxNode7Plus::publishNavPVT, this, _1), 1);
 
   // Subscribe to Nav Relative Position NED, High Precision GNSS devices only
   param_nh.param("nav_relposned", enabled_["nav_relposned"], isHighPrecision());
@@ -927,9 +942,28 @@ void UbloxNode8::subscribeVersion() {
   // Subscribe to Nav Survey In, High Precision GNSS devices only
   param_nh.param("nav_svin", enabled_["nav_svin"], isHighPrecision());
   if (enabled_["nav_svin"])
-    gps_.subscribe<ublox_msgs::NavSVIN>(boost::bind(
-        &UbloxNode::publish<ublox_msgs::NavSVIN>, this, _1, "navsvin"), 1);
+     gps_.subscribe<ublox_msgs::NavSVIN>(boost::bind(
+        &UbloxNode8::publishNavSvin, this, _1), 1);
+}
 
+void UbloxNode8::publishNavSvin(ublox_msgs::NavSVIN m) {
+  static ros::Publisher publisher =
+      nh_->advertise<ublox_msgs::NavSVIN>("navsvin", kROSQueueSize);
+  publisher.publish(m);
+
+  if(!m.active && m.valid && mode_ == SURVEY_IN) {
+    mode_ = TIME; // switch to time mode
+
+    // Set the Measurement & nav rate
+    if(!gps_.configRate(meas_rate_, nav_rate_)) {
+      ROS_ERROR("Failed to set measurement rate to %d ms %s %d", meas_rate_, 
+                "navigation rate to ", nav_rate_);
+    }
+    // Enable the RTCM out messages
+    if(!gps_.configRtcm(rtcm_ids_, rtcm_rate_)) {
+      ROS_ERROR("Failed to configure RTCM IDs");
+    }
+  }
 }
 
 int main(int argc, char** argv) {
@@ -946,7 +980,6 @@ int main(int argc, char** argv) {
   } else if(ublox_version == 7){
     UbloxNode7 node(nh);
   } else {
-    ROS_INFO("U-Blox Version: %d", ublox_version);
     UbloxNode8 node(nh);
   }
   
