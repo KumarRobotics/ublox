@@ -117,7 +117,7 @@ class Gps {
    * @param rate the send rate
    * @return true on ACK, false on other conditions.
    */
-  bool configRtcm(std::vector<int> ids, unsigned int rate);
+  bool configRtcm(std::vector<int> ids, uint8_t rate);
 
   /**
    * @brief Set the TMODE3 settings to fixed at the given antenna reference
@@ -177,7 +177,7 @@ class Gps {
    * @param rate the updated rate in Hz
    * @return true on ACK, false on other conditions.
    */
-  bool setRate(uint8_t class_id, uint8_t message_id, unsigned int rate);
+  bool setRate(uint8_t class_id, uint8_t message_id, uint8_t rate);
 
   /**
    * @brief Set the device dynamic model.
@@ -263,8 +263,12 @@ class Gps {
   /**
    * @brief Wait for an acknowledge message until the timeout
    * @param timeout maximum time to wait in seconds
+   * @param class_id the expected class ID of the ACK
+   * @param msg_id the expected message ID of the ACK
+   * @return true if expected ACK received, false otherwise
    */
-  void waitForAcknowledge(const boost::posix_time::time_duration& timeout);
+  bool waitForAcknowledge(const boost::posix_time::time_duration& timeout, 
+                          uint8_t class_id, uint8_t msg_id);
 
  private:
   void readCallback(unsigned char* data, std::size_t& size);
@@ -273,6 +277,8 @@ class Gps {
   bool configured_;
   // TODO: this variable is not thread safe :'(
   enum { WAIT, ACK, NACK } acknowledge_; 
+  uint8_t acknowledge_class_id_;
+  uint8_t acknowledge_msg_id_;
   unsigned int baudrate_;
   uint16_t uart_in_;
   uint16_t uart_out_;
@@ -371,14 +377,17 @@ bool Gps::configure(const ConfigT& message, bool wait) {
 
   std::vector<unsigned char> out(kWriterSize);
   ublox::Writer writer(out.data(), out.size());
-  if (!writer.write(message))
+  if (!writer.write(message)) {
+    ROS_ERROR("Failed to encode config message");
     return false;
+  }
   worker_->send(out.data(), writer.end() - out.data());
 
   if (!wait) return true;
 
-  waitForAcknowledge(default_timeout_);
-  return (acknowledge_ == ACK);
+  return waitForAcknowledge(default_timeout_, 
+                            message.CLASS_ID,
+                            message.MESSAGE_ID);
 }
 
 }  // namespace ublox_gps

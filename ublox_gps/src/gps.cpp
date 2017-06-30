@@ -183,7 +183,7 @@ void Gps::close() {
   configured_ = false;
 }
 
-bool Gps::setRate(uint8_t class_id, uint8_t message_id, unsigned int rate) {
+bool Gps::setRate(uint8_t class_id, uint8_t message_id, uint8_t rate) {
   ublox_msgs::CfgMSG msg;
   msg.msgClass = class_id;
   msg.msgID = message_id;
@@ -228,6 +228,10 @@ bool Gps::enableSBAS(bool enabled, uint8_t usage, uint8_t max_sbas) {
 }
 
 bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
+  if(debug) {
+    ROS_INFO("Configuring measurement rate to %u and nav rate to %u", meas_rate, 
+             nav_rate);
+  }
   CfgRATE rate;
   rate.measRate = meas_rate;
   rate.navRate = nav_rate;  //  must be fixed at 1 for ublox 5 and 6
@@ -259,7 +263,7 @@ bool Gps::disableUart(CfgPRT initialCfg) {
   return configure(port);
 }
 
-bool Gps::configRtcm(std::vector<int> ids, unsigned int rate) {
+bool Gps::configRtcm(std::vector<int> ids, uint8_t rate) {
   for(size_t i = 0; i < ids.size(); ++i) {
     if(debug) {
       ROS_INFO("Setting RTCM %d Rate %u", ids[i], rate);
@@ -287,7 +291,8 @@ bool Gps::configTmode3Fixed(bool lla_flag,
                             std::vector<float> arp_position_hp,
                             float fixed_pos_acc) {
   if(arp_position.size() != 3 || arp_position_hp.size() != 3) {
-    ROS_ERROR("Configuring TMODE3 to Fixed: size of position & arp_position_hp args must be 3");
+    ROS_ERROR("Configuring TMODE3 to Fixed: size of position %s",
+              "& arp_position_hp args must be 3");
     return false;
   }
 
@@ -356,14 +361,19 @@ bool Gps::poll(uint8_t class_id, uint8_t message_id,
   return true;
 }
 
-void Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout) {
+bool Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout, 
+                             uint8_t class_id, uint8_t msg_id) {
   boost::posix_time::ptime wait_until(
       boost::posix_time::second_clock::local_time() + timeout);
 
-  while (acknowledge_ == WAIT &&
-         boost::posix_time::second_clock::local_time() < wait_until) {
+  while (acknowledge_ == WAIT || acknowledge_class_id_ != class_id 
+         || acknowledge_msg_id_ != msg_id
+         && boost::posix_time::second_clock::local_time() < wait_until ) {
     worker_->wait(timeout);
   }
+  return acknowledge_ == ACK 
+         && acknowledge_class_id_ == class_id 
+         && acknowledge_msg_id_ == msg_id;
 }
 
 void Gps::readCallback(unsigned char* data, std::size_t& size) {
@@ -374,7 +384,7 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
       for (ublox::Reader::iterator it = reader.pos();
            it != reader.pos() + reader.length() + 8; ++it)
         oss << std::hex << static_cast<unsigned int>(*it) << " ";
-      ROS_INFO("received ublox %d bytes\n%s", reader.length() + 8, 
+      ROS_INFO("U-blox: received %d bytes\n%s", reader.length() + 8, 
                oss.str().c_str());
     }
 
@@ -390,9 +400,13 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
       const uint8_t * data = reader.data();
       acknowledge_ = (reader.messageId() == ublox_msgs::Message::ACK::NACK) 
                      ? NACK : ACK;
-      if (debug >= 2)
-        ROS_INFO("received ublox %s: %x / %x", 
-                 (acknowledge_ == ACK ? "ACK" : "NACK"), data[0], data[1]);
+      acknowledge_class_id_ = data[0];
+      acknowledge_msg_id_ = data[1];
+      if (acknowledge_ == ACK && debug >= 2)
+        ROS_INFO("U-blox: received ACK: %x / %x", data[0], data[1]);
+      else if(acknowledge_ == NACK) {
+        ROS_ERROR("U-blox: received NACK: %x / %x", data[0], data[1]);
+      }
     }
   }
 
