@@ -31,6 +31,10 @@
 
 using namespace ublox_gps;
 using namespace ublox_node;
+const char * const UbloxNode::mode_names[] = {"Init", 
+                                              "Fixed", 
+                                              "Survey-In", 
+                                              "Time"};
 
 int UbloxNode::setParams() {
   int qzss_sig_cfg_default = 
@@ -291,7 +295,7 @@ void UbloxNode::initDiagnostics() {
   const double target_freq = rate_;  //  actual update frequency
   double min_freq = target_freq;
   double max_freq = target_freq;
-  double timeStampStatusMax = meas_rate_ * 1e-3 * 0.05; // TODO
+  double timeStampStatusMax = meas_rate_ * 1e-3 * 0.05;
   diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
                                                       kTolerance, kWindow);
   diagnostic_updater::TimeStampStatusParam time_param(kTimeStampStatusMin,
@@ -517,26 +521,32 @@ void UbloxNode6::subscribeVersion() {
 
 void UbloxNode6::fixDiagnostic(
     diagnostic_updater::DiagnosticStatusWrapper& stat) {
-  //  check the last pos message, convert to diagnostic
-  if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_NO_FIX) {
-    stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
-    stat.message = "No fix";
-  } else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_DEAD_RECKONING_ONLY) {
+  // Set the diagnostic level based on the fix status
+  if (last_nav_sol_.gpsFix == ublox_msgs::NavSOL::GPS_DEAD_RECKONING_ONLY) {
     stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
     stat.message = "Dead reckoning only";
-  } else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_2D_FIX) {
+  } else if (last_nav_sol_.gpsFix == ublox_msgs::NavSOL::GPS_2D_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "2D fix";
-  } else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_3D_FIX) {
+  } else if (last_nav_sol_.gpsFix == ublox_msgs::NavSOL::GPS_3D_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "3D fix";
-  } else if (status.gpsFix ==
-             ublox_msgs::NavSTATUS::GPS_GPS_DEAD_RECKONING_COMBINED) {
+  } else if (last_nav_sol_.gpsFix ==
+             ublox_msgs::NavSOL::GPS_GPS_DEAD_RECKONING_COMBINED) {
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "GPS and dead reckoning combined";
-  } else if (status.gpsFix == ublox_msgs::NavSTATUS::GPS_TIME_ONLY_FIX) {
+  } else if (last_nav_sol_.gpsFix == ublox_msgs::NavSOL::GPS_TIME_ONLY_FIX) {
     stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
     stat.message = "Time fix only";
+  } 
+  // If fix is not ok (within DOP & Accuracy Masks), raise the diagnostic level
+  if(!last_nav_sol_.flags & ublox_msgs::NavSOL::FLAGS_GPS_FIX_OK) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+  } 
+  // Raise diagnostic level to error if no fix
+  if (last_nav_sol_.gpsFix == ublox_msgs::NavSOL::GPS_NO_FIX) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+    stat.message = "No fix";
   }
 
   //  append last fix position
@@ -547,7 +557,7 @@ void UbloxNode6::fixDiagnostic(
   stat.add("hMSL", last_nav_pos_.hMSL);
   stat.add("hAcc", last_nav_pos_.hAcc);
   stat.add("vAcc", last_nav_pos_.vAcc);
-  stat.add("numSV", num_svs_used_);
+  stat.add("numSV", last_nav_sol_.numSV);
 }
 
 void UbloxNode6::publishNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
@@ -560,35 +570,35 @@ void UbloxNode6::publishNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
       nh_->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
   if (m.iTOW == last_nav_vel_.iTOW) {
     //  use last timestamp
-    fix.header.stamp = velocity.header.stamp;
+    fix_.header.stamp = velocity_.header.stamp;
   } else {
     //  new timestamp
-    fix.header.stamp = ros::Time::now();
+    fix_.header.stamp = ros::Time::now();
   }
-  fix.header.frame_id = frame_id_;
-  fix.latitude = m.lat * 1e-7;
-  fix.longitude = m.lon * 1e-7;
-  fix.altitude = m.height * 1e-3;
-  if (status.gpsFix >= status.GPS_2D_FIX)
-    fix.status.status = fix.status.STATUS_FIX;
+  fix_.header.frame_id = frame_id_;
+  fix_.latitude = m.lat * 1e-7;
+  fix_.longitude = m.lon * 1e-7;
+  fix_.altitude = m.height * 1e-3;
+  if (last_nav_sol_.gpsFix >= last_nav_sol_.GPS_2D_FIX)
+    fix_.status.status = fix_.status.STATUS_FIX;
   else
-    fix.status.status = fix.status.STATUS_NO_FIX;
+    fix_.status.status = fix_.status.STATUS_NO_FIX;
 
   // Convert from mm to m
   const double varH = pow(m.hAcc / 1000.0, 2);
   const double varV = pow(m.vAcc / 1000.0, 2);
 
-  fix.position_covariance[0] = varH;
-  fix.position_covariance[4] = varH;
-  fix.position_covariance[8] = varV;
-  fix.position_covariance_type =
+  fix_.position_covariance[0] = varH;
+  fix_.position_covariance[4] = varH;
+  fix_.position_covariance[8] = varV;
+  fix_.position_covariance_type =
       sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
 
-  fix.status.service = fix.status.SERVICE_GPS;
-  fixPublisher.publish(fix);
+  fix_.status.service = fix_.status.SERVICE_GPS;
+  fixPublisher.publish(fix_);
   last_nav_pos_ = m;
   //  update diagnostics
-  freq_diag_->tick(fix.header.stamp);
+  freq_diag_->tick(fix_.header.stamp);
   updater_->update();
 }
 
@@ -603,35 +613,35 @@ void UbloxNode6::publishNavVelNed(const ublox_msgs::NavVELNED& m) {
                                                                 kROSQueueSize);
   if (m.iTOW == last_nav_pos_.iTOW) {
     //  use same time as las navposllh message
-    velocity.header.stamp = fix.header.stamp;
+    velocity_.header.stamp = fix_.header.stamp;
   } else {
     //  create a new timestamp
-    velocity.header.stamp = ros::Time::now();
+    velocity_.header.stamp = ros::Time::now();
   }
-  velocity.header.frame_id = frame_id_;
+  velocity_.header.frame_id = frame_id_;
 
   //  convert to XYZ linear velocity
-  velocity.twist.twist.linear.x = m.velE / 100.0;
-  velocity.twist.twist.linear.y = m.velN / 100.0;
-  velocity.twist.twist.linear.z = -m.velD / 100.0;
+  velocity_.twist.twist.linear.x = m.velE / 100.0;
+  velocity_.twist.twist.linear.y = m.velN / 100.0;
+  velocity_.twist.twist.linear.z = -m.velD / 100.0;
 
   const double varSpeed = pow(m.sAcc / 100.0, 2);
 
   const int cols = 6;
-  velocity.twist.covariance[cols * 0 + 0] = varSpeed;
-  velocity.twist.covariance[cols * 1 + 1] = varSpeed;
-  velocity.twist.covariance[cols * 2 + 2] = varSpeed;
-  velocity.twist.covariance[cols * 3 + 3] = -1;  //  angular rate unsupported
+  velocity_.twist.covariance[cols * 0 + 0] = varSpeed;
+  velocity_.twist.covariance[cols * 1 + 1] = varSpeed;
+  velocity_.twist.covariance[cols * 2 + 2] = varSpeed;
+  velocity_.twist.covariance[cols * 3 + 3] = -1;  //  angular rate unsupported
 
-  velocityPublisher.publish(velocity);
+  velocityPublisher.publish(velocity_);
   last_nav_vel_ = m;
 }
 
 void UbloxNode6::publishNavSol(const ublox_msgs::NavSOL& m) {
   static ros::Publisher publisher =
       nh_->advertise<ublox_msgs::NavSOL>("navsol", kROSQueueSize);
-  num_svs_used_ = m.numSV;  //  number of satellites used
   publisher.publish(m);
+  last_nav_sol_ = m;
 }
 
 /** Ublox Firmware Version >=7 **/
@@ -981,6 +991,20 @@ void UbloxNode8::publishNavSvIn(ublox_msgs::NavSVIN m) {
     if(!gps_.configRtcm(rtcm_ids_, rtcm_rate_)) {
       ROS_ERROR("Failed to configure RTCM IDs");
     }
+  }
+}
+
+void UbloxNode8::modeDiagnostic(
+    diagnostic_updater::DiagnosticStatusWrapper& stat) {
+  stat.add("mode", mode_names[mode_]);
+  if(mode_ == TIME) {
+    for(int i = 0; i < rtcm_ids_.size(); i++) {
+      ros::Duration dt = ros::Time::now() - last_received_rtcm_[rtcm_ids_[i]];
+      std::string id = boost::lexical_cast<std::string>(rtcm_ids_[i]);
+      stat.add("RTCM " + id, dt.toSec());
+    }
+  } else if(mode_ == SURVEY_IN) {
+    // stat.add("Survey In Status: ", svin.active, svin.valid);
   }
 }
 

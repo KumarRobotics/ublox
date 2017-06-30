@@ -38,6 +38,7 @@
 #include <boost/asio/serial_port.hpp>
 #include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 // ROS includes
 #include <ros/ros.h>
 #include <ros/serialization.h>
@@ -132,6 +133,8 @@ class UbloxNode {
  protected:
   // Current mode of U-Blox
   enum {INIT, FIXED, SURVEY_IN, TIME} mode_;
+  static const char * const mode_names[]; //declaration
+
   // ROS objects
   boost::shared_ptr<ros::NodeHandle> nh_;
   boost::shared_ptr<diagnostic_updater::Updater> updater_;
@@ -255,7 +258,7 @@ class UbloxNode {
  */
 class UbloxNode6 : public UbloxNode {
  public:
-  UbloxNode6(boost::shared_ptr<ros::NodeHandle> _nh);
+  UbloxNode6(boost::shared_ptr<ros::NodeHandle> nh);
 
   /*
    * @brief Publish a NavPOSLLh message & update the fix diagnostics & 
@@ -295,13 +298,11 @@ class UbloxNode6 : public UbloxNode {
   // The last received navigation velocity
   ublox_msgs::NavVELNED last_nav_vel_;
   // The last received num svs used
-  int num_svs_used_;
+  ublox_msgs::NavSOL last_nav_sol_;
   // The last Nav Sat fix based on last_nav_pos_
-  sensor_msgs::NavSatFix fix;
+  sensor_msgs::NavSatFix fix_;
   // The last Twist based on last_nav_vel_
-  geometry_msgs::TwistWithCovarianceStamped velocity;
-  // The last received nav status
-  ublox_msgs::NavSTATUS status;
+  geometry_msgs::TwistWithCovarianceStamped velocity_;
 };
 
 /**
@@ -347,7 +348,7 @@ class UbloxNode7 : public UbloxNode7Plus {
  */
 class UbloxNode8 : public UbloxNode7Plus {
  public:
-  UbloxNode8(boost::shared_ptr<ros::NodeHandle> _nh);
+  UbloxNode8(boost::shared_ptr<ros::NodeHandle> nh);
 
  protected:
   /**
@@ -366,6 +367,10 @@ class UbloxNode8 : public UbloxNode7Plus {
    * configured RTCM messages.
    */
   void publishNavSvIn(ublox_msgs::NavSVIN msg);
+  void modeDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat);
+
+  // Map of RTCM IDs and the last time the message was received
+  std::map<uint16_t, ros::Time> last_received_rtcm_;
 };
 
 }
