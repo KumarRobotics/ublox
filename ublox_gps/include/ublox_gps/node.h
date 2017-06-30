@@ -57,8 +57,36 @@
 namespace ublox_node {
 // Queue size for ROS publishers
 const static uint32_t kROSQueueSize = 1;
+const static uint16_t kDefaultMeasPeriod = 250; 
+// Subscribe Rate for U-Blox SV Info messages
+const static uint32_t kNavSvInfoSubscribeRate = 20; // [Hz]
+// Subscribe Rate of U-Blox msgs
+const static uint32_t kSubscribeRate = 1; // [Hz]
 
+const static char * const mode_names[] = {"Init", 
+                                          "Fixed", 
+                                          "Survey-In", 
+                                          "Time"};
+// Current mode of U-Blox
+enum {INIT, FIXED, SURVEY_IN, TIME} mode_;
+// ROS objects
+boost::shared_ptr<diagnostic_updater::Updater> updater_;
+boost::shared_ptr<diagnostic_updater::TopicDiagnostic> freq_diag_;
 boost::shared_ptr<ros::NodeHandle> nh;
+
+ublox_gps::Gps gps;
+std::string frame_id_;
+int fix_status_service_;
+// Product Category, e.g. SPG, HPG, see documentation for types
+std::string product_category_;
+int meas_rate_, nav_rate_;
+
+// IDs of RTCM out messages to configure
+std::vector<int> rtcm_ids_;
+// Rate of RTCM out messages [Hz]
+int rtcm_rate_;
+// Which GNSS are supported by the device
+std::set<std::string> supported_;
 
 /**
  * @brief Publish a ROS message of type MessageT. Should be used to publish
@@ -73,24 +101,133 @@ void publish(const MessageT& m, const std::string& topic) {
   publisher.publish(m);
 }
 
+
+class UbloxFirmware {
+ public:
+
+  /**
+   * @brief Set the parameters specific to this firmware version.
+   */
+  virtual void setParams() = 0;
+  
+  /**
+   * @brief Handle to send fix status to ROS diagnostics.
+   */
+  virtual void fixDiagnostic(
+      diagnostic_updater::DiagnosticStatusWrapper& stat) = 0;
+
+  /**
+   * @brief Configure the U-Blox GNSS settings.
+   */
+  virtual void configureGnss() = 0;
+
+  /* 
+   * @brief Subscribe to ublox messages available on this version. 
+   * (e.g. NavPVT, RxmRAWX)
+   */
+  virtual void subscribe() = 0; 
+
+ protected:
+  /**
+   * @gnss The string representing the GNSS. Refer MonVER message protocol.
+   * i.e. GPS, GLO, GAL, BDS, QZSS, SBAS, IMES
+   * @return true if the device supports the given GNSS
+   */
+  bool supportsGnss(std::string gnss) {
+    return supported_.count(gnss) > 0;
+  }
+
+  // Whether the message subscribers are enabled
+  std::map<std::string, bool> enabled_;
+};
+
+class UbloxHardware {
+ public:
+  /**
+   * @brief Set the parameters specific to this hardware.
+   */
+  virtual void setParams() = 0;
+  /**
+   * @brief Configure the U-Blox settings specific to this hardware.
+   */
+  virtual void configure() = 0;
+
+  /**
+   * @brief Subscribe to Hardware specific messages.
+   */
+  virtual void subscribe() = 0;
+ protected:
+  std::map<std::string, bool> enabled_;
+};
+
+class UbloxHardwareDefault : public UbloxHardware {
+  /**
+   * @brief Do nothing.
+   */
+  void setParams() {}
+  /**
+   * @brief Do nothing.
+   */
+  void configure() {}
+
+  /**
+   * @brief Do nothing.
+   */
+  void subscribe() {}
+};
+
+/**
+ * @brief High Precision GNSS functions
+ */
+class UbloxHardwareHpg: public UbloxHardware {
+ public:
+  void setParams();
+
+  void configure();
+
+  void subscribe();
+  /**
+   * @brief Publishes received Nav SVIN messages. When the survey in finishes, 
+   * it changes the measurement & navigation rate to the user configured values 
+   * and enables the user configured RTCM messages.
+   */
+  void publishNavSvIn(ublox_msgs::NavSVIN msg);
+
+ protected:
+  // Settings for High Precision GNSS
+  int tmode3_;
+  
+  // Fixed mode settings
+  bool lla_flag_;
+  // Antenna Reference Point Position [m]
+  std::vector<float> arp_position_;
+  // Antenna Reference Point Position - High Precision [0.1 mm]
+  std::vector<float> arp_position_hp_;
+  // Fixed Position Accuracy [m]
+  float fixed_pos_acc_;
+  
+  // Survey in settings
+  // Survey in minimum duration [s]
+  int sv_in_min_dur_;
+  // Survey in accuracy limit [m]
+  float sv_in_acc_lim_;
+};
+
 /**
  * Abstract class representing a U-blox node.
  */
 class UbloxNode {
  public:
-  // Subscribe Rate for U-Blox SV Info messages
-  const static uint32_t kNavSvInfoSubscribeRate = 20; // [Hz]
   // how often (in seconds) to call poll messages
   const static double kPollDuration = 1.0;
-  // Subscribe Rate of U-Blox msgs
-  const static uint32_t kSubscribeRate = 1; // [Hz]
   // Constants used for diagnostic frequency updater
   const static float kDiagnosticPeriod = 0.2; // [s] 5Hz diagnostic period
   const static double kTolerance = 0.05;
   const static double kWindow = 10;
   const static double kTimeStampStatusMin = 0;
   // Default measurement period used during Survey-In [s]
-  const static uint16_t kDefaultMeasPeriod = 250;
+
+  UbloxNode();
 
   /**
    * @brief Set the protocol version from the device information.
@@ -112,77 +249,30 @@ class UbloxNode {
    */
   void setProductCategory(std::string product_category) {
     product_category_ = product_category;
-  }
-
-  /**
-   * Whether or not this device is a High Precision GNSS.
-   */
-  bool isHighPrecision() {
-    return product_category_.compare("HPG") == 0;
-  }
-
-  /**
-   * @gnss The string representing the GNSS. Refer MonVER message protocol.
-   * i.e. GPS, GLO, GAL, BDS, QZSS, SBAS, IMES
-   * @return true if the device supports the given GNSS
-   */
-  bool supportsGnss(std::string gnss) {
-    return supported_.count(gnss) > 0;
+    if(product_category.compare("HPG") == 0){
+      hardware_.reset(new UbloxHardwareHpg);
+    } else {
+      hardware_.reset(new UbloxHardwareDefault);
+    }
   }
 
  protected:
-  // Current mode of U-Blox
-  enum {INIT, FIXED, SURVEY_IN, TIME} mode_;
-  static const char * const mode_names[]; //declaration
-
-  // ROS objects
-  boost::shared_ptr<diagnostic_updater::Updater> updater_;
-  boost::shared_ptr<diagnostic_updater::TopicDiagnostic> freq_diag_;
-
-  ublox_gps::Gps gps_;
-
   /* Variables set from parameter server */
   // Whether the message subscribers are enabled
   std::map<std::string, bool> enabled_;
-  std::string frame_id_, device_, dynamic_model_, fix_mode_;
+  std::string device_, dynamic_model_, fix_mode_;
   // Set from dynamic model & fix mode strings
   uint8_t dmodel_, fmode_;
   // UART baudrate and in/out protocol (see CfgPRT message for constants)
   int baudrate_, uart_in_, uart_out_; 
-  int rate_, meas_rate_, nav_rate_;
-  // Settings for High Precision GNSS
-  int tmode3_, dgnss_mode_;
+  int rate_;
   
-  // Fixed mode settings
-  bool lla_flag_;
-  // Antenna Reference Point Position [m]
-  std::vector<float> arp_position_;
-  // Antenna Reference Point Position - High Precision [0.1 mm]
-  std::vector<float> arp_position_hp_;
-  // Fixed Position Accuracy [m]
-  float fixed_pos_acc_;
-  
-  // Survey in settings
-  // Survey in minimum duration [s]
-  int sv_in_min_dur_;
-  // Survey in accuracy limit [m]
-  float sv_in_acc_lim_;
-  // IDs of RTCM out messages to configure
-  std::vector<int> rtcm_ids_;
-  // Rate of RTCM out messages [Hz]
-  int rtcm_rate_;
   // If true: enable the GNSS
-  bool enable_gps_, enable_sbas_, enable_galileo_, enable_beidou_, enable_imes_; 
-  bool enable_qzss_, enable_glonass_, enable_ppp_;
-  int qzss_sig_cfg_, sbas_usage_, max_sbas_, dr_limit_;
-  int fix_status_service_;
+  bool enable_sbas_, enable_ppp_;
+  int sbas_usage_, max_sbas_, dr_limit_;
 
   /** Determined From Mon VER */
   float protocol_version_;
-  // Product Category, e.g. SPG, HPG, see documentation for types
-  std::string product_category_;
-  // Which GNSS are supported by the device
-  std::set<std::string> supported_;
 
   /**
    * @brief Initialize the U-blox node. Configure the U-blox and subscribe to 
@@ -194,36 +284,31 @@ class UbloxNode {
    * Process the MonVer message. Find the protocol version, hardware type and 
    * supported GNSS.
    */
-  void processMonVer(ublox_msgs::MonVER monVer);
+  void processMonVer();
 
   /**
-   * @brief Handle to send fix status to ROS diagnostics.
+   * @gnss The string representing the GNSS. Refer MonVER message protocol.
+   * i.e. GPS, GLO, GAL, BDS, QZSS, SBAS, IMES
+   * @return true if the device supports the given GNSS
    */
-  virtual void fixDiagnostic(
-      diagnostic_updater::DiagnosticStatusWrapper& stat) = 0;
-
-  /**
-   * @brief Configure the U-Blox GNSS settings.
-   */
-  virtual void configureGnss() = 0;
-
-  /* 
-   * @brief Subscribe to ublox messages available on this version. 
-   * (e.g. NavPVT, RxmRAWX)
-   */
-  virtual void subscribeVersion() = 0; 
+  bool supportsGnss(std::string gnss) {
+    return supported_.count(gnss) > 0;
+  }
 
  private:
   // Asynchronous IO objects
   boost::asio::io_service io_service_;
   boost::shared_ptr<boost::asio::serial_port> serial_handle_;
   boost::shared_ptr<boost::asio::ip::tcp::socket> tcp_handle_;
+
+  boost::shared_ptr<UbloxFirmware> firmware_;
+  boost::shared_ptr<UbloxHardware> hardware_;
   
   /**
    * @brief Set class parameters from the ROS node parameters.
    * @return 0 if successful
    */
-  int setParams();
+  void setParams();
 
   /**
    * @brief Poll messages from the U-Blox device.
@@ -255,7 +340,7 @@ class UbloxNode {
 /**
  * Represents a U-Blox node for firmware version 6.
  */
-class UbloxNode6 : public UbloxNode {
+class UbloxNode6 : public UbloxFirmware {
  public:
   UbloxNode6();
 
@@ -289,7 +374,9 @@ class UbloxNode6 : public UbloxNode {
     /**
    * @brief Subscribes to NavPVT, RxmRAW, and RxmSFRB messages. 
    */
-  void subscribeVersion();
+  void subscribe();
+
+  void setParams();
 
  private:
   // The last received navigation position
@@ -307,21 +394,23 @@ class UbloxNode6 : public UbloxNode {
 /**
  * Abstract class defining functions applicable to Firmware versions >=7.
  */
-class UbloxNode7Plus : public UbloxNode {
+class UbloxNode7Plus : public UbloxFirmware {
  public:
   /**
    * Publish a NavPVT message. Also publishes Fix and Twist messages and
    * updates the fix diagnostics.
    */
   void publishNavPvt(const ublox_msgs::NavPVT& m);
-  
  
  protected:
   void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat);
   /* Implement these in version specific classes */
   virtual void configureGnss() = 0;
-  virtual void subscribeVersion() = 0; 
+  virtual void subscribe() = 0; 
+  virtual void setParams() = 0;
   ublox_msgs::NavPVT last_nav_pvt_; 
+  bool enable_gps_, enable_glonass_, enable_qzss_, enable_sbas_;
+  int  qzss_sig_cfg_;
 };
 
 /**
@@ -335,11 +424,13 @@ class UbloxNode7 : public UbloxNode7Plus {
   /**
    * @brief Subscribes to NavPVT, RxmRAW, and RxmSFRB messages. 
    */
-  void subscribeVersion();
+  void subscribe();
   /**
    * @brief Configures GNSS individually. Only configures GLONASS.
    */
   void configureGnss();
+
+  void setParams();
 };
 
 /**
@@ -353,23 +444,28 @@ class UbloxNode8 : public UbloxNode7Plus {
   /**
    * @brief Subscribes to NavPVT, RxmRAWX, and RxmSFRBX messages. 
    */
-  void subscribeVersion();
+  void subscribe();
   /**
    * @brief Configures all GNSS systems in 1 message based on ROS params and
    * configure DGNSS.
    */
   void configureGnss();
-  /**
-   * @brief Only for High Precision GNSS Devices. Publishes received Nav SVIN
-   * messages. When the survey in finishes,  it changes the measurement & 
-   * navigation rate to the user configured values and enables the user
-   * configured RTCM messages.
-   */
-  void publishNavSvIn(ublox_msgs::NavSVIN msg);
+  
   void modeDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat);
+
+  void setParams();
+
+  /**
+   * Whether or not this device is a High Precision GNSS.
+   */
+  bool isHighPrecision() {
+    return product_category_.compare("HPG") == 0;
+  }
 
   // Map of RTCM IDs and the last time the message was received
   std::map<uint16_t, ros::Time> last_received_rtcm_;
+  bool enable_galileo_, enable_beidou_, enable_imes_;
+  int dgnss_mode_;
 };
 
 }
