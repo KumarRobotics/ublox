@@ -61,6 +61,20 @@ class UbloxNode {
  public:
   // Queue size for ROS publishers
   const static uint32_t kROSQueueSize = 1;
+  // Subscribe Rate for U-Blox SV Info messages
+  const static uint32_t kNavSvInfoSubscribeRate = 20; // [Hz]
+  // how often (in seconds) to call poll messages
+  const static double kPollDuration = 1.0;
+  // Subscribe Rate of U-Blox msgs
+  const static uint32_t kSubscribeRate = 1; // [Hz]
+  // Constants used for diagnostic frequency updater
+  const static float kDiagnosticPeriod = 0.2; // [s] 5Hz diagnostic period
+  const static double kTolerance = 0.05;
+  const static double kWindow = 10;
+  const static double kTimeStampStatusMin = 0;
+  // Default measurement period used during Survey-In [s]
+  const static uint16_t kDefaultMeasPeriod = 250;
+
   /**
    * @brief Set the node handle parameter.
    */ 
@@ -130,29 +144,40 @@ class UbloxNode {
   std::map<std::string, bool> enabled_;
   std::string frame_id_, device_, dynamic_model_, fix_mode_;
   // Set from dynamic model & fix mode strings
-  uint8_t dmodel, fmode;
-  // UART in out protocol
+  uint8_t dmodel_, fmode_;
+  // UART baudrate and in/out protocol (see CfgPRT message for constants)
   int baudrate_, uart_in_, uart_out_; 
-  int rate_, meas_rate_, nav_rate_, rtcm_rate_;
+  int rate_, meas_rate_, nav_rate_;
   // Settings for High Precision GNSS
   int tmode3_, dgnss_mode_;
+  
   // Fixed mode settings
   bool lla_flag_;
+  // Antenna Reference Point Position [m]
   std::vector<float> arp_position_;
+  // Antenna Reference Point Position - High Precision [0.1 mm]
   std::vector<float> arp_position_hp_;
+  // Fixed Position Accuracy [m]
   float fixed_pos_acc_;
+  
   // Survey in settings
+  // Survey in minimum duration [s]
   int sv_in_min_dur_;
+  // Survey in accuracy limit [m]
   float sv_in_acc_lim_;
+  // IDs of RTCM out messages to configure
   std::vector<int> rtcm_ids_;
+  // Rate of RTCM out messages [Hz]
+  int rtcm_rate_;
+  // If true: enable the GNSS
   bool enable_gps_, enable_sbas_, enable_galileo_, enable_beidou_, enable_imes_; 
   bool enable_qzss_, enable_glonass_, enable_ppp_;
   int qzss_sig_cfg_, sbas_usage_, max_sbas_, dr_limit_;
   int fix_status_service_;
 
-  // From Mon VER
+  /** Determined From Mon VER */
   float protocol_version_;
-  // Product Category, e.g. SPG, HPG
+  // Product Category, e.g. SPG, HPG, see documentation for types
   std::string product_category_;
   // Which GNSS are supported by the device
   std::set<std::string> supported_;
@@ -191,13 +216,7 @@ class UbloxNode {
   boost::asio::io_service io_service_;
   boost::shared_ptr<boost::asio::serial_port> serial_handle_;
   boost::shared_ptr<boost::asio::ip::tcp::socket> tcp_handle_;
-  // how often (in seconds) to call poll messages
-  const static double kPollDuration = 1.0;
-  // Constants used for diagnostic frequency updater
-  const static double kTolerance = 0.05;
-  const static double kWindow = 10;
-  const static double kTimeStampStatusMin = 0;
-
+  
   /**
    * @brief Set class parameters from the ROS node parameters.
    * @return 0 if successful
@@ -242,18 +261,18 @@ class UbloxNode6 : public UbloxNode {
    * @brief Publish a NavPOSLLh message & update the fix diagnostics & 
    * last known position.
    */
-  void publishNavPOSLLH(const ublox_msgs::NavPOSLLH& m);
+  void publishNavPosLlh(const ublox_msgs::NavPOSLLH& m);
   
   /*
    * @brief Publish a NavVELNED message & update the last known velocity.
    */
-  void publishNavVELNED(const ublox_msgs::NavVELNED& m);
+  void publishNavVelNed(const ublox_msgs::NavVELNED& m);
 
   /*
    * @brief Publish a NavSOL message and update the number of SVs used for the 
    * fix.
    */
-  void publishNavSOL(const ublox_msgs::NavSOL& m);
+  void publishNavSol(const ublox_msgs::NavSOL& m);
  protected:
   /**
    * @brief Updates fix diagnostic from NavPOSLLH, NavVELNED, and NavSOL 
@@ -294,7 +313,7 @@ class UbloxNode7Plus : public UbloxNode {
    * Publish a NavPVT message. Also publishes Fix and Twist messages and
    * updates the fix diagnostics.
    */
-  void publishNavPVT(const ublox_msgs::NavPVT& m);
+  void publishNavPvt(const ublox_msgs::NavPVT& m);
   
  
  protected:
@@ -346,7 +365,7 @@ class UbloxNode8 : public UbloxNode7Plus {
    * navigation rate to the user configured values and enables the user
    * configured RTCM messages.
    */
-  void publishNavSvin(ublox_msgs::NavSVIN msg);
+  void publishNavSvIn(ublox_msgs::NavSVIN msg);
 };
 
 }
