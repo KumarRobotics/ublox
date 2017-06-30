@@ -36,6 +36,7 @@
 #include <boost/thread.hpp>
 #include <boost/thread/condition.hpp>
 
+
 #include "worker.h"
 
 namespace ublox_gps {
@@ -165,9 +166,8 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
                                    std::size_t bytes_transfered) {
   ReadLock lock(read_mutex_);
   if (error) {
-    ROS_ERROR("Buffer read error");
-    // do something
-
+    ROS_ERROR("ASIO input buffer read error: %s, %li", error.message().c_str(), 
+              bytes_transfered);
   } else if (bytes_transfered > 0) {
     in_buffer_size_ += bytes_transfered;
 

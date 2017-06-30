@@ -24,7 +24,7 @@ uint16 measRate           # Measurement Rate, GPS measurements are
                           # taken every measRate milliseconds [ms]
 uint16 navRate            # Navigation Rate, in number of measurement
                           # cycles. On u-blox 5 and u-blox 6, this parameter
-                          # cannot be changed, and is always equals 1.
+                          # cannot be changed, and always equals 1.
 uint16 timeRef            # The time system to which measurements are aligned
 uint16 TIME_REF_UTC = 0
 uint16 TIME_REF_GPS = 1
