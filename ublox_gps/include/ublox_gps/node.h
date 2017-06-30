@@ -55,13 +55,29 @@
 #include <ublox_gps/utils.h>
 
 namespace ublox_node {
+// Queue size for ROS publishers
+const static uint32_t kROSQueueSize = 1;
+
+boost::shared_ptr<ros::NodeHandle> nh;
+
+/**
+ * @brief Publish a ROS message of type MessageT. Should be used to publish
+ * all messages which are simply read from U-blox and published.
+ * @param m the message to publish
+ * @param topic the topic to publish the message on
+ */
+template <typename MessageT>
+void publish(const MessageT& m, const std::string& topic) {
+  static ros::Publisher publisher =
+      nh->advertise<MessageT>(topic, kROSQueueSize);
+  publisher.publish(m);
+}
+
 /**
  * Abstract class representing a U-blox node.
  */
 class UbloxNode {
  public:
-  // Queue size for ROS publishers
-  const static uint32_t kROSQueueSize = 1;
   // Subscribe Rate for U-Blox SV Info messages
   const static uint32_t kNavSvInfoSubscribeRate = 20; // [Hz]
   // how often (in seconds) to call poll messages
@@ -75,13 +91,6 @@ class UbloxNode {
   const static double kTimeStampStatusMin = 0;
   // Default measurement period used during Survey-In [s]
   const static uint16_t kDefaultMeasPeriod = 250;
-
-  /**
-   * @brief Set the node handle parameter.
-   */ 
-  void setNh(boost::shared_ptr<ros::NodeHandle> nh) {
-    nh_ = nh;
-  }
 
   /**
    * @brief Set the protocol version from the device information.
@@ -121,22 +130,12 @@ class UbloxNode {
     return supported_.count(gnss) > 0;
   }
 
-  /**
-   * @brief Publish a ROS message of type MessageT. Should be used to publish
-   * all messages which are simply read from U-blox and published.
-   * @param m the message to publish
-   * @param topic the topic to publish the message on
-   */
-  template <typename MessageT>
-  void publish(const MessageT& m, const std::string& topic);
-
  protected:
   // Current mode of U-Blox
   enum {INIT, FIXED, SURVEY_IN, TIME} mode_;
   static const char * const mode_names[]; //declaration
 
   // ROS objects
-  boost::shared_ptr<ros::NodeHandle> nh_;
   boost::shared_ptr<diagnostic_updater::Updater> updater_;
   boost::shared_ptr<diagnostic_updater::TopicDiagnostic> freq_diag_;
 
@@ -258,7 +257,7 @@ class UbloxNode {
  */
 class UbloxNode6 : public UbloxNode {
  public:
-  UbloxNode6(boost::shared_ptr<ros::NodeHandle> nh);
+  UbloxNode6();
 
   /*
    * @brief Publish a NavPOSLLh message & update the fix diagnostics & 
@@ -330,7 +329,7 @@ class UbloxNode7Plus : public UbloxNode {
  */
 class UbloxNode7 : public UbloxNode7Plus {
  public:
-  UbloxNode7(boost::shared_ptr<ros::NodeHandle> _nh);
+  UbloxNode7();
 
  protected:
   /**
@@ -348,7 +347,7 @@ class UbloxNode7 : public UbloxNode7Plus {
  */
 class UbloxNode8 : public UbloxNode7Plus {
  public:
-  UbloxNode8(boost::shared_ptr<ros::NodeHandle> nh);
+  UbloxNode8();
 
  protected:
   /**
