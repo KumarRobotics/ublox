@@ -192,6 +192,7 @@ void UbloxNode::pollMessages(const ros::TimerEvent& event) {
 }
 
 void UbloxNode::subscribe() {
+  ROS_INFO("Subscribing to U-Blox messages");
   // subscribe messages
   nh->param("all", enabled["all"], false);
   nh->param("rxm", enabled["rxm"], enabled["all"]);
@@ -202,31 +203,15 @@ void UbloxNode::subscribe() {
     gps.subscribe<ublox_msgs::NavSTATUS>(boost::bind(
         publish<ublox_msgs::NavSTATUS>, _1, "navstatus"), kSubscribeRate);
   
-  nh->param("nav_svinfo", enabled["nav_svinfo"], enabled["all"]);
-  if (enabled["nav_svinfo"])
-    gps.subscribe<ublox_msgs::NavSVINFO>(boost::bind(
-        publish<ublox_msgs::NavSVINFO>, _1, "navsvinfo"), 
-        kNavSvInfoSubscribeRate);
-  
-  nh->param("nav_clk", enabled["nav_clk"], enabled["all"]);
-  if (enabled["nav_clk"])
-    gps.subscribe<ublox_msgs::NavCLOCK>(boost::bind(
-        publish<ublox_msgs::NavCLOCK>, _1, "navclock"), kSubscribeRate);
-
-  nh->param("rxm_eph", enabled["rxm_eph"], enabled["rxm"]);
-  if (enabled["rxm_eph"])
-    gps.subscribe<ublox_msgs::RxmEPH>(boost::bind(
-        publish<ublox_msgs::RxmEPH>, _1, "rxmeph"), kSubscribeRate);
-
-  nh->param("rxm_alm", enabled["rxm_alm"], enabled["rxm"]);
-  if (enabled["rxm_alm"])
-    gps.subscribe<ublox_msgs::RxmALM>(boost::bind(
-        publish<ublox_msgs::RxmALM>, _1, "rxmalm"), kSubscribeRate);
-  
   nh->param("nav_posecef", enabled["nav_posecef"], false);
   if (enabled["nav_posecef"])
     gps.subscribe<ublox_msgs::NavPOSECEF>(boost::bind(
         publish<ublox_msgs::NavPOSECEF>, _1, "navposecef"), kSubscribeRate);
+
+  nh->param("nav_clock", enabled["nav_clock"], enabled["all"]);
+  if (enabled["nav_clock"])
+    gps.subscribe<ublox_msgs::NavCLOCK>(boost::bind(
+        publish<ublox_msgs::NavCLOCK>, _1, "navclock"), kSubscribeRate);  
   
   nh->param("aid_alm", enabled["aid_alm"], enabled["aid"]);
   if (enabled["aid_alm"]) 
@@ -399,8 +384,8 @@ void UbloxNode::initialize() {
     
     ros::Timer poller; 
     poller = nh->createTimer(ros::Duration(kPollDuration), 
-                              &UbloxNode::pollMessages, 
-                              this);
+                             &UbloxNode::pollMessages, 
+                             this);
     poller.start();
     ros::spin();
   }
@@ -448,6 +433,18 @@ void UbloxFirmware6::subscribe() {
     gps.subscribe<ublox_msgs::RxmSFRB>(boost::bind(
         publish<ublox_msgs::RxmSFRB>, _1, "rxmsfrb"), kSubscribeRate);
 
+  // Subscribe to RXM EPH, raw data product variants only
+  nh->param("rxm_eph", enabled["rxm_eph"], enabled["rxm"]);
+  if (enabled["rxm_eph"])
+    gps.subscribe<ublox_msgs::RxmEPH>(boost::bind(
+        publish<ublox_msgs::RxmEPH>, _1, "rxmeph"), kSubscribeRate);
+
+  // Subscribe to RXM ALM, raw data product variants only
+  nh->param("rxm_alm", enabled["rxm_alm"], enabled["rxm"]);
+  if (enabled["rxm_alm"])
+    gps.subscribe<ublox_msgs::RxmALM>(boost::bind(
+        publish<ublox_msgs::RxmALM>, _1, "rxmalm"), kSubscribeRate);
+
   // Subscribe to Nav POSLLH
   nh->param("nav_posllh", enabled["nav_posllh"], true);
   if (enabled["nav_posllh"])
@@ -466,6 +463,12 @@ void UbloxFirmware6::subscribe() {
     gps.subscribe<ublox_msgs::NavVELNED>(boost::bind(
         &UbloxFirmware6::publishNavVelNed, this, _1), kSubscribeRate);
   
+  // Subscribe to Nav SVINFO
+  nh->param("nav_svinfo", enabled["nav_svinfo"], enabled["all"]);
+  if (enabled["nav_svinfo"])
+    gps.subscribe<ublox_msgs::NavSVINFO>(boost::bind(
+        publish<ublox_msgs::NavSVINFO>, _1, "navsvinfo"), 
+        kNavSvInfoSubscribeRate);
 }
 
 void UbloxFirmware6::fixDiagnostic(
@@ -772,7 +775,21 @@ bool UbloxFirmware7::configureUblox() {
 }
 
 void UbloxFirmware7::subscribe() {
-  // Subscribe to RXM Raw
+  // Subscribe to Nav PVT
+  nh->param("nav_pvt", enabled["nav_pvt"], true);
+  if (enabled["nav_pvt"])
+    gps.subscribe<ublox_msgs::NavPVT>(boost::bind(
+        &UbloxFirmware7Plus::publishNavPvt, this, _1),
+        kSubscribeRate);
+
+  // Subscribe to Nav SVINFO
+  nh->param("nav_svinfo", enabled["nav_svinfo"], enabled["all"]);
+  if (enabled["nav_svinfo"])
+    gps.subscribe<ublox_msgs::NavSVINFO>(boost::bind(
+        publish<ublox_msgs::NavSVINFO>, _1, "navsvinfo"), 
+        kNavSvInfoSubscribeRate);
+
+  // Subscribe to RXM Raw, raw data product variants only
   nh->param("rxm_raw", enabled["rxm_raw"],
                  enabled["all"] || enabled["rxm"]);
   if (enabled["rxm_raw"])
@@ -780,20 +797,25 @@ void UbloxFirmware7::subscribe() {
         publish<ublox_msgs::RxmRAW>, _1, "rxmraw"),
         kSubscribeRate);
 
-  // Subscribe to RXM SFRB
+  // Subscribe to RXM SFRB, raw data product variants only
   nh->param("rxm_sfrb", enabled["rxm_sfrb"],
                  enabled["all"] || enabled["rxm"]);
   if (enabled["rxm_sfrb"])
     gps.subscribe<ublox_msgs::RxmSFRB>(boost::bind(
         publish<ublox_msgs::RxmSFRB>, _1, "rxmsfrb"),
         kSubscribeRate);
- 
-  // Subscribe to Nav PVT (version 7 & above only)
-  nh->param("nav_pvt", enabled["nav_pvt"], true);
-  if (enabled["nav_pvt"])
-    gps.subscribe<ublox_msgs::NavPVT>(boost::bind(
-        &UbloxFirmware7Plus::publishNavPvt, this, _1),
-        kSubscribeRate);
+
+  // Subscribe to RXM EPH, raw data product variants only
+  nh->param("rxm_eph", enabled["rxm_eph"], enabled["rxm"]);
+  if (enabled["rxm_eph"])
+    gps.subscribe<ublox_msgs::RxmEPH>(boost::bind(
+        publish<ublox_msgs::RxmEPH>, _1, "rxmeph"), kSubscribeRate);
+
+  // Subscribe to RXM ALM, raw data product variants only
+  nh->param("rxm_alm", enabled["rxm_alm"], enabled["rxm"]);
+  if (enabled["rxm_alm"])
+    gps.subscribe<ublox_msgs::RxmALM>(boost::bind(
+        publish<ublox_msgs::RxmALM>, _1, "rxmalm"), kSubscribeRate);
 }
 
 //
@@ -909,19 +931,25 @@ bool UbloxFirmware8::configureUblox() {
 }
 
 void UbloxFirmware8::subscribe() {
+  // Subscribe to Nav PVT (version 7 & above only)
+  nh->param("nav_pvt", enabled["nav_pvt"], true);
+  if (enabled["nav_pvt"])
+    gps.subscribe<ublox_msgs::NavPVT>(boost::bind(
+        &UbloxFirmware7Plus::publishNavPvt, this, _1), 
+        kSubscribeRate);
+
+  // Subscribe to Nav SAT messages
+  nh->param("nav_sat", enabled["nav_sat"], enabled["all"]);
+  if (enabled["nav_sat"])
+    gps.subscribe<ublox_msgs::NavSAT>(boost::bind(
+        publish<ublox_msgs::NavSAT>, _1, "navsat"), kNavSvInfoSubscribeRate);
+
   // Subscribe to RTCM messages
   nh->param("rxm_rtcm", enabled["rxm_rtcm"], 
             enabled["all"] || enabled["rxm"]);
   if (enabled["rxm_rtcm"])
     gps.subscribe<ublox_msgs::RxmRTCM>(boost::bind(
         publish<ublox_msgs::RxmRTCM>, _1, "rxmrtcm"), 
-        kSubscribeRate);
-
-  // Subscribe to Nav PVT (version 7 & above only)
-  nh->param("nav_pvt", enabled["nav_pvt"], true);
-  if (enabled["nav_pvt"])
-    gps.subscribe<ublox_msgs::NavPVT>(boost::bind(
-        &UbloxFirmware7Plus::publishNavPvt, this, _1), 
         kSubscribeRate);
 }
 

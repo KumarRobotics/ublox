@@ -39,6 +39,7 @@
 #include <ublox_msgs/NavSOL.h>
 #include <ublox_msgs/NavPVT.h>
 #include <ublox_msgs/NavSTATUS.h>
+#include <ublox_msgs/NavSAT.h>
 #include <ublox_msgs/NavSVIN.h>
 #include <ublox_msgs/NavSVINFO.h>
 #include <ublox_msgs/NavTIMEGPS.h>
@@ -115,6 +116,7 @@ namespace Message {
     static const uint8_t SBAS = NavSBAS::MESSAGE_ID;
     static const uint8_t SOL = NavSOL::MESSAGE_ID;
     static const uint8_t PVT = NavPVT::MESSAGE_ID;
+    static const uint8_t SAT = NavSAT::MESSAGE_ID;
     static const uint8_t STATUS = NavSTATUS::MESSAGE_ID;
     static const uint8_t SVINFO = NavSVINFO::MESSAGE_ID;
     static const uint8_t SVIN = NavSVIN::MESSAGE_ID;

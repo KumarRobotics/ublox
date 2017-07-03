@@ -194,6 +194,41 @@ struct Serializer<ublox_msgs::NavSBAS_<ContainerAllocator> >
 };
 
 template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::NavSAT_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::NavSAT_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.iTOW);
+    stream.next(m.version);
+    stream.next(m.numSvs);
+    stream.next(m.reserved0);
+    m.sv.resize(m.numSvs);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::deserialize(stream, m.sv[i]);
+  }
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::NavSAT_<ContainerAllocator> >::param_type m)
+  {
+    return 8 + 12 * m.numSvs;
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::NavSAT_<ContainerAllocator> >::param_type m)
+  {
+    if(m.sv.size() != m.numSvs) {
+      ROS_ERROR("NavSAT numSvs must equal sv size");
+    }
+    ros::serialization::OStream stream(data, size);
+    stream.next(m.iTOW);
+    stream.next(m.version);
+    stream.next(static_cast<typename ublox_msgs::NavSAT_<ContainerAllocator>::_numSvs_type>(m.sv.size()));
+    stream.next(m.reserved0);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::serialize(stream, m.sv[i]);
+  }
+};
+
+template <typename ContainerAllocator>
 struct Serializer<ublox_msgs::NavSVINFO_<ContainerAllocator> >
 {
   static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::NavSVINFO_<ContainerAllocator> >::reference m)
