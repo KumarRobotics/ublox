@@ -32,39 +32,55 @@
 using namespace ublox_gps;
 using namespace ublox_node;
 
+//
+// U-Blox Node
+//
 UbloxNode::UbloxNode() {
-    // Create Ublox Node based on firmware version
+  // Create Ublox Node based on firmware version
   int ublox_version;
   nh->param("ublox_version", ublox_version, 6);
   ROS_INFO("U-Blox Firmware Version: %d", ublox_version);
+  boost::shared_ptr<UbloxInterface> firmware;
   if(ublox_version <= 6) {
-    firmware_.reset(new UbloxNode6());
+    firmware.reset(new UbloxFirmware6);
   } else if(ublox_version == 7){
-    firmware_.reset(new UbloxNode7());
+    firmware.reset(new UbloxFirmware7);
   } else {
-    firmware_.reset(new UbloxNode8());
+    firmware.reset(new UbloxFirmware8);
   }
+  xware_.push_back(firmware);
+  // Initialize the node
   initialize();
 }
 
+void UbloxNode::setHardware(std::string product_category) {
+  boost::shared_ptr<UbloxInterface> hardware;
+  if(product_category.compare("HPG") == 0) {
+    hardware.reset(new UbloxHpg);
+    xware_.push_back(hardware);
+  } else if(product_category.compare("TIM")) {
+    hardware.reset(new UbloxTim);
+    xware_.push_back(hardware);
+  }
+}
 
-void UbloxNode::setParams() {
+void UbloxNode::getRosParams() {
   int uart_in_default = ublox_msgs::CfgPRT::PROTO_UBX 
                         | ublox_msgs::CfgPRT::PROTO_NMEA 
                         | ublox_msgs::CfgPRT::PROTO_RTCM;
   int uart_out_default = ublox_msgs::CfgPRT::PROTO_UBX;
   nh->param("device", device_, std::string("/dev/ttyACM0"));
-  nh->param("frame_id", frame_id_, std::string("gps"));
+  nh->param("frame_id", frame_id, std::string("gps"));
   // UART 1 params
   nh->param("baudrate", baudrate_, 9600);
   nh->param("uart_in", uart_in_, uart_in_default);
   nh->param("uart_out", uart_out_, uart_out_default);
   // Measurement rate params
   nh->param("rate", rate_, 4);  // in Hz
-  nh->param("nav_rate", nav_rate_, 1);  // # of measurement rate cycles
+  nh->param("nav_rate", nav_rate, 1);  // # of measurement rate cycles
   // RTCM params
-  nh->param("rtcm_ids", rtcm_ids_, rtcm_ids_);  // RTCM IDs to configure
-  nh->param("rtcm_rate", rtcm_rate_, 1);  // in Hz, same for all RTCM IDs
+  nh->param("rtcm_ids", rtcm_ids, rtcm_ids);  // RTCM IDs to configure
+  nh->param("rtcm_rate", rtcm_rate, 1);  // in Hz, same for all RTCM IDs
   // PPP: Advanced Setting
   nh->param("enable_ppp", enable_ppp_, false);
   // SBAS params, only for some devices
@@ -96,7 +112,7 @@ void UbloxNode::setParams() {
   }
   
   //  measurement rate param for ublox, units of ms
-  meas_rate_ = 1000 / rate_;
+  meas_rate = 1000 / rate_;
 }
 
 void UbloxNode::initializeIo() {
@@ -160,13 +176,13 @@ void UbloxNode::initializeIo() {
 
 void UbloxNode::pollMessages(const ros::TimerEvent& event) {
   static std::vector<uint8_t> payload(1, 1);
-  if (enabled_["aid_alm"]) {
+  if (enabled["aid_alm"]) {
     gps.poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::ALM, payload);
   }
-  if (enabled_["aid_eph"]) {
+  if (enabled["aid_eph"]) {
     gps.poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::EPH, payload);
   }
-  if (enabled_["aid_hui"]) {
+  if (enabled["aid_hui"]) {
     gps.poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::HUI);
   }
   payload[0]++;
@@ -175,95 +191,85 @@ void UbloxNode::pollMessages(const ros::TimerEvent& event) {
   }
 }
 
-void UbloxNode::subscribeAll() {
+void UbloxNode::subscribe() {
   // subscribe messages
-  nh->param("all", enabled_["all"], false);
-  nh->param("rxm", enabled_["rxm"], false);
-  nh->param("aid", enabled_["aid"], false);
+  nh->param("all", enabled["all"], false);
+  nh->param("rxm", enabled["rxm"], enabled["all"]);
+  nh->param("aid", enabled["aid"], enabled["all"]);
   
-  nh->param("nav_status", enabled_["nav_status"], true);
-  if (enabled_["nav_status"])
+  nh->param("nav_status", enabled["nav_status"], true);
+  if (enabled["nav_status"])
     gps.subscribe<ublox_msgs::NavSTATUS>(boost::bind(
-        publish<ublox_msgs::NavSTATUS>, _1, "navstatus"), 
-        kSubscribeRate);
+        publish<ublox_msgs::NavSTATUS>, _1, "navstatus"), kSubscribeRate);
   
-  nh->param("nav_svinfo", enabled_["nav_svinfo"], enabled_["all"]);
-  if (enabled_["nav_svinfo"])
+  nh->param("nav_svinfo", enabled["nav_svinfo"], enabled["all"]);
+  if (enabled["nav_svinfo"])
     gps.subscribe<ublox_msgs::NavSVINFO>(boost::bind(
         publish<ublox_msgs::NavSVINFO>, _1, "navsvinfo"), 
         kNavSvInfoSubscribeRate);
   
-  nh->param("nav_clk", enabled_["nav_clk"], enabled_["all"]);
-  if (enabled_["nav_clk"])
+  nh->param("nav_clk", enabled["nav_clk"], enabled["all"]);
+  if (enabled["nav_clk"])
     gps.subscribe<ublox_msgs::NavCLOCK>(boost::bind(
-        publish<ublox_msgs::NavCLOCK>, _1, "navclock"), 
-        kSubscribeRate);
+        publish<ublox_msgs::NavCLOCK>, _1, "navclock"), kSubscribeRate);
 
-  nh->param("rxm_eph", enabled_["rxm_eph"],
-                 enabled_["all"] || enabled_["rxm"]);
-  if (enabled_["rxm_eph"])
+  nh->param("rxm_eph", enabled["rxm_eph"], enabled["rxm"]);
+  if (enabled["rxm_eph"])
     gps.subscribe<ublox_msgs::RxmEPH>(boost::bind(
-        publish<ublox_msgs::RxmEPH>, _1, "rxmeph"), 
-        kSubscribeRate);
+        publish<ublox_msgs::RxmEPH>, _1, "rxmeph"), kSubscribeRate);
 
-  nh->param("rxm_alm", enabled_["rxm_alm"],
-                 enabled_["all"] || enabled_["rxm"]);
-  if (enabled_["rxm_alm"])
+  nh->param("rxm_alm", enabled["rxm_alm"], enabled["rxm"]);
+  if (enabled["rxm_alm"])
     gps.subscribe<ublox_msgs::RxmALM>(boost::bind(
-        publish<ublox_msgs::RxmALM>, _1, "rxmalm"), 
-        kSubscribeRate);
+        publish<ublox_msgs::RxmALM>, _1, "rxmalm"), kSubscribeRate);
   
-  nh->param("nav_posecef", enabled_["nav_posecef"], false);
-  if (enabled_["nav_posecef"])
+  nh->param("nav_posecef", enabled["nav_posecef"], false);
+  if (enabled["nav_posecef"])
     gps.subscribe<ublox_msgs::NavPOSECEF>(boost::bind(
-        publish<ublox_msgs::NavPOSECEF>, _1, "navposecef"), 
-        kSubscribeRate);
+        publish<ublox_msgs::NavPOSECEF>, _1, "navposecef"), kSubscribeRate);
   
-  nh->param("aid_alm", enabled_["aid_alm"],
-                 enabled_["all"] || enabled_["aid"]);
-  if (enabled_["aid_alm"]) 
+  nh->param("aid_alm", enabled["aid_alm"], enabled["aid"]);
+  if (enabled["aid_alm"]) 
     gps.subscribe<ublox_msgs::AidALM>(boost::bind(
-        publish<ublox_msgs::AidALM>, _1, "aidalm"), 
-        kSubscribeRate);
+        publish<ublox_msgs::AidALM>, _1, "aidalm"), kSubscribeRate);
   
-  nh->param("aid_eph", enabled_["aid_eph"],
-                 enabled_["all"] || enabled_["aid"]);
-  if (enabled_["aid_eph"]) 
+  nh->param("aid_eph", enabled["aid_eph"], enabled["aid"]);
+  if (enabled["aid_eph"]) 
     gps.subscribe<ublox_msgs::AidEPH>(boost::bind(
-        publish<ublox_msgs::AidEPH>, _1, "aideph"), 
-        kSubscribeRate);
+        publish<ublox_msgs::AidEPH>, _1, "aideph"), kSubscribeRate);
   
-  nh->param("aid_hui", enabled_["aid_hui"],
-                 enabled_["all"] || enabled_["aid"]);
-  if (enabled_["aid_hui"]) 
+  nh->param("aid_hui", enabled["aid_hui"], enabled["aid"]);
+  if (enabled["aid_hui"]) 
     gps.subscribe<ublox_msgs::AidHUI>(boost::bind(
-        publish<ublox_msgs::AidHUI>, _1, "aidhui"), 
-        kSubscribeRate);
+        publish<ublox_msgs::AidHUI>, _1, "aidhui"), kSubscribeRate);
 
-  firmware_->subscribe();
+  for(int i = 0; i < xware_.size(); i++) {
+    xware_[i]->subscribe();
+  }
 }
 
-void UbloxNode::initDiagnostics() {
+void UbloxNode::initializeRosDiagnostics() {
   if (!nh->hasParam("diagnostic_period"))
     nh->setParam("diagnostic_period", kDiagnosticPeriod);
   
-  updater_.reset(new diagnostic_updater::Updater());
-  updater_->setHardwareID("ublox");
+  updater.reset(new diagnostic_updater::Updater());
+  updater->setHardwareID("ublox");
 
   const double target_freq = rate_;  //  actual update frequency
   double min_freq = target_freq;
   double max_freq = target_freq;
-  double timeStampStatusMax = meas_rate_ * 1e-3 * 0.05;
+  double timeStampStatusMax = meas_rate * 1e-3 * 0.05;
   diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
                                                       kTolerance, kWindow);
   diagnostic_updater::TimeStampStatusParam time_param(kTimeStampStatusMin,
                                                       timeStampStatusMax);
-  freq_diag_.reset(new diagnostic_updater::TopicDiagnostic(
-      std::string("fix"), *updater_, freq_param, time_param));
-
   // configure diagnostic updater for frequency
-  // updater_->add("fix", this, &UbloxNode::fixDiagnostic);
-  // updater_->force_update();
+  freq_diag.reset(new diagnostic_updater::TopicDiagnostic(
+      std::string("fix"), *updater, freq_param, time_param));
+
+  for(int i = 0; i < xware_.size(); i++) {
+    xware_[i]->initializeRosDiagnostics();
+  }
 }
 
 
@@ -289,20 +295,20 @@ void UbloxNode::processMonVer() {
   for(std::size_t i = 0; i < extension.size(); ++i) {
     std::size_t found = extension[i].find("PROTVER");
     if (found!=std::string::npos) {
-      setProtocolVersion(::atof(
-          extension[i].substr(8, extension[i].size()-8).c_str()));
+      protocol_version_ = ::atof(
+          extension[i].substr(8, extension[i].size()-8).c_str());
       break;
     }
   }
 
   if(protocol_version_ < 18) {
     // Firmware is for Standard Precision GNSS product 
-    setProductCategory(std::string("SPG"));
+    setHardware(std::string("SPG"));
     // Final line contains supported GNSS delimited by ;
     std::vector<std::string> strs;
     boost::split(strs, extension[extension.size()-1], boost::is_any_of(";"));
     for(size_t i = 0; i < strs.size(); i++) {
-      supported_.insert(strs[i]);
+      supported.insert(strs[i]);
     }
   } else {
     for(std::size_t i = 0; i < extension.size(); ++i) {
@@ -312,7 +318,7 @@ void UbloxNode::processMonVer() {
         boost::split(strs, extension[i], boost::is_any_of("="));
         if(strs.size() > 1) {
           if (strs[0].compare(std::string("FWVER")) == 0) {
-            setProductCategory(strs[1].substr(0, 3));
+            setHardware(strs[1].substr(0, 3));
             continue;
           }
         }
@@ -321,7 +327,7 @@ void UbloxNode::processMonVer() {
       if(i >= extension.size() - 2) {
         boost::split(strs, extension[i], boost::is_any_of(";"));
         for(size_t i = 0; i < strs.size(); i++) {
-          supported_.insert(strs[i]);
+          supported.insert(strs[i]);
         }
       }
     }
@@ -333,13 +339,12 @@ bool UbloxNode::configureUblox() {
     if (!gps.isInitialized()) {
       throw std::runtime_error("Failed to initialize.");
     }
-    if (!gps.configRate(meas_rate_, nav_rate_)) {
+    if (!gps.configRate(meas_rate, nav_rate)) {
       std::stringstream ss;
-      ss << "Failed to set measurement rate to " << meas_rate_ 
-         << "ms and navigation rate to " << nav_rate_;
+      ss << "Failed to set measurement rate to " << meas_rate 
+         << "ms and navigation rate to " << nav_rate;
       throw std::runtime_error(ss.str());
     }
-    firmware_->configureGnss();
     // If device doesn't have SBAS, will receive NACK (causes exception)
     if(supportsGnss("SBAS")) {
       if (!gps.enableSBAS(enable_sbas_, sbas_usage_, max_sbas_)) {
@@ -364,6 +369,9 @@ bool UbloxNode::configureUblox() {
       ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
       throw std::runtime_error(ss.str());
     }
+    for(int i = 0; i < xware_.size(); i++) {
+      xware_[i]->configureUblox();
+    }
   } catch (std::exception& e) {
     ROS_ERROR("Error configuring device: %s", e.what());
     return false;
@@ -371,22 +379,24 @@ bool UbloxNode::configureUblox() {
   return true;
 }
 
-
 void UbloxNode::initialize() {
-  setParams();
-  initDiagnostics();
+  // Params must be set before initializing IO
+  getRosParams();
   initializeIo();
+  // Must process Mon VER before setting firmware/hardware params
   processMonVer();
+  // Must set firmware & hardware params before initializing diagnostics
+  for(int i = 0; i < xware_.size(); i++) {
+    xware_[i]->getRosParams();
+  }
+  // Do this last
+  initializeRosDiagnostics();
 
-  firmware_->setParams();
-  hardware_->setParams();
   if (configureUblox()) {
     ROS_INFO("U-Blox configured successfully.");
     // Subscribe to all U-Blox messages
-    subscribeAll();
+    subscribe();
     
-    hardware_->configure();
-    hardware_->subscribe();
     ros::Timer poller; 
     poller = nh->createTimer(ros::Duration(kPollDuration), 
                               &UbloxNode::pollMessages, 
@@ -400,52 +410,65 @@ void UbloxNode::initialize() {
   }
 }
 
-/** Ublox Version 6 **/
-
-UbloxNode6::UbloxNode6() {}
-
-void UbloxNode6::configureGnss() {  
-  ROS_WARN("ublox_version < 7, ignoring GNSS settings");
+//
+// U-Blox Firmware (all versions) 
+//
+void UbloxFirmware::initializeRosDiagnostics() {
+  updater->add("fix", this, &UbloxFirmware::fixDiagnostic);
+  updater->force_update();
 }
 
-void UbloxNode6::subscribe() {
-  // Subscribe to RXM Raw
-  nh->param("rxm_raw", enabled_["rxm_raw"],
-                 enabled_["all"] || enabled_["rxm"]);
-  if (enabled_["rxm_raw"])
-    gps.subscribe<ublox_msgs::RxmRAW>(boost::bind(
-        publish<ublox_msgs::RxmRAW>, _1, "rxmraw"), 
-        kSubscribeRate);
+//
+// U-Blox Firmware Version 6
+//
+UbloxFirmware6::UbloxFirmware6() {}
 
-  // Subscribe to RXM SFRB
-  nh->param("rxm_sfrb", enabled_["rxm_sfrb"],
-                 enabled_["all"] || enabled_["rxm"]);
-  if (enabled_["rxm_sfrb"])
+void UbloxFirmware6::getRosParams() {
+  // Fix Service type, used when publishing fix status messages
+  fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS;  
+}
+
+bool UbloxFirmware6::configureUblox() {  
+  ROS_WARN("ublox_version < 7, ignoring GNSS settings");
+  return true;
+}
+
+void UbloxFirmware6::subscribe() {
+  // Subscribe to RXM Raw, raw data product variants only
+  nh->param("rxm_raw", enabled["rxm_raw"],
+                 enabled["all"] || enabled["rxm"]);
+  if (enabled["rxm_raw"])
+    gps.subscribe<ublox_msgs::RxmRAW>(boost::bind(
+        publish<ublox_msgs::RxmRAW>, _1, "rxmraw"), kSubscribeRate);
+
+  // Subscribe to RXM SFRB, raw data product variants only
+  nh->param("rxm_sfrb", enabled["rxm_sfrb"],
+                 enabled["all"] || enabled["rxm"]);
+  if (enabled["rxm_sfrb"])
     gps.subscribe<ublox_msgs::RxmSFRB>(boost::bind(
-        publish<ublox_msgs::RxmSFRB>, _1, "rxmsfrb"), 
-        kSubscribeRate);
+        publish<ublox_msgs::RxmSFRB>, _1, "rxmsfrb"), kSubscribeRate);
 
   // Subscribe to Nav POSLLH
-  nh->param("nav_posllh", enabled_["nav_posllh"], true);
-  if (enabled_["nav_posllh"])
+  nh->param("nav_posllh", enabled["nav_posllh"], true);
+  if (enabled["nav_posllh"])
     gps.subscribe<ublox_msgs::NavPOSLLH>(boost::bind(
-        &UbloxNode6::publishNavPosLlh, this, _1), kSubscribeRate);
+        &UbloxFirmware6::publishNavPosLlh, this, _1), kSubscribeRate);
 
   // Subscribe to Nav SOL
-  nh->param("nav_sol", enabled_["nav_sol"], true);
-  if (enabled_["nav_sol"])
+  nh->param("nav_sol", enabled["nav_sol"], true);
+  if (enabled["nav_sol"])
     gps.subscribe<ublox_msgs::NavSOL>(boost::bind(
-        &UbloxNode6::publishNavSol, this, _1), kSubscribeRate);
+        &UbloxFirmware6::publishNavSol, this, _1), kSubscribeRate);
 
   // Subscribe to Nav VELNED
-  nh->param("nav_velned", enabled_["nav_velned"], true);
-  if (enabled_["nav_velned"])
+  nh->param("nav_velned", enabled["nav_velned"], true);
+  if (enabled["nav_velned"])
     gps.subscribe<ublox_msgs::NavVELNED>(boost::bind(
-        &UbloxNode6::publishNavVelNed, this, _1), kSubscribeRate);
+        &UbloxFirmware6::publishNavVelNed, this, _1), kSubscribeRate);
   
 }
 
-void UbloxNode6::fixDiagnostic(
+void UbloxFirmware6::fixDiagnostic(
     diagnostic_updater::DiagnosticStatusWrapper& stat) {
   // Set the diagnostic level based on the fix status
   if (last_nav_sol_.gpsFix == ublox_msgs::NavSOL::GPS_DEAD_RECKONING_ONLY) {
@@ -486,7 +509,7 @@ void UbloxNode6::fixDiagnostic(
   stat.add("numSV", last_nav_sol_.numSV);
 }
 
-void UbloxNode6::publishNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
+void UbloxFirmware6::publishNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::NavPOSLLH>("navposllh", kROSQueueSize);
   publisher.publish(m);
@@ -501,7 +524,7 @@ void UbloxNode6::publishNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
     //  new timestamp
     fix_.header.stamp = ros::Time::now();
   }
-  fix_.header.frame_id = frame_id_;
+  fix_.header.frame_id = frame_id;
   fix_.latitude = m.lat * 1e-7;
   fix_.longitude = m.lon * 1e-7;
   fix_.altitude = m.height * 1e-3;
@@ -524,11 +547,11 @@ void UbloxNode6::publishNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
   fixPublisher.publish(fix_);
   last_nav_pos_ = m;
   //  update diagnostics
-  freq_diag_->tick(fix_.header.stamp);
-  updater_->update();
+  freq_diag->tick(fix_.header.stamp);
+  updater->update();
 }
 
-void UbloxNode6::publishNavVelNed(const ublox_msgs::NavVELNED& m) {
+void UbloxFirmware6::publishNavVelNed(const ublox_msgs::NavVELNED& m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::NavVELNED>("navvelned", kROSQueueSize);
   publisher.publish(m);
@@ -544,7 +567,7 @@ void UbloxNode6::publishNavVelNed(const ublox_msgs::NavVELNED& m) {
     //  create a new timestamp
     velocity_.header.stamp = ros::Time::now();
   }
-  velocity_.header.frame_id = frame_id_;
+  velocity_.header.frame_id = frame_id;
 
   //  convert to XYZ linear velocity
   velocity_.twist.twist.linear.x = m.velE / 100.0;
@@ -563,7 +586,7 @@ void UbloxNode6::publishNavVelNed(const ublox_msgs::NavVELNED& m) {
   last_nav_vel_ = m;
 }
 
-void UbloxNode6::publishNavSol(const ublox_msgs::NavSOL& m) {
+void UbloxFirmware6::publishNavSol(const ublox_msgs::NavSOL& m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::NavSOL>("navsol", kROSQueueSize);
   publisher.publish(m);
@@ -571,7 +594,7 @@ void UbloxNode6::publishNavSol(const ublox_msgs::NavSOL& m) {
 }
 
 /** Ublox Firmware Version >=7 **/
-void UbloxNode7Plus::fixDiagnostic(
+void UbloxFirmware7Plus::fixDiagnostic(
     diagnostic_updater::DiagnosticStatusWrapper& stat) {
   //  check the last message, convert to diagnostic
   if (last_nav_pvt_.fixType == ublox_msgs::NavSTATUS::GPS_NO_FIX) {
@@ -608,7 +631,7 @@ void UbloxNode7Plus::fixDiagnostic(
   stat.add("numSV", last_nav_pvt_.numSV);
 }
 
-void UbloxNode7Plus::publishNavPvt(const ublox_msgs::NavPVT& m) {
+void UbloxFirmware7Plus::publishNavPvt(const ublox_msgs::NavPVT& m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::NavPVT>("navpvt", kROSQueueSize);
   publisher.publish(m);
@@ -624,7 +647,7 @@ void UbloxNode7Plus::publishNavPvt(const ublox_msgs::NavPVT& m) {
   bool fixOk = m.flags & m.FLAGS_GNSS_FIX_OK;
   uint8_t cpSoln = m.flags & m.CARRIER_PHASE_FIXED;
 
-  fix.header.frame_id = frame_id_;
+  fix.header.frame_id = frame_id;
   fix.latitude = m.lat * 1e-7; // to deg
   fix.longitude = m.lon * 1e-7; // to deg
   fix.altitude = m.height * 1e-3; // to [m]
@@ -645,7 +668,7 @@ void UbloxNode7Plus::publishNavPvt(const ublox_msgs::NavPVT& m) {
   fix.position_covariance_type =
       sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
 
-  fix.status.service = fix_status_service_;
+  fix.status.service = fix_status_service;
   fixPublisher.publish(fix);
 
   /** Fix Velocity */
@@ -654,7 +677,7 @@ void UbloxNode7Plus::publishNavPvt(const ublox_msgs::NavPVT& m) {
                                                                 kROSQueueSize);
   geometry_msgs::TwistWithCovarianceStamped velocity;
   velocity.header.stamp = fix.header.stamp;
-  velocity.header.frame_id = frame_id_;
+  velocity.header.frame_id = frame_id;
 
   // convert to XYZ linear velocity [m/s] in ENU
   velocity.twist.twist.linear.x = m.velE * 1e-3;
@@ -673,14 +696,52 @@ void UbloxNode7Plus::publishNavPvt(const ublox_msgs::NavPVT& m) {
 
   /** Update diagnostics **/
   last_nav_pvt_ = m;
-  freq_diag_->tick(fix.header.stamp);
-  updater_->update();
+  freq_diag->tick(fix.header.stamp);
+  updater->update();
 }
 
-/** Ublox Firmware Version 7 **/
-UbloxNode7::UbloxNode7() {}
+//
+// Ublox Firmware Version 7
+//
+UbloxFirmware7::UbloxFirmware7() {}
 
-void UbloxNode7::configureGnss() {
+void UbloxFirmware7::getRosParams() {
+  int qzss_sig_cfg_default = 
+      ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA;
+  nh->param("qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_default);
+  // GNSS enable/disable
+  nh->param("enable_gps", enable_gps_, true);
+  nh->param("enable_glonass", enable_glonass_, false);
+  nh->param("enable_qzss", enable_qzss_, false);
+  
+  if(enable_gps_ && !supportsGnss("GPS")) 
+    ROS_WARN("enable_gps is true, but GPS GNSS is not supported by this device");
+  if(enable_glonass_ && !supportsGnss("GLO")) 
+    ROS_WARN("enable_glonass is true, but GLONASS is not %s", 
+             "supported by this device");
+  if(enable_qzss_ && !supportsGnss("QZSS")) 
+    ROS_WARN("enable_qzss is true, but QZSS is not supported by this device");
+  if(enable_sbas_ && !supportsGnss("SBAS")) 
+    ROS_WARN("enable_sbas is true, but SBAS is not supported by this device");
+  
+  bool enable_galileo, enable_beidou, enable_imes;
+  nh->param("enable_imes", enable_imes, false);
+  if(enable_galileo) 
+    ROS_WARN("ublox_version < 8, ignoring Galileo GNSS Settings");
+  nh->param("enable_galileo", enable_galileo, false);
+  if(enable_beidou) 
+    ROS_WARN("ublox_version < 8, ignoring BeiDou Settings");
+  nh->param("enable_beidou", enable_beidou, false);
+  if(enable_imes) 
+    ROS_WARN("ublox_version < 8, ignoring IMES GNSS Settings");
+
+  // Fix Service type, used when publishing fix status messages
+  fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS 
+      + (enable_glonass_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GLONASS;
+}
+
+bool UbloxFirmware7::configureUblox() {
+  /** Configure the GNSS **/
   ublox_msgs::CfgGNSS cfgGNSSRead;
   if (gps.poll(cfgGNSSRead)) {
     ROS_INFO("Read GNSS config.");
@@ -707,37 +768,81 @@ void UbloxNode7::configureGnss() {
                              ((enable_glonass_) ? "enable" : "disable") +
                              " GLONASS.");
   }
+  return true;
 }
 
-void UbloxNode7::subscribe() {
+void UbloxFirmware7::subscribe() {
   // Subscribe to RXM Raw
-  nh->param("rxm_raw", enabled_["rxm_raw"],
-                 enabled_["all"] || enabled_["rxm"]);
-  if (enabled_["rxm_raw"])
+  nh->param("rxm_raw", enabled["rxm_raw"],
+                 enabled["all"] || enabled["rxm"]);
+  if (enabled["rxm_raw"])
     gps.subscribe<ublox_msgs::RxmRAW>(boost::bind(
         publish<ublox_msgs::RxmRAW>, _1, "rxmraw"),
         kSubscribeRate);
 
   // Subscribe to RXM SFRB
-  nh->param("rxm_sfrb", enabled_["rxm_sfrb"],
-                 enabled_["all"] || enabled_["rxm"]);
-  if (enabled_["rxm_sfrb"])
+  nh->param("rxm_sfrb", enabled["rxm_sfrb"],
+                 enabled["all"] || enabled["rxm"]);
+  if (enabled["rxm_sfrb"])
     gps.subscribe<ublox_msgs::RxmSFRB>(boost::bind(
         publish<ublox_msgs::RxmSFRB>, _1, "rxmsfrb"),
         kSubscribeRate);
  
   // Subscribe to Nav PVT (version 7 & above only)
-  nh->param("nav_pvt", enabled_["nav_pvt"], true);
-  if (enabled_["nav_pvt"])
+  nh->param("nav_pvt", enabled["nav_pvt"], true);
+  if (enabled["nav_pvt"])
     gps.subscribe<ublox_msgs::NavPVT>(boost::bind(
-        &UbloxNode7Plus::publishNavPvt, this, _1),
+        &UbloxFirmware7Plus::publishNavPvt, this, _1),
         kSubscribeRate);
 }
 
-/** Ublox Version 8 **/
-UbloxNode8::UbloxNode8() {}
+//
+// Ublox Version 8 
+//
+UbloxFirmware8::UbloxFirmware8() {}
 
-void UbloxNode8::configureGnss() {
+void UbloxFirmware8::getRosParams() {
+  int qzss_sig_cfg_default = 
+      ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA;
+  nh->param("qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_default);
+  // GNSS enable/disable
+  nh->param("enable_gps", enable_gps_, true);
+  nh->param("enable_galileo", enable_galileo_, false);
+  nh->param("enable_beidou", enable_beidou_, false);
+  nh->param("enable_imes", enable_imes_, false);
+  nh->param("enable_glonass", enable_glonass_, false);
+  nh->param("enable_qzss", enable_qzss_, false);
+  nh->param("enable_sbas", enable_sbas_, false);
+
+  if(enable_gps_ && !supportsGnss("GPS")) 
+    ROS_WARN("enable_gps is true, but GPS GNSS is not supported by %s",
+             "this device");
+  if(enable_glonass_ && !supportsGnss("GLO")) 
+    ROS_WARN("enable_glonass is true, but GLONASS is not supported by %s",
+             "this device");
+  if(enable_galileo_ && !supportsGnss("GAL")) 
+    ROS_WARN("enable_galileo is true, but Galileo GNSS is not supported by %s",
+             "this device");
+  if(enable_beidou_ && !supportsGnss("BDS")) 
+    ROS_WARN("enable_beidou is true, but Beidou GNSS is not supported by %s",
+             "this device");
+  if(enable_imes_ && !supportsGnss("IMES")) 
+    ROS_WARN("enable_imes is true, but IMES GNSS is not supported by %s",
+             "this device");
+  if(enable_qzss_ && !supportsGnss("QZSS")) 
+    ROS_WARN("enable_qzss is true, but QZSS is not supported by this device");
+  if(enable_sbas_ && !supportsGnss("SBAS")) 
+    ROS_WARN("enable_sbas is true, but SBAS is not supported by this device");
+
+  // Fix Service type, used when publishing fix status messages
+  fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS 
+      + (enable_glonass_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GLONASS
+      + (enable_beidou_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_COMPASS
+      + (enable_galileo_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GALILEO;
+}
+
+bool UbloxFirmware8::configureUblox() {
+  /** Configure the GNSS **/
   ublox_msgs::CfgGNSS cfgGNSSRead;
   if (gps.poll(cfgGNSSRead)) {
     ROS_INFO("Read GNSS config.");
@@ -800,146 +905,32 @@ void UbloxNode8::configureGnss() {
   if (!gps.configure(cfgGNSSWrite)) {
     throw std::runtime_error(std::string("Failed to Configure GNSS"));
   }
-
-  // Configure DGNSS
-  if(dgnss_mode_ != 0)
-    if(!gps.configDgnss(dgnss_mode_)) {
-      throw std::runtime_error(std::string("Failed to Configure DGNSS"));
-    }
+  return true;
 }
-void UbloxNode8::subscribe() {
-  // Subscribe to RawX messages
-  nh->param("rxm_raw", enabled_["rxm_raw"],
-                 enabled_["all"] || enabled_["rxm"]);
-  if (enabled_["rxm_raw"])
-    gps.subscribe<ublox_msgs::RxmRAWX>(boost::bind(
-        publish<ublox_msgs::RxmRAWX>, _1, "rxmraw"), 
-        kSubscribeRate);
 
+void UbloxFirmware8::subscribe() {
   // Subscribe to RTCM messages
-  nh->param("rxm_rtcm", enabled_["rxm_rtcm"], 
-                 enabled_["all"] || enabled_["rxm"]);
-  if (enabled_["rxm_rtcm"])
+  nh->param("rxm_rtcm", enabled["rxm_rtcm"], 
+            enabled["all"] || enabled["rxm"]);
+  if (enabled["rxm_rtcm"])
     gps.subscribe<ublox_msgs::RxmRTCM>(boost::bind(
         publish<ublox_msgs::RxmRTCM>, _1, "rxmrtcm"), 
         kSubscribeRate);
 
-  // Subscribe to SFRB messages
-  nh->param("rxm_sfrb", enabled_["rxm_sfrb"],
-                 enabled_["all"] || enabled_["rxm"]);
-  if (enabled_["rxm_sfrb"])
-    gps.subscribe<ublox_msgs::RxmSFRBX>(boost::bind(
-        publish<ublox_msgs::RxmSFRBX>, _1, "rxmsfrb"), 
-        kSubscribeRate);
-
   // Subscribe to Nav PVT (version 7 & above only)
-  nh->param("nav_pvt", enabled_["nav_pvt"], true);
-  if (enabled_["nav_pvt"])
+  nh->param("nav_pvt", enabled["nav_pvt"], true);
+  if (enabled["nav_pvt"])
     gps.subscribe<ublox_msgs::NavPVT>(boost::bind(
-        &UbloxNode7Plus::publishNavPvt, this, _1), 
+        &UbloxFirmware7Plus::publishNavPvt, this, _1), 
         kSubscribeRate);
 }
 
-void UbloxNode8::modeDiagnostic(
-    diagnostic_updater::DiagnosticStatusWrapper& stat) {
-  stat.add("mode", mode_names[mode_]);
-  if(mode_ == TIME) {
-    for(int i = 0; i < rtcm_ids_.size(); i++) {
-      ros::Duration dt = ros::Time::now() - last_received_rtcm_[rtcm_ids_[i]];
-      std::string id = boost::lexical_cast<std::string>(rtcm_ids_[i]);
-      stat.add("RTCM " + id, dt.toSec());
-    }
-  } else if(mode_ == SURVEY_IN) {
-    // stat.add("Survey In Status: ", svin.active, svin.valid);
-  }
-}
-
-void UbloxNode6::setParams() {
-  // Fix Service type, used when publishing fix status messages
-  fix_status_service_ = sensor_msgs::NavSatStatus::SERVICE_GPS;  
-}
-
-
-void UbloxNode7::setParams() {
-  int qzss_sig_cfg_default = 
-      ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA;
-  nh->param("qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_default);
-  // GNSS enable/disable
-  nh->param("enable_gps", enable_gps_, true);
-  nh->param("enable_glonass", enable_glonass_, false);
-  nh->param("enable_qzss", enable_qzss_, false);
-  
-  if(enable_gps_ && !supportsGnss("GPS")) 
-    ROS_WARN("enable_gps is true, but GPS GNSS is not supported by this device");
-  if(enable_glonass_ && !supportsGnss("GLO")) 
-    ROS_WARN("enable_glonass is true, but GLONASS is not %s", 
-             "supported by this device");
-  if(enable_qzss_ && !supportsGnss("QZSS")) 
-    ROS_WARN("enable_qzss is true, but QZSS is not supported by this device");
-  if(enable_sbas_ && !supportsGnss("SBAS")) 
-    ROS_WARN("enable_sbas is true, but SBAS is not supported by this device");
-  
-  bool enable_galileo, enable_beidou, enable_imes;
-  nh->param("enable_imes", enable_imes, false);
-  if(enable_galileo) 
-    ROS_WARN("ublox_version < 8, ignoring Galileo GNSS Settings");
-  nh->param("enable_galileo", enable_galileo, false);
-  if(enable_beidou) 
-    ROS_WARN("ublox_version < 8, ignoring BeiDou Settings");
-  nh->param("enable_beidou", enable_beidou, false);
-  if(enable_imes) 
-    ROS_WARN("ublox_version < 8, ignoring IMES GNSS Settings");
-
-  // Fix Service type, used when publishing fix status messages
-  fix_status_service_ = sensor_msgs::NavSatStatus::SERVICE_GPS 
-      + (enable_glonass_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GLONASS;
-}
-
-
-void UbloxNode8::setParams() {
-  int qzss_sig_cfg_default = 
-      ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA;
-  nh->param("qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_default);
-  // DGNSS
+//
+// U-Blox High Precision GNSS 
+//
+void UbloxHpg::getRosParams() {
   nh->param("dgnss_mode", dgnss_mode_, 0); // If 0, will not be configured
-  // GNSS enable/disable
-  nh->param("enable_gps", enable_gps_, true);
-  nh->param("enable_galileo", enable_galileo_, false);
-  nh->param("enable_beidou", enable_beidou_, false);
-  nh->param("enable_imes", enable_imes_, false);
-  nh->param("enable_glonass", enable_glonass_, false);
-  nh->param("enable_qzss", enable_qzss_, false);
-  nh->param("enable_sbas", enable_sbas_, false);
-
-  if(enable_gps_ && !supportsGnss("GPS")) 
-    ROS_WARN("enable_gps is true, but GPS GNSS is not supported by %s",
-             "this device");
-  if(enable_glonass_ && !supportsGnss("GLO")) 
-    ROS_WARN("enable_glonass is true, but GLONASS is not supported by %s",
-             "this device");
-  if(enable_galileo_ && !supportsGnss("GAL")) 
-    ROS_WARN("enable_galileo is true, but Galileo GNSS is not supported by %s",
-             "this device");
-  if(enable_beidou_ && !supportsGnss("BDS")) 
-    ROS_WARN("enable_beidou is true, but Beidou GNSS is not supported by %s",
-             "this device");
-  if(enable_imes_ && !supportsGnss("IMES")) 
-    ROS_WARN("enable_imes is true, but IMES GNSS is not supported by %s",
-             "this device");
-  if(enable_qzss_ && !supportsGnss("QZSS")) 
-    ROS_WARN("enable_qzss is true, but QZSS is not supported by this device");
-  if(enable_sbas_ && !supportsGnss("SBAS")) 
-    ROS_WARN("enable_sbas is true, but SBAS is not supported by this device");
-
-  // Fix Service type, used when publishing fix status messages
-  fix_status_service_ = sensor_msgs::NavSatStatus::SERVICE_GPS 
-      + (enable_glonass_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GLONASS
-      + (enable_beidou_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_COMPASS
-      + (enable_galileo_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GALILEO;
-}
-
-void UbloxHardwareHpg::setParams() {
-  nh->param("tmode3", tmode3_, 0); // default to disabled
+  nh->param("tmode3", tmode3_, -1); // default to do not configure
 
   if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_FIXED) {
     if(!nh->getParam("arp_position", arp_position_))
@@ -965,7 +956,8 @@ void UbloxHardwareHpg::setParams() {
   }
 }
 
-void UbloxHardwareHpg::configure() {
+bool UbloxHpg::configureUblox() {
+  // Configure TMODE3
   if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
     if(!gps.disableTmode3())
       throw std::runtime_error("Failed to disable TMODE3.");
@@ -973,60 +965,136 @@ void UbloxHardwareHpg::configure() {
     if(!gps.configTmode3Fixed(lla_flag_, arp_position_, arp_position_hp_, 
                                fixed_pos_acc_))
       throw std::runtime_error("Failed to set TMODE3 to fixed.");
-    if(!gps.configRtcm(rtcm_ids_, rtcm_rate_)) {
+    if(!gps.configRtcm(rtcm_ids, rtcm_rate)) {
       throw std::runtime_error("Failed to set RTCM rates");
     }
   } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
-    mode_ = SURVEY_IN;
+    mode = SURVEY_IN;
     // For Survey in, meas rate must be at least 1 Hz
-    uint16_t meas_rate = std::min(meas_rate_, 1000); // [ms]
-    if(1000 % meas_rate != 0) {
+    uint16_t meas_rate_temp = std::min(meas_rate, 1000); // [ms]
+    if(1000 % meas_rate_temp != 0) {
       // If measurement period isn't a factor of 1000, set to default
-      meas_rate = kDefaultMeasPeriod;
+      meas_rate_temp = kDefaultMeasPeriod;
     }
     // Set nav rate to 1 Hz during survey in
-    gps.configRate(meas_rate, (int) 1000 / meas_rate);
+    gps.configRate(meas_rate_temp, (int) 1000 / meas_rate_temp);
     // First disable, then set to survey in
     if(!gps.disableTmode3())
-      throw std::runtime_error(std::string("Failed to disable TMODE3") +
+      throw std::runtime_error(std::string("Failed to disable TMODE3 ") +
                                "before setting to survey-in.");
     if(!gps.configTmode3SurveyIn(sv_in_min_dur_, sv_in_acc_lim_))
       throw std::runtime_error("Failed to set TMODE3 to survey-in.");
   }
+
+  // Configure DGNSS
+  if(dgnss_mode_ != 0) {
+    if(!gps.configDgnss(dgnss_mode_)) {
+      throw std::runtime_error(std::string("Failed to Configure DGNSS"));
+    }
+  }
+  return true;
 }
 
-void UbloxHardwareHpg::subscribe() {
+void UbloxHpg::subscribe() {
   // Subscribe to Nav Relative Position NED, High Precision GNSS devices only
-  nh->param("nav_relposned", enabled_["nav_relposned"], true);
-  if (enabled_["nav_relposned"])
+  nh->param("nav_relposned", enabled["nav_relposned"], true);
+  if (enabled["nav_relposned"])
     gps.subscribe<ublox_msgs::NavRELPOSNED>(boost::bind(
         publish<ublox_msgs::NavRELPOSNED>, _1, "navrelposned"), kSubscribeRate);
 
   // Subscribe to Nav Survey In, High Precision GNSS devices only
-  nh->param("nav_svin", enabled_["nav_svin"], true);
-  if (enabled_["nav_svin"])
+  nh->param("nav_svin", enabled["nav_svin"], true);
+  if (enabled["nav_svin"])
      gps.subscribe<ublox_msgs::NavSVIN>(boost::bind(
-        &UbloxHardwareHpg::publishNavSvIn, this, _1), kSubscribeRate);
+        &UbloxHpg::publishNavSvIn, this, _1), kSubscribeRate);
 }
 
-void UbloxHardwareHpg::publishNavSvIn(ublox_msgs::NavSVIN m) {
+void UbloxHpg::publishNavSvIn(ublox_msgs::NavSVIN m) {
   static ros::Publisher publisher =
       nh->advertise<ublox_msgs::NavSVIN>("navsvin", kROSQueueSize);
   publisher.publish(m);
 
-  if(!m.active && m.valid && mode_ == SURVEY_IN) {
-    mode_ = TIME; // switch to time mode
+  last_nav_svin_ = m;
 
-    // Set the Measurement & nav rate
-    if(!gps.configRate(meas_rate_, nav_rate_)) {
-      ROS_ERROR("Failed to set measurement rate to %d ms %s %d", meas_rate_, 
-                "navigation rate to ", nav_rate_);
+  if(!m.active && m.valid && mode == SURVEY_IN) {
+    mode = TIME; // switch to time mode
+
+    // Set the Measurement & nav rate to user config
+    if(!gps.configRate(meas_rate, nav_rate)) {
+      ROS_ERROR("Failed to set measurement rate to %d ms %s %d", meas_rate, 
+                "navigation rate to ", nav_rate);
     }
     // Enable the RTCM out messages
-    if(!gps.configRtcm(rtcm_ids_, rtcm_rate_)) {
+    if(!gps.configRtcm(rtcm_ids, rtcm_rate)) {
       ROS_ERROR("Failed to configure RTCM IDs");
     }
   }
+
+  updater->update();
+}
+
+void UbloxHpg::initializeRosDiagnostics() {
+  updater->add("HPG", this, &UbloxHpg::diagnosticUpdater);
+  updater->force_update();
+}
+
+void UbloxHpg::diagnosticUpdater(
+    diagnostic_updater::DiagnosticStatusWrapper& stat) {
+  stat.add("TMODE3", mode_names[mode]);
+  if(mode == INIT || mode == DISABLED) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+    stat.message = "TMODE3 ok";
+  } else if(mode == TIME) {
+    std::string error_msg = "RTCM Message frequency too low for IDs: ";
+    bool error = false;
+    for(int i = 0; i < rtcm_ids.size(); i++) {
+      ros::Duration dt = ros::Time::now() - last_received_rtcm_[rtcm_ids[i]];
+      std::string id = boost::lexical_cast<std::string>(rtcm_ids[i]);
+      stat.add("RTCM " + id, dt.toSec());
+      if(dt.toSec() > 1.0) {
+        error_msg += rtcm_ids[i] + ", ";
+        error = true;
+      }
+    }
+    if(error) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+      stat.message = error_msg.c_str();
+    } else {
+      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+      stat.message = "RTCM Message frequencies ok";
+    }
+  } else if(mode == SURVEY_IN) {
+    if(!last_nav_svin_.active && !last_nav_svin_.valid) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+      stat.message = "Survey-In inactive and invalid";
+    } else if (last_nav_svin_.active && !last_nav_svin_.valid) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+      stat.message = "Survey-In active but invalid";
+    } else if (!last_nav_svin_.active && last_nav_svin_.valid) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+      stat.message = "Survey-In done and valid";
+    } else if(last_nav_svin_.active && last_nav_svin_.valid) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+      stat.message = "Survey-In active and valid";
+    }
+  }
+}
+
+/* U-Blox Time Sync Products */
+void UbloxTim::subscribe() {
+  // Subscribe to RawX messages
+  nh->param("rxm_raw", enabled["rxm_raw"],
+            enabled["all"] || enabled["rxm"]);
+  if (enabled["rxm_raw"])
+    gps.subscribe<ublox_msgs::RxmRAWX>(boost::bind(
+        publish<ublox_msgs::RxmRAWX>, _1, "rxmraw"), kSubscribeRate);
+
+  // Subscribe to SFRBX messages
+  nh->param("rxm_sfrb", enabled["rxm_sfrb"], 
+            enabled["all"] || enabled["rxm"]);
+  if (enabled["rxm_sfrb"])
+    gps.subscribe<ublox_msgs::RxmSFRBX>(boost::bind(
+        publish<ublox_msgs::RxmSFRBX>, _1, "rxmsfrb"), kSubscribeRate);
 }
 
 int main(int argc, char** argv) {
