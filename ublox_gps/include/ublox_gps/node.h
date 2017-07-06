@@ -206,6 +206,11 @@ class UbloxNode : public virtual UbloxInterface {
    */
   void initializeRosDiagnostics();
 
+  /**
+   * @brief Prints an INF message to the ROS console.
+   */
+  void printInf(const ublox_msgs::Inf &m, uint8_t id);
+
  private:
   /**
    * @brief Initialize the U-Blox node. Configure the U-Blox and subscribe to 

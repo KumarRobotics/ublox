@@ -222,7 +222,9 @@ class Gps {
   bool enableSBAS(bool enabled, uint8_t usage, uint8_t max_sbas);
 
   /**
-   * @brief Set the rate of the Ublox message & subscribe to the given message
+   * @brief Configure the U-Blox send rate of the message & subscribe to the 
+   * given message
+   * @param the callback handler for the message
    * @param rate the rate in Hz of the message
    * @return
    */
@@ -230,12 +232,28 @@ class Gps {
   Callbacks::iterator subscribe(typename CallbackHandler_<T>::Callback callback,
                                 unsigned int rate);
   /**
-   * @brief Subscribe to the given Ublox message
+   * @brief Subscribe to the given Ublox message.
+   * @param the callback handler for the message
    * @return
    */
   template <typename T>
   Callbacks::iterator subscribe(
       typename CallbackHandler_<T>::Callback callback);
+
+  /**
+   * @brief Subscribe to the message with the given ID. This is used for 
+   * messages which have the same format but different message IDs, 
+   * e.g. INF messages.
+   * @param the callback handler for the message
+   * @param message_id the U-Blox message ID
+   * @return
+   */
+  template <typename T>
+  Callbacks::iterator subscribeId(
+      typename CallbackHandler_<T>::Callback callback, 
+      unsigned int message_id);
+
+
   template <typename T>
   bool read(T& message,
             const boost::posix_time::time_duration& timeout = default_timeout_);
@@ -336,6 +354,16 @@ Callbacks::iterator Gps::subscribe(
   CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
   return callbacks_.insert(
       std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
+                     boost::shared_ptr<CallbackHandler>(handler)));
+}
+
+template <typename T>
+Callbacks::iterator Gps::subscribeId(
+    typename CallbackHandler_<T>::Callback callback, unsigned int message_id) {
+  boost::mutex::scoped_lock lock(callback_mutex_);
+  CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
+  return callbacks_.insert(
+      std::make_pair(std::make_pair(T::CLASS_ID, message_id),
                      boost::shared_ptr<CallbackHandler>(handler)));
 }
 

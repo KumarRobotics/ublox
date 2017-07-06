@@ -172,6 +172,7 @@ void UbloxNode::initializeIo() {
     gps.configUart1(baudrate_, uart_in_, uart_out_);
     gps.initialize(*serial, io_service_, baudrate_, uart_in_, uart_out_);
   }
+  ROS_INFO("I/O initialized");
 }
 
 void UbloxNode::pollMessages(const ros::TimerEvent& event) {
@@ -191,13 +192,26 @@ void UbloxNode::pollMessages(const ros::TimerEvent& event) {
   }
 }
 
+void UbloxNode::printInf(const ublox_msgs::Inf &m, uint8_t id) {
+  if(id == ublox_msgs::Message::INF::ERROR) {
+    ROS_ERROR("%s", m.str.data());
+  } else if(id == ublox_msgs::Message::INF::WARNING) {
+    ROS_WARN("%s", m.str.data());
+  } else {
+    ROS_INFO("%s", m.str.data());
+  }
+}
+
 void UbloxNode::subscribe() {
   ROS_INFO("Subscribing to U-Blox messages");
   // subscribe messages
   nh->param("all", enabled["all"], false);
+  nh->param("inf", enabled["inf"], true);
   nh->param("rxm", enabled["rxm"], enabled["all"]);
   nh->param("aid", enabled["aid"], enabled["all"]);
+  nh->param("mon", enabled["mon"], enabled["all"]);
   
+  // Nav Messages
   nh->param("nav_status", enabled["nav_status"], true);
   if (enabled["nav_status"])
     gps.subscribe<ublox_msgs::NavSTATUS>(boost::bind(
@@ -213,6 +227,43 @@ void UbloxNode::subscribe() {
     gps.subscribe<ublox_msgs::NavCLOCK>(boost::bind(
         publish<ublox_msgs::NavCLOCK>, _1, "navclock"), kSubscribeRate);  
   
+  // INF messages
+  nh->param("inf_debug", enabled["inf_debug"], false);
+  if (enabled["inf_debug"])
+    gps.subscribeId<ublox_msgs::Inf>(
+        boost::bind(&UbloxNode::printInf, this, _1, 
+                    ublox_msgs::Message::INF::DEBUG), 
+        ublox_msgs::Message::INF::DEBUG);
+
+  nh->param("inf_error", enabled["inf_error"], enabled["inf"]);
+  if (enabled["inf_error"])
+    gps.subscribeId<ublox_msgs::Inf>(
+        boost::bind(&UbloxNode::printInf, this, _1, 
+                    ublox_msgs::Message::INF::ERROR), 
+        ublox_msgs::Message::INF::ERROR);
+
+  nh->param("inf_notice", enabled["inf_notice"], enabled["inf"]);
+  if (enabled["inf_notice"])
+    gps.subscribeId<ublox_msgs::Inf>(
+        boost::bind(&UbloxNode::printInf, this, _1, 
+                    ublox_msgs::Message::INF::NOTICE), 
+        ublox_msgs::Message::INF::NOTICE);
+
+  nh->param("inf_test", enabled["inf_test"], enabled["inf"]);
+  if (enabled["inf_test"])
+    gps.subscribeId<ublox_msgs::Inf>(
+        boost::bind(&UbloxNode::printInf, this, _1, 
+                    ublox_msgs::Message::INF::TEST), 
+        ublox_msgs::Message::INF::TEST);
+
+  nh->param("inf_warning", enabled["inf_warning"], enabled["inf"]);
+  if (enabled["inf_warning"])
+    gps.subscribeId<ublox_msgs::Inf>(
+        boost::bind(&UbloxNode::printInf, this, _1, 
+                    ublox_msgs::Message::INF::WARNING), 
+        ublox_msgs::Message::INF::WARNING);
+
+  // AID messages
   nh->param("aid_alm", enabled["aid_alm"], enabled["aid"]);
   if (enabled["aid_alm"]) 
     gps.subscribe<ublox_msgs::AidALM>(boost::bind(
@@ -789,21 +840,25 @@ void UbloxFirmware7::subscribe() {
         publish<ublox_msgs::NavSVINFO>, _1, "navsvinfo"), 
         kNavSvInfoSubscribeRate);
 
+  // Subscribe to Mon HW
+  nh->param("mon_hw", enabled["mon_hw"], enabled["mon"]);
+  if (enabled["mon_hw"])
+    gps.subscribe<ublox_msgs::MonHW>(boost::bind(
+        publish<ublox_msgs::MonHW>, _1, "monhw"), kSubscribeRate);
+
   // Subscribe to RXM Raw, raw data product variants only
   nh->param("rxm_raw", enabled["rxm_raw"],
                  enabled["all"] || enabled["rxm"]);
   if (enabled["rxm_raw"])
     gps.subscribe<ublox_msgs::RxmRAW>(boost::bind(
-        publish<ublox_msgs::RxmRAW>, _1, "rxmraw"),
-        kSubscribeRate);
+        publish<ublox_msgs::RxmRAW>, _1, "rxmraw"), kSubscribeRate);
 
   // Subscribe to RXM SFRB, raw data product variants only
   nh->param("rxm_sfrb", enabled["rxm_sfrb"],
                  enabled["all"] || enabled["rxm"]);
   if (enabled["rxm_sfrb"])
     gps.subscribe<ublox_msgs::RxmSFRB>(boost::bind(
-        publish<ublox_msgs::RxmSFRB>, _1, "rxmsfrb"),
-        kSubscribeRate);
+        publish<ublox_msgs::RxmSFRB>, _1, "rxmsfrb"), kSubscribeRate);
 
   // Subscribe to RXM EPH, raw data product variants only
   nh->param("rxm_eph", enabled["rxm_eph"], enabled["rxm"]);
@@ -944,13 +999,18 @@ void UbloxFirmware8::subscribe() {
     gps.subscribe<ublox_msgs::NavSAT>(boost::bind(
         publish<ublox_msgs::NavSAT>, _1, "navsat"), kNavSvInfoSubscribeRate);
 
+  // Subscribe to Mon HW
+  nh->param("mon_hw", enabled["mon_hw"], enabled["mon"]);
+  if (enabled["mon_hw"])
+    gps.subscribe<ublox_msgs::MonHW>(boost::bind(
+        publish<ublox_msgs::MonHW>, _1, "monhw"), kSubscribeRate);
+
   // Subscribe to RTCM messages
   nh->param("rxm_rtcm", enabled["rxm_rtcm"], 
             enabled["all"] || enabled["rxm"]);
   if (enabled["rxm_rtcm"])
     gps.subscribe<ublox_msgs::RxmRTCM>(boost::bind(
-        publish<ublox_msgs::RxmRTCM>, _1, "rxmrtcm"), 
-        kSubscribeRate);
+        publish<ublox_msgs::RxmRTCM>, _1, "rxmrtcm"), kSubscribeRate);
 }
 
 //
