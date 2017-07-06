@@ -378,16 +378,19 @@ bool Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout,
 
 void Gps::readCallback(unsigned char* data, std::size_t& size) {
   ublox::Reader reader(data, size);
+  // Read all U-Blox messages in buffer
   while (reader.search() != reader.end() && reader.found()) {
     if (debug >= 3) {
+      // Print the received bytes
       std::ostringstream oss;
       for (ublox::Reader::iterator it = reader.pos();
            it != reader.pos() + reader.length() + 8; ++it)
-        oss << std::hex << static_cast<unsigned int>(*it) << " ";
-      ROS_INFO("U-blox: received %d bytes\n%s", reader.length() + 8, 
+        oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
+      ROS_INFO("U-blox: reading %d bytes\n%s", reader.length() + 8, 
                oss.str().c_str());
     }
 
+    // Find the callback handlers for the message & decode it
     callback_mutex_.lock();
     Callbacks::key_type key =
         std::make_pair(reader.classId(), reader.messageId());
@@ -397,20 +400,20 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
     callback_mutex_.unlock();
 
     if (reader.classId() == ublox_msgs::Class::ACK) {
+      // Process ACK/NACK messages
       const uint8_t * data = reader.data();
       acknowledge_ = (reader.messageId() == ublox_msgs::Message::ACK::NACK) 
                      ? NACK : ACK;
       acknowledge_class_id_ = data[0];
       acknowledge_msg_id_ = data[1];
       if (acknowledge_ == ACK && debug >= 2)
-        ROS_INFO("U-blox: received ACK: %x / %x", data[0], data[1]);
-      else if(acknowledge_ == NACK) {
-        ROS_ERROR("U-blox: received NACK: %x / %x", data[0], data[1]);
-      }
+        ROS_INFO("U-blox: received ACK: 0x%02x / 0x%02x", data[0], data[1]);
+      else if(acknowledge_ == NACK)
+        ROS_ERROR("U-blox: received NACK: 0x%02x / 0x%02x", data[0], data[1]);
     }
   }
 
-  // delete read bytes from input buffer
+  // delete read bytes from ASIO input buffer
   std::copy(reader.pos(), reader.end(), data);
   size -= reader.pos() - data;
 }

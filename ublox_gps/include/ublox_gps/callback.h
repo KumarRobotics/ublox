@@ -54,21 +54,26 @@ class CallbackHandler_ : public CallbackHandler {
   CallbackHandler_(const Callback& func = Callback()) : func_(func) {}
   virtual const T& get() { return message_; }
 
+  /**
+   * @brief Decode the U-Blox message & call the callback function if it exists.
+   */
   void handle(ublox::Reader& reader) {
     boost::mutex::scoped_lock(mutex_);
     try {
       if (!reader.read<T>(message_)) {
-        ROS_ERROR("Decoder error for %u / %u (%d bytes)", 
+        ROS_ERROR("U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)", 
                   static_cast<unsigned int>(reader.classId()),
                   static_cast<unsigned int>(reader.messageId()),
                   reader.length());
+        condition_.notify_all();
         return;
       }
     } catch (std::runtime_error& e) {
-      ROS_ERROR("Decoder error for %u / %u (%d bytes)", 
+      ROS_ERROR("U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)", 
                   static_cast<unsigned int>(reader.classId()),
                   static_cast<unsigned int>(reader.messageId()),
                   reader.length());
+      condition_.notify_all();
       return;
     }
 
@@ -76,16 +81,13 @@ class CallbackHandler_ : public CallbackHandler {
     condition_.notify_all();
   }
   
-
-
  private:
   Callback func_;
   T message_;
 };
 
 typedef std::multimap<std::pair<uint8_t, uint8_t>,
-                      boost::shared_ptr<CallbackHandler> >
-    Callbacks;
+                      boost::shared_ptr<CallbackHandler> > Callbacks;
 
 }  // namespace ublox_gps
 
