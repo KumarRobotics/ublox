@@ -72,6 +72,39 @@ struct Serializer<ublox_msgs::CfgGNSS_<ContainerAllocator> >
 };
 
 template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::Inf_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::Inf_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    m.str.clear();
+    m.str.reserve(count);
+    try {
+      typename ublox_msgs::Inf_<ContainerAllocator>::_str_type::value_type temp;
+      // Add each char
+      for (int i = 0; i < count; i++) {
+        stream.next(temp);
+        m.str.push_back(temp);
+      }
+    } catch(ros::serialization::StreamOverrunException& e) {
+      ROS_ERROR("U-Blox: Error decoding Inf message");
+    }
+  }
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::Inf_<ContainerAllocator> >::param_type m)
+  {
+    return m.str.size();
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::Inf_<ContainerAllocator> >::param_type m)
+  {
+    ros::serialization::OStream stream(data, size);
+    for(std::size_t i = 0; i < m.str.size(); ++i) 
+      ros::serialization::serialize(stream, m.str[i]);
+  }
+};
+
+template <typename ContainerAllocator>
 struct Serializer<ublox_msgs::MonVER_<ContainerAllocator> >
 {
   static void read(const uint8_t *data, uint32_t count, 

@@ -41,6 +41,11 @@ namespace ublox {
 
 static const uint8_t DEFAULT_SYNC_A = 0xB5;
 static const uint8_t DEFAULT_SYNC_B = 0x62;
+// Number of bytes in a message header (Sync chars + class ID + message ID)
+static const uint8_t kHeaderLength = 6;
+// Number of bytes in the message header and checksum 
+static const uint8_t kWrapperLength = 8;
+
 
 template <typename T>
 struct Serializer {
@@ -93,6 +98,7 @@ class Reader {
   {
     if (found_) next();
 
+    // Search for a message header
     for( ; count_ > 0; --count_, ++data_) {
       if (data_[0] == options_.sync_a && 
           (count_ == 1 || data_[1] == options_.sync_b)) 
@@ -102,18 +108,26 @@ class Reader {
     return data_;
   }
 
+  // @returns true if A message with the correct header & length has been found
   bool found()
   {
     if (found_) return true;
-    if (count_ < 6) return false;
+    // Verify message is long enough to have sync chars, id, length & checksum
+    if (count_ < kWrapperLength) return false;
+    // Verify the header bits
     if (data_[0] != options_.sync_a || data_[1] != options_.sync_b) 
       return false;
-    if (count_ < length() + 8) return false;
+    // Verify that the buffer length is long enough based on the received
+    // message length
+    if (count_ < length() + kWrapperLength) return false;
 
     found_ = true;
     return true;
   }
 
+  // @brief Go to the next message, uses the received message length.
+  // Warning: will not go to the correct byte location if the received message
+  // length is incorrect, still needs to be called after this.
   iterator next() {
     if (found()) {
       uint32_t size = length() + 8;
@@ -134,25 +148,27 @@ class Reader {
   uint8_t classId() { return data_[2]; }
   uint8_t messageId() { return data_[3]; }
   uint32_t length() { return (data_[5] << 8) + data_[4]; }
-  const uint8_t *data() { return data_ + 6; }
+  const uint8_t *data() { return data_ + kHeaderLength; }
   uint16_t checksum() { 
-    return *reinterpret_cast<const uint16_t *>(data_ + 6 + length()); 
+    return *reinterpret_cast<const uint16_t *>(data_ + kHeaderLength + length()); 
   }
 
   template <typename T>
   bool read(typename boost::call_traits<T>::reference message, 
             bool search = false) {
     if (search) this->search();
-    if (!found()) return false;
+    if (!found()) return false; 
     if (!Message<T>::canDecode(classId(), messageId())) return false;
 
     uint16_t chk;
     if (calculateChecksum(data_ + 2, length() + 4, chk) != this->checksum()) {
       // checksum error
+      ROS_ERROR("U-Blox read checksum error: 0x%02x / 0x%02x", classId(), 
+                messageId());
       return false;
     }
 
-    Serializer<T>::read(data_ + 6, length(), message);
+    Serializer<T>::read(data_ + kHeaderLength, length(), message);
     return true;
   }
 
@@ -184,18 +200,18 @@ class Writer {
                                    uint8_t class_id = T::CLASS_ID, 
                                    uint8_t message_id = T::MESSAGE_ID) {
     uint32_t length = Serializer<T>::serializedLength(message);
-    if (size_ < length + 8) {
-      ROS_ERROR("Write %u / %u: Size_ < length + 8", class_id, message_id);
+    if (size_ < length + kWrapperLength) {
+      ROS_ERROR("U-Blox write %u / %u: size < length + 8", class_id, message_id);
       return false;
     }
-    Serializer<T>::write(data_ + 6, size_ - 6, message);
+    Serializer<T>::write(data_ + kHeaderLength, size_ - kHeaderLength, message);
     return write(0, length, class_id, message_id);
   }
 
   bool write(const uint8_t* message, uint32_t length, uint8_t class_id, 
              uint8_t message_id) {
-    if (size_ < length + 8) {
-      ROS_ERROR("Write %u / %u: Size_ < length + 8", class_id, message_id);
+    if (size_ < length + kWrapperLength) {
+      ROS_ERROR("U-Blox write %u / %u: size < length + 8", class_id, message_id);
       return false;
     }
     uint8_t *start = data_;
@@ -207,7 +223,7 @@ class Writer {
     *data_++ = message_id;
     *data_++ = length & 0xFF;
     *data_++ = (length >> 8) & 0xFF;
-    size_ -= 6;
+    size_ -= kHeaderLength;
 
     // write message
     if (message) std::copy(message, message + length, data_);
@@ -242,6 +258,15 @@ class Writer {
   namespace package { namespace { \
     static const ublox::Message<message>::StaticKeyInitializer static_key_initializer_##message(class_id, message_id); \
   } } \
+
+// Use for messages which have the same structure but different IDs, e.g. INF
+// Call DECLARE_UBLOX_MESSAGE for the first message and DECLARE_UBLOX_MESSAGE2
+// for following declarations
+#define DECLARE_UBLOX_MESSAGE2(class_id, message_id, package, message, name) \
+  namespace package { namespace { \
+    static const ublox::Message<message>::StaticKeyInitializer static_key_initializer_##name(class_id, message_id); \
+  } } \
+
 
 // use implementation of class Serializer in "serialization_ros.h"
 #include "serialization_ros.h"

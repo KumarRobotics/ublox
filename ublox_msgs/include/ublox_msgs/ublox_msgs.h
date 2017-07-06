@@ -58,6 +58,8 @@
 #include <ublox_msgs/RxmSFRBX.h>
 #include <ublox_msgs/RxmSVSI.h>
 
+#include <ublox_msgs/Inf.h>
+
 #include <ublox_msgs/AidALM.h>
 #include <ublox_msgs/AidEPH.h>
 #include <ublox_msgs/AidHUI.h>
@@ -74,19 +76,22 @@
 #include <ublox_msgs/CfgSBAS.h>
 #include <ublox_msgs/CfgTMODE3.h>
 
+#include <ublox_msgs/MonGNSS.h>
+#include <ublox_msgs/MonHW.h>
 #include <ublox_msgs/MonVER.h>
 
 namespace ublox_msgs {
 
 namespace Class {
-  // Navigation Results: Position, Speed, Time, Acc, Heading, DOP, SVs used
+  // Navigation Result Messages: Position, Speed, Time, Acceleration, Heading, 
+  // DOP, SVs used
   static const uint8_t NAV = 0x01; 
   // Receiver Manager Messages: Satellite Status, RTC Status
   static const uint8_t RXM = 0x02; 
   // Information Messages: Printf-Style Messages, with IDs such as Error, 
   // Warning, Notice
   static const uint8_t INF = 0x04; 
-  // Ack/Nack Messages: as replies to CFG Input Messages
+  // Ack/Nack Messages: Acknowledge or Reject messages to CFG input messages
   static const uint8_t ACK = 0x05; 
   // Configuration Input Messages: Set Dynamic Model, Set DOP Mask, Set Baud 
   // Rate, etc.
@@ -101,6 +106,15 @@ namespace Class {
   // External Sensor Fusion Messages: External sensor measurements and status 
   // information
   static const uint8_t ESF = 0x10; 
+  // Multiple GNSS Assistance Messages: Assistance data for various GNSS
+  static const uint8_t MGA = 0x13;
+  // Logging Messages: Log creation, deletion, info and retrieval
+  static const uint8_t LOG = 0x21;
+  // Security Feature Messages
+  static const uint8_t SEC = 0x27;
+  // High Rate Navigation Results Messages: High rate time, position, speed, 
+  // heading
+  static const uint8_t HNR = 0x28;
   // RTCM Configuration Messages
   static const uint8_t RTCM = 0xF5;
 }
@@ -137,10 +151,12 @@ namespace Message {
     static const uint8_t SVSI = RxmSVSI::MESSAGE_ID;
   }
 
-  namespace AID {
-    static const uint8_t ALM = AidALM::MESSAGE_ID;
-    static const uint8_t EPH = AidEPH::MESSAGE_ID;
-    static const uint8_t HUI = AidHUI::MESSAGE_ID;
+  namespace INF {
+    static const uint8_t ERROR = 0x00;
+    static const uint8_t WARNING = 0x01;
+    static const uint8_t NOTICE = 0x02;
+    static const uint8_t TEST = 0x03;
+    static const uint8_t DEBUG = 0x04;
   }
 
   namespace ACK {
@@ -148,22 +164,30 @@ namespace Message {
     static const uint8_t ACK = 0x01; 
   }
 
+  namespace AID {
+    static const uint8_t ALM = AidALM::MESSAGE_ID;
+    static const uint8_t EPH = AidEPH::MESSAGE_ID;
+    static const uint8_t HUI = AidHUI::MESSAGE_ID;
+  }
+
   namespace CFG {
-    static const uint8_t ANT   = CfgANT::MESSAGE_ID;
-    static const uint8_t CFG   = CfgCFG::MESSAGE_ID;
-    static const uint8_t GNSS  = CfgGNSS::MESSAGE_ID;
-    static const uint8_t DGNSS  = CfgDGNSS::MESSAGE_ID;
-    static const uint8_t MSG   = CfgMSG::MESSAGE_ID;
-    static const uint8_t NAV5  = CfgNAV5::MESSAGE_ID;
+    static const uint8_t ANT = CfgANT::MESSAGE_ID;
+    static const uint8_t CFG = CfgCFG::MESSAGE_ID;
+    static const uint8_t GNSS = CfgGNSS::MESSAGE_ID;
+    static const uint8_t DGNSS = CfgDGNSS::MESSAGE_ID;
+    static const uint8_t MSG = CfgMSG::MESSAGE_ID;
+    static const uint8_t NAV5 = CfgNAV5::MESSAGE_ID;
     static const uint8_t NAVX5 = CfgNAVX5::MESSAGE_ID;
-    static const uint8_t PRT   = CfgPRT::MESSAGE_ID;
-    static const uint8_t RATE  = CfgRATE::MESSAGE_ID;
-    static const uint8_t SBAS  = CfgSBAS::MESSAGE_ID;
-    static const uint8_t TMODE3  = CfgTMODE3::MESSAGE_ID;
+    static const uint8_t PRT = CfgPRT::MESSAGE_ID;
+    static const uint8_t RATE = CfgRATE::MESSAGE_ID;
+    static const uint8_t SBAS = CfgSBAS::MESSAGE_ID;
+    static const uint8_t TMODE3 = CfgTMODE3::MESSAGE_ID;
   }
   
   namespace MON {
-    static const uint8_t VER   = MonVER::MESSAGE_ID;
+    static const uint8_t GNSS = MonGNSS::MESSAGE_ID;
+    static const uint8_t HW = MonHW::MESSAGE_ID;
+    static const uint8_t VER = MonVER::MESSAGE_ID;
   }
 }
 

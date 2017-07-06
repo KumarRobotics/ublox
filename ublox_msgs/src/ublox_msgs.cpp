@@ -68,6 +68,17 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::VELECEF,
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::VELNED, 
                       ublox_msgs, NavVELNED);
 
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::INF, ublox_msgs::Message::INF::ERROR, 
+                      ublox_msgs, Inf);
+DECLARE_UBLOX_MESSAGE2(ublox_msgs::Class::INF, ublox_msgs::Message::INF::WARNING, 
+                       ublox_msgs, Inf, WARNING);
+DECLARE_UBLOX_MESSAGE2(ublox_msgs::Class::INF, ublox_msgs::Message::INF::NOTICE, 
+                      ublox_msgs, Inf, NOTICE);
+DECLARE_UBLOX_MESSAGE2(ublox_msgs::Class::INF, ublox_msgs::Message::INF::TEST, 
+                      ublox_msgs, Inf, TEST);
+DECLARE_UBLOX_MESSAGE2(ublox_msgs::Class::INF, ublox_msgs::Message::INF::DEBUG, 
+                      ublox_msgs, Inf, DEBUG);
+
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::RXM, ublox_msgs::Message::RXM::ALM, 
                       ublox_msgs, RxmALM);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::RXM, ublox_msgs::Message::RXM::EPH, 
@@ -113,5 +124,9 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::RATE,
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::TMODE3, 
                       ublox_msgs, CfgTMODE3);
 
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::GNSS, 
+                      ublox_msgs, MonGNSS);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::HW, 
+                      ublox_msgs, MonHW);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::VER, 
                       ublox_msgs, MonVER);
