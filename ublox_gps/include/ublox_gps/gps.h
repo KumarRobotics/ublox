@@ -48,6 +48,8 @@
 #include <stdexcept>
 
 namespace ublox_gps {
+const static unsigned int kBaudrates[] = {4800, 9600, 19200, 38400, 
+                                          57600, 115200, 230400, 460800};
 
 /**
  * @brief Determine dynamic model from human-readable string.
@@ -406,7 +408,8 @@ bool Gps::configure(const ConfigT& message, bool wait) {
   std::vector<unsigned char> out(kWriterSize);
   ublox::Writer writer(out.data(), out.size());
   if (!writer.write(message)) {
-    ROS_ERROR("Failed to encode config message");
+    ROS_ERROR("Failed to encode config message 0x%02x / 0x%02x", 
+              message.CLASS_ID, message.MESSAGE_ID);
     return false;
   }
   worker_->send(out.data(), writer.end() - out.data());

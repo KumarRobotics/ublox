@@ -126,56 +126,26 @@ void Gps::initialize(boost::asio::serial_port& serial_port,
   configured_ = false;
 
   boost::asio::serial_port_base::baud_rate current_baudrate;
-  // TODO
-  serial_port.set_option(boost::asio::serial_port_base::baud_rate(4800));
-  boost::this_thread::sleep(
-      boost::posix_time::milliseconds(kSetBaudrateSleepMs));
-  if (debug) {
+  serial_port.get_option(current_baudrate);
+  // Incrementally increase the baudrate to the desired value
+  for (int i = 0; i < sizeof(kBaudrates)/sizeof(kBaudrates[0]); i++) {
+    if (current_baudrate.value() == baudrate)
+      break;
+    // Don't step down, unless the desired baudrate is lower
+    if(current_baudrate.value() > kBaudrates[i] && baudrate > kBaudrates[i])
+      continue;
+    serial_port.set_option(
+        boost::asio::serial_port_base::baud_rate(kBaudrates[i]));
+    boost::this_thread::sleep(
+        boost::posix_time::milliseconds(kSetBaudrateSleepMs));
     serial_port.get_option(current_baudrate);
-    ROS_INFO("Set baudrate %u", current_baudrate.value());
+    if (debug)
+      ROS_INFO("U-Blox: Set ASIO baudrate to %u", current_baudrate.value());
   }
   configured_ = configUart1(baudrate, uart_in, uart_out);
-  if (configured_) return;
-
-  serial_port.set_option(boost::asio::serial_port_base::baud_rate(9600));
-  boost::this_thread::sleep(
-      boost::posix_time::milliseconds(kSetBaudrateSleepMs));
-  if (debug) {
-    serial_port.get_option(current_baudrate);
-    ROS_INFO("Set baudrate %u", current_baudrate.value());
+  if(!configured_ || current_baudrate.value() != baudrate) {
+    throw std::runtime_error("Could not configure serial baudrate");
   }
-  configured_ = configUart1(baudrate, uart_in, uart_out);
-  if (configured_) return;
-
-  serial_port.set_option(boost::asio::serial_port_base::baud_rate(19200));
-  boost::this_thread::sleep(
-      boost::posix_time::milliseconds(kSetBaudrateSleepMs));
-  if (debug) {
-    serial_port.get_option(current_baudrate);
-    ROS_INFO("Set baudrate %u", current_baudrate.value());
-  }
-  configured_ = configUart1(baudrate, uart_in, uart_out);
-  if (configured_) return;
-
-  serial_port.set_option(boost::asio::serial_port_base::baud_rate(38400));
-  boost::this_thread::sleep(
-      boost::posix_time::milliseconds(kSetBaudrateSleepMs));
-  if (debug) {
-    serial_port.get_option(current_baudrate);
-    ROS_INFO("Set baudrate %u", current_baudrate.value());
-  }
-  configured_ = configUart1(baudrate, uart_in, uart_out);
-  if (configured_) return;
-
-  serial_port.set_option(boost::asio::serial_port_base::baud_rate(baudrate));
-  boost::this_thread::sleep(
-      boost::posix_time::milliseconds(kSetBaudrateSleepMs));
-  if (debug) {
-    serial_port.get_option(current_baudrate);
-    ROS_INFO("Set baudrate %u", current_baudrate.value());
-  }
-  configured_ = configUart1(baudrate, uart_in, uart_out);
-  if (configured_) return;
 }
 
 void Gps::close() {

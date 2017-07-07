@@ -1065,11 +1065,12 @@ bool UbloxHpg::configureUblox() {
       meas_rate_temp = kDefaultMeasPeriod;
     }
     // Set nav rate to 1 Hz during survey in
-    gps.configRate(meas_rate_temp, (int) 1000 / meas_rate_temp);
+    if(!gps.configRate(meas_rate_temp, (int) 1000 / meas_rate_temp))
+      throw std::runtime_error(std::string("Failed to set nav rate to 1 Hz") +
+                               "before setting TMODE3 to survey-in.");
     // First disable, then set to survey in
     if(!gps.disableTmode3())
-      throw std::runtime_error(std::string("Failed to disable TMODE3 ") +
-                               "before setting to survey-in.");
+      ROS_ERROR("Failed to disable TMODE3 before setting to survey-in.");
     if(!gps.configTmode3SurveyIn(sv_in_min_dur_, sv_in_acc_lim_))
       throw std::runtime_error("Failed to set TMODE3 to survey-in.");
   }
