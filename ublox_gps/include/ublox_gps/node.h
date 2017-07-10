@@ -34,9 +34,6 @@
 #include <vector>
 #include <set>
 // Boost
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/serial_port.hpp>
-#include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 // ROS includes
@@ -219,11 +216,6 @@ class UbloxNode : public virtual UbloxInterface {
   void initialize();
 
   /**
-   * @brief Initialize the Serial / TCP IO.
-   */
-  void initializeIo();
-  
-  /**
    * Process the MonVer message. Find the protocol version, hardware type and 
    * supported GNSS.
    */
@@ -235,8 +227,10 @@ class UbloxNode : public virtual UbloxInterface {
    * Currently only supports HPG. To add functionality for other hardware,
    * extend UbloxInterface and modify this function.
    * @param the product category, e.g. SPG, HPG, ADR, FTS.
+   * @param for HPG/TIM products, this value is either REF or ROV, for other
+   * products this string is empty
    */
-  void setHardware(std::string product_category);
+  void setHardware(std::string product_category, std::string ref_rov);
 
   /**
    * @brief Poll messages from the U-Blox device.
@@ -258,10 +252,6 @@ class UbloxNode : public virtual UbloxInterface {
   /** Determined From Mon VER */
   float protocol_version_;
 
-  // Asynchronous IO objects
-  boost::asio::io_service io_service_;
-  boost::shared_ptr<boost::asio::serial_port> serial_handle_;
-  boost::shared_ptr<boost::asio::ip::tcp::socket> tcp_handle_;
   // The node will call the functions in these interfaces for each object
   // in the vector, this allows the user to easily add new features
   std::vector<boost::shared_ptr<UbloxInterface> > xware_;
@@ -424,29 +414,29 @@ class UbloxFirmware8 : public UbloxFirmware7Plus {
 };
 
 /**
- * @brief Implements functions for High Precision GNSS devices.
+ * @brief Implements functions for High Precision GNSS Reference station.
  */
-class UbloxHpg: public UbloxInterface {
+class UbloxHpgRef: public UbloxInterface {
  public:
   /**
-   * @brief Gets the High Precision GNSS parameters, e.g. tmode3.
+   * @brief Gets the Reference Station GNSS parameters, e.g. tmode3.
    */
   void getRosParams();
 
   /**
-   * @brief Configures High Precision GNSS settings, e.g. TMODE3.
+   * @brief Configures Reference Station settings, e.g. TMODE3.
    * @returns true if configured correctly, false otherwise
    */
   bool configureUblox();
 
   /**
-   * @brief Subscribes to High Precision GNSS messages, e.g. NavSVIN.
+   * @brief Subscribes to Reference Station messages, e.g. NavSVIN.
    */
   void subscribe();
 
   /**
-   * @brief Adds diagnostic updaters for High Precision GNSS status, including
-   * TMODE status and status of RTCM messages if in Time mode.
+   * @brief Adds diagnostic updaters for Reference Station status, including
+   * TMODE status.
    */
   void initializeRosDiagnostics();
 
@@ -468,8 +458,6 @@ class UbloxHpg: public UbloxInterface {
 
   // The last received Nav SVIN message
   ublox_msgs::NavSVIN last_nav_svin_;
-  // Map of RTCM IDs and the last time the message was received
-  std::map<int, ros::Time> last_received_rtcm_;
 
   // TMODE3 to set, e.g. disabled, survey-in, fixed
   int tmode3_;
@@ -489,10 +477,49 @@ class UbloxHpg: public UbloxInterface {
   int sv_in_min_dur_;
   // Survey in accuracy limit [m]
   float sv_in_acc_lim_;
+};
+
+/**
+ * @brief Implements functions for High Precision GNSS Rover.
+ */
+class UbloxHpgRov: public UbloxInterface {
+ public:
+  /**
+   * @brief Gets the High Precision GNSS rover parameters, e.g. DGNSS mode.
+   */
+  void getRosParams();
+
+  /**
+   * @brief Configures rover settings, e.g. DGNSS.
+   * @returns true if configured correctly, false otherwise
+   */
+  bool configureUblox();
+
+  /**
+   * @brief Subscribes to Rover messages, e.g. NavRELPOSNED.
+   */
+  void subscribe();
+
+  /**
+   * @brief Adds diagnostic updaters for rover GNSS status, including
+   * status of RTCM messages.
+   */
+  void initializeRosDiagnostics();
+
+ protected:
+  /**
+   * @brief Update the High Precision Diagnostics the RTCM messages status.
+   */
+  void diagnosticUpdater(
+    diagnostic_updater::DiagnosticStatusWrapper& stat);
+
+  // Map of RTCM IDs and the last time the message was received
+  std::map<int, ros::Time> last_received_rtcm_;
 
   // The DGNSS mode, see CfgDGNSS message for possible values
   int dgnss_mode_;
 };
+
 
 /**
  * @brief Implements functions for Time Sync products.

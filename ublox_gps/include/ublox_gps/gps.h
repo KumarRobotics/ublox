@@ -30,6 +30,9 @@
 #ifndef UBLOX_GPS_H
 #define UBLOX_GPS_H
 
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/serial_port.hpp>
+#include <boost/regex.hpp>
 #include <boost/asio/io_service.hpp>
 #include <map>
 #include <vector>
@@ -48,6 +51,7 @@
 #include <stdexcept>
 
 namespace ublox_gps {
+// Possible baudrates for U-Blox devices
 const static unsigned int kBaudrates[] = {4800, 9600, 19200, 38400, 
                                           57600, 115200, 230400, 460800};
 
@@ -89,12 +93,30 @@ class Gps {
   Gps();
   virtual ~Gps();
 
-  template <typename StreamT>
-  void initialize(StreamT& stream, boost::asio::io_service& io_service, 
-                  unsigned int baudrate,
-                  uint16_t uart_in,
-                  uint16_t uart_out);
-  void initialize(const boost::shared_ptr<Worker>& worker);
+  /**
+   * @brief Initialize the I/O port, if TCP, baudrate, and uart_in/uart_out 
+   * values will be ignored.
+   * @param baudrate the desired baudrate of the port
+   * @param uart_in The UART in protocol, see CfgPRT for values
+   * @param uart_in The UART out protocol, see CfgPRT for values
+   */
+  void initializeIo(std::string device,
+                    unsigned int baudrate,
+                    uint16_t uart_in,
+                    uint16_t uart_out);
+
+  /**
+   * @brief Initialize TCP I/O.
+   */
+  void initializeTcp();
+
+  /**
+   * @brief Initialize the Serial I/O port.
+   */
+  void initializeSerial(unsigned int baudrate,
+                        uint16_t uart_in,
+                        uint16_t uart_out);
+
   void close();
 
   /**
@@ -291,56 +313,24 @@ class Gps {
                           uint8_t class_id, uint8_t msg_id);
 
  private:
+  void setWorker(const boost::shared_ptr<Worker>& worker);
   void readCallback(unsigned char* data, std::size_t& size);
 
   boost::shared_ptr<Worker> worker_;
   bool configured_;
-  // TODO: this variable is not thread safe :'(
   enum { WAIT, ACK, NACK } acknowledge_; 
   uint8_t acknowledge_class_id_;
   uint8_t acknowledge_msg_id_;
-  unsigned int baudrate_;
-  uint16_t uart_in_;
-  uint16_t uart_out_;
   static boost::posix_time::time_duration default_timeout_;
 
   Callbacks callbacks_;
   boost::mutex callback_mutex_;
 
+  // Asynchronous IO objects
+  boost::asio::io_service io_service_;
+  boost::shared_ptr<boost::asio::serial_port> serial_handle_;
+  boost::shared_ptr<boost::asio::ip::tcp::socket> tcp_handle_;
 };
-
-/**
- * @brief Initialize the worker and configure the Serial port.
- * @param baudrate the baud rate of the port in Hz
- * @param uart_in the ublox UART 1 port in protocol (see Cfg PRT message)
- * @param uart_out the ublox UART 1 port out protocol (see Cfg PRT message)
- */
-template <typename StreamT>
-void Gps::initialize(StreamT& stream, boost::asio::io_service& io_service,
-                     unsigned int baudrate,
-                     uint16_t uart_in,
-                     uint16_t uart_out) {
-  if (worker_) return;
-  initialize(
-      boost::shared_ptr<Worker>(new AsyncWorker<StreamT>(stream, io_service)));
-}
-
-template <>
-void Gps::initialize(boost::asio::serial_port& serial_port,
-                     boost::asio::io_service& io_service,
-                     unsigned int baudrate,
-                     uint16_t uart_in,
-                     uint16_t uart_out);
-
-extern template void Gps::initialize<boost::asio::ip::tcp::socket>(
-    boost::asio::ip::tcp::socket& stream, 
-    boost::asio::io_service& io_service,
-    unsigned int baudrate,
-    uint16_t uart_in,
-    uint16_t uart_out);
-// extern template void
-// Gps::initialize<boost::asio::ip::udp::socket>(boost::asio::ip::udp::socket&
-// stream, boost::asio::io_service& io_service);
 
 template <typename T>
 Callbacks::iterator Gps::subscribe(
