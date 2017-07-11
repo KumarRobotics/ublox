@@ -45,7 +45,6 @@ uint8 flags             # Fix Status Flags
 uint8 FLAGS_GNSS_FIX_OK = 1          # i.e. within DOP & accuracy masks
 uint8 FLAGS_DIFF_SOLN = 2            # DGPS used
 uint8 FLAGS_PSM_MASK = 28            # Power Save Mode
-# Power save mode flags
 uint8 PSM_OFF = 0                       # PSM is off
 uint8 PSM_ENABLED = 4                   # Enabled (state before acquisition)
 uint8 PSM_ACQUIRED = 8                  # Acquisition
@@ -53,7 +52,7 @@ uint8 PSM_TRACKING = 12                 # Tracking
 uint8 PSM_POWER_OPTIMIZED_TRACKING = 16 # Power Optimized Tracking
 uint8 PSM_INACTIVE = 20                 # Inactive
 uint8 FLAGS_HEAD_VEH_VALID = 32         # heading of vehicle is valid
-uint8 FLAGS_CARRIER_PHASE_MASK = 192    # Carrier Phase Range Solution Status     
+uint8 FLAGS_CARRIER_PHASE_MASK = 192 # Carrier Phase Range Solution Status     
 uint8 CARRIER_PHASE_NO_SOLUTION = 0     # no carrier phase range solution
 uint8 CARRIER_PHASE_FLOAT = 64          # carrier phase float solution (no fixed 
                                         # integer measurements have been used to 
@@ -61,7 +60,6 @@ uint8 CARRIER_PHASE_FLOAT = 64          # carrier phase float solution (no fixed
 uint8 CARRIER_PHASE_FIXED = 128         # fixed solution (>=1 fixed integer 
                                         # carrier phase range measurements have 
                                         # been used to calculate  the solution)
-# Carrier Phase Range solution flags
 
 uint8 flags2            # Additional Flags
 uint8 FLAGS2_CONFIRMED_AVAILABLE = 32   # information about UTC Date and Time of 
@@ -80,7 +78,7 @@ uint32 vAcc             # Vertical Accuracy Estimate [mm]
 int32 velN              # NED north velocity [mm/s]
 int32 velE              # NED east velocity [mm/s]
 int32 velD              # NED down velocity [mm/s]
-int32 gSpeed           # Ground Speed (2-D) [mm/s]
+int32 gSpeed            # Ground Speed (2-D) [mm/s]
 int32 heading           # Heading of motion 2-D [deg / 1e-5]
 uint32 sAcc             # Speed Accuracy Estimate [mm/s]
 uint32 headAcc          # Heading Accuracy Estimate (both motion & vehicle) 
