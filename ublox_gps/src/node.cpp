@@ -711,6 +711,7 @@ void UbloxFirmware7::getRosParams() {
   nh->param("enable_gps", enable_gps_, true);
   nh->param("enable_glonass", enable_glonass_, false);
   nh->param("enable_qzss", enable_qzss_, false);
+  nh->param("enable_sbas", enable_sbas_, false);
   
   if(enable_gps_ && !supportsGnss("GPS")) 
     ROS_WARN("enable_gps is true, but GPS GNSS is not supported by this device");
@@ -754,17 +755,50 @@ bool UbloxFirmware7::configureUblox() {
   cfgGNSSWrite.numTrkChHw = cfgGNSSRead.numTrkChHw;
   cfgGNSSWrite.numTrkChUse = cfgGNSSRead.numTrkChUse;
   cfgGNSSWrite.msgVer = 0;
-  // configure glonass
-  ublox_msgs::CfgGNSS_Block block;
-  block.gnssId = block.GNSS_ID_GLONASS;
-  block.resTrkCh = block.RES_TRK_CH_GLONASS;
-  block.maxTrkCh = block.MAX_TRK_CH_GLONASS;
-  block.flags = enable_glonass_ | block.SIG_CFG_GLONASS_L1OF;
-  cfgGNSSWrite.blocks.push_back(block);
-  if (!gps.configure(cfgGNSSWrite)) {
-    throw std::runtime_error(std::string("Failed to ") +
-                             ((enable_glonass_) ? "enable" : "disable") +
-                             " GLONASS.");
+  
+  // configure GLONASS
+  if(supportsGnss("GLO")) {
+    ublox_msgs::CfgGNSS_Block block;
+    block.gnssId = block.GNSS_ID_GLONASS;
+    block.resTrkCh = block.RES_TRK_CH_GLONASS;
+    block.maxTrkCh = block.MAX_TRK_CH_GLONASS;
+    block.flags = enable_glonass_ | block.SIG_CFG_GLONASS_L1OF;
+    cfgGNSSWrite.blocks.push_back(block);
+    if (!gps.configure(cfgGNSSWrite)) {
+      throw std::runtime_error(std::string("Failed to ") +
+                               ((enable_glonass_) ? "enable" : "disable") +
+                               " GLONASS.");
+    }
+  }
+  
+  if(supportsGnss("QZSS")) {
+    // configure QZSS
+    ublox_msgs::CfgGNSS_Block block;
+    block.gnssId = block.GNSS_ID_QZSS;
+    block.resTrkCh = block.RES_TRK_CH_QZSS;
+    block.maxTrkCh = block.MAX_TRK_CH_QZSS;
+    block.flags = enable_qzss_ | qzss_sig_cfg_; 
+    cfgGNSSWrite.blocks[0] = block;
+    if (!gps.configure(cfgGNSSWrite)) {
+      throw std::runtime_error(std::string("Failed to ") +
+                               ((enable_glonass_) ? "enable" : "disable") +
+                               " QZSS.");
+    }
+  }
+
+  if(supportsGnss("SBAS")) {
+    // configure SBAS
+    ublox_msgs::CfgGNSS_Block block;
+    block.gnssId = block.GNSS_ID_SBAS;
+    block.resTrkCh = block.RES_TRK_CH_SBAS;
+    block.maxTrkCh = block.MAX_TRK_CH_SBAS;
+    block.flags = enable_sbas_ | block.SIG_CFG_SBAS_L1CA;
+    cfgGNSSWrite.blocks[0] = block;
+    if (!gps.configure(cfgGNSSWrite)) {
+      throw std::runtime_error(std::string("Failed to ") +
+                               ((enable_sbas_) ? "enable" : "disable") +
+                               " SBAS.");
+    }
   }
   return true;
 }
@@ -936,7 +970,8 @@ bool UbloxFirmware8::configureUblox() {
   // Configure SBAS
   ublox_msgs::CfgGNSS_Block sbas_block;
   sbas_block.gnssId = sbas_block.GNSS_ID_SBAS;
-  sbas_block.maxTrkCh = sbas_block.MAX_TRK_CH_MAJOR_MIN;
+  sbas_block.resTrkCh = sbas_block.RES_TRK_CH_SBAS;
+  sbas_block.maxTrkCh = sbas_block.MAX_TRK_CH_SBAS;
   sbas_block.flags = enable_sbas_ | sbas_block.SIG_CFG_SBAS_L1CA;
   cfgGNSSWrite.blocks.push_back(sbas_block);
   // Configure Galileo
