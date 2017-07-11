@@ -38,6 +38,7 @@
 #include <boost/lexical_cast.hpp>
 // ROS includes
 #include <ros/ros.h>
+#include <ros/console.h>
 #include <ros/serialization.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/publisher.h>

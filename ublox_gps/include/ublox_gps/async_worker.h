@@ -41,7 +41,7 @@
 
 namespace ublox_gps {
 
-static const int debug = 1;
+static int debug = 1; // this variable is set by the main node
 
 template <typename StreamT>
 class AsyncWorker : public Worker {
@@ -141,7 +141,7 @@ void AsyncWorker<StreamT>::doWrite() {
     for (std::vector<unsigned char>::iterator it = out_.begin();
          it != out_.end(); ++it)
       oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
-    ROS_INFO("U-Blox sent %li bytes: \n%s", out_.size(), oss.str().c_str());
+    ROS_DEBUG("U-Blox sent %li bytes: \n%s", out_.size(), oss.str().c_str());
   }
   // Clear the buffer & unlock
   out_.clear();
@@ -176,7 +176,7 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
                in_.begin() + in_buffer_size_ - bytes_transfered;
            it != in_.begin() + in_buffer_size_; ++it)
         oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
-      ROS_INFO("U-Blox received %li bytes \n%s", bytes_transfered, 
+      ROS_DEBUG("U-Blox received %li bytes \n%s", bytes_transfered, 
                oss.str().c_str());
     }
 

@@ -92,10 +92,8 @@ bool Gps::configUart1(unsigned int baudrate, int16_t inProtoMask,
   port.inProtoMask = inProtoMask;
   port.outProtoMask = outProtoMask;
 
-  if (debug) {
-    ROS_INFO("Setting In/Out Protocol: %i / %i", inProtoMask, outProtoMask);
-    ROS_INFO("Changing baudrate to %u", baudrate);
-  }
+  ROS_DEBUG("Setting In/Out Protocol: %i / %i", inProtoMask, outProtoMask);
+  ROS_DEBUG("Changing baudrate to %u", baudrate);
   return configure(port);
 }
 
@@ -129,8 +127,7 @@ void Gps::initializeSerial(unsigned int baudrate,
     boost::this_thread::sleep(
         boost::posix_time::milliseconds(kSetBaudrateSleepMs));
     serial_handle_->get_option(current_baudrate);
-    if (debug)
-      ROS_INFO("U-Blox: Set ASIO baudrate to %u", current_baudrate.value());
+    ROS_DEBUG("U-Blox: Set ASIO baudrate to %u", current_baudrate.value());
   }
   configured_ = configUart1(baudrate, uart_in, uart_out);
   if(!configured_ || current_baudrate.value() != baudrate) {
@@ -256,10 +253,8 @@ bool Gps::enableSBAS(bool enabled, uint8_t usage, uint8_t max_sbas) {
 }
 
 bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
-  if(debug) {
-    ROS_INFO("Configuring measurement rate to %u and nav rate to %u", meas_rate, 
-             nav_rate);
-  }
+  ROS_DEBUG("Configuring measurement rate to %u and nav rate to %u", meas_rate, 
+           nav_rate);
   CfgRATE rate;
   rate.measRate = meas_rate;
   rate.navRate = nav_rate;  //  must be fixed at 1 for ublox 5 and 6
@@ -293,9 +288,7 @@ bool Gps::disableUart(CfgPRT initialCfg) {
 
 bool Gps::configRtcm(std::vector<int> ids, uint8_t rate) {
   for(size_t i = 0; i < ids.size(); ++i) {
-    if(debug) {
-      ROS_INFO("Setting RTCM %d Rate %u", ids[i], rate);
-    }
+    ROS_DEBUG("Setting RTCM %d Rate %u", ids[i], rate);
     if(!setRate(ublox_msgs::Class::RTCM, (uint8_t)ids[i], rate)) {
       ROS_ERROR("Could not set RTCM %d to rate %u", ids[i], rate);
       return false;
@@ -305,9 +298,7 @@ bool Gps::configRtcm(std::vector<int> ids, uint8_t rate) {
 }
 
 bool Gps::disableTmode3() {
-  if(debug) {
-    ROS_INFO("Disabling TMODE3");
-  }
+  ROS_DEBUG("Disabling TMODE3");
 
   CfgTMODE3 tmode3;
   tmode3.flags = tmode3.FLAGS_MODE_DISABLED & tmode3.FLAGS_MODE_MASK;
@@ -324,9 +315,7 @@ bool Gps::configTmode3Fixed(bool lla_flag,
     return false;
   }
 
-  if(debug) {
-    ROS_INFO("Configuring TMODE3 to Fixed");
-  }
+  ROS_DEBUG("Configuring TMODE3 to Fixed");
 
   CfgTMODE3 tmode3;
   tmode3.flags = tmode3.FLAGS_MODE_FIXED & tmode3.FLAGS_MODE_MASK;
@@ -357,9 +346,7 @@ bool Gps::configTmode3Fixed(bool lla_flag,
 bool Gps::configTmode3SurveyIn(unsigned int svinMinDur, 
                                float svinAccLimit) {
   CfgTMODE3 tmode3;
-  if(debug) {
-    ROS_INFO("Setting TMODE3 to Survey In");
-  }
+  ROS_DEBUG("Setting TMODE3 to Survey In");
   tmode3.flags = tmode3.FLAGS_MODE_SURVEY_IN & tmode3.FLAGS_MODE_MASK;
   tmode3.svinMinDur = svinMinDur;
   // Convert from m to [0.1 mm]
@@ -369,9 +356,7 @@ bool Gps::configTmode3SurveyIn(unsigned int svinMinDur,
 
 bool Gps::configDgnss(uint8_t mode) {
   CfgDGNSS cfg;
-  if(debug) {
-    ROS_INFO("Setting DGNSS mode to %u", mode);
-  }
+  ROS_DEBUG("Setting DGNSS mode to %u", mode);
   cfg.dgnssMode = mode;
   return configure(cfg);
 }
@@ -414,7 +399,7 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
       for (ublox::Reader::iterator it = reader.pos();
            it != reader.pos() + reader.length() + 8; ++it)
         oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
-      ROS_INFO("U-blox: reading %d bytes\n%s", reader.length() + 8, 
+      ROS_DEBUG("U-blox: reading %d bytes\n%s", reader.length() + 8, 
                oss.str().c_str());
     }
 
@@ -435,7 +420,7 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
       acknowledge_class_id_ = data[0];
       acknowledge_msg_id_ = data[1];
       if (acknowledge_ == ACK && debug >= 2)
-        ROS_INFO("U-blox: received ACK: 0x%02x / 0x%02x", data[0], data[1]);
+        ROS_DEBUG("U-blox: received ACK: 0x%02x / 0x%02x", data[0], data[1]);
       else if(acknowledge_ == NACK)
         ROS_ERROR("U-blox: received NACK: 0x%02x / 0x%02x", data[0], data[1]);
     }

@@ -30,25 +30,27 @@
 #ifndef UBLOX_GPS_H
 #define UBLOX_GPS_H
 
+#include <map>
+#include <vector>
+#include <locale>
+#include <stdexcept>
+
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/serial_port.hpp>
 #include <boost/regex.hpp>
 #include <boost/asio/io_service.hpp>
-#include <map>
-#include <vector>
 
 #include <ros/console.h>
-#include <ublox/serialization/ublox_msgs.h>
-#include <ublox_gps/async_worker.h>
-#include <ublox_gps/callback.h>
 
+#include <ublox/serialization/ublox_msgs.h>
 #include <ublox_msgs/CfgNAV5.h>
 #include <ublox_msgs/CfgNAVX5.h>
 #include <ublox_msgs/CfgPRT.h>
 #include <ublox_msgs/CfgRATE.h>
 #include <ublox_msgs/CfgTMODE3.h>
-#include <locale>
-#include <stdexcept>
+
+#include <ublox_gps/async_worker.h>
+#include <ublox_gps/callback.h>
 
 namespace ublox_gps {
 // Possible baudrates for U-Blox devices
