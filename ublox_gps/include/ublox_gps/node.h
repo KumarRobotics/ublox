@@ -74,13 +74,6 @@ const static uint32_t kNavSvInfoSubscribeRate = 20; // [Hz]
 // Subscribe Rate of U-Blox msgs
 const static uint32_t kSubscribeRate = 1; // [Hz]
 
-const static char * const mode_names[] = {"Init", 
-                                          "Fixed", 
-                                          "Disabled",
-                                          "Survey-In", 
-                                          "Time"};
-// Current mode of U-Blox
-static enum {INIT, FIXED, DISABLED, SURVEY_IN, TIME} mode;
 // ROS objects
 boost::shared_ptr<diagnostic_updater::Updater> updater;
 boost::shared_ptr<diagnostic_updater::TopicDiagnostic> freq_diag;
@@ -473,10 +466,16 @@ class UbloxHpgRef: public UbloxInterface {
   float fixed_pos_acc_;
   
   // TMODE3 = Survey in settings
+  // If true, will reset the survey-in, if false, will only reset if 
+  // there's no fix and survey in is disabled
+  bool svin_reset_;
   // Measurement period used during Survey-In [s]
   int sv_in_min_dur_;
   // Survey in accuracy limit [m]
   float sv_in_acc_lim_;
+
+  // Current mode of U-Blox
+  enum {INIT, FIXED, DISABLED, SURVEY_IN, TIME} mode_;
 };
 
 /**

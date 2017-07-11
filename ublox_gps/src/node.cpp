@@ -56,11 +56,9 @@ UbloxNode::UbloxNode() {
 void UbloxNode::setHardware(std::string product_category, std::string ref_rov) {
   if(product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0) {
     xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxHpgRef));
-    ROS_ERROR("REF");
   } else if(product_category.compare("HPG") == 0 
             && ref_rov.compare("ROV") == 0) {
     xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxHpgRov));
-    ROS_ERROR("ROV");
   } else if(product_category.compare("TIM") == 0) {
     xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxTim));
   }
@@ -321,36 +319,36 @@ bool UbloxNode::configureUblox() {
     if (!gps.isInitialized()) {
       throw std::runtime_error("Failed to initialize.");
     }
-    if (!gps.configRate(meas_rate, nav_rate)) {
-      std::stringstream ss;
-      ss << "Failed to set measurement rate to " << meas_rate 
-         << "ms and navigation rate to " << nav_rate;
-      throw std::runtime_error(ss.str());
-    }
-    // If device doesn't have SBAS, will receive NACK (causes exception)
-    if(supportsGnss("SBAS")) {
-      if (!gps.enableSBAS(enable_sbas_, sbas_usage_, max_sbas_)) {
-        throw std::runtime_error(std::string("Failed to ") +
-                                 ((enable_sbas_) ? "enable" : "disable") +
-                                 " SBAS.");
-      }
-    }
-    if (!gps.setPPPEnabled(enable_ppp_)) {
-      throw std::runtime_error(std::string("Failed to ") +
-                               ((enable_ppp_) ? "enable" : "disable") 
-                               + " PPP.");
-    }
-    if (!gps.setDynamicModel(dmodel_)) {
-      throw std::runtime_error("Failed to set model: " + dynamic_model_ + ".");
-    }
-    if (!gps.setFixMode(fmode_)) {
-      throw std::runtime_error("Failed to set fix mode: " + fix_mode_ + ".");
-    }
-    if (!gps.setDeadReckonLimit(dr_limit_)) {
-      std::stringstream ss;
-      ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
-      throw std::runtime_error(ss.str());
-    }
+    // if (!gps.configRate(meas_rate, nav_rate)) {
+    //   std::stringstream ss;
+    //   ss << "Failed to set measurement rate to " << meas_rate 
+    //      << "ms and navigation rate to " << nav_rate;
+    //   throw std::runtime_error(ss.str());
+    // }
+    // // If device doesn't have SBAS, will receive NACK (causes exception)
+    // if(supportsGnss("SBAS")) {
+    //   if (!gps.enableSBAS(enable_sbas_, sbas_usage_, max_sbas_)) {
+    //     throw std::runtime_error(std::string("Failed to ") +
+    //                              ((enable_sbas_) ? "enable" : "disable") +
+    //                              " SBAS.");
+    //   }
+    // }
+    // if (!gps.setPPPEnabled(enable_ppp_)) {
+    //   throw std::runtime_error(std::string("Failed to ") +
+    //                            ((enable_ppp_) ? "enable" : "disable") 
+    //                            + " PPP.");
+    // }
+    // if (!gps.setDynamicModel(dmodel_)) {
+    //   throw std::runtime_error("Failed to set model: " + dynamic_model_ + ".");
+    // }
+    // if (!gps.setFixMode(fmode_)) {
+    //   throw std::runtime_error("Failed to set fix mode: " + fix_mode_ + ".");
+    // }
+    // if (!gps.setDeadReckonLimit(dr_limit_)) {
+    //   std::stringstream ss;
+    //   ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
+    //   throw std::runtime_error(ss.str());
+    // }
     for(int i = 0; i < xware_.size(); i++) {
       xware_[i]->configureUblox();
     }
@@ -865,7 +863,10 @@ void UbloxFirmware8::getRosParams() {
 }
 
 bool UbloxFirmware8::configureUblox() {
-  /** Configure the GNSS **/
+  //
+  // Configure the GNSS, only if the configuration is different
+  //
+  // First, get the current GNSS configuration
   ublox_msgs::CfgGNSS cfgGNSSRead;
   if (gps.poll(cfgGNSSRead)) {
     ROS_INFO("Read GNSS config.");
@@ -875,6 +876,52 @@ bool UbloxFirmware8::configureUblox() {
     throw std::runtime_error("Failed to read the GNSS config.");
   }
 
+  // Then, check if the GNSS configuration is correct
+  bool correct = true;
+  for(int i = 0; i < cfgGNSSRead.blocks.size(); i++) {
+    ublox_msgs::CfgGNSS_Block block = cfgGNSSRead.blocks[i];
+    if (block.gnssId == block.GNSS_ID_GPS
+        && !enable_gps_ == block.flags & block.FLAGS_ENABLE) {
+      correct = false;
+      break;
+    } else if (block.gnssId == block.GNSS_ID_SBAS
+               && !enable_sbas_ == block.flags & block.FLAGS_ENABLE) {
+      correct = false;
+      break;
+    } else if (block.gnssId == block.GNSS_ID_GALILEO
+               && !enable_galileo_ == block.flags & block.FLAGS_ENABLE) {
+      correct = false;
+      break;
+    } else if (block.gnssId == block.GNSS_ID_BEIDOU
+               && !enable_beidou_ == block.flags & block.FLAGS_ENABLE) {
+      correct = false;
+      break;
+    } else if (block.gnssId == block.GNSS_ID_IMES
+               && !enable_imes_ == block.flags & block.FLAGS_ENABLE) {
+      correct = false;
+      break;
+    } else if (block.gnssId == block.GNSS_ID_QZSS
+               && !enable_qzss_ == block.flags & block.FLAGS_ENABLE 
+               || (enable_qzss_ 
+               && qzss_sig_cfg_ != block.flags & block.FLAGS_SIG_CFG_MASK)) {
+      correct = false;
+      break;
+    } else if (block.gnssId == block.GNSS_ID_GLONASS
+               && !enable_glonass_ == block.flags & block.FLAGS_ENABLE) {
+      correct = false;
+      break;
+    }
+  }
+
+  // If the GNSS is already configured correctly, do not re-configure GNSS
+  // since this requires a cold reset
+  if(correct) {
+    ROS_INFO("U-Blox GNSS settings are already as desired. %s",
+             "Device not re-configured.");
+    return true;
+  }
+
+  // Create configuration message
   ublox_msgs::CfgGNSS cfgGNSSWrite;
   cfgGNSSWrite.msgVer = 0;
   cfgGNSSWrite.numTrkChHw = cfgGNSSRead.numTrkChHw;
@@ -925,9 +972,12 @@ bool UbloxFirmware8::configureUblox() {
   glonass_block.flags = enable_glonass_ | glonass_block.SIG_CFG_GLONASS_L1OF;
   cfgGNSSWrite.blocks.push_back(glonass_block);
   cfgGNSSWrite.numConfigBlocks = cfgGNSSWrite.blocks.size(); 
+
+  // Configure the GNSS
   if (!gps.configure(cfgGNSSWrite)) {
     throw std::runtime_error(std::string("Failed to Configure GNSS"));
   }
+  ROS_WARN("GNSS re-configured, cold reset recommended.");
   return true;
 }
 
@@ -980,6 +1030,7 @@ void UbloxHpgRef::getRosParams() {
       lla_flag_ = false;
     }
   } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
+    nh->param("svin_reset", svin_reset_, true);
     if(!nh->getParam("sv_in_min_dur", sv_in_min_dur_))
       throw std::runtime_error(std::string("Invalid settings: sv_in_min_dur ") 
                                + "must be set if TMODE3 is survey-in");
@@ -994,30 +1045,60 @@ bool UbloxHpgRef::configureUblox() {
   if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
     if(!gps.disableTmode3())
       throw std::runtime_error("Failed to disable TMODE3.");
+    mode_ = DISABLED;
   } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_FIXED) {
     if(!gps.configTmode3Fixed(lla_flag_, arp_position_, arp_position_hp_, 
                                fixed_pos_acc_))
       throw std::runtime_error("Failed to set TMODE3 to fixed.");
-    if(!gps.configRtcm(rtcm_ids, rtcm_rate)) {
+    if(!gps.configRtcm(rtcm_ids, rtcm_rate))
       throw std::runtime_error("Failed to set RTCM rates");
-    }
+    mode_ = FIXED;
   } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
-    mode = SURVEY_IN;
+    if(!svin_reset_) {
+      ublox_msgs::NavSVIN nav_svin;
+      if(!gps.poll(nav_svin))
+        throw std::runtime_error(std::string("Failed to poll NavSVIN while") +
+                                 " configuring survey-in");
+      // Don't reset survey-in if it's already active
+      if(nav_svin.active) {
+        mode_ = SURVEY_IN;
+        return true;
+      }
+      // Don't reset survey-in if it already has a valid value
+      if(nav_svin.valid) {
+        mode_ = TIME;
+        return true;
+      }
+      ublox_msgs::NavPVT nav_pvt;
+      if(!gps.poll(nav_pvt))
+        throw std::runtime_error(std::string("Failed to poll NavPVT while") + 
+                                 " configuring survey-in");
+      // Don't reset survey in if in time mode with a good fix
+      if (nav_pvt.fixType == nav_pvt.FIX_TYPE_TIME_ONLY 
+          && nav_pvt.flags & nav_pvt.FLAGS_GNSS_FIX_OK) {
+        mode_ = TIME;
+        return true;
+      }
+    }
+    // Reset the Survey In    
     // For Survey in, meas rate must be at least 1 Hz
     uint16_t meas_rate_temp = std::min(meas_rate, 1000); // [ms]
-    if(1000 % meas_rate_temp != 0) {
-      // If measurement period isn't a factor of 1000, set to default
+    // If measurement period isn't a factor of 1000, set to default
+    if(1000 % meas_rate_temp != 0)
       meas_rate_temp = kDefaultMeasPeriod;
-    }
     // Set nav rate to 1 Hz during survey in
     if(!gps.configRate(meas_rate_temp, (int) 1000 / meas_rate_temp))
       throw std::runtime_error(std::string("Failed to set nav rate to 1 Hz") +
                                "before setting TMODE3 to survey-in.");
-    // First disable, then set to survey in
+    // As recommended in the documentation, first disable, then set to survey in
     if(!gps.disableTmode3())
       ROS_ERROR("Failed to disable TMODE3 before setting to survey-in.");
+    else 
+      mode_ = DISABLED;
+    // Set to Survey in mode
     if(!gps.configTmode3SurveyIn(sv_in_min_dur_, sv_in_acc_lim_))
       throw std::runtime_error("Failed to set TMODE3 to survey-in.");
+    mode_ = SURVEY_IN;
   }
   return true;
 }
@@ -1037,8 +1118,8 @@ void UbloxHpgRef::publishNavSvIn(ublox_msgs::NavSVIN m) {
 
   last_nav_svin_ = m;
 
-  if(!m.active && m.valid && mode == SURVEY_IN) {
-    mode = TIME; // switch to time mode
+  if(!m.active && m.valid && mode_ == SURVEY_IN) {
+    mode_ = TIME; // switch to time mode
 
     // Set the Measurement & nav rate to user config
     if(!gps.configRate(meas_rate, nav_rate)) {
@@ -1061,12 +1142,14 @@ void UbloxHpgRef::initializeRosDiagnostics() {
 
 void UbloxHpgRef::diagnosticUpdater(
     diagnostic_updater::DiagnosticStatusWrapper& stat) {
-  stat.add("TMODE3", mode_names[mode]);
-  if(mode == INIT || mode == DISABLED) {
-    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
-    stat.message = "TMODE3 ok";
-  } else if(mode == SURVEY_IN) {
-    if(!last_nav_svin_.active && !last_nav_svin_.valid) {
+  if (mode_ == INIT) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+    stat.message = "TMODE3 Not configured";
+  } else if (mode_ == DISABLED){
+    stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+    stat.message = "TMODE3 Disabled";
+  } else if (mode_ == SURVEY_IN) {
+    if (!last_nav_svin_.active && !last_nav_svin_.valid) {
       stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
       stat.message = "Survey-In inactive and invalid";
     } else if (last_nav_svin_.active && !last_nav_svin_.valid) {
@@ -1074,11 +1157,28 @@ void UbloxHpgRef::diagnosticUpdater(
       stat.message = "Survey-In active but invalid";
     } else if (!last_nav_svin_.active && last_nav_svin_.valid) {
       stat.level = diagnostic_msgs::DiagnosticStatus::OK;
-      stat.message = "Survey-In done and valid";
-    } else if(last_nav_svin_.active && last_nav_svin_.valid) {
+      stat.message = "Survey-In complete";
+    } else if (last_nav_svin_.active && last_nav_svin_.valid) {
       stat.level = diagnostic_msgs::DiagnosticStatus::OK;
       stat.message = "Survey-In active and valid";
     }
+    
+    stat.add("iTOW [ms]", last_nav_svin_.iTOW);
+    stat.add("Duration [s]", last_nav_svin_.dur);
+    stat.add("# observations", last_nav_svin_.obs);
+    stat.add("Mean X [m]", last_nav_svin_.meanX * 1e-2);
+    stat.add("Mean Y [m]", last_nav_svin_.meanY * 1e-2);
+    stat.add("Mean Z [m]", last_nav_svin_.meanZ * 1e-2);
+    stat.add("Mean X HP [m]", last_nav_svin_.meanXHP * 1e-4);
+    stat.add("Mean Y HP [m]", last_nav_svin_.meanYHP * 1e-4);
+    stat.add("Mean Z HP [m]", last_nav_svin_.meanZHP * 1e-4);
+    stat.add("Mean Accuracy [m]", last_nav_svin_.meanAcc * 1e-4);
+  } else if(mode_ == FIXED) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+    stat.message = "TMODE3 Fixed Position";
+  } else if(mode_ == TIME) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+    stat.message = "TMODE3 Time";
   }
 }
 
