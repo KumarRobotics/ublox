@@ -16,6 +16,7 @@ uint8 resTrkCh          # (Read only in protocol versions greater than 23)
                         # for this GNSS system
 uint8 RES_TRK_CH_GPS = 8
 uint8 RES_TRK_CH_QZSS = 0
+uint8 RES_TRK_CH_SBAS = 0
 uint8 RES_TRK_CH_GLONASS = 8
 uint8 maxTrkCh          # (Read only in protocol versions greater than 23)
                         # Maximum number of tracking channels used for this 
@@ -25,8 +26,10 @@ uint8 maxTrkCh          # (Read only in protocol versions greater than 23)
 uint8 MAX_TRK_CH_MAJOR_MIN = 4         # maxTrkCh must have this minimum value
                                        # for each enabled major GNSS
 uint8 MAX_TRK_CH_GPS = 16
-uint8 MAX_TRK_CH_QZSS = 3
 uint8 MAX_TRK_CH_GLONASS = 14
+uint8 MAX_TRK_CH_QZSS = 3
+uint8 MAX_TRK_CH_SBAS = 3
+
 uint8 reserved1         # Reserved
 
 uint32 flags            # Bitfield of flags. At least one signal must be
