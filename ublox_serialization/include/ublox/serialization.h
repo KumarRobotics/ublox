@@ -163,7 +163,7 @@ class Reader {
     uint16_t chk;
     if (calculateChecksum(data_ + 2, length() + 4, chk) != this->checksum()) {
       // checksum error
-      ROS_ERROR("U-Blox read checksum error: 0x%02x / 0x%02x", classId(), 
+      ROS_DEBUG("U-Blox read checksum error: 0x%02x / 0x%02x", classId(), 
                 messageId());
       return false;
     }
