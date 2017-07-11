@@ -1,0 +1,33 @@
+# Config Ublox M8T Zoe
+ublox_version:  8
+device:         /dev/ttyACM0
+frame_id:       gps
+baudrate:       9600
+rate:           2
+enable_sbas:    false
+enable_glonass: true
+enable_beidou:  false
+enable_qzss:    false
+enable_ppp:     false
+dynamic_model:  automotive  # portable, stationary, pedestrian, automotive, sea, airborne1, airborne2, airborne4, wristwatch
+fix_mode:       auto
+dr_limit:       0
+
+# Messages
+all:            true
+aid:            true
+aid_alm:        true
+aid_eph:        true
+aid_hui:        true
+nav_sol:        true
+nav_pvt:        true
+nav_status:     true
+nav_svinfo:     true
+nav_clk:        true
+nav_posllh:     true
+nav_sat:        true
+nav_posecef:    false
+nav_velned:     false
+rxm:            true
+rxm_raw:        true
+rxm_sfrb:       true
