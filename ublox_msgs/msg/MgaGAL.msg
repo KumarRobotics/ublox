@@ -5,6 +5,9 @@
 # receiver. See the description of AssistNow Online for details.
 # 
 
+uint8 CLASS_ID = 19
+uint8 MESSAGE_ID = 2
+
 uint8 type              # Message type (0x01 for this type)
 uint8 version           # Message version (0x00 for this version)
 uint8 svid              # Galileo Satellite identifier
