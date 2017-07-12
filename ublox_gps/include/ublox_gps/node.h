@@ -115,7 +115,7 @@ void publish(const MessageT& m, const std::string& topic) {
 }
 
 /**
- * @gnss The string representing the GNSS. Refer MonVER message protocol.
+ * @param gnss The string representing the GNSS. Refer MonVER message protocol.
  * i.e. GPS, GLO, GAL, BDS, QZSS, SBAS, IMES
  * @return true if the device supports the given GNSS
  */
@@ -232,6 +232,7 @@ class UbloxNode : public virtual UbloxInterface {
 
   /**
    * @brief Poll messages from the U-Blox device.
+   * @param event a timer indicating how often to poll the messages
    */
   void pollMessages(const ros::TimerEvent& event);
 
@@ -308,17 +309,20 @@ class UbloxFirmware6 : public UbloxFirmware {
   /*
    * @brief Publish a NavPOSLLh message & update the fix diagnostics & 
    * last known position.
+   * @param m the message to publish
    */
   void publishNavPosLlh(const ublox_msgs::NavPOSLLH& m);
   
   /*
    * @brief Publish a NavVELNED message & update the last known velocity.
+   * @param m the message to publish
    */
   void publishNavVelNed(const ublox_msgs::NavVELNED& m);
 
   /*
    * @brief Publish a NavSOL message and update the number of SVs used for the 
    * fix.
+   * @param m the message to publish
    */
   void publishNavSol(const ublox_msgs::NavSOL& m);
 
@@ -337,23 +341,127 @@ class UbloxFirmware6 : public UbloxFirmware {
 /**
  * Abstract class defining functions applicable to Firmware versions >=7.
  */
+template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
   /**
    * Publish a NavPVT message. Also publishes Fix and Twist messages and
    * updates the fix diagnostics.
+   * @param m the message to publish
    */
-  void publishNavPvt(const ublox_msgs::NavPVT& m);
+  // template<typename NavPVT>
+  void publishNavPvt(const NavPVT& m) {
+    static ros::Publisher publisher =
+        nh->advertise<NavPVT>("navpvt", kROSQueueSize);
+    publisher.publish(m);
+
+    /** Fix message */
+    static ros::Publisher fixPublisher =
+        nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
+    // timestamp
+    sensor_msgs::NavSatFix fix;
+    fix.header.stamp.sec = toUtcSeconds(m);
+    fix.header.stamp.nsec = m.nano;
+
+    bool fixOk = m.flags & m.FLAGS_GNSS_FIX_OK;
+    uint8_t cpSoln = m.flags & m.CARRIER_PHASE_FIXED;
+
+    fix.header.frame_id = frame_id;
+    fix.latitude = m.lat * 1e-7; // to deg
+    fix.longitude = m.lon * 1e-7; // to deg
+    fix.altitude = m.height * 1e-3; // to [m]
+    if (fixOk && m.fixType >= m.FIX_TYPE_2D) {
+      fix.status.status = fix.status.STATUS_FIX;
+      if(cpSoln == m.CARRIER_PHASE_FIXED)
+        fix.status.status = fix.status.STATUS_GBAS_FIX;
+    }
+    else {
+      fix.status.status = fix.status.STATUS_NO_FIX;
+    }
+
+    const double varH = pow(m.hAcc / 1000.0, 2); // to [m^2]
+    const double varV = pow(m.vAcc / 1000.0, 2); // to [m^2]
+    fix.position_covariance[0] = varH;
+    fix.position_covariance[4] = varH;
+    fix.position_covariance[8] = varV;
+    fix.position_covariance_type =
+        sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
+
+    fix.status.service = fix_status_service;
+    fixPublisher.publish(fix);
+
+    /** Fix Velocity */
+    static ros::Publisher velocityPublisher =
+        nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
+                                                                  kROSQueueSize);
+    geometry_msgs::TwistWithCovarianceStamped velocity;
+    velocity.header.stamp = fix.header.stamp;
+    velocity.header.frame_id = frame_id;
+
+    // convert to XYZ linear velocity [m/s] in ENU
+    velocity.twist.twist.linear.x = m.velE * 1e-3;
+    velocity.twist.twist.linear.y = m.velN * 1e-3;
+    velocity.twist.twist.linear.z = -m.velD * 1e-3;
+
+    const double covSpeed = pow(m.sAcc * 1e-3, 2);
+
+    const int cols = 6;
+    velocity.twist.covariance[cols * 0 + 0] = covSpeed;
+    velocity.twist.covariance[cols * 1 + 1] = covSpeed;
+    velocity.twist.covariance[cols * 2 + 2] = covSpeed;
+    velocity.twist.covariance[cols * 3 + 3] = -1;  //  angular rate unsupported
+
+    velocityPublisher.publish(velocity);
+
+    /** Update diagnostics **/
+    last_nav_pvt_ = m;
+    freq_diag->tick(fix.header.stamp);
+    updater->update();
+  }
 
  protected:
 
   /**
    * @brief Update the fix diagnostics from PVT message.
    */
-  void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat);
+  void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) {
+    //  check the last message, convert to diagnostic
+    if (last_nav_pvt_.fixType == ublox_msgs::NavSTATUS::GPS_NO_FIX) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+      stat.message = "No fix";
+    } else if (last_nav_pvt_.fixType == 
+               ublox_msgs::NavSTATUS::GPS_DEAD_RECKONING_ONLY) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+      stat.message = "Dead reckoning only";
+    } else if (last_nav_pvt_.fixType == ublox_msgs::NavSTATUS::GPS_2D_FIX) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+      stat.message = "2D fix";
+    } else if (last_nav_pvt_.fixType == ublox_msgs::NavSTATUS::GPS_3D_FIX) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+      stat.message = "3D fix";
+    } else if (last_nav_pvt_.fixType ==
+               ublox_msgs::NavSTATUS::GPS_GPS_DEAD_RECKONING_COMBINED) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+      stat.message = "GPS and dead reckoning combined";
+    } else if (last_nav_pvt_.fixType == 
+               ublox_msgs::NavSTATUS::GPS_TIME_ONLY_FIX) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+      stat.message = "Time fix only";
+    }
+
+    //  append last fix position
+    stat.add("iTOW", last_nav_pvt_.iTOW);
+    stat.add("lon", last_nav_pvt_.lon);
+    stat.add("lat", last_nav_pvt_.lat);
+    stat.add("height", last_nav_pvt_.height);
+    stat.add("hMSL", last_nav_pvt_.hMSL);
+    stat.add("hAcc", last_nav_pvt_.hAcc);
+    stat.add("vAcc", last_nav_pvt_.vAcc);
+    stat.add("numSV", last_nav_pvt_.numSV);
+  }
  
   // The last received NavPVT message
-  ublox_msgs::NavPVT last_nav_pvt_; 
+  NavPVT last_nav_pvt_; 
   // Whether or not to enable the given GNSS
   bool enable_gps_, enable_glonass_, enable_qzss_, enable_sbas_;
   // The QZSS Signal configuration, see CfgGNSS message
@@ -363,7 +471,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
 /**
  * Represents a U-Blox node for firmware version 7.
  */
-class UbloxFirmware7 : public UbloxFirmware7Plus {
+class UbloxFirmware7 : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  public:
   UbloxFirmware7();
 
@@ -386,7 +494,7 @@ class UbloxFirmware7 : public UbloxFirmware7Plus {
 /**
  * Represents a U-Blox node for firmware version 8.
  */
-class UbloxFirmware8 : public UbloxFirmware7Plus {
+class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  public:
   UbloxFirmware8();
 
@@ -436,7 +544,10 @@ class UbloxAdrUdr: public UbloxInterface {
   /**
    * @brief Does nothing.
    */
-  void initializeRosDiagnostics() {}
+  void initializeRosDiagnostics() {
+    ROS_WARN("ROS Diagnostics specific to U-Blox ADR/UDR devices is %s",
+             "unimplemented. See UbloxAdrUdr class in node.h & node.cpp.");
+  }
 
   // Whether or not to enable dead reckoning
   bool use_adr_;
@@ -449,7 +560,10 @@ class UbloxFts: public UbloxInterface {
   /**
    * @brief Gets the FTS parameters. Currently unimplemented.
    */
-  void getRosParams() {}
+  void getRosParams() {
+    ROS_WARN("Functionality specific to U-Blox FTS devices is %s",
+             "unimplemented. See UbloxFts class in node.h & node.cpp.");
+  }
 
   /**
    * @brief Configures FTS settings. Currently unimplemented.
@@ -498,8 +612,9 @@ class UbloxHpgRef: public UbloxInterface {
    * @brief Publishes received Nav SVIN messages. When the survey in finishes, 
    * it changes the measurement & navigation rate to the user configured values 
    * and enables the user configured RTCM messages.
+   * @param m the message to publish
    */
-  void publishNavSvIn(ublox_msgs::NavSVIN msg);
+  void publishNavSvIn(ublox_msgs::NavSVIN m);
 
  protected:
   /**
@@ -587,7 +702,10 @@ class UbloxTim: public UbloxInterface {
   /**
    * @brief Gets the Time Sync parameters. Currently unimplemented.
    */
-  void getRosParams() {}
+  void getRosParams() {
+    ROS_WARN("Functionality specific to U-Blox TIM devices is only %s",
+             "partially implemented. See UbloxTim class in node.h & node.cpp.");
+  }
 
   /**
    * @brief Configures Time Sync settings. Currently unimplemented.

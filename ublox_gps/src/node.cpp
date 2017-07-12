@@ -587,113 +587,6 @@ void UbloxFirmware6::publishNavSol(const ublox_msgs::NavSOL& m) {
   last_nav_sol_ = m;
 }
 
-/** Ublox Firmware Version >=7 **/
-void UbloxFirmware7Plus::fixDiagnostic(
-    diagnostic_updater::DiagnosticStatusWrapper& stat) {
-  //  check the last message, convert to diagnostic
-  if (last_nav_pvt_.fixType == ublox_msgs::NavSTATUS::GPS_NO_FIX) {
-    stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
-    stat.message = "No fix";
-  } else if (last_nav_pvt_.fixType == 
-             ublox_msgs::NavSTATUS::GPS_DEAD_RECKONING_ONLY) {
-    stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
-    stat.message = "Dead reckoning only";
-  } else if (last_nav_pvt_.fixType == ublox_msgs::NavSTATUS::GPS_2D_FIX) {
-    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
-    stat.message = "2D fix";
-  } else if (last_nav_pvt_.fixType == ublox_msgs::NavSTATUS::GPS_3D_FIX) {
-    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
-    stat.message = "3D fix";
-  } else if (last_nav_pvt_.fixType ==
-             ublox_msgs::NavSTATUS::GPS_GPS_DEAD_RECKONING_COMBINED) {
-    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
-    stat.message = "GPS and dead reckoning combined";
-  } else if (last_nav_pvt_.fixType == 
-             ublox_msgs::NavSTATUS::GPS_TIME_ONLY_FIX) {
-    stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
-    stat.message = "Time fix only";
-  }
-
-  //  append last fix position
-  stat.add("iTOW", last_nav_pvt_.iTOW);
-  stat.add("lon", last_nav_pvt_.lon);
-  stat.add("lat", last_nav_pvt_.lat);
-  stat.add("height", last_nav_pvt_.height);
-  stat.add("hMSL", last_nav_pvt_.hMSL);
-  stat.add("hAcc", last_nav_pvt_.hAcc);
-  stat.add("vAcc", last_nav_pvt_.vAcc);
-  stat.add("numSV", last_nav_pvt_.numSV);
-}
-
-void UbloxFirmware7Plus::publishNavPvt(const ublox_msgs::NavPVT& m) {
-  static ros::Publisher publisher =
-      nh->advertise<ublox_msgs::NavPVT>("navpvt", kROSQueueSize);
-  publisher.publish(m);
-
-  /** Fix message */
-  static ros::Publisher fixPublisher =
-      nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
-  // timestamp
-  sensor_msgs::NavSatFix fix;
-  fix.header.stamp.sec = toUtcSeconds(m);
-  fix.header.stamp.nsec = m.nano;
-
-  bool fixOk = m.flags & m.FLAGS_GNSS_FIX_OK;
-  uint8_t cpSoln = m.flags & m.CARRIER_PHASE_FIXED;
-
-  fix.header.frame_id = frame_id;
-  fix.latitude = m.lat * 1e-7; // to deg
-  fix.longitude = m.lon * 1e-7; // to deg
-  fix.altitude = m.height * 1e-3; // to [m]
-  if (fixOk && m.fixType >= m.FIX_TYPE_2D) {
-    fix.status.status = fix.status.STATUS_FIX;
-    if(cpSoln == m.CARRIER_PHASE_FIXED)
-      fix.status.status = fix.status.STATUS_GBAS_FIX;
-  }
-  else {
-    fix.status.status = fix.status.STATUS_NO_FIX;
-  }
-
-  const double varH = pow(m.hAcc / 1000.0, 2); // to [m^2]
-  const double varV = pow(m.vAcc / 1000.0, 2); // to [m^2]
-  fix.position_covariance[0] = varH;
-  fix.position_covariance[4] = varH;
-  fix.position_covariance[8] = varV;
-  fix.position_covariance_type =
-      sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
-
-  fix.status.service = fix_status_service;
-  fixPublisher.publish(fix);
-
-  /** Fix Velocity */
-  static ros::Publisher velocityPublisher =
-      nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
-                                                                kROSQueueSize);
-  geometry_msgs::TwistWithCovarianceStamped velocity;
-  velocity.header.stamp = fix.header.stamp;
-  velocity.header.frame_id = frame_id;
-
-  // convert to XYZ linear velocity [m/s] in ENU
-  velocity.twist.twist.linear.x = m.velE * 1e-3;
-  velocity.twist.twist.linear.y = m.velN * 1e-3;
-  velocity.twist.twist.linear.z = -m.velD * 1e-3;
-
-  const double covSpeed = pow(m.sAcc * 1e-3, 2);
-
-  const int cols = 6;
-  velocity.twist.covariance[cols * 0 + 0] = covSpeed;
-  velocity.twist.covariance[cols * 1 + 1] = covSpeed;
-  velocity.twist.covariance[cols * 2 + 2] = covSpeed;
-  velocity.twist.covariance[cols * 3 + 3] = -1;  //  angular rate unsupported
-
-  velocityPublisher.publish(velocity);
-
-  /** Update diagnostics **/
-  last_nav_pvt_ = m;
-  freq_diag->tick(fix.header.stamp);
-  updater->update();
-}
-
 //
 // Ublox Firmware Version 7
 //
@@ -803,7 +696,7 @@ void UbloxFirmware7::subscribe() {
   // Subscribe to Nav PVT
   nh->param("nav_pvt", enabled["nav_pvt"], true);
   if (enabled["nav_pvt"])
-    gps.subscribe<ublox_msgs::NavPVT>(boost::bind(
+    gps.subscribe<ublox_msgs::NavPVT7>(boost::bind(
         &UbloxFirmware7Plus::publishNavPvt, this, _1),
         kSubscribeRate);
 
