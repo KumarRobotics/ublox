@@ -55,17 +55,21 @@
 // This file declares the UbloxInterface which contains functions applicable
 // to all Ublox firmware or hardware such as configuring the U-Blox and 
 // subscribe to messages.
-// It also declares UbloxNode which implements the UbloxInterface and all 
-// functionality which applies to any U-Blox device, regardless of the
-// firmware version or product type. It contains instances of UbloxInterface
-// for the specific firmware and product version.
+// It also declares UbloxNode which implements the UbloxInterface and acts as
+// the main class and ROS node. It implements functionality which is generic to
+// any U-Blox device, regardless of the firmware version or product type. 
+// The class is designed in compositional style; it contains instances of 
+// a list of UbloxInterfaces for device specific functionality, including
+// for the specific firmware and product version. During configuration,
+// UbloxNode calls the methods of each interface in the list.
 // UbloxFirmware is an abstract class which implements UbloxInterface and 
 // functions generic to all firmware (such as the initializing the diagnostics).
-// This file also declares subclasses of UbloxFirmware for firmware versions
-// 6-8.
-// Lastly, this file declares Product specific classes which also implement
-// U-Blox interface, currently only a default class and a class for High 
-// Precision GNSS devices.
+// Subclasses of UbloxFirmware for firmware versions 6-8 are also declared in  
+// this file.
+// Lastly, this file declares classes for each product category which also 
+// implement U-Blox interface, currently only the class for High Precision 
+// GNSS devices has been fully implemented and tested.
+
 namespace ublox_node {
 // Queue size for ROS publishers
 const static uint32_t kROSQueueSize = 1;
@@ -80,6 +84,7 @@ boost::shared_ptr<diagnostic_updater::Updater> updater;
 boost::shared_ptr<diagnostic_updater::TopicDiagnostic> freq_diag;
 boost::shared_ptr<ros::NodeHandle> nh;
 
+// Handles communication with the U-Blox Device
 ublox_gps::Gps gps;
 // Which GNSS are supported by the device
 std::set<std::string> supported;
@@ -216,15 +221,14 @@ class UbloxNode : public virtual UbloxInterface {
   void processMonVer();
 
   /**
-   * @brief Set the hardware member which is used for hardware specific 
+   * @brief Add the interface which is used for product category 
    * configuration, subscribers, & diagnostics.
-   * Currently only supports HPG. To add functionality for other hardware,
-   * extend UbloxInterface and modify this function.
-   * @param the product category, e.g. SPG, HPG, ADR, FTS.
+   * @param the product category, i.e. SPG, HPG, ADR, UDR, TIM, or FTS.
    * @param for HPG/TIM products, this value is either REF or ROV, for other
    * products this string is empty
    */
-  void setHardware(std::string product_category, std::string ref_rov);
+  void addProductInterface(std::string product_category, 
+                           std::string ref_rov = "");
 
   /**
    * @brief Poll messages from the U-Blox device.

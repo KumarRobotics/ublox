@@ -29,7 +29,6 @@
 
 #include "ublox_gps/node.h"
 
-using namespace ublox_gps;
 using namespace ublox_node;
 
 //
@@ -52,7 +51,8 @@ UbloxNode::UbloxNode() {
   initialize();
 }
 
-void UbloxNode::setHardware(std::string product_category, std::string ref_rov) {
+void UbloxNode::addProductInterface(std::string product_category, 
+                                    std::string ref_rov) {
   if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0)
     xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxHpgRef));
   else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0)
@@ -303,9 +303,9 @@ void UbloxNode::processMonVer() {
         if(strs.size() > 1) {
           if (strs[0].compare(std::string("FWVER")) == 0) {
             if(strs[1].length() > 8)
-              setHardware(strs[1].substr(0, 3), strs[1].substr(8, 10));
+              addProductInterface(strs[1].substr(0, 3), strs[1].substr(8, 10));
             else
-              setHardware(strs[1].substr(0, 3), "");
+              addProductInterface(strs[1].substr(0, 3));
             continue;
           }
         }
@@ -1324,7 +1324,7 @@ void UbloxHpgRov::diagnosticUpdater(
 }
 
 //
-// U-Blox Time Sync Products, partially implemented
+// U-Blox Time Sync Products, partially implemented.
 //
 void UbloxTim::subscribe() {
   // Subscribe to RawX messages
@@ -1345,8 +1345,8 @@ void UbloxTim::subscribe() {
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ublox_gps");
   nh.reset(new ros::NodeHandle("~"));
-  nh->param("debug", debug, 1);
-  if(debug) {
+  nh->param("debug", ublox_gps::debug, 1);
+  if(ublox_gps::debug) {
     if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, 
                                        ros::console::levels::Debug))
      ros::console::notifyLoggerLevelsChanged();
