@@ -408,6 +408,62 @@ class UbloxFirmware8 : public UbloxFirmware7Plus {
 };
 
 /**
+ * @brief Interface for Automotive Dead Reckoning (ADR) and Untethered
+ * Dead Reckoning (UDR) Devices.
+ */
+class UbloxAdrUdr: public UbloxInterface {
+ public:
+  /**
+   * @brief Gets the ADR/UDR parameters, e.g. useAdr.
+   */
+  void getRosParams();
+
+  /**
+   * @brief Configures ADR/UDR settings, e.g. useAdr.
+   * @returns true if configured correctly, false otherwise
+   */
+  bool configureUblox();
+
+  /**
+   * @brief Subscribes to ADR/UDR messages, e.g. NavATT, Esf and HNR messages
+   */
+  void subscribe();
+
+  /**
+   * @brief Does nothing.
+   */
+  void initializeRosDiagnostics() {}
+
+  // Whether or not to enable dead reckoning
+  bool use_adr_;
+};
+
+/**
+ * @brief Implements functions for FTS products. Currently unimplemented. TODO
+ */
+class UbloxFts: public UbloxInterface {
+  /**
+   * @brief Gets the FTS parameters. Currently unimplemented.
+   */
+  void getRosParams() {}
+
+  /**
+   * @brief Configures FTS settings. Currently unimplemented.
+   */
+  bool configureUblox() {}
+
+  /**
+   * @brief Subscribes to FTS GNSS messages.
+   */
+  void subscribe() {}
+
+  /**
+   * @brief Adds diagnostic updaters for FTS status. 
+   */
+  void initializeRosDiagnostics() {}
+};
+
+/**
  * @brief Implements functions for High Precision GNSS Reference station.
  */
 class UbloxHpgRef: public UbloxInterface {
@@ -519,7 +575,6 @@ class UbloxHpgRov: public UbloxInterface {
   // The DGNSS mode, see CfgDGNSS message for possible values
   int dgnss_mode_;
 };
-
 
 /**
  * @brief Implements functions for Time Sync products.

@@ -237,16 +237,23 @@ bool Gps::setDeadReckonLimit(uint8_t limit) {
   return configure(msg);
 }
 
-bool Gps::setPPPEnabled(bool enabled) {
+bool Gps::setPPPEnabled(bool enable) {
   ublox_msgs::CfgNAVX5 msg;
-  msg.usePPP = enabled;
+  msg.usePPP = enable;
   msg.mask1 = ublox_msgs::CfgNAVX5::MASK1_PPP;
   return configure(msg);
 }
 
-bool Gps::enableSBAS(bool enabled, uint8_t usage, uint8_t max_sbas) {
+bool Gps::setUseAdr(bool enable) {
+  ublox_msgs::CfgNAVX5 msg;
+  msg.useAdr = enable;
+  msg.mask2 = ublox_msgs::CfgNAVX5::MASK2_ADR;
+  return configure(msg);
+}
+
+bool Gps::enableSBAS(bool enable, uint8_t usage, uint8_t max_sbas) {
   ublox_msgs::CfgSBAS msg;
-  msg.mode = (enabled ? CfgSBAS::MODE_ENABLED : 0);
+  msg.mode = (enable ? CfgSBAS::MODE_ENABLED : 0);
   msg.usage = usage;
   msg.maxSBAS = max_sbas;
   return configure(msg);

@@ -53,14 +53,21 @@ UbloxNode::UbloxNode() {
 }
 
 void UbloxNode::setHardware(std::string product_category, std::string ref_rov) {
-  if(product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0)
+  if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0)
     xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxHpgRef));
-  else if(product_category.compare("HPG") == 0 
-            && ref_rov.compare("ROV") == 0)
+  else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0)
     xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxHpgRov));
-  else if(product_category.compare("TIM") == 0)
+  else if (product_category.compare("TIM") == 0)
     xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxTim));
- 
+  else if (product_category.compare("ADR") == 0 || 
+          product_category.compare("UDR") == 0)
+    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxAdrUdr));
+  else if (product_category.compare("FTS") == 0)
+    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxFts));
+  else if(product_category.compare("SPG") != 0)
+    ROS_WARN("Product category %s %s from MonVER message not recognized %s", 
+             product_category.c_str(), ref_rov.c_str(),
+             "options are HPG REF, HPG ROV, TIM, ADR, UDR, FTS, SPG");
 }
 
 void UbloxNode::getRosParams() {
@@ -107,9 +114,9 @@ void UbloxNode::getRosParams() {
     throw std::runtime_error(std::string("Invalid settings: max_sbas must ") +
                                          "be between 0 and 255");
 
-  if(rtcm_rate <= 0 || rtcm_rate > 255)
+  if(rtcm_rate < 0 || rtcm_rate > 255)
     throw std::runtime_error(std::string("Invalid settings: rtcm_rate must ") +
-                                         "be between 1 and 255");
+                                         "be between 0 and 255");
 
   try {
     dmodel_ = ublox_gps::modelFromString(dynamic_model_);
@@ -282,8 +289,6 @@ void UbloxNode::processMonVer() {
   }
 
   if(protocol_version_ < 18) {
-    // Firmware is for Standard Precision GNSS product 
-    setHardware(std::string("SPG"), "");
     // Final line contains supported GNSS delimited by ;
     std::vector<std::string> strs;
     boost::split(strs, extension[extension.size()-1], boost::is_any_of(";"));
@@ -1036,6 +1041,63 @@ void UbloxFirmware8::subscribe() {
 }
 
 //
+// U-Blox ADR devices, partially implemented
+//
+void UbloxAdrUdr::getRosParams() {
+  nh->param("use_adr", use_adr_, true);
+  // Check the nav rate
+  float nav_rate_hz = 1000 / (meas_rate * nav_rate);
+  if(nav_rate_hz != 1)
+    ROS_WARN("Nav Rate recommended to be 1 Hz");
+}
+
+bool UbloxAdrUdr::configureUblox() {
+  if(!gps.setUseAdr(use_adr_))
+    throw std::runtime_error(std::string("Failed to ") 
+                             + (use_adr_ ? "enable" : "disable") + "use_adr");
+}
+
+void UbloxAdrUdr::subscribe() {
+  nh->param("esf", enabled["esf"], true);
+
+  // Subscribe to NAV ATT messages
+  nh->param("nav_att", enabled["nav_att"], true);
+  if (enabled["nav_att"])
+    gps.subscribe<ublox_msgs::NavATT>(boost::bind(
+        publish<ublox_msgs::NavATT>, _1, "navatt"), kSubscribeRate);
+
+  // Subscribe to ESF INS messages
+  nh->param("esf_ins", enabled["esf_ins"], enabled["esf"]);
+  if (enabled["esf_ins"])
+    gps.subscribe<ublox_msgs::EsfINS>(boost::bind(
+        publish<ublox_msgs::EsfINS>, _1, "esfins"), kSubscribeRate);
+
+  // Subscribe to ESF Meas messages
+  nh->param("esf_meas", enabled["esf_meas"], enabled["esf"]);
+  if (enabled["esf_meas"])
+    gps.subscribe<ublox_msgs::EsfMEAS>(boost::bind(
+        publish<ublox_msgs::EsfMEAS>, _1, "esfmeas"), kSubscribeRate);
+
+  // Subscribe to ESF Raw messages
+  nh->param("esf_raw", enabled["esf_raw"], enabled["esf"]);
+  if (enabled["esf_raw"])
+    gps.subscribe<ublox_msgs::EsfRAW>(boost::bind(
+        publish<ublox_msgs::EsfRAW>, _1, "esfraw"), kSubscribeRate);
+
+  // Subscribe to ESF Status messages
+  nh->param("esf_status", enabled["esf_status"], enabled["esf"]);
+  if (enabled["esf_status"])
+    gps.subscribe<ublox_msgs::EsfSTATUS>(boost::bind(
+        publish<ublox_msgs::EsfSTATUS>, _1, "esfstatus"), kSubscribeRate);
+
+  // Subscribe to HNR PVT messages
+  nh->param("hnr_pvt", enabled["hnr_pvt"], true);
+  if (enabled["hnr_pvt"])
+    gps.subscribe<ublox_msgs::HnrPVT>(boost::bind(
+        publish<ublox_msgs::HnrPVT>, _1, "hnrpvt"), kSubscribeRate);
+}
+
+//
 // U-Blox High Precision GNSS Reference Station
 //
 void UbloxHpgRef::getRosParams() {
@@ -1262,7 +1324,7 @@ void UbloxHpgRov::diagnosticUpdater(
 }
 
 //
-// U-Blox Time Sync Products
+// U-Blox Time Sync Products, partially implemented
 //
 void UbloxTim::subscribe() {
   // Subscribe to RawX messages

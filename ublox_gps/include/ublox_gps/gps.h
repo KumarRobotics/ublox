@@ -197,7 +197,7 @@ class Gps {
   bool disableTmode3();
 
   /**
-   * @brief Set the rate of the given message
+   * @brief Set the rate at which the U-Blox device sends the given message
    * @param class_id the class identifier of the message
    * @param message_id the message identifier
    * @param rate the updated rate in Hz
@@ -228,24 +228,30 @@ class Gps {
 
   /**
    * @brief Enable or disable PPP (precise-point-positioning).
-   * @param enabled If true, PPP is enabled.
+   * @param enabled If true, enable PPP.
    * @return true on ACK, false on other conditions.
    *
    * @note This is part of the expert settings. It is recommended you check
    * the ublox manual first.
    */
-  bool setPPPEnabled(bool enabled);
+  bool setPPPEnabled(bool enable);
+
+
+  /**
+   * @brief Enable or disable ADR (automotive dead reckoning).
+   * @param enabled If true, enable ADR.
+   * @return true on ACK, false on other conditions.
+   */
+  bool setUseAdr(bool enable);
 
   /**
    * @brief Enable or disable SBAS.
-   * @param enabled If true, PPP is enabled.
+   * @param enable If true, enable SBAS.
+   * @param usage SBAS usage, see CfgSBAS for options
+   * @param max_sbas Maximum Number of SBAS prioritized tracking channels
    * @return true on ACK, false on other conditions.
-   *
-   * @note This is part of the expert settings. It is recommended you check
-   * the ublox manual first. If the device does not have SBAS capabilities 
-   * it will return a NACK.
    */
-  bool enableSBAS(bool enabled, uint8_t usage, uint8_t max_sbas);
+  bool enableSBAS(bool enable, uint8_t usage, uint8_t max_sbas);
 
   /**
    * @brief Configure the U-Blox send rate of the message & subscribe to the 
