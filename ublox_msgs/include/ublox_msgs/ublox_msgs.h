@@ -29,6 +29,7 @@
 #ifndef UBLOX_MSGS_H
 #define UBLOX_MSGS_H
 
+#include <ublox_msgs/NavATT.h>
 #include <ublox_msgs/NavCLOCK.h>
 #include <ublox_msgs/NavDGPS.h>
 #include <ublox_msgs/NavDOP.h>
@@ -132,6 +133,7 @@ namespace Class {
 
 namespace Message {
   namespace NAV {
+    static const uint8_t ATT = NavATT::MESSAGE_ID;
     static const uint8_t CLOCK = NavCLOCK::MESSAGE_ID;
     static const uint8_t DGPS = NavDGPS::MESSAGE_ID;
     static const uint8_t DOP = NavDOP::MESSAGE_ID;
