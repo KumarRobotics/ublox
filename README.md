@@ -64,48 +64,54 @@ Velocity in local ENU frame.
 
 To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
 
-Inf messages
-`~inf`: This acts as the default value for the INF parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-`~inf_debug`: If true prints INF Debug messages to ROS DEBUG console.
-`~inf_error`: If true prints INF Debug messages to ROS DEBUG console.
-`~inf_notice`: If true prints INF Debug messages to ROS DEBUG console.
-`~inf_test`: If true prints INF Debug messages to ROS DEBUG console.
-`~inf_warning`: If true prints INF Debug messages to ROS DEBUG console.
+### INF messages
+* `~inf`: This acts as the default value for the INF parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
+* `~inf_debug`: If true, configures UBX/NMEA ports to enable Debug messages and prints received INF Debug messages to `ROS_DEBUG` console.
+* `~inf_error`: If true, configures UBX/NMEA ports to enable Error messages and prints received INF Error messages to `ROS_ERROR` console.
+* `~inf_notice`: If true, configures UBX/NMEA ports to enable Notice messages and prints received INF Notice messages to `ROS_INFO` console.
+* `~inf_test`: If true, configures UBX/NMEA ports to enable Test messages and prints received INF Test messages to `ROS_INFO` console.
+* `~inf_warning`: If true, configures UBX/NMEA ports to enable Warning messages and prints received INF Warning messages to `ROS_WARN` console.
 
-`~aid`: This acts as the default value for the AID parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-`~aid_alm`: Topic `~aidalm`
-`~aid_eph`: Topic `~aideph`
-`~aid_hui`: Topic `~aidhui`
+### AID messages
+*`~aid`: This acts as the default value for the AID parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
+* `~aid_alm`: Topic `~aidalm`
+* `~aid_eph`: Topic `~aideph`
+* `~aid_hui`: Topic `~aidhui`
 
-`~rxm`: This acts as the default value for the RXM parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-`~rxm_alm`: Topic `~rxmalm`
-`~rxm_raw`: Topic `~rxmraw`
-`~rxm_rtcm`: Topic `~rxmrtcm`
-`~rxm_sfrb`: Topic `~rxmsfrb`
-`~rxm_eph`: Topic `~rxmeph`
+### RXM messages
+* `~rxm`: This acts as the default value for the RXM parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
+* `~rxm_alm`: Topic `~rxmalm`
+* `~rxm_raw`: Topic `~rxmraw`
+* `~rxm_rtcm`: Topic `~rxmrtcm`
+* `~rxm_sfrb`: Topic `~rxmsfrb`
+* `~rxm_eph`: Topic `~rxmeph`
 
-`~mon_hw`: Topic `~monhw`
+### MON messages
+* `~mon_hw`: Topic `~monhw`
 
-`~nav_att`: Topic `~navatt` on ADR/UDR devices only
-`~nav_clock`: Topic `~navclock`
-`~nav_posecef`: Topic `~navposecef`
-`~nav_posllh`: Topic `~navposllh`. Firmware <= 6 only. For 7 and above, use NavPVT
-`~nav_pvt`: Topic `~navpvt`. Firmware >=7 only.
-`~nav_relposned`: Topic `~navrelposned`
-`~nav_sat`: Topic `~navsat`
-`~nav_sol`: Topic `~navsol`. Firmware <= 6 only. For 7 and above, use NavPVT
-`~nav_status`: Topic `~navstatus`
-`~nav_svin`: Topic `~navsvin`
-`~nav_svinfo`: Topic `~navsvinfo`
-`~nav_velned`: Topic `~navvelned`. Firmware <= 6 only. For 7 and above, use NavPVT
+### NAV messages
+* `~nav_att`: Topic `~navatt` on ADR/UDR devices only
+* `~nav_clock`: Topic `~navclock`
+* `~nav_posecef`: Topic `~navposecef`
+* `~nav_posllh`: Topic `~navposllh`. Firmware <= 6 only. For 7 and above, use NavPVT
+* `~nav_pvt`: Topic `~navpvt`. Firmware >=7 only.
+* `~nav_relposned`: Topic `~navrelposned`
+* `~nav_sat`: Topic `~navsat`
+* `~nav_sol`: Topic `~navsol`. Firmware <= 6 only. For 7 and above, use NavPVT
+* `~nav_status`: Topic `~navstatus`
+* `~nav_svin`: Topic `~navsvin`
+* `~nav_svinfo`: Topic `~navsvinfo`
+* `~nav_velned`: Topic `~navvelned`. Firmware <= 6 only. For 7 and above, use NavPVT
 
-`~esf`: This acts as the default value for the RXM parameters below. It defaults to true for ADR/UDR devices. Individual messages can be turned off by setting the parameter below to false.
-`~esf_ins`: Topic `~esfins`
-`~esf_meas`: Topic `~esfmeas`
-`~esf_raw`: Topic `~esfraw`
-`~esf_status`: Topic `~esfstatus`
+### ESF messages
+* `~esf`: This acts as the default value for the RXM parameters below. It defaults to true for ADR/UDR devices. Individual messages can be turned off by setting the parameter below to false.
+* `~esf_ins`: Topic `~esfins`
+* `~esf_meas`: Topic `~esfmeas`
+* `~esf_raw`: Topic `~esfraw`
+* `~esf_status`: Topic `~esfstatus`
 
-`~hnr_pvt`: Topic `~hnrpvt`
+### HNR messages
+* `~hnr_pvt`: Topic `~hnrpvt`
 
 ## Launch
 
