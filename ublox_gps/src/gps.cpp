@@ -267,6 +267,11 @@ bool Gps::configSbas(bool enable, uint8_t usage, uint8_t max_sbas) {
   return configure(msg);
 }
 
+bool Gps::configInf(CfgINF msg) {
+  ROS_DEBUG("Configuring INF messages");
+  return configure(msg);
+}
+
 bool Gps::configTmode3Fixed(bool lla_flag,
                             std::vector<float> arp_position, 
                             std::vector<float> arp_position_hp,
@@ -333,7 +338,7 @@ bool Gps::setRate(uint8_t class_id, uint8_t message_id, uint8_t rate) {
 }
 
 bool Gps::setDynamicModel(uint8_t model) {
-  ROS_DEBUG("Set dynamic model %u", model);
+  ROS_DEBUG("Setting dynamic model to %u", model);
 
   ublox_msgs::CfgNAV5 msg;
   msg.dynModel = model;
@@ -342,7 +347,7 @@ bool Gps::setDynamicModel(uint8_t model) {
 }
 
 bool Gps::setFixMode(uint8_t mode) {
-  ROS_DEBUG("Set fix mode %u", mode);
+  ROS_DEBUG("Setting fix mode to %u", mode);
 
   ublox_msgs::CfgNAV5 msg;
   msg.fixMode = mode;
@@ -351,7 +356,7 @@ bool Gps::setFixMode(uint8_t mode) {
 }
 
 bool Gps::setDeadReckonLimit(uint8_t limit) {
-  ROS_DEBUG("Setting DR Limit %u", limit);
+  ROS_DEBUG("Setting DR Limit to %u", limit);
   
   ublox_msgs::CfgNAV5 msg;
   msg.drLimit = limit;

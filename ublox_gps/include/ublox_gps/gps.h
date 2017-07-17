@@ -43,11 +43,6 @@
 #include <ros/console.h>
 
 #include <ublox/serialization/ublox_msgs.h>
-#include <ublox_msgs/CfgNAV5.h>
-#include <ublox_msgs/CfgNAVX5.h>
-#include <ublox_msgs/CfgPRT.h>
-#include <ublox_msgs/CfgRATE.h>
-#include <ublox_msgs/CfgTMODE3.h>
 
 #include <ublox_gps/async_worker.h>
 #include <ublox_gps/callback.h>
@@ -154,6 +149,13 @@ class Gps {
    * @return true on ACK, false on other conditions.
    */
   bool configSbas(bool enable, uint8_t usage, uint8_t max_sbas);
+
+  /**
+   * @brief Configure the INF messages.
+   * @param msg the inf message to send
+   * @return true on ACK, false otherwise
+   */
+  bool configInf(ublox_msgs::CfgINF msg);
 
   /**
    * @brief Set the TMODE3 settings to fixed at the given antenna reference
@@ -284,10 +286,10 @@ class Gps {
 
   template <typename ConfigT>
   bool poll(ConfigT& message,
+            const std::vector<uint8_t>& payload = std::vector<uint8_t>(),
             const boost::posix_time::time_duration& timeout = default_timeout_);
   bool poll(uint8_t class_id, uint8_t message_id,
             const std::vector<uint8_t>& payload = std::vector<uint8_t>());
-  template <typename ConfigT>
 
   /**
    * @brief Send the given configuration message.
@@ -296,6 +298,7 @@ class Gps {
    * @return true if message sent successfully and either ACK was received or 
    * wait was set to false
    */
+  template <typename ConfigT>
   bool configure(const ConfigT& message, bool wait = true);
 
   /**
@@ -371,8 +374,9 @@ Callbacks::iterator Gps::subscribeId(
 
 template <typename ConfigT>
 bool Gps::poll(ConfigT& message,
+               const std::vector<uint8_t>& payload,
                const boost::posix_time::time_duration& timeout) {
-  if (!poll(ConfigT::CLASS_ID, ConfigT::MESSAGE_ID)) return false;
+  if (!poll(ConfigT::CLASS_ID, ConfigT::MESSAGE_ID, payload)) return false;
   return read(message, timeout);
 }
 

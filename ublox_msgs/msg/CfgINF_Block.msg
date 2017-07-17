@@ -7,6 +7,8 @@ uint8 protocolID          # Protocol Identifier, identifying for which
                           # 0: UBX Protocol
                           # 1: NMEA Protocol
                           # 2-255: Reserved
+uint8 PROTOCOL_ID_UBX = 0
+uint8 PROTOCOL_ID_NMEA = 1
 
 uint8[3] reserved1        # Reserved
 

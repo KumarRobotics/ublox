@@ -146,13 +146,13 @@ void UbloxNode::pollMessages(const ros::TimerEvent& event) {
 
 void UbloxNode::printInf(const ublox_msgs::Inf &m, uint8_t id) {
   if (id == ublox_msgs::Message::INF::ERROR)
-    ROS_ERROR("%s", m.str.data());
+    ROS_ERROR("INF: %s", m.str.data());
   else if (id == ublox_msgs::Message::INF::WARNING)
-    ROS_WARN("%s", m.str.data());
+    ROS_WARN("INF: %s", m.str.data());
   else if (id == ublox_msgs::Message::INF::DEBUG)
-    ROS_DEBUG("%s", m.str.data());
+    ROS_DEBUG("INF: %s", m.str.data());
   else
-    ROS_INFO("%s", m.str.data());
+    ROS_INFO("INF: %s", m.str.data());
 }
 
 void UbloxNode::subscribe() {
@@ -361,6 +361,40 @@ bool UbloxNode::configureUblox() {
   return true;
 }
 
+void UbloxNode::configureInf() {
+  ublox_msgs::CfgINF msg;
+  // Subscribe to UBX INF messages
+  ublox_msgs::CfgINF_Block block;
+  block.protocolID = block.PROTOCOL_ID_UBX;
+  // Enable desired INF messages on each UBX port
+  for(int i = 0; i < block.infMsgMask.size(); i++) {
+    block.infMsgMask[i] = enabled["inf_error"] & block.INF_MSG_ERROR |
+                          enabled["inf_warning"] & block.INF_MSG_WARNING |
+                          enabled["inf_notice"] & block.INF_MSG_NOTICE |
+                          enabled["inf_test"] & block.INF_MSG_TEST |
+                          enabled["inf_debug"] & block.INF_MSG_DEBUG;
+  }
+  msg.blocks.push_back(block);
+
+  // IF NMEA is enabled
+  if(uart_in_ & ublox_msgs::CfgPRT::PROTO_NMEA) {
+    ublox_msgs::CfgINF_Block block;
+    block.protocolID = block.PROTOCOL_ID_UBX;
+    // Enable desired INF messages on each NMEA port
+    for(int i = 0; i < block.infMsgMask.size(); i++) {
+      block.infMsgMask[i] = enabled["inf_error"] & block.INF_MSG_ERROR |
+                            enabled["inf_warning"] & block.INF_MSG_WARNING |
+                            enabled["inf_notice"] & block.INF_MSG_NOTICE |
+                            enabled["inf_test"] & block.INF_MSG_TEST |
+                            enabled["inf_debug"] & block.INF_MSG_DEBUG;
+    }
+    msg.blocks.push_back(block);
+  }
+
+  if(!gps.configInf(msg))
+    ROS_WARN("Failed to configure INF messages");
+}
+
 void UbloxNode::initialize() {
   // Params must be set before initializing IO
   getRosParams();
@@ -377,7 +411,9 @@ void UbloxNode::initialize() {
     ROS_INFO("U-Blox configured successfully.");
     // Subscribe to all U-Blox messages
     subscribe();
-    
+    // Configure INF messages (needs INF params, call after subscribing)
+    configureInf();
+
     ros::Timer poller; 
     poller = nh->createTimer(ros::Duration(kPollDuration), 
                              &UbloxNode::pollMessages, 

@@ -237,6 +237,11 @@ class UbloxNode : public virtual UbloxInterface {
    */
   void pollMessages(const ros::TimerEvent& event);
 
+  /**
+   * @brief Configure INF messages, call after subscribe.
+   */
+  void configureInf();
+
   // Used for diagnostic updater
   double min_freq, max_freq;
 
