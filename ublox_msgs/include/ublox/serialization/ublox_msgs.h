@@ -72,6 +72,31 @@ struct Serializer<ublox_msgs::CfgGNSS_<ContainerAllocator> >
 };
 
 template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::CfgINF_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::CfgINF_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    int num_blocks = count / 10;
+    m.blocks.resize(num_blocks);
+    for(std::size_t i = 0; i < num_blocks; ++i) 
+      ros::serialization::deserialize(stream, m.blocks[i]);
+  }
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::CfgINF_<ContainerAllocator> >::param_type m)
+  {
+    return 10 * m.blocks.size();
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::CfgINF_<ContainerAllocator> >::param_type m)
+  {
+    ros::serialization::OStream stream(data, size);
+    for(std::size_t i = 0; i < m.blocks.size(); ++i) 
+      ros::serialization::serialize(stream, m.blocks[i]);
+  }
+};
+
+template <typename ContainerAllocator>
 struct Serializer<ublox_msgs::Inf_<ContainerAllocator> >
 {
   static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::Inf_<ContainerAllocator> >::reference m)
@@ -714,7 +739,7 @@ struct Serializer<ublox_msgs::EsfSTATUS_<ContainerAllocator> >
   static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::EsfSTATUS_<ContainerAllocator> >::param_type m)
   {
     if(m.sens.size() != m.numSens) {
-      ROS_ERROR("CfgGNSS numSens must equal sens size");
+      ROS_ERROR("Writing EsfSTATUS message: numSens must equal size of sens");
     }
     ros::serialization::OStream stream(data, size);
     stream.next(m.iTOW);

@@ -67,6 +67,8 @@
 #include <ublox_msgs/CfgDGNSS.h>
 #include <ublox_msgs/CfgGNSS.h>
 #include <ublox_msgs/CfgHNR.h>
+#include <ublox_msgs/CfgINF.h>
+#include <ublox_msgs/CfgINF_Block.h>
 #include <ublox_msgs/CfgMSG.h>
 #include <ublox_msgs/CfgNAV5.h>
 #include <ublox_msgs/CfgNAVX5.h>
@@ -189,6 +191,7 @@ namespace Message {
     static const uint8_t CFG = CfgCFG::MESSAGE_ID;
     static const uint8_t GNSS = CfgGNSS::MESSAGE_ID;
     static const uint8_t HNR = CfgHNR::MESSAGE_ID;
+    static const uint8_t INF = CfgINF::MESSAGE_ID;
     static const uint8_t DGNSS = CfgDGNSS::MESSAGE_ID;
     static const uint8_t MSG = CfgMSG::MESSAGE_ID;
     static const uint8_t NAV5 = CfgNAV5::MESSAGE_ID;
