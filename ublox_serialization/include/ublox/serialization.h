@@ -260,9 +260,9 @@ class Writer {
   } } \
 
 // Use for messages which have the same structure but different IDs, e.g. INF
-// Call DECLARE_UBLOX_MESSAGE for the first message and DECLARE_UBLOX_MESSAGE2
+// Call DECLARE_UBLOX_MESSAGE for the first message and DECLARE_UBLOX_MESSAGE_ID
 // for following declarations
-#define DECLARE_UBLOX_MESSAGE2(class_id, message_id, package, message, name) \
+#define DECLARE_UBLOX_MESSAGE_ID(class_id, message_id, package, message, name) \
   namespace package { namespace { \
     static const ublox::Message<message>::StaticKeyInitializer static_key_initializer_##name(class_id, message_id); \
   } } \
