@@ -80,23 +80,6 @@ Gps::Gps() : configured_(false) {}
 
 Gps::~Gps() { close(); }
 
-bool Gps::configUart1(unsigned int baudrate, int16_t inProtoMask, 
-                      int16_t outProtoMask) {
-  if (!worker_) return true;
-
-  CfgPRT port;
-  port.portID = CfgPRT::PORT_ID_UART1;
-  port.baudRate = baudrate;
-  port.mode = CfgPRT::MODE_RESERVED1 | CfgPRT::MODE_CHAR_LEN_8BIT |
-              CfgPRT::MODE_PARITY_NO | CfgPRT::MODE_STOP_BITS_1;
-  port.inProtoMask = inProtoMask;
-  port.outProtoMask = outProtoMask;
-
-  ROS_DEBUG("Setting In/Out Protocol: %i / %i", inProtoMask, outProtoMask);
-  ROS_DEBUG("Changing baudrate to %u", baudrate);
-  return configure(port);
-}
-
 void Gps::setWorker(const boost::shared_ptr<Worker>& worker) {
   if (worker_) return;
   worker_ = worker;
@@ -208,68 +191,27 @@ void Gps::close() {
   configured_ = false;
 }
 
-bool Gps::setRate(uint8_t class_id, uint8_t message_id, uint8_t rate) {
-  ublox_msgs::CfgMSG msg;
-  msg.msgClass = class_id;
-  msg.msgID = message_id;
-  msg.rate = rate;
-  return configure(msg);
+bool Gps::configUart1(unsigned int baudrate, uint16_t in_proto_mask, 
+                      uint16_t out_proto_mask) {
+  if (!worker_) return true;
+
+  ROS_DEBUG("Setting UART1 In/Out Protocol: %u / %u", in_proto_mask, 
+            out_proto_mask);
+  ROS_DEBUG("Setting UART1 baud rate to %u", baudrate);
+
+  CfgPRT port;
+  port.portID = CfgPRT::PORT_ID_UART1;
+  port.baudRate = baudrate;
+  port.mode = CfgPRT::MODE_RESERVED1 | CfgPRT::MODE_CHAR_LEN_8BIT |
+              CfgPRT::MODE_PARITY_NO | CfgPRT::MODE_STOP_BITS_1;
+  port.inProtoMask = in_proto_mask;
+  port.outProtoMask = out_proto_mask;
+  return configure(port);
 }
 
-bool Gps::setDynamicModel(uint8_t model) {
-  ublox_msgs::CfgNAV5 msg;
-  msg.dynModel = model;
-  msg.mask = ublox_msgs::CfgNAV5::MASK_DYN;
-  return configure(msg);
-}
+bool Gps::disableUart1(CfgPRT& prev_config) {
+  ROS_DEBUG("Disabling UART1");
 
-bool Gps::setFixMode(uint8_t mode) {
-  ublox_msgs::CfgNAV5 msg;
-  msg.fixMode = mode;
-  msg.mask = ublox_msgs::CfgNAV5::MASK_FIX_MODE;
-  return configure(msg);
-}
-
-bool Gps::setDeadReckonLimit(uint8_t limit) {
-  ublox_msgs::CfgNAV5 msg;
-  msg.drLimit = limit;
-  msg.mask = ublox_msgs::CfgNAV5::MASK_DR_LIM;
-  return configure(msg);
-}
-
-bool Gps::setPPPEnabled(bool enable) {
-  ublox_msgs::CfgNAVX5 msg;
-  msg.usePPP = enable;
-  msg.mask1 = ublox_msgs::CfgNAVX5::MASK1_PPP;
-  return configure(msg);
-}
-
-bool Gps::setUseAdr(bool enable) {
-  ublox_msgs::CfgNAVX5 msg;
-  msg.useAdr = enable;
-  msg.mask2 = ublox_msgs::CfgNAVX5::MASK2_ADR;
-  return configure(msg);
-}
-
-bool Gps::enableSBAS(bool enable, uint8_t usage, uint8_t max_sbas) {
-  ublox_msgs::CfgSBAS msg;
-  msg.mode = (enable ? CfgSBAS::MODE_ENABLED : 0);
-  msg.usage = usage;
-  msg.maxSBAS = max_sbas;
-  return configure(msg);
-}
-
-bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
-  ROS_DEBUG("Configuring measurement rate to %u and nav rate to %u", meas_rate, 
-           nav_rate);
-  CfgRATE rate;
-  rate.measRate = meas_rate;
-  rate.navRate = nav_rate;  //  must be fixed at 1 for ublox 5 and 6
-  rate.timeRef = CfgRATE::TIME_REF_GPS;
-  return configure(rate);
-}
-
-bool Gps::disableUart(CfgPRT initialCfg) {
   // Poll UART PRT Config
   std::vector<uint8_t> payload;
   payload.push_back(CfgPRT::PORT_ID_UART1);
@@ -277,20 +219,31 @@ bool Gps::disableUart(CfgPRT initialCfg) {
     ROS_ERROR("disableUart: Could not poll UART1 CfgPRT");
     return false;
   }
-  if(!read(initialCfg, default_timeout_)) {
+  if(!read(prev_config, default_timeout_)) {
     ROS_ERROR("disableUart: Could not read polled UART1 CfgPRT message");
     return false;
   }
   // Keep original settings, but disable in/out
   CfgPRT port;
   port.portID = CfgPRT::PORT_ID_UART1;
-  port.mode = initialCfg.mode;
-  port.baudRate = initialCfg.baudRate;
+  port.mode = prev_config.mode;
+  port.baudRate = prev_config.baudRate;
   port.inProtoMask = 0;
   port.outProtoMask = 0;
-  port.txReady = initialCfg.txReady;
-  port.flags = initialCfg.flags;
+  port.txReady = prev_config.txReady;
+  port.flags = prev_config.flags;
   return configure(port);
+}
+
+bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
+  ROS_DEBUG("Configuring measurement rate to %u and nav rate to %u", meas_rate, 
+           nav_rate);
+
+  CfgRATE rate;
+  rate.measRate = meas_rate;
+  rate.navRate = nav_rate;  //  must be fixed at 1 for ublox 5 and 6
+  rate.timeRef = CfgRATE::TIME_REF_GPS;
+  return configure(rate);
 }
 
 bool Gps::configRtcm(std::vector<int> ids, uint8_t rate) {
@@ -304,12 +257,14 @@ bool Gps::configRtcm(std::vector<int> ids, uint8_t rate) {
   return true;
 }
 
-bool Gps::disableTmode3() {
-  ROS_DEBUG("Disabling TMODE3");
+bool Gps::configSbas(bool enable, uint8_t usage, uint8_t max_sbas) {
+  ROS_DEBUG("Configuring SBAS: usage %u, max_sbas %u", usage, max_sbas);
 
-  CfgTMODE3 tmode3;
-  tmode3.flags = tmode3.FLAGS_MODE_DISABLED & tmode3.FLAGS_MODE_MASK;
-  return configure(tmode3);
+  ublox_msgs::CfgSBAS msg;
+  msg.mode = (enable ? CfgSBAS::MODE_ENABLED : 0);
+  msg.usage = usage;
+  msg.maxSBAS = max_sbas;
+  return configure(msg);
 }
 
 bool Gps::configTmode3Fixed(bool lla_flag,
@@ -350,22 +305,83 @@ bool Gps::configTmode3Fixed(bool lla_flag,
   return configure(tmode3);
 }
 
-bool Gps::configTmode3SurveyIn(unsigned int svinMinDur, 
-                               float svinAccLimit) {
+bool Gps::configTmode3SurveyIn(unsigned int svin_min_dur, 
+                               float svin_acc_limit) {
   CfgTMODE3 tmode3;
   ROS_DEBUG("Setting TMODE3 to Survey In");
   tmode3.flags = tmode3.FLAGS_MODE_SURVEY_IN & tmode3.FLAGS_MODE_MASK;
-  tmode3.svinMinDur = svinMinDur;
+  tmode3.svinMinDur = svin_min_dur;
   // Convert from m to [0.1 mm]
-  tmode3.svinAccLimit = (int)round(svinAccLimit * 1e4);
+  tmode3.svinAccLimit = (int)round(svin_acc_limit * 1e4);
   return configure(tmode3);
 }
 
-bool Gps::configDgnss(uint8_t mode) {
+bool Gps::disableTmode3() {
+  ROS_DEBUG("Disabling TMODE3");
+
+  CfgTMODE3 tmode3;
+  tmode3.flags = tmode3.FLAGS_MODE_DISABLED & tmode3.FLAGS_MODE_MASK;
+  return configure(tmode3);
+}
+
+bool Gps::setRate(uint8_t class_id, uint8_t message_id, uint8_t rate) {
+  ublox_msgs::CfgMSG msg;
+  msg.msgClass = class_id;
+  msg.msgID = message_id;
+  msg.rate = rate;
+  return configure(msg);
+}
+
+bool Gps::setDynamicModel(uint8_t model) {
+  ROS_DEBUG("Set dynamic model %u", model);
+
+  ublox_msgs::CfgNAV5 msg;
+  msg.dynModel = model;
+  msg.mask = ublox_msgs::CfgNAV5::MASK_DYN;
+  return configure(msg);
+}
+
+bool Gps::setFixMode(uint8_t mode) {
+  ROS_DEBUG("Set fix mode %u", mode);
+
+  ublox_msgs::CfgNAV5 msg;
+  msg.fixMode = mode;
+  msg.mask = ublox_msgs::CfgNAV5::MASK_FIX_MODE;
+  return configure(msg);
+}
+
+bool Gps::setDeadReckonLimit(uint8_t limit) {
+  ROS_DEBUG("Setting DR Limit %u", limit);
+  
+  ublox_msgs::CfgNAV5 msg;
+  msg.drLimit = limit;
+  msg.mask = ublox_msgs::CfgNAV5::MASK_DR_LIM;
+  return configure(msg);
+}
+
+bool Gps::setPpp(bool enable) {
+  ROS_DEBUG("%s PPP", (enable ? "Enabling" : "Disabling"));
+
+  ublox_msgs::CfgNAVX5 msg;
+  msg.usePPP = enable;
+  msg.mask1 = ublox_msgs::CfgNAVX5::MASK1_PPP;
+  return configure(msg);
+}
+
+bool Gps::setDgnss(uint8_t mode) {
   CfgDGNSS cfg;
   ROS_DEBUG("Setting DGNSS mode to %u", mode);
   cfg.dgnssMode = mode;
   return configure(cfg);
+}
+
+bool Gps::setUseAdr(bool enable) {
+  ROS_DEBUG("%s ADR/UDR", (enable ? "Enabling" : "Disabling"));
+  
+  ublox_msgs::CfgNAVX5 msg;
+  msg.useAdr = enable;
+  msg.mask2 = ublox_msgs::CfgNAVX5::MASK2_ADR;
+  return configure(msg);
 }
 
 bool Gps::poll(uint8_t class_id, uint8_t message_id,

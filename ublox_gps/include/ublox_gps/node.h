@@ -170,8 +170,9 @@ class UbloxNode : public virtual UbloxInterface {
   const static double kPollDuration = 1.0;
   // Constants used for diagnostic frequency updater
   const static float kDiagnosticPeriod = 0.2; // [s] 5Hz diagnostic period
-  const static double kTolerance = 0.05;
-  const static double kWindow = 10;
+  // Tolerance for Fix topic frequency as percentage of target frequency
+  const static double kFixFreqTol = 0.10; 
+  const static double kFixFreqWindow = 10;
   const static double kTimeStampStatusMin = 0;
 
   /**
@@ -235,6 +236,9 @@ class UbloxNode : public virtual UbloxInterface {
    * @param event a timer indicating how often to poll the messages
    */
   void pollMessages(const ros::TimerEvent& event);
+
+  // Used for diagnostic updater
+  double min_freq, max_freq;
 
   /* Variables set from parameter server */
   std::string device_, dynamic_model_, fix_mode_;
@@ -659,6 +663,11 @@ class UbloxHpgRef: public UbloxInterface {
  */
 class UbloxHpgRov: public UbloxInterface {
  public:
+  // Constants for diagnostic updater
+  const static double kRtcmFreqMin = 1;
+  const static double kRtcmFreqMax = 10;
+  const static double kRtcmFreqTol = 0.1;
+  const static int kRtcmFreqWindow = 25;
   /**
    * @brief Gets the High Precision GNSS rover parameters, e.g. DGNSS mode.
    */
@@ -682,17 +691,16 @@ class UbloxHpgRov: public UbloxInterface {
   void initializeRosDiagnostics();
 
  protected:
-  /**
-   * @brief Update the High Precision Diagnostics the RTCM messages status.
-   */
-  void diagnosticUpdater(
-    diagnostic_updater::DiagnosticStatusWrapper& stat);
+  // For RTCM frequency diagnostic updater
+  double rtcm_freq_min, rtcm_freq_max;
 
   // Map of RTCM IDs and the last time the message was received
   std::map<int, ros::Time> last_received_rtcm_;
 
   // The DGNSS mode, see CfgDGNSS message for possible values
   int dgnss_mode_;
+
+  boost::shared_ptr<diagnostic_updater::HeaderlessTopicDiagnostic> freq_rtcm;
 };
 
 /**

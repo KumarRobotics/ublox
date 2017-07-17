@@ -243,12 +243,13 @@ void UbloxNode::initializeRosDiagnostics() {
   updater.reset(new diagnostic_updater::Updater());
   updater->setHardwareID("ublox");
 
-  const double target_freq = rate_;  //  actual update frequency
-  double min_freq = target_freq;
-  double max_freq = target_freq;
-  double timeStampStatusMax = meas_rate * 1e-3 * 0.05;
+  const double target_freq = ((double)rate_) / nav_rate;  //  actual update frequency
+  min_freq = target_freq;
+  max_freq = target_freq;
+  double timeStampStatusMax = meas_rate * 1e-3 * 1.10;
   diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
-                                                      kTolerance, kWindow);
+                                                      kFixFreqTol, 
+                                                      kFixFreqWindow);
   diagnostic_updater::TimeStampStatusParam time_param(kTimeStampStatusMin,
                                                       timeStampStatusMax);
   // configure diagnostic updater for frequency
@@ -332,13 +333,13 @@ bool UbloxNode::configureUblox() {
     }
     // If device doesn't have SBAS, will receive NACK (causes exception)
     if(supportsGnss("SBAS")) {
-      if (!gps.enableSBAS(enable_sbas_, sbas_usage_, max_sbas_)) {
+      if (!gps.configSbas(enable_sbas_, sbas_usage_, max_sbas_)) {
         throw std::runtime_error(std::string("Failed to ") +
                                  ((enable_sbas_) ? "enable" : "disable") +
                                  " SBAS.");
       }
     }
-    if (!gps.setPPPEnabled(enable_ppp_))
+    if (!gps.setPpp(enable_ppp_))
       throw std::runtime_error(std::string("Failed to ") +
                                ((enable_ppp_) ? "enable" : "disable") 
                                + " PPP.");
@@ -1176,7 +1177,7 @@ void UbloxHpgRov::getRosParams() {
 
 bool UbloxHpgRov::configureUblox() {
   // Configure the DGNSS
-  if(!gps.configDgnss(dgnss_mode_))
+  if(!gps.setDgnss(dgnss_mode_))
     throw std::runtime_error(std::string("Failed to Configure DGNSS"));
   return true;
 }
@@ -1190,30 +1191,17 @@ void UbloxHpgRov::subscribe() {
 }
 
 void UbloxHpgRov::initializeRosDiagnostics() {
-  updater->add("HPG ROV", this, &UbloxHpgRov::diagnosticUpdater);
-  updater->force_update();
-}
+  rtcm_freq_min = kRtcmFreqMin;
+  rtcm_freq_max = kRtcmFreqMax;
+  // Add diagnostics for frequency of RTCM messages
+  diagnostic_updater::FrequencyStatusParam freq_param(&rtcm_freq_min, 
+                                                      &rtcm_freq_max,
+                                                      kRtcmFreqTol, 
+                                                      kRtcmFreqWindow);
+  freq_rtcm.reset(new diagnostic_updater::HeaderlessTopicDiagnostic(
+      std::string("rxmrtcm"), *updater, freq_param));
 
-void UbloxHpgRov::diagnosticUpdater(
-    diagnostic_updater::DiagnosticStatusWrapper& stat) {
-  std::string error_msg = "RTCM Message frequency too low for IDs: ";
-  bool error = false;
-  for(int i = 0; i < rtcm_ids.size(); i++) {
-    ros::Duration dt = ros::Time::now() - last_received_rtcm_[rtcm_ids[i]];
-    std::string id = boost::lexical_cast<std::string>(rtcm_ids[i]);
-    stat.add("RTCM " + id, dt.toSec());
-    if(dt.toSec() > 1.0) {
-      error_msg += rtcm_ids[i] + ", ";
-      error = true;
-    }
-  }
-  if(error) {
-    stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
-    stat.message = error_msg.c_str();
-  } else {
-    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
-    stat.message = "RTCM Message frequencies ok";
-  } 
+  updater->force_update();
 }
 
 //

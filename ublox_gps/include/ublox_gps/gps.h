@@ -107,27 +107,27 @@ class Gps {
                     uint16_t uart_in,
                     uint16_t uart_out);
 
-  /**
-   * @brief Initialize TCP I/O.
-   */
-  void initializeTcp();
-
-  /**
-   * @brief Initialize the Serial I/O port.
-   */
-  void initializeSerial(unsigned int baudrate,
-                        uint16_t uart_in,
-                        uint16_t uart_out);
-
   void close();
+  
+  /**
+   * @brief Configure the UART1 Port.
+   * @param ids the baudrate of the port
+   * @param in_proto_mask the in protocol mask, see CfgPRT message
+   * @param out_proto_mask the out protocol mask, see CfgPRT message
+   * @return true on ACK, false on other conditions.
+   */
+  bool configUart1(unsigned int baudrate, uint16_t in_proto_mask, 
+                   uint16_t out_proto_mask);
 
   /**
-   * @brief Configure the DGNSS mode (see CfgDGNSS message for details).
-   * @param mode the DGNSS mode (see CfgDGNSS message for options)
-   * @return true on ACK, false on other conditions
+   * @brief Disable the UART Port. Sets in/out protocol masks to 0. Does not 
+   * modify other values.
+   * @param prev_cfg an empty message which will be filled with the previous
+   * configuration parameters
+   * @return true on ACK, false on other conditions.
    */
-  bool configDgnss(uint8_t mode);
-  
+  bool disableUart1(ublox_msgs::CfgPRT& prev_cfg);
+
   /**
    * @brief Configure the device navigation and measurement rate settings.
    * @param meas_rate Period in milliseconds between subsequent measurements.
@@ -144,6 +144,16 @@ class Gps {
    * @return true on ACK, false on other conditions.
    */
   bool configRtcm(std::vector<int> ids, uint8_t rate);
+
+  /**
+   * @brief Configure the SBAS settings.
+   * @param enable If true, enable SBAS. Deprecated in firmware 8, use CfgGNSS
+   * instead.
+   * @param usage SBAS usage, see CfgSBAS for options
+   * @param max_sbas Maximum Number of SBAS prioritized tracking channels
+   * @return true on ACK, false on other conditions.
+   */
+  bool configSbas(bool enable, uint8_t usage, uint8_t max_sbas);
 
   /**
    * @brief Set the TMODE3 settings to fixed at the given antenna reference
@@ -164,30 +174,11 @@ class Gps {
 
   /**
    * @brief Set the TMODE3 settings to survey-in.
-   * @param svinMinDur Survey-in minimum duration [s]
-   * @param svinAccLiit Survey-in position accuracy limit [m]
+   * @param svin_min_dur Survey-in minimum duration [s]
+   * @param svin_acc_limit Survey-in position accuracy limit [m]
    * @return true on ACK, false on other conditions.
    */
-  bool configTmode3SurveyIn(unsigned int svinMinDur, float svinAccLimit);
-
-  /**
-   * @brief Configure the UART1 Port.
-   * @param ids the baudrate of the port
-   * @param in_proto_mask the in protocol mask, see CfgPRT message
-   * @param out_proto_mask the out protocol mask, see CfgPRT message
-   * @return true on ACK, false on other conditions.
-   */
-  bool configUart1(unsigned int baudrate, int16_t in_proto_mask, 
-                int16_t out_proto_mask);
-
-  /**
-   * @brief Disable the UART Port. Sets in/out protocol masks to 0. Does not 
-   * modify other values.
-   * @param initial_cfg an empty message which is filled with the previous
-   * configuration parameters
-   * @return true on ACK, false on other conditions.
-   */
-  bool disableUart(ublox_msgs::CfgPRT prev_cfg);
+  bool configTmode3SurveyIn(unsigned int svin_min_dur, float svin_acc_limit);
 
   /**
    * @brief Set the TMODE3 settings to disabled. Should only be called for
@@ -228,30 +219,27 @@ class Gps {
 
   /**
    * @brief Enable or disable PPP (precise-point-positioning).
-   * @param enabled If true, enable PPP.
+   * @param enable If true, enable PPP.
    * @return true on ACK, false on other conditions.
    *
    * @note This is part of the expert settings. It is recommended you check
    * the ublox manual first.
    */
-  bool setPPPEnabled(bool enable);
+  bool setPpp(bool enable);
 
+  /**
+   * @brief Set the DGNSS mode (see CfgDGNSS message for details).
+   * @param mode the DGNSS mode (see CfgDGNSS message for options)
+   * @return true on ACK, false on other conditions
+   */
+  bool setDgnss(uint8_t mode);
 
   /**
    * @brief Enable or disable ADR (automotive dead reckoning).
-   * @param enabled If true, enable ADR.
+   * @param enable If true, enable ADR.
    * @return true on ACK, false on other conditions.
    */
   bool setUseAdr(bool enable);
-
-  /**
-   * @brief Enable or disable SBAS.
-   * @param enable If true, enable SBAS.
-   * @param usage SBAS usage, see CfgSBAS for options
-   * @param max_sbas Maximum Number of SBAS prioritized tracking channels
-   * @return true on ACK, false on other conditions.
-   */
-  bool enableSBAS(bool enable, uint8_t usage, uint8_t max_sbas);
 
   /**
    * @brief Configure the U-Blox send rate of the message & subscribe to the 
@@ -321,7 +309,21 @@ class Gps {
                           uint8_t class_id, uint8_t msg_id);
 
  private:
+
   void setWorker(const boost::shared_ptr<Worker>& worker);
+  /**
+   * @brief Initialize TCP I/O.
+   */
+  void initializeTcp();
+  /**
+   * @brief Initialize the Serial I/O port.
+   * @param baudrate the desired baud rate of the port
+   * @param uart_in the UART In protocol, see CfgPRT for options
+   * @param uart_out the UART Out protocol, see CfgPRT for options
+   */
+  void initializeSerial(unsigned int baudrate,
+                        uint16_t uart_in,
+                        uint16_t uart_out);
   void readCallback(unsigned char* data, std::size_t& size);
 
   boost::shared_ptr<Worker> worker_;
@@ -379,18 +381,19 @@ bool Gps::read(T& message, const boost::posix_time::time_duration& timeout) {
   bool result = false;
   if (!worker_) return false;
 
+  // Create a callback handler for this message
   callback_mutex_.lock();
   CallbackHandler_<T>* handler = new CallbackHandler_<T>();
   Callbacks::iterator callback = callbacks_.insert(
       (std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
                       boost::shared_ptr<CallbackHandler>(handler))));
   callback_mutex_.unlock();
-
+  // Wait for the message
   if (handler->wait(timeout)) {
     message = handler->get();
     result = true;
   }
-
+  // Remove the callback handler
   callback_mutex_.lock();
   callbacks_.erase(callback);
   callback_mutex_.unlock();
@@ -402,7 +405,7 @@ bool Gps::configure(const ConfigT& message, bool wait) {
   if (!worker_) return false;
 
   acknowledge_ = WAIT;
-
+  // Encode the message
   std::vector<unsigned char> out(kWriterSize);
   ublox::Writer writer(out.data(), out.size());
   if (!writer.write(message)) {
@@ -410,10 +413,11 @@ bool Gps::configure(const ConfigT& message, bool wait) {
               message.CLASS_ID, message.MESSAGE_ID);
     return false;
   }
+  // Send the message to the device
   worker_->send(out.data(), writer.end() - out.data());
 
   if (!wait) return true;
-
+  // Wait for an acknowledgment and return whether or not it was received
   return waitForAcknowledge(default_timeout_, 
                             message.CLASS_ID,
                             message.MESSAGE_ID);
