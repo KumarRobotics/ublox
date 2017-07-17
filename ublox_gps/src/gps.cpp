@@ -191,6 +191,17 @@ void Gps::close() {
   configured_ = false;
 }
 
+bool Gps::reset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
+  ROS_DEBUG("Resetting Device");
+
+  CfgRST rst;
+  rst.navBbrMask = nav_bbr_mask;
+  rst.resetMode = reset_mode;
+
+  // Don't wait for ACK
+  return configure(rst, false);
+}
+
 bool Gps::configUart1(unsigned int baudrate, uint16_t in_proto_mask, 
                       uint16_t out_proto_mask) {
   if (!worker_) return true;
@@ -264,11 +275,6 @@ bool Gps::configSbas(bool enable, uint8_t usage, uint8_t max_sbas) {
   msg.mode = (enable ? CfgSBAS::MODE_ENABLED : 0);
   msg.usage = usage;
   msg.maxSBAS = max_sbas;
-  return configure(msg);
-}
-
-bool Gps::configInf(CfgINF msg) {
-  ROS_DEBUG("Configuring INF messages");
   return configure(msg);
 }
 

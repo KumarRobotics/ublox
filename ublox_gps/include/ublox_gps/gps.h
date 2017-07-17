@@ -103,6 +103,14 @@ class Gps {
                     uint16_t uart_out);
 
   void close();
+
+  /**
+   * @brief Send a reset message to the u-blox-device
+   * @param nav_bbr_mask The BBR sections to clear, see CfgRST message
+   * @param reset_mode The reset type, see CfgRST message
+   * @return true if the message was successfully sent, false otherwise
+   */
+  bool reset(uint16_t nav_bbr_mask, uint16_t reset_mode);
   
   /**
    * @brief Configure the UART1 Port.
@@ -149,13 +157,6 @@ class Gps {
    * @return true on ACK, false on other conditions.
    */
   bool configSbas(bool enable, uint8_t usage, uint8_t max_sbas);
-
-  /**
-   * @brief Configure the INF messages.
-   * @param msg the inf message to send
-   * @return true on ACK, false otherwise
-   */
-  bool configInf(ublox_msgs::CfgINF msg);
 
   /**
    * @brief Set the TMODE3 settings to fixed at the given antenna reference

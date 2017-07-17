@@ -367,7 +367,7 @@ void UbloxNode::configureInf() {
   ublox_msgs::CfgINF_Block block;
   block.protocolID = block.PROTOCOL_ID_UBX;
   // Enable desired INF messages on each UBX port
-  for(int i = 0; i < block.infMsgMask.size(); i++) {
+  for (int i = 0; i < block.infMsgMask.size(); i++) {
     block.infMsgMask[i] = enabled["inf_error"] & block.INF_MSG_ERROR |
                           enabled["inf_warning"] & block.INF_MSG_WARNING |
                           enabled["inf_notice"] & block.INF_MSG_NOTICE |
@@ -377,11 +377,11 @@ void UbloxNode::configureInf() {
   msg.blocks.push_back(block);
 
   // IF NMEA is enabled
-  if(uart_in_ & ublox_msgs::CfgPRT::PROTO_NMEA) {
+  if (uart_in_ & ublox_msgs::CfgPRT::PROTO_NMEA) {
     ublox_msgs::CfgINF_Block block;
     block.protocolID = block.PROTOCOL_ID_UBX;
     // Enable desired INF messages on each NMEA port
-    for(int i = 0; i < block.infMsgMask.size(); i++) {
+    for (int i = 0; i < block.infMsgMask.size(); i++) {
       block.infMsgMask[i] = enabled["inf_error"] & block.INF_MSG_ERROR |
                             enabled["inf_warning"] & block.INF_MSG_WARNING |
                             enabled["inf_notice"] & block.INF_MSG_NOTICE |
@@ -391,7 +391,8 @@ void UbloxNode::configureInf() {
     msg.blocks.push_back(block);
   }
 
-  if(!gps.configInf(msg))
+  ROS_DEBUG("Configuring INF messages");
+  if (!gps.configure(msg))
     ROS_WARN("Failed to configure INF messages");
 }
 
@@ -402,7 +403,7 @@ void UbloxNode::initialize() {
   // Must process Mon VER before setting firmware/hardware params
   processMonVer();
   // Must set firmware & hardware params before initializing diagnostics
-  for(int i = 0; i < xware_.size(); i++)
+  for (int i = 0; i < xware_.size(); i++)
     xware_[i]->getRosParams();
   // Do this last
   initializeRosDiagnostics();
@@ -794,6 +795,9 @@ void UbloxFirmware8::getRosParams() {
   // QZSS Signal Configuration
   qzss_sig_cfg_ = ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA; // Default
   nh->param("qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_);
+  // Reset type, device is only reset if GNSS configuration is changed
+  reset_mode_ = ublox_msgs::CfgRST::RESET_MODE_SW; // default
+  nh->param("reset_mode", reset_mode_, reset_mode_);
 
   if(enable_gps_ && !supportsGnss("GPS")) 
     ROS_WARN("enable_gps is true, but GPS GNSS is not supported by %s",
@@ -938,7 +942,10 @@ bool UbloxFirmware8::configureUblox() {
   if (!gps.configure(cfgGNSSWrite))
     throw std::runtime_error(std::string("Failed to Configure GNSS"));
   
-  ROS_WARN("GNSS re-configured, cold reset recommended.");
+  ROS_WARN("GNSS re-configured, cold resetting device.");
+  if (!gps.reset(ublox_msgs::CfgRST::NAV_BBR_COLD_START, reset_mode_));
+    throw std::runtime_error(std::string("Failed to cold reset device ") +
+                             "after configuring GNSS");
   return true;
 }
 

@@ -526,6 +526,9 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  private:
   // Whether or not to enable the given GNSS
   bool enable_galileo_, enable_beidou_, enable_imes_;
+  // Type of device reset, only used if GNSS configuration is changed
+  // see CfgRST message for constants
+  int reset_mode_;
 };
 
 /**
