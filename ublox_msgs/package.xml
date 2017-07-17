@@ -1,16 +1,15 @@
 <package>
   <name>ublox_msgs</name>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <description>
 
      ublox_msgs contains raw messages used by GNSS receiver modules of the company u-blox AG.
 
   </description>
   <author>Johannes Meyer</author>
-  <maintainer email="nothing@nobody.com">Johannes Meyer</maintainer>
-  <maintainer email="vmlane@alumn.mit.edu">Veronica Lane</maintainer>
+  <maintainer email="vmlane@alum.mit.edu">Veronica Lane</maintainer>
   <license>BSD</license>
-  <url>http://ros.org/wiki/ublox_msgs</url>
+  <url>http://ros.org/wiki/ublox</url>
 
   <buildtool_depend>catkin</buildtool_depend>
 
@@ -27,7 +26,7 @@
   <run_depend>sensor_msgs</run_depend>
 
   <export>
-    <rosdoc external="http://www.u-blox.com/en/download/documents-a-resources.html"/>
+    <rosdoc external="http://www.u-blox.com/en/product-resources"/>
   </export>
 
 </package>
