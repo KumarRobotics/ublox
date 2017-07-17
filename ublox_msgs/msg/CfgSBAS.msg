@@ -11,6 +11,8 @@ uint8 MESSAGE_ID = 22
 
 uint8 mode              # SBAS Mode
 uint8 MODE_ENABLED = 1    # SBAS Enabled (1) / Disabled (0)
+                          #  This field is deprecated; use UBX-CFG-GNSS to 
+                          # enable/disable SBAS operation
 uint8 MODE_TEST = 2       # SBAS Testbed: Use data anyhow (1) / Ignore data when 
                           # in Test Mode (SBAS Msg 0)
 
