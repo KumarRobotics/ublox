@@ -23,21 +23,21 @@ The `ublox_gps` node supports the following parameters for all products and firm
 * `dynamic_model`: See u-blox protocol spec. Defaults to `portable`.
 * `fix_mode`: Type of fixes supported: `2d`, `3d` or `both`.
 * `dr_limit`: Max time in seconds to use dead reckoning after signal is lost. Defaults to 0.
-For devices with firmware >= 7:
+### For devices with firmware >= 7:
 * `enable_gps`: Enable GPS receiver. Defaults to true.
 * `enable_glonass`: Enable GLONASS receiver. Defaults to false.
 * `enable_beidou`: Enable BeiDou receiver. Defaults to false.
 * `enable_qzss`: Enable QZSS receiver. Defaults to false.
 * `qzss_sig_cfg`: QZSS signal configuration. Defaults to L1CA. See `CfgGNSS` message for constants.
-For devices with firmware >= 8:
+### For devices with firmware >= 8:
 * `enable_galileo`: Enable Galileo receiver. Defaults to false.
 * `enable_imes`: Enable IMES receiver. Defaults to false.
 * `reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_SW`.
-For UDR/ADR devices:
+### For UDR/ADR devices:
 * `use_adr`: Enable ADR/UDR. Defaults to true.
 * nav_rate should be set to 1 Hz.
-For HPG Reference devices:
-** `tmode3`: Time Mode, defaults to Survey-In. See CfgTMODE3 for constants.
+### For HPG Reference devices:
+* `tmode3`: Time Mode, defaults to Survey-In. See CfgTMODE3 for constants.
 * `lla_flag`: True if the Fixed position is in Lat, Lon, Alt coordinates. False if ECEF. Must be set if `tmode3` is set to fixed. 
 * `arp_position`: Antenna Reference Point position. Must be set if `tmode3` is set to fixed. 
 * `arp_position_hp`: Antenna Reference Point High Precision position. Must be set if tmode3 is set to fixed. 
@@ -45,9 +45,9 @@ For HPG Reference devices:
 * `svin_reset`: Whether or not to reset the survey in upon initialization. If false, it will only reset if the TMODE is disabled. Defaults to true.
 * `sv_in_min_dur`: The minimum Survey-In Duration time in seconds. Must be set if tmode3 is set to survey in.
 * `sv_in_acc_lim`: The minimum accuracy level of the survey in position in meters. MMust be set if `tmode3` is set to survey in.
-For HPG Rover devices:
+### For HPG Rover devices:
 * `DGNSS mode`: The Differential GNSS mode. Defaults to RTK FIXED. See `CfgDGNSS` message for constants.
-For FTS & TIM devices:
+### For FTS & TIM devices:
 * currently unimplemented. See `UbloxFts` and `UbloxTim` classes in `ublox_gps` package `node.h` & `node.cpp` files.
 
 ## Fix Topics
