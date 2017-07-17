@@ -10,8 +10,8 @@ Example .yaml configuration files are included in `ublox_gps/config`.
 The `ublox_gps` node supports the following parameters for all products and firmware version:
 * `device`: Path to the device in `/dev`. Defaults to `/dev/ttyACM0`.
 * `baudrate`: Bit rate of the serial communication. Defaults to 9600.
-* `uart_in`: UART in communication protocol. Defaults to UBX, NMEA & RTCM. See CfgPRT message for possible values.
-* `uart_out`: UART out communication protocol. Defaults to UBX, NMEA & RTCM. See CfgPRT message for possible values.
+* `uart_in`: UART1 in communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
+* `uart_out`: UART1 out communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
 * `ublox_version`: Version of device: 6, 7 or 8. Defaults to 6. Please consult known issues section.
 * `frame_id`: ROS name prepended to frames produced by the node. Defaults to `gps`.
 * `rate`: Rate in Hz of measurements. Defaults to 4.
@@ -28,7 +28,7 @@ For devices with firmware >= 7:
 * `enable_glonass`: Enable GLONASS receiver. Defaults to false.
 * `enable_beidou`: Enable BeiDou receiver. Defaults to false.
 * `enable_qzss`: Enable QZSS receiver. Defaults to false.
-* `qzss_sig_cfg`: QZSS signal configuration. Defaults to L1CA. See CfgGNSS for constants.
+* `qzss_sig_cfg`: QZSS signal configuration. Defaults to L1CA. See `CfgGNSS` message for constants.
 For devices with firmware >= 8:
 * `enable_galileo`: Enable Galileo receiver. Defaults to false.
 * `enable_imes`: Enable IMES receiver. Defaults to false.
@@ -37,7 +37,7 @@ For UDR/ADR devices:
 * `use_adr`: Enable ADR/UDR. Defaults to true.
 * nav_rate should be set to 1 Hz.
 For HPG Reference devices:
-* `tmode3`: Time Mode, defaults to Survey-In. See CfgTMODE3 for constants.
+** `tmode3`: Time Mode, defaults to Survey-In. See CfgTMODE3 for constants.
 * `lla_flag`: True if the Fixed position is in Lat, Lon, Alt coordinates. False if ECEF. Must be set if `tmode3` is set to fixed. 
 * `arp_position`: Antenna Reference Point position. Must be set if `tmode3` is set to fixed. 
 * `arp_position_hp`: Antenna Reference Point High Precision position. Must be set if tmode3 is set to fixed. 
