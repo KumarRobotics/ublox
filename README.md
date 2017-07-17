@@ -5,6 +5,8 @@ The driver was originally written by Johannes Meyer. Changes made later are deta
 
 ## Options
 
+Example .yaml configuration files are included in `ublox_gps/config`.
+
 The `ublox_gps` node supports the following parameters for all products and firmware version:
 * `device`: Path to the device in `/dev`. Defaults to `/dev/ttyACM0`.
 * `baudrate`: Bit rate of the serial communication. Defaults to 9600.
@@ -58,9 +60,9 @@ Navigation Satellite fix.
 
 Velocity in local ENU frame.
 
-## Additional topics.
+## Additional Topics
 
-To subscribe to the given topic set the parameter shown to true.
+To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
 
 Inf messages
 `~inf`: This acts as the default value for the INF parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
@@ -108,6 +110,8 @@ Inf messages
 ## Launch
 
 A sample launch file is provided in `ublox_gps.launch`. The two topics to which you should subscribe are `/gps/fix` and `/gps/fix_velocity`. The angular component of `fix_velocity` is unused.
+
+A second sample launch file `ublox_device.launch` loads the parameters from a yaml file in the config folder. The required arguments are `node_name` and `param_file_name`.
 
 ## Debugging
 
@@ -189,16 +193,18 @@ For debugging messages set the debug parameter to > 0. The range for debug is 0-
 ## Adding new messages
 1. Create the .msg file and add it to ublox_msgs/msg. Make sure the file includes the constants CLASS_ID and MESSAGE_ID. 
 
-2. Modify ublox_msgs/include/ublox_msgs/ublox_msgs.h. 
+2. Modify `ublox_msgs/include/ublox_msgs/ublox_msgs.h`. 
 a. Include the message header. 
 b. Make sure the message's class constant is declared in the ublox_msgs::Class namespace. 
 c. Declare the message's ID constant in the ublox_messages::Message::<CLASS_NAME> namespace.
 
-3. Declare the message in ublox_msgs/src/ublox_msgs.cpp. 
+3. Declare the message in `ublox_msgs/src/ublox_msgs.cpp`. 
 
 4. If the message has a repeated or optional block of varying size, create an additional message for the repeating block and include it in the message. 
-a. Include the block message in the ublox_msgs/include/ublox_msgs/ublox_msgs.h file. 
-b. Modify ublox_msgs/include/ublox/serialization/ublox_msgs.h and add a custom Serializer. If the message doesn't include the number of repeating/optional blocks as a parameter, you can infer it from the count/size of the message, which is the length of the payload.
+a. Include the block message in the `ublox_msgs/include/ublox_msgs/ublox_msgs.h` file. 
+b. Modify `ublox_msgs/include/ublox/serialization/ublox_msgs.h` and add a custom Serializer. If the message doesn't include the number of repeating/optional blocks as a parameter, you can infer it from the count/size of the message, which is the length of the payload.
+
+5. Modify `ublox_gps/src/node.cpp` (and the header file if necessary) to either subscribe to the message or send the configuration message. Be sure to modify the appropriate subscribe function. For messages which apply to all firmware/hardware, modify UbloxNode::subscribe. Otherwise modify the appropriate firmware or hardware's subscribe function, e.g. UbloxFirmware8, UbloxHpgRov. If the message is a configuration message, consider modifying `ublox_gps/src/gps.cpp` (and the header file) to add a configuration function.
 
 ### One message protocol for multiple IDs (e.g. INF message)
 If a given message protocol applies to multiple message IDs (e.g. the INF message), do not include the message ID in the message itself.

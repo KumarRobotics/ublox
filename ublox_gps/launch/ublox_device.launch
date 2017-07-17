@@ -8,6 +8,6 @@
   <node pkg="ublox_gps" type="ublox_gps" name="$(arg node_name)"
         output="$(arg output)">
     <rosparam command="load" 
-              file="$(find rtk_localization)/config/gps/$(arg param_file_name).yaml" />
+              file="$(find ublox_gps)/config/$(arg param_file_name).yaml" />
   </node>
 </launch>
