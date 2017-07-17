@@ -1,33 +1,42 @@
-device: /dev/ttyACM2
+# Configuration Settings for C94-M8P device
+
+debug: 1                    # Levels 0-4 (0 means no debug statements will print)
+
+device: /dev/ttyACM1
+ublox_version: 8
 frame_id: gps
 baudrate: 19200       # C94-M8P specific
-rate: 10  #  in Hz
+rate: 10              # in Hz
+nav_rate: 1
+dgnss_mode: 3         # Fixed mode
+uart_in: 32           # RTCM 3
+uart_out: 0           # No UART out for rover
 enable_sbas: false    # Not supported by C94-M8P
 enable_glonass: true  # Supported by C94-M8P
 enable_beidou: false  # Supported by C94-M8P
-enable_qzss: true  # Supported by C94-M8P
+enable_qzss: false    # Supported by C94-M8P
 enable_ppp: false
+reset_mode: 1         # SW reset after GNSS re-configuration
 # Airborne < 2G, 2D fix not supported (3D only), 
 # Max Alt: 50km, Max Horizontal Velocity: 250 m/s, Max Vertical Velocity: 100 m/s
 dynamic_model: airborne2
-fix_mode: both
+fix_mode: auto
 dr_limit: 0
-ublox_version: 8
 
 # Subscriptions
 all: true
+inf: true
 aid: true
-aid_alm: true
-aid_eph: true
-aid_hui: true
+rxm: true
+
+aid_hui: false
+
 nav_sol: true
 nav_pvt: true
 nav_status: true
 nav_svinfo: true
+nav_svin: true
 nav_clk: true
-nav_posllh: true
 nav_posecef: false
 nav_velned: false
-rxm: true
-rxm_raw: true
-rxm_sfrb: true
+nav_relposned: true
