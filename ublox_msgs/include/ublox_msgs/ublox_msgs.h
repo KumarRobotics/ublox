@@ -14,9 +14,9 @@
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
 // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -43,6 +43,8 @@
 #include <ublox_msgs/NavTIMEUTC.h>
 #include <ublox_msgs/NavVELECEF.h>
 #include <ublox_msgs/NavVELNED.h>
+#include <ublox_msgs/NavSAT.h>
+#include <ublox_msgs/NavSAT_SV.h>
 
 #include <ublox_msgs/RxmALM.h>
 #include <ublox_msgs/RxmEPH.h>
@@ -53,6 +55,8 @@
 #include <ublox_msgs/RxmSFRB.h>
 #include <ublox_msgs/RxmSFRBX.h>
 #include <ublox_msgs/RxmSVSI.h>
+#include <ublox_msgs/RxmMEASX.h>
+#include <ublox_msgs/RxmMEASX_SV.h>
 
 #include <ublox_msgs/AidALM.h>
 #include <ublox_msgs/AidEPH.h>
@@ -74,27 +78,27 @@ namespace ublox_msgs {
 
 namespace Class {
   // Navigation Results: Position, Speed, Time, Acc, Heading, DOP, SVs used
-  static const uint8_t NAV = 0x01; 
+  static const uint8_t NAV = 0x01;
   // Receiver Manager Messages: Satellite Status, RTC Status
-  static const uint8_t RXM = 0x02; 
-  // Information Messages: Printf-Style Messages, with IDs such as Error, 
+  static const uint8_t RXM = 0x02;
+  // Information Messages: Printf-Style Messages, with IDs such as Error,
   // Warning, Notice
-  static const uint8_t INF = 0x04; 
+  static const uint8_t INF = 0x04;
   // Ack/Nack Messages: as replies to CFG Input Messages
-  static const uint8_t ACK = 0x05; 
-  // Configuration Input Messages: Set Dynamic Model, Set DOP Mask, Set Baud 
+  static const uint8_t ACK = 0x05;
+  // Configuration Input Messages: Set Dynamic Model, Set DOP Mask, Set Baud
   // Rate, etc.
-  static const uint8_t CFG = 0x06; 
-  // Monitoring Messages: Comunication Status, CPU Load, Stack Usage, Task 
+  static const uint8_t CFG = 0x06;
+  // Monitoring Messages: Comunication Status, CPU Load, Stack Usage, Task
   // Status
-  static const uint8_t MON = 0x0A; 
+  static const uint8_t MON = 0x0A;
   // AssistNow Aiding Messages: Ephemeris, Almanac, other A-GPS data input
-  static const uint8_t AID = 0x0B; 
+  static const uint8_t AID = 0x0B;
   // Timing Messages: Timepulse Output, Timemark Results
-  static const uint8_t TIM = 0x0D; 
-  // External Sensor Fusion Messages: External sensor measurements and status 
+  static const uint8_t TIM = 0x0D;
+  // External Sensor Fusion Messages: External sensor measurements and status
   // information
-  static const uint8_t ESF = 0x10; 
+  static const uint8_t ESF = 0x10;
   // RTCM Configuration Messages
   static const uint8_t RTCM = 0xF5;
 }
@@ -115,6 +119,7 @@ namespace Message {
     static const uint8_t TIMEUTC = NavTIMEUTC::MESSAGE_ID;
     static const uint8_t VELECEF = NavVELECEF::MESSAGE_ID;
     static const uint8_t VELNED = NavVELNED::MESSAGE_ID;
+    static const uint8_t SAT = NavSAT::MESSAGE_ID;
   }
 
   namespace RXM {
@@ -125,6 +130,7 @@ namespace Message {
     static const uint8_t SFRB = RxmSFRB::MESSAGE_ID;
     static const uint8_t SFRBX = RxmSFRBX::MESSAGE_ID;
     static const uint8_t SVSI = RxmSVSI::MESSAGE_ID;
+    static const uint8_t MEASX = RxmMEASX::MESSAGE_ID;
   }
 
   namespace AID {
@@ -134,8 +140,8 @@ namespace Message {
   }
 
   namespace ACK {
-    static const uint8_t NACK = 0x00; 
-    static const uint8_t ACK = 0x01; 
+    static const uint8_t NACK = 0x00;
+    static const uint8_t ACK = 0x01;
   }
 
   namespace CFG {
@@ -149,7 +155,7 @@ namespace Message {
     static const uint8_t SBAS  = CfgSBAS::MESSAGE_ID;
     static const uint8_t GNSS  = CfgGNSS::MESSAGE_ID;
   }
-  
+
   namespace MON {
     static const uint8_t VER   = MonVER::MESSAGE_ID;
   }

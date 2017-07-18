@@ -42,6 +42,7 @@
 #include <ublox_msgs/NavSOL.h>
 #include <ublox_msgs/NavSTATUS.h>
 #include <ublox_msgs/NavVELNED.h>
+#include <ublox_msgs/NavSAT.h>
 #include <ublox_msgs/ublox_msgs.h>
 
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
@@ -276,6 +277,19 @@ void UbloxNode::subscribeAll() {
   if (enabled["aid_hui"])
     gps.subscribe<ublox_msgs::AidHUI>(boost::bind(
         &UbloxNode::publish<ublox_msgs::AidHUI>, this, _1, "aidhui"), 1);
+
+  // Subscribe to Nav SAT
+  param_nh.param("nav_sat", enabled["nav_sat"], enabled["all"]);
+  if (enabled["nav_sat"])
+    gps.subscribe<ublox_msgs::NavSAT>(boost::bind(
+        &UbloxNode::publish<ublox_msgs::NavSAT>, this, _1, "navsat"), 1);
+
+  // Subscribe to MEASX messages
+  param_nh.param("rxm_meas", enabled["rxm_meas"],
+               enabled["all"] || enabled["rxm"]);
+  if (enabled["rxm_meas"])
+    gps.subscribe<ublox_msgs::RxmMEASX>(boost::bind(
+        &UbloxNode::publish<ublox_msgs::RxmMEASX>, this, _1, "rxmmeas"), 1);
 
   subscribeVersion();
 }
@@ -791,6 +805,7 @@ void UbloxNode8::subscribeVersion() {
   if (enabled["nav_pvt"])
     gps.subscribe<ublox_msgs::NavPVT>(boost::bind(
         &UbloxNode7::publishNavPVT, this, _1), 1);
+
 }
 
 int main(int argc, char** argv) {
