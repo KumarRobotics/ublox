@@ -72,6 +72,7 @@
 #include <ublox_msgs/CfgMSG.h>
 #include <ublox_msgs/CfgNAV5.h>
 #include <ublox_msgs/CfgNAVX5.h>
+#include <ublox_msgs/CfgNMEA.h>
 #include <ublox_msgs/CfgPRT.h>
 #include <ublox_msgs/CfgRATE.h>
 #include <ublox_msgs/CfgRST.h>
@@ -197,6 +198,7 @@ namespace Message {
     static const uint8_t MSG = CfgMSG::MESSAGE_ID;
     static const uint8_t NAV5 = CfgNAV5::MESSAGE_ID;
     static const uint8_t NAVX5 = CfgNAVX5::MESSAGE_ID;
+    static const uint8_t NMEA = CfgNMEA::MESSAGE_ID;
     static const uint8_t PRT = CfgPRT::MESSAGE_ID;
     static const uint8_t RATE = CfgRATE::MESSAGE_ID;
     static const uint8_t RST = CfgRST::MESSAGE_ID;
