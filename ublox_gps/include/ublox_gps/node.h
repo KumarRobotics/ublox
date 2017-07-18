@@ -171,7 +171,7 @@ class UbloxNode : public virtual UbloxInterface {
   // Constants used for diagnostic frequency updater
   const static float kDiagnosticPeriod = 0.2; // [s] 5Hz diagnostic period
   // Tolerance for Fix topic frequency as percentage of target frequency
-  const static double kFixFreqTol = 0.10; 
+  const static double kFixFreqTol = 0.15; 
   const static double kFixFreqWindow = 10;
   const static double kTimeStampStatusMin = 0;
 
@@ -435,38 +435,46 @@ class UbloxFirmware7Plus : public UbloxFirmware {
    */
   void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) {
     //  check the last message, convert to diagnostic
-    if (last_nav_pvt_.fixType == ublox_msgs::NavSTATUS::GPS_NO_FIX) {
-      stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
-      stat.message = "No fix";
-    } else if (last_nav_pvt_.fixType == 
-               ublox_msgs::NavSTATUS::GPS_DEAD_RECKONING_ONLY) {
+    if (last_nav_pvt_.fixType == 
+        ublox_msgs::NavPVT::FIX_TYPE_DEAD_RECKONING_ONLY) {
       stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
       stat.message = "Dead reckoning only";
-    } else if (last_nav_pvt_.fixType == ublox_msgs::NavSTATUS::GPS_2D_FIX) {
-      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+    } else if (last_nav_pvt_.fixType == ublox_msgs::NavPVT::FIX_TYPE_2D) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
       stat.message = "2D fix";
-    } else if (last_nav_pvt_.fixType == ublox_msgs::NavSTATUS::GPS_3D_FIX) {
+    } else if (last_nav_pvt_.fixType == ublox_msgs::NavPVT::FIX_TYPE_3D) {
       stat.level = diagnostic_msgs::DiagnosticStatus::OK;
       stat.message = "3D fix";
     } else if (last_nav_pvt_.fixType ==
-               ublox_msgs::NavSTATUS::GPS_GPS_DEAD_RECKONING_COMBINED) {
+               ublox_msgs::NavPVT::FIX_TYPE_GNSS_DEAD_RECKONING_COMBINED) {
       stat.level = diagnostic_msgs::DiagnosticStatus::OK;
       stat.message = "GPS and dead reckoning combined";
     } else if (last_nav_pvt_.fixType == 
-               ublox_msgs::NavSTATUS::GPS_TIME_ONLY_FIX) {
+               ublox_msgs::NavPVT::FIX_TYPE_TIME_ONLY) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+      stat.message = "Time only fix";
+    }
+
+    // If fix not ok (w/in DOP & Accuracy Masks), raise the diagnostic level
+    if (!last_nav_pvt_.flags & ublox_msgs::NavPVT::FLAGS_GNSS_FIX_OK) {
       stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
-      stat.message = "Time fix only";
+      stat.message += ", fix not ok";
+    } 
+    // Raise diagnostic level to error if no fix
+    if (last_nav_pvt_.fixType == ublox_msgs::NavPVT::FIX_TYPE_NO_FIX) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+      stat.message = "No fix";
     }
 
     //  append last fix position
-    stat.add("iTOW", last_nav_pvt_.iTOW);
-    stat.add("lon", last_nav_pvt_.lon);
-    stat.add("lat", last_nav_pvt_.lat);
-    stat.add("height", last_nav_pvt_.height);
-    stat.add("hMSL", last_nav_pvt_.hMSL);
-    stat.add("hAcc", last_nav_pvt_.hAcc);
-    stat.add("vAcc", last_nav_pvt_.vAcc);
-    stat.add("numSV", last_nav_pvt_.numSV);
+    stat.add("iTOW [ms]", last_nav_pvt_.iTOW);
+    stat.add("Latitude [deg]", last_nav_pvt_.lat * 1e-7);
+    stat.add("Longitude [deg]", last_nav_pvt_.lon * 1e-7);
+    stat.add("Altitude [m]", last_nav_pvt_.height * 1e-3);
+    stat.add("Height above MSL [m]", last_nav_pvt_.hMSL * 1e-3);
+    stat.add("Horizontal Accuracy [m]", last_nav_pvt_.hAcc * 1e-3);
+    stat.add("Vertical Accuracy [m]", last_nav_pvt_.vAcc * 1e-3);
+    stat.add("# SVs used", (int)last_nav_pvt_.numSV);
   }
  
   // The last received NavPVT message
@@ -630,12 +638,16 @@ class UbloxHpgRef: public UbloxInterface {
 
  protected:
   /**
-   * @brief Update the High Precision Diagnostics, including the TMODE3 and 
-   * the status of the survey-in if in survey-in mode or the RTCM messages if in
-   * time mode.
+   * @brief Update the TMODE3 diagnostics and the status of the survey-in if in
+   * survey-in mode or the RTCM messages if in time mode.
    */
-  void diagnosticUpdater(
-    diagnostic_updater::DiagnosticStatusWrapper& stat);
+  void tmode3Diagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
+
+  /**
+   * @brief Set the mode to time mode (internal state variable) and configure 
+   * the RTCM messages and measurement and nav rate.
+   */
+  bool setTimeMode();
 
   // The last received Nav SVIN message
   ublox_msgs::NavSVIN last_nav_svin_;
@@ -699,16 +711,29 @@ class UbloxHpgRov: public UbloxInterface {
   void initializeRosDiagnostics();
 
  protected:
+  /**
+   * @brief Update the rover diagnostics, including the carrier phase solution 
+   * status (float or fixed).
+   */
+  void carrierPhaseDiagnostics(
+      diagnostic_updater::DiagnosticStatusWrapper& stat);
+
+  /**
+   * @brief Publish received NavRELPOSNED, save the last received message, and
+   * update the rover diagnostics.
+   */
+  void publishNavRelPosNed(const ublox_msgs::NavRELPOSNED &m);
+
+
+  ublox_msgs::NavRELPOSNED last_rel_pos_;
+
   // For RTCM frequency diagnostic updater
   double rtcm_freq_min, rtcm_freq_max;
-
-  // Map of RTCM IDs and the last time the message was received
-  std::map<int, ros::Time> last_received_rtcm_;
 
   // The DGNSS mode, see CfgDGNSS message for possible values
   int dgnss_mode_;
 
-  boost::shared_ptr<diagnostic_updater::HeaderlessTopicDiagnostic> freq_rtcm;
+  boost::shared_ptr<diagnostic_updater::HeaderlessTopicDiagnostic> freq_rtcm_;
 };
 
 /**

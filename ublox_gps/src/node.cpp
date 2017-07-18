@@ -521,12 +521,13 @@ void UbloxFirmware6::fixDiagnostic(
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "GPS and dead reckoning combined";
   } else if (last_nav_sol_.gpsFix == ublox_msgs::NavSOL::GPS_TIME_ONLY_FIX) {
-    stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "Time fix only";
   } 
   // If fix is not ok (within DOP & Accuracy Masks), raise the diagnostic level
   if (!last_nav_sol_.flags & ublox_msgs::NavSOL::FLAGS_GPS_FIX_OK) {
     stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+    stat.message += ", fix not ok";
   } 
   // Raise diagnostic level to error if no fix
   if (last_nav_sol_.gpsFix == ublox_msgs::NavSOL::GPS_NO_FIX) {
@@ -534,15 +535,15 @@ void UbloxFirmware6::fixDiagnostic(
     stat.message = "No fix";
   }
 
-  //  append last fix position
-  stat.add("iTOW", last_nav_pos_.iTOW);
-  stat.add("lon", last_nav_pos_.lon);
-  stat.add("lat", last_nav_pos_.lat);
-  stat.add("height", last_nav_pos_.height);
-  stat.add("hMSL", last_nav_pos_.hMSL);
-  stat.add("hAcc", last_nav_pos_.hAcc);
-  stat.add("vAcc", last_nav_pos_.vAcc);
-  stat.add("numSV", last_nav_sol_.numSV);
+  // Add last fix position
+  stat.add("iTOW [ms]", last_nav_pos_.iTOW);
+  stat.add("Latitude [deg]", last_nav_pos_.lat * 1e-7);
+  stat.add("Longitude [deg]", last_nav_pos_.lon * 1e-7);
+  stat.add("Altitude [m]", last_nav_pos_.height * 1e-3);
+  stat.add("Height above MSL [m]", last_nav_pos_.hMSL * 1e-3);
+  stat.add("Horizontal Accuracy [m]", last_nav_pos_.hAcc * 1e-3);
+  stat.add("Vertical Accuracy [m]", last_nav_pos_.vAcc * 1e-3);
+  stat.add("# SVs used", (int)last_nav_sol_.numSV);
 }
 
 void UbloxFirmware6::publishNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
@@ -1095,7 +1096,7 @@ bool UbloxHpgRef::configureUblox() {
       }
       // Don't reset survey-in if it already has a valid value
       if(nav_svin.valid) {
-        mode_ = TIME;
+        setTimeMode();
         return true;
       }
       ublox_msgs::NavPVT nav_pvt;
@@ -1105,7 +1106,7 @@ bool UbloxHpgRef::configureUblox() {
       // Don't reset survey in if in time mode with a good fix
       if (nav_pvt.fixType == nav_pvt.FIX_TYPE_TIME_ONLY 
           && nav_pvt.flags & nav_pvt.FLAGS_GNSS_FIX_OK) {
-        mode_ = TIME;
+        setTimeMode();
         return true;
       }
     }
@@ -1148,33 +1149,42 @@ void UbloxHpgRef::publishNavSvIn(ublox_msgs::NavSVIN m) {
   last_nav_svin_ = m;
 
   if(!m.active && m.valid && mode_ == SURVEY_IN) {
-    mode_ = TIME;
-
-    // Set the Measurement & nav rate to user config
-    if(!gps.configRate(meas_rate, nav_rate))
-      ROS_ERROR("Failed to set measurement rate to %d ms %s %d", meas_rate, 
-                "navigation rate to ", nav_rate);
-    // Enable the RTCM out messages
-    if(!gps.configRtcm(rtcm_ids, rtcm_rate))
-      ROS_ERROR("Failed to configure RTCM IDs");
+    setTimeMode();
   }
 
   updater->update();
 }
 
+bool UbloxHpgRef::setTimeMode() {
+  ROS_INFO("Setting mode (internal state) to Time Mode");
+  mode_ = TIME;
+
+  // Set the Measurement & nav rate to user config 
+  // (survey-in sets nav_rate to 1 Hz regardless of user setting)
+  if(!gps.configRate(meas_rate, nav_rate))
+    ROS_ERROR("Failed to set measurement rate to %d ms %s %d", meas_rate, 
+              "navigation rate to ", nav_rate);
+  // Enable the RTCM out messages
+  if(!gps.configRtcm(rtcm_ids, rtcm_rate)) {
+    ROS_ERROR("Failed to configure RTCM IDs");
+    return false;
+  }
+  return true;
+}
+
 void UbloxHpgRef::initializeRosDiagnostics() {
-  updater->add("HPG REF", this, &UbloxHpgRef::diagnosticUpdater);
+  updater->add("TMODE3", this, &UbloxHpgRef::tmode3Diagnostics);
   updater->force_update();
 }
 
-void UbloxHpgRef::diagnosticUpdater(
+void UbloxHpgRef::tmode3Diagnostics(
     diagnostic_updater::DiagnosticStatusWrapper& stat) {
   if (mode_ == INIT) {
     stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
-    stat.message = "TMODE3 Not configured";
+    stat.message = "Not configured";
   } else if (mode_ == DISABLED){
     stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
-    stat.message = "TMODE3 Disabled";
+    stat.message = "Disabled";
   } else if (mode_ == SURVEY_IN) {
     if (!last_nav_svin_.active && !last_nav_svin_.valid) {
       stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
@@ -1202,10 +1212,10 @@ void UbloxHpgRef::diagnosticUpdater(
     stat.add("Mean Accuracy [m]", last_nav_svin_.meanAcc * 1e-4);
   } else if(mode_ == FIXED) {
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
-    stat.message = "TMODE3 Fixed Position";
+    stat.message = "Fixed Position";
   } else if(mode_ == TIME) {
     stat.level = diagnostic_msgs::DiagnosticStatus::OK;
-    stat.message = "TMODE3 Time";
+    stat.message = "Time";
   }
 }
 
@@ -1230,7 +1240,7 @@ void UbloxHpgRov::subscribe() {
   nh->param("nav_relposned", enabled["nav_relposned"], true);
   if (enabled["nav_relposned"])
     gps.subscribe<ublox_msgs::NavRELPOSNED>(boost::bind(
-        publish<ublox_msgs::NavRELPOSNED>, _1, "navrelposned"), kSubscribeRate);
+       &UbloxHpgRov::publishNavRelPosNed, this, _1), kSubscribeRate);
 }
 
 void UbloxHpgRov::initializeRosDiagnostics() {
@@ -1241,10 +1251,54 @@ void UbloxHpgRov::initializeRosDiagnostics() {
                                                       &rtcm_freq_max,
                                                       kRtcmFreqTol, 
                                                       kRtcmFreqWindow);
-  freq_rtcm.reset(new diagnostic_updater::HeaderlessTopicDiagnostic(
+  freq_rtcm_.reset(new diagnostic_updater::HeaderlessTopicDiagnostic(
       std::string("rxmrtcm"), *updater, freq_param));
-
+  updater->add("Carrier Phase Solution", this, 
+                &UbloxHpgRov::carrierPhaseDiagnostics);
   updater->force_update();
+}
+
+void UbloxHpgRov::carrierPhaseDiagnostics(
+    diagnostic_updater::DiagnosticStatusWrapper& stat) {
+  uint32_t carr_soln = last_rel_pos_.flags & last_rel_pos_.FLAGS_CARR_SOLN_MASK;
+  stat.add("iTow", last_rel_pos_.iTow);
+  if (carr_soln & last_rel_pos_.FLAGS_CARR_SOLN_NONE ||
+      !(last_rel_pos_.flags & last_rel_pos_.FLAGS_DIFF_SOLN &&
+        last_rel_pos_.flags & last_rel_pos_.FLAGS_REL_POS_VALID)) {
+    stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+    stat.message = "None";
+  } else {
+    if (carr_soln & last_rel_pos_.FLAGS_CARR_SOLN_FLOAT) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+      stat.message = "Float";    
+    } else if (carr_soln & last_rel_pos_.FLAGS_CARR_SOLN_FIXED) {
+      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+      stat.message = "Fixed";    
+    }
+    stat.add("Ref Station ID", last_rel_pos_.refStationId);
+
+    double rel_pos_n = (last_rel_pos_.relPosN 
+                       + (last_rel_pos_.relPosHPN * 1e-2)) * 1e-2;
+    double rel_pos_e = (last_rel_pos_.relPosE 
+                       + (last_rel_pos_.relPosHPE * 1e-2)) * 1e-2;
+    double rel_pos_d = (last_rel_pos_.relPosD 
+                       + (last_rel_pos_.relPosHPD * 1e-2)) * 1e-2;
+    stat.add("Relative Position N [m]", rel_pos_n);
+    stat.add("Relative Accuracy N [m]", last_rel_pos_.accN * 1e-4);
+    stat.add("Relative Position E [m]", rel_pos_e);
+    stat.add("Relative Accuracy E [m]", last_rel_pos_.accE * 1e-4);
+    stat.add("Relative Position D [m]", rel_pos_d);
+    stat.add("Relative Accuracy D [m]", last_rel_pos_.accD * 1e-4);
+  }
+}
+
+void UbloxHpgRov::publishNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
+  static ros::Publisher publisher = 
+      nh->advertise<ublox_msgs::NavRELPOSNED>("navrelposned", kROSQueueSize);
+  publisher.publish(m);
+
+  last_rel_pos_ = m;
+  updater->update();
 }
 
 //
