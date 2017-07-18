@@ -85,8 +85,8 @@ void UbloxNode::getRosParams() {
   nh->param("rate", rate_, 4);  // in Hz
   nh->param("nav_rate", nav_rate, 1);  // # of measurement rate cycles
   // RTCM params
-  nh->param("rtcm_ids", rtcm_ids, rtcm_ids);  // RTCM IDs to configure
-  nh->param("rtcm_rate", rtcm_rate, 1);  // in Hz, same for all RTCM IDs
+  nh->param("rtcm_ids", rtcm_ids, rtcm_ids);  // RTCM output message IDs 
+  nh->param("rtcm_rates", rtcm_rates, rtcm_rates);  // RTCM output message rates
   // PPP: Advanced Setting
   nh->param("enable_ppp", enable_ppp_, false);
   // SBAS params, only for some devices
@@ -114,9 +114,18 @@ void UbloxNode::getRosParams() {
     throw std::runtime_error(std::string("Invalid settings: max_sbas must ") +
                                          "be between 0 and 255");
 
-  if(rtcm_rate < 0 || rtcm_rate > 255)
-    throw std::runtime_error(std::string("Invalid settings: rtcm_rate must ") +
-                                         "be between 0 and 255");
+  if(rtcm_ids.size() != rtcm_rates.size())
+    throw std::runtime_error(std::string("Invalid settings: size of rtcm_ids") +
+                             " must match size of rtcm_rates");
+  
+  for(int i = 0; i < rtcm_rates.size(); i++) {
+    if(rtcm_rates[i] < 0 || rtcm_rates[i] > 255)
+      throw std::runtime_error(std::string("Invalid settings: rtcm_rates must ") 
+                               + "be between 0 and 255");    
+    if(rtcm_ids[i] < 0 || rtcm_ids[i] > 255)
+      throw std::runtime_error(std::string("Invalid settings: rtcm_ids must ") 
+                               + "be between 0 and 255");    
+  }
 
   try {
     dmodel_ = ublox_gps::modelFromString(dynamic_model_);
@@ -1039,6 +1048,9 @@ void UbloxAdrUdr::subscribe() {
 // U-Blox High Precision GNSS Reference Station
 //
 void UbloxHpgRef::getRosParams() {
+  if(nav_rate * meas_rate != 1000)
+    ROS_WARN("For HPG Ref devices, nav_rate should be exactly 1 Hz.");
+
   tmode3_ =  ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN; // default
   nh->param("tmode3", tmode3_, tmode3_);
 
@@ -1080,7 +1092,7 @@ bool UbloxHpgRef::configureUblox() {
     if(!gps.configTmode3Fixed(lla_flag_, arp_position_, arp_position_hp_, 
                                fixed_pos_acc_))
       throw std::runtime_error("Failed to set TMODE3 to fixed.");
-    if(!gps.configRtcm(rtcm_ids, rtcm_rate))
+    if(!gps.configRtcm(rtcm_ids, rtcm_rates))
       throw std::runtime_error("Failed to set RTCM rates");
     mode_ = FIXED;
   } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
@@ -1165,7 +1177,7 @@ bool UbloxHpgRef::setTimeMode() {
     ROS_ERROR("Failed to set measurement rate to %d ms %s %d", meas_rate, 
               "navigation rate to ", nav_rate);
   // Enable the RTCM out messages
-  if(!gps.configRtcm(rtcm_ids, rtcm_rate)) {
+  if(!gps.configRtcm(rtcm_ids, rtcm_rates)) {
     ROS_ERROR("Failed to configure RTCM IDs");
     return false;
   }

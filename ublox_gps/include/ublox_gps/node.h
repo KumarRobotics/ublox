@@ -96,10 +96,8 @@ std::string frame_id;
 int fix_status_service;
 // The measurement and navigation rate, see CfgRate message
 int meas_rate, nav_rate;
-// IDs of RTCM out messages to configure
-std::vector<int> rtcm_ids;
-// Rate of RTCM out messages [Hz]
-int rtcm_rate;
+// IDs and rates of RTCM out messages to configure, lengths must match
+std::vector<int> rtcm_ids, rtcm_rates;
 
 /**
  * @brief Publish a ROS message of type MessageT. Should be used to publish
