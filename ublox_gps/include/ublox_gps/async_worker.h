@@ -36,18 +36,18 @@
 #include <boost/thread.hpp>
 #include <boost/thread/condition.hpp>
 
+
 #include "worker.h"
 
 namespace ublox_gps {
 
-static const int debug = 1;
+static int debug = 1; // this variable is set by the main node
 
 template <typename StreamT>
 class AsyncWorker : public Worker {
  public:
   typedef boost::mutex Mutex;
-  typedef boost::mutex::scoped_lock WriteLock;
-  typedef boost::mutex::scoped_lock ReadLock;
+  typedef boost::mutex::scoped_lock ScopedLock;
 
   AsyncWorker(StreamT& stream, boost::asio::io_service& io_service,
               std::size_t buffer_size = 8192);
@@ -109,7 +109,7 @@ AsyncWorker<StreamT>::~AsyncWorker() {
 template <typename StreamT>
 bool AsyncWorker<StreamT>::send(const unsigned char* data,
                                 const unsigned int size) {
-  WriteLock lock(write_mutex_);
+  ScopedLock lock(write_mutex_);
   if(size == 0) {
     ROS_ERROR("Ublox AsyncWorker::send: Size of message to send is 0");
     return true;
@@ -127,7 +127,7 @@ bool AsyncWorker<StreamT>::send(const unsigned char* data,
 
 template <typename StreamT>
 void AsyncWorker<StreamT>::doWrite() {
-  WriteLock lock(write_mutex_);
+  ScopedLock lock(write_mutex_);
   // Do nothing if out buffer is empty
   if (out_.size() == 0) {
     return;
@@ -140,9 +140,8 @@ void AsyncWorker<StreamT>::doWrite() {
     std::ostringstream oss;
     for (std::vector<unsigned char>::iterator it = out_.begin();
          it != out_.end(); ++it)
-      oss << std::hex << static_cast<unsigned int>(*it) << " ";
-    oss << std::dec;
-    ROS_INFO("sent %li bytes: \n%s", out_.size(), oss.str().c_str());
+      oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
+    ROS_DEBUG("U-Blox sent %li bytes: \n%s", out_.size(), oss.str().c_str());
   }
   // Clear the buffer & unlock
   out_.clear();
@@ -151,7 +150,7 @@ void AsyncWorker<StreamT>::doWrite() {
 
 template <typename StreamT>
 void AsyncWorker<StreamT>::doRead() {
-  ReadLock lock(read_mutex_);
+  ScopedLock lock(read_mutex_);
   stream_.async_read_some(
       boost::asio::buffer(in_.data() + in_buffer_size_,
                           in_.size() - in_buffer_size_),
@@ -163,11 +162,11 @@ void AsyncWorker<StreamT>::doRead() {
 template <typename StreamT>
 void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
                                    std::size_t bytes_transfered) {
-  ReadLock lock(read_mutex_);
+  ScopedLock lock(read_mutex_);
   if (error) {
-    ROS_ERROR("Buffer read error");
-    // do something
-
+    ROS_ERROR("U-Blox ASIO input buffer read error: %s, %li", 
+              error.message().c_str(), 
+              bytes_transfered);
   } else if (bytes_transfered > 0) {
     in_buffer_size_ += bytes_transfered;
 
@@ -176,8 +175,9 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
       for (std::vector<unsigned char>::iterator it =
                in_.begin() + in_buffer_size_ - bytes_transfered;
            it != in_.begin() + in_buffer_size_; ++it)
-        oss << std::hex << static_cast<unsigned int>(*it) << " ";
-      ROS_INFO("received %li bytes \n%s", bytes_transfered, oss.str().c_str());
+        oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
+      ROS_DEBUG("U-Blox received %li bytes \n%s", bytes_transfered, 
+               oss.str().c_str());
     }
 
     if (read_callback_)
@@ -192,7 +192,7 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
 
 template <typename StreamT>
 void AsyncWorker<StreamT>::doClose() {
-  ReadLock lock(read_mutex_);
+  ScopedLock lock(read_mutex_);
   stopping_ = true;
   boost::system::error_code error;
   stream_.cancel(error);
@@ -201,7 +201,7 @@ void AsyncWorker<StreamT>::doClose() {
 template <typename StreamT>
 void AsyncWorker<StreamT>::wait(
     const boost::posix_time::time_duration& timeout) {
-  ReadLock lock(read_mutex_);
+  ScopedLock lock(read_mutex_);
   read_condition_.timed_wait(lock, timeout);
 }
 

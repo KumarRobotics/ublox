@@ -1,5 +1,5 @@
 # NAV-PVT (0x01 0x07)
-# Navigation Position Velocity Time Solution
+# Navigation Position Velocity Time Solution Firmware version 7
 #
 # Note that during a leap second there may be more (or less) than 60 seconds in
 # a minute; see the description of leap seconds for details.
@@ -86,7 +86,3 @@ uint32 headAcc          # Heading Accuracy Estimate (both motion & vehicle)
 
 uint16 pDOP             # Position DOP [1 / 0.01]
 uint8[6] reserved1      # Reserved
-
-int32 headVeh           # Heading of vehicle (2-D) [deg / 1e-5]
-int16 magDec            # Magnetic declination [deg / 1e-2]
-uint16 magAcc           # Magnetic declination accuracy [deg / 1e-2]

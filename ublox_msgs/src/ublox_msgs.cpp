@@ -31,6 +31,8 @@
 template <typename T>
 std::vector<std::pair<uint8_t,uint8_t> > ublox::Message<T>::keys_;
 
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::ATT, 
+                      ublox_msgs, NavATT);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::CLOCK, 
                       ublox_msgs, NavCLOCK);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::DGPS, 
@@ -41,14 +43,24 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::POSECEF,
                       ublox_msgs, NavPOSECEF);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::POSLLH, 
                       ublox_msgs, NavPOSLLH);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, 
+                      ublox_msgs::Message::NAV::RELPOSNED, 
+                      ublox_msgs, 
+                      NavRELPOSNED);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::SBAS, 
                       ublox_msgs, NavSBAS);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::SOL, 
                       ublox_msgs, NavSOL);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::PVT, 
                       ublox_msgs, NavPVT);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::PVT, 
+                      ublox_msgs, NavPVT7);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::SAT, 
+                      ublox_msgs, NavSAT);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::STATUS, 
                       ublox_msgs, NavSTATUS);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::SVIN, 
+                      ublox_msgs, NavSVIN);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::SVINFO, 
                       ublox_msgs, NavSVINFO);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::TIMEGPS, 
@@ -60,6 +72,21 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::VELECEF,
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::VELNED, 
                       ublox_msgs, NavVELNED);
 
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::INF, ublox_msgs::Message::INF::ERROR, 
+                      ublox_msgs, Inf);
+DECLARE_UBLOX_MESSAGE_ID(ublox_msgs::Class::INF, 
+                         ublox_msgs::Message::INF::WARNING, 
+                         ublox_msgs, Inf, WARNING);
+DECLARE_UBLOX_MESSAGE_ID(ublox_msgs::Class::INF, 
+                         ublox_msgs::Message::INF::NOTICE, 
+                         ublox_msgs, Inf, NOTICE);
+DECLARE_UBLOX_MESSAGE_ID(ublox_msgs::Class::INF, 
+                         ublox_msgs::Message::INF::TEST, 
+                         ublox_msgs, Inf, TEST);
+DECLARE_UBLOX_MESSAGE_ID(ublox_msgs::Class::INF, 
+                         ublox_msgs::Message::INF::DEBUG, 
+                         ublox_msgs, Inf, DEBUG);
+
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::RXM, ublox_msgs::Message::RXM::ALM, 
                       ublox_msgs, RxmALM);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::RXM, ublox_msgs::Message::RXM::EPH, 
@@ -68,12 +95,50 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::RXM, ublox_msgs::Message::RXM::RAW,
                       ublox_msgs, RxmRAW);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::RXM, ublox_msgs::Message::RXM::RAWX, 
                       ublox_msgs, RxmRAWX);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::RXM, ublox_msgs::Message::RXM::RTCM, 
+                      ublox_msgs, RxmRTCM);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::RXM, ublox_msgs::Message::RXM::SFRB, 
                       ublox_msgs, RxmSFRB);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::RXM, ublox_msgs::Message::RXM::SFRBX, 
                       ublox_msgs, RxmSFRBX);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::RXM, ublox_msgs::Message::RXM::SVSI, 
                       ublox_msgs, RxmSVSI);
+
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::ANT, 
+                      ublox_msgs, CfgANT);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::CFG, 
+                      ublox_msgs, CfgCFG);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::DGNSS, 
+                      ublox_msgs, CfgDGNSS);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::GNSS, 
+                      ublox_msgs, CfgGNSS);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::HNR,
+                      ublox_msgs, CfgHNR);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::INF,
+                      ublox_msgs, CfgINF);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::MSG, 
+                      ublox_msgs, CfgMSG);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::NAV5, 
+                      ublox_msgs, CfgNAV5);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::NAVX5, 
+                      ublox_msgs, CfgNAVX5);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::NMEA, 
+                      ublox_msgs, CfgNMEA);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::PRT, 
+                      ublox_msgs, CfgPRT);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::RATE, 
+                      ublox_msgs, CfgRATE);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::RST, 
+                      ublox_msgs, CfgRST);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::TMODE3, 
+                      ublox_msgs, CfgTMODE3);
+
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::GNSS, 
+                      ublox_msgs, MonGNSS);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::HW, 
+                      ublox_msgs, MonHW);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::VER, 
+                      ublox_msgs, MonVER);
 
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::AID, ublox_msgs::Message::AID::ALM, 
                       ublox_msgs, AidALM);
@@ -82,22 +147,18 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::AID, ublox_msgs::Message::AID::EPH,
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::AID, ublox_msgs::Message::AID::HUI, 
                       ublox_msgs, AidHUI);
 
-DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::ANT, 
-                      ublox_msgs, CfgANT);
-DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::CFG, 
-                      ublox_msgs, CfgCFG);
-DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::MSG, 
-                      ublox_msgs, CfgMSG);
-DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::NAV5, 
-                      ublox_msgs, CfgNAV5);
-DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::NAVX5, 
-                      ublox_msgs, CfgNAVX5);
-DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::PRT, 
-                      ublox_msgs, CfgPRT);
-DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::RATE, 
-                      ublox_msgs, CfgRATE);
-DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::GNSS, 
-                      ublox_msgs, CfgGNSS);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::ESF, ublox_msgs::Message::ESF::INS,
+                      ublox_msgs, EsfINS);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::ESF, ublox_msgs::Message::ESF::MEAS, 
+                      ublox_msgs, EsfMEAS);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::ESF, ublox_msgs::Message::ESF::RAW, 
+                      ublox_msgs, EsfRAW);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::ESF, ublox_msgs::Message::ESF::STATUS, 
+                      ublox_msgs, EsfSTATUS);
 
-DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::VER, 
-                      ublox_msgs, MonVER);
+
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MGA, ublox_msgs::Message::MGA::GAL, 
+                      ublox_msgs, MgaGAL);
+
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::HNR, ublox_msgs::Message::HNR::PVT, 
+                      ublox_msgs, HnrPVT);

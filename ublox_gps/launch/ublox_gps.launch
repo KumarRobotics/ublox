@@ -17,7 +17,7 @@
     <!-- RTCM IDs to configure -->
     <arg name="rtcm_ids" default="[]" /> 
     <!-- in Hz, same for all RTCM IDs -->
-    <arg name="rtcm_rate" default="1" /> 
+    <arg name="rtcm_rate" default="[]" /> 
 
     <!-- See Ublox docs -->
     <arg name="dynamic_model" default="portable"/>

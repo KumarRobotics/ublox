@@ -10,7 +10,8 @@ extern "C" {
 }
 
 // Convert date/time to UTC time in seconds
-long toUtcSeconds(const ublox_msgs::NavPVT& msg) {
+template<typename NavPVT>
+long toUtcSeconds(const NavPVT& msg) {
   // Create TM struct for mkgmtime
   struct tm time = {0};
   time.tm_year = msg.year - 1900; 

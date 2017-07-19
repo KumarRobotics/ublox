@@ -3,8 +3,9 @@
 #
 # See important comments concerning validity of position given in section
 # Navigation Output Filters.
-# This message outputs the Geodetic position in the currently selected Ellipsoid. The default is
-# the WGS84 Ellipsoid, but can be changed with the message CFG-DAT.
+# This message outputs the Geodetic position in the currently selected 
+# Ellipsoid. The default is the WGS84 Ellipsoid, but can be changed with the
+# message CFG-DAT.
 #
 
 uint8 CLASS_ID = 1

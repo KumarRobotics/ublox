@@ -72,6 +72,55 @@ struct Serializer<ublox_msgs::CfgGNSS_<ContainerAllocator> >
 };
 
 template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::CfgINF_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::CfgINF_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    int num_blocks = count / 10;
+    m.blocks.resize(num_blocks);
+    for(std::size_t i = 0; i < num_blocks; ++i) 
+      ros::serialization::deserialize(stream, m.blocks[i]);
+  }
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::CfgINF_<ContainerAllocator> >::param_type m)
+  {
+    return 10 * m.blocks.size();
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::CfgINF_<ContainerAllocator> >::param_type m)
+  {
+    ros::serialization::OStream stream(data, size);
+    for(std::size_t i = 0; i < m.blocks.size(); ++i) 
+      ros::serialization::serialize(stream, m.blocks[i]);
+  }
+};
+
+template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::Inf_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::Inf_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    m.str.resize(count);
+    for (int i = 0; i < count; ++i)
+      ros::serialization::deserialize(stream, m.str[i]);
+  }
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::Inf_<ContainerAllocator> >::param_type m)
+  {
+    return m.str.size();
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::Inf_<ContainerAllocator> >::param_type m)
+  {
+    ros::serialization::OStream stream(data, size);
+    for(std::size_t i = 0; i < m.str.size(); ++i) 
+      ros::serialization::serialize(stream, m.str[i]);
+  }
+};
+
+template <typename ContainerAllocator>
 struct Serializer<ublox_msgs::MonVER_<ContainerAllocator> >
 {
   static void read(const uint8_t *data, uint32_t count, 
@@ -187,6 +236,41 @@ struct Serializer<ublox_msgs::NavSBAS_<ContainerAllocator> >
     stream.next(m.sys);
     stream.next(m.service);
     stream.next(static_cast<typename ublox_msgs::NavSBAS_<ContainerAllocator>::_cnt_type>(m.sv.size()));
+    stream.next(m.reserved0);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::serialize(stream, m.sv[i]);
+  }
+};
+
+template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::NavSAT_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::NavSAT_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.iTOW);
+    stream.next(m.version);
+    stream.next(m.numSvs);
+    stream.next(m.reserved0);
+    m.sv.resize(m.numSvs);
+    for(std::size_t i = 0; i < m.sv.size(); ++i) 
+      ros::serialization::deserialize(stream, m.sv[i]);
+  }
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::NavSAT_<ContainerAllocator> >::param_type m)
+  {
+    return 8 + 12 * m.numSvs;
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::NavSAT_<ContainerAllocator> >::param_type m)
+  {
+    if(m.sv.size() != m.numSvs) {
+      ROS_ERROR("NavSAT numSvs must equal sv size");
+    }
+    ros::serialization::OStream stream(data, size);
+    stream.next(m.iTOW);
+    stream.next(m.version);
+    stream.next(static_cast<typename ublox_msgs::NavSAT_<ContainerAllocator>::_numSvs_type>(m.sv.size()));
     stream.next(m.reserved0);
     for(std::size_t i = 0; i < m.sv.size(); ++i) 
       ros::serialization::serialize(stream, m.sv[i]);
@@ -559,6 +643,115 @@ struct Serializer<ublox_msgs::AidEPH_<ContainerAllocator> >
       ros::serialization::serialize(stream, m.sf3d[i]);
   }
 };
+
+template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::EsfMEAS_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::EsfMEAS_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.timeTag);
+    stream.next(m.flags);
+    stream.next(m.id);
+
+    bool calib_valid = m.flags & m.FLAGS_CALIB_T_TAG_VALID;
+    int data_size = (count - (calib_valid ? 12 : 8)) / 4;
+    // Repeating block
+    m.data.resize(data_size);
+    for(std::size_t i = 0; i < data_size; ++i) 
+      ros::serialization::deserialize(stream, m.data[i]);
+    // Optional block
+    if(calib_valid) {
+      m.calibTtag.resize(1);
+      ros::serialization::deserialize(stream, m.calibTtag[0]);
+    }
+  }
+
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::EsfMEAS_<ContainerAllocator> >::param_type m)
+  {
+    return 4 + 8 * m.data.size() + 4 * m.calibTtag.size();
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::EsfMEAS_<ContainerAllocator> >::param_type m)
+  {
+    ros::serialization::OStream stream(data, size);
+    stream.next(m.timeTag);
+    stream.next(m.flags);
+    stream.next(m.id);
+    for(std::size_t i = 0; i < m.data.size(); ++i) 
+      ros::serialization::serialize(stream, m.data[i]);
+    for(std::size_t i = 0; i < m.calibTtag.size(); ++i) 
+      ros::serialization::serialize(stream, m.calibTtag[i]);
+  }
+};
+
+template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::EsfRAW_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::EsfRAW_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.reserved0);
+    m.blocks.clear();
+    int num_blocks = (count - 4) / 8;
+    m.blocks.resize(num_blocks);
+    for(std::size_t i = 0; i < num_blocks; ++i) 
+      ros::serialization::deserialize(stream, m.blocks[i]);
+  }
+
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::EsfRAW_<ContainerAllocator> >::param_type m)
+  {
+    return 4 + 8 * m.blocks.size();
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::EsfRAW_<ContainerAllocator> >::param_type m)
+  {
+    ros::serialization::OStream stream(data, size);
+    stream.next(m.reserved0);
+    for(std::size_t i = 0; i < m.blocks.size(); ++i) 
+      ros::serialization::serialize(stream, m.blocks[i]);
+  }
+};
+
+template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::EsfSTATUS_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::EsfSTATUS_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.iTOW);
+    stream.next(m.version);
+    stream.next(m.fusionMode);
+    stream.next(m.reserved2);
+    stream.next(m.numSens);
+    m.sens.resize(m.numSens);
+    for(std::size_t i = 0; i < m.sens.size(); ++i) 
+      ros::serialization::deserialize(stream, m.sens[i]);
+  }
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::EsfSTATUS_<ContainerAllocator> >::param_type m)
+  {
+    return 16 + 4 * m.numSens;
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::EsfSTATUS_<ContainerAllocator> >::param_type m)
+  {
+    if(m.sens.size() != m.numSens) {
+      ROS_ERROR("Writing EsfSTATUS message: numSens must equal size of sens");
+    }
+    ros::serialization::OStream stream(data, size);
+    stream.next(m.iTOW);
+    stream.next(m.version);
+    stream.next(m.fusionMode);
+    stream.next(m.reserved2);
+    stream.next(static_cast<typename ublox_msgs::EsfSTATUS_<ContainerAllocator>::_numSens_type>(m.sens.size()));
+    for(std::size_t i = 0; i < m.sens.size(); ++i) 
+      ros::serialization::serialize(stream, m.sens[i]);
+  }
+};
+
 
 } // namespace ublox
 
