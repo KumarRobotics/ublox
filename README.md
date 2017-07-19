@@ -5,7 +5,7 @@ The driver was originally written by Johannes Meyer. Changes made later are deta
 
 ## Options
 
-Example .yaml configuration files are included in `ublox_gps/config`.
+Example .yaml configuration files are included in `ublox_gps/config`. Consult the u-blox documentation for your device for the recommended settings.
 
 The `ublox_gps` node supports the following parameters for all products and firmware version:
 * `device`: Path to the device in `/dev`. Defaults to `/dev/ttyACM0`.
@@ -20,7 +20,16 @@ The `ublox_gps` node supports the following parameters for all products and firm
 * `enable_sbas`: Enable satellite-based augmentation system. Defaults to false.
 * `max_sbas`: Maximum number of SBAS channels. Defaults to 0.
 * `sbas_usage`: See `CfgSBAS` message for details. Defaults to 0.
-* `dynamic_model`: See u-blox protocol spec. Defaults to `portable`.
+* `dynamic_model`: Possible values below. Defaults to `portable`. See u-blox documentation for further description.
+    * `portable`
+    * `stationary`
+    * `pedestrian`
+    * `automotive`
+    * `sea`
+    * `airborne1`: Airborne, max acceleration = 1G
+    * `airborne2`: Airborne, max acceleration = 1G
+    * `airborne4`: Airborne, max acceleration = 1G
+    * `wristwatch`
 * `fix_mode`: Type of fixes supported: `2d`, `3d` or `both`.
 * `dr_limit`: Max time in seconds to use dead reckoning after signal is lost. Defaults to 0.
 ### For devices with firmware >= 7:
@@ -35,7 +44,7 @@ The `ublox_gps` node supports the following parameters for all products and firm
 * `reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_SW`.
 ### For UDR/ADR devices:
 * `use_adr`: Enable ADR/UDR. Defaults to true.
-* nav_rate should be set to 1 Hz.
+* `nav_rate` should be set to 1 Hz.
 ### For HPG Reference devices:
 * `tmode3`: Time Mode, defaults to Survey-In. See CfgTMODE3 for constants.
 * `lla_flag`: True if the Fixed position is in Lat, Lon, Alt coordinates. False if ECEF. Must be set if `tmode3` is set to fixed. 
@@ -124,6 +133,14 @@ A second sample launch file `ublox_device.launch` loads the parameters from a ya
 For debugging messages set the debug parameter to > 0. The range for debug is 0-4. At level 1 it prints configuration messages and checksum errors, at level 2 it also prints ACK/NACK messages and sent messages. At level 3 it prints the received bytes being decoded by a specific message reader. At level 4 it prints the incoming buffer before it is split by message header.
 
 # Version history
+
+* **1.1.1**:
+  - BUG FIX for fix diagnostics. NumSV was displaying incorrectly. For firmware versions >=7, the NavPVT flags variable is now compared to the constants from the NavPVT message not NavSOL.
+  - Changed rtcm_rate parameter to a vector instead of a scalar, now each RTCM id can be set to a different rate.
+  - Diagnostic variables are displayed more clearly with units included. 
+  - For HPG Rovers, added diagnostic updater for Carrier Phase Solution.
+  - Added CfgNMEA message.
+  - Added constants for NavSAT_SV flags bit mask.
 
 * **1.1.0**:
   - BUG FIX for NAV-PVT messages for firmware 7. The NAV-PVT message is shorter for firmware version 7, the new message is `NavPVT7`
@@ -216,6 +233,14 @@ b. Modify `ublox_msgs/include/ublox/serialization/ublox_msgs.h` and add a custom
 If a given message protocol applies to multiple message IDs (e.g. the `Inf` message), do not include the message ID in the message itself.
 When declaring the message, for the first declaration, use `DECLARE_UBLOX_MESSAGE` macro. For the following declarations use the `DECLARE_UBLOX_MESSAGE_ID` macro.
 
+## Adding device / firmware specific functionality
+
+The `node.cpp` file in `ublox_gps` contains a main Node class called UbloxNode which acts as the ROS Node and handles the node initialization, publishers, and diagnostics. This Node is designed with composition architecture and contains a vector `xware` of instances of `UbloxInterface`. Classes which implement these interfaces extend the functionality of the node, and the UbloxNode calls the public class methods (`getRosParams()`, `configureUblox()`, `subscribe()`, and `initializeRosDiagnostics()`) for each instance in the `xware` vector in its `initialize()` method. Firmware classes and product category classes (e.g. `UbloxHpgRef`, `UbloxHpgRov`, `UbloxAdrUdr`) implement `UbloxInterface` and are added to the node class. The Firmware class is selected based on the `ublox_version` and the product category class is selected after parsing the `MonVER` message. `SPG` products do not have their own implementation of `UbloxInterface`, since the Firmware classes implement the default behavior for these devices.
+
+Currently there are only implementations of `UbloxInterface` specific to firmware versions 6-8 and `UbloxHpgRef`, `UbloxHpgRov`, `UbloxAdrUdr`, `UbloxTim`, `UbloxFts`. Since the class is designed in compositional style, any implementation of `UbloxInterface` can be added to the `UbloxNode` `xware` vector and its methods will be called by `UbloxNode`. Simply add an implementation of `UbloxInterface` to the ublox_gps `node.h` and `node.cpp` files. Be careful to keep parameters and configuration generic to specific firmware or product category in the correct class. 
+
+`UbloxHpgRef` and `UbloxHpgRov` have been tested on the C94-M8P device. 
+
 ## Known Issues
 
 ### Note on `ublox_version`:
@@ -225,6 +250,12 @@ When declaring the message, for the first declaration, use `DECLARE_UBLOX_MESSAG
 Consequently, the user should specify the version of their device in rosparam.
 
 A warning will be issued on the console indicating which options have been ignored.
+
+## Unimplemented / Untested Devices
+
+`UbloxTim` and `UbloxFts` are currently unimplemented skeleton classes. `UbloxAdrUdr` is implemented, with the exception of `initializeRosDiagnostics()` and has not been tested on hardware. 
+
+`UbloxFirmware7` has not been properly tested on a device with firmware version 7. `UbloxFirmware6` has been tested on a device with firmware version 8, but not with firmware version 6.
 
 ## FAQs
 
