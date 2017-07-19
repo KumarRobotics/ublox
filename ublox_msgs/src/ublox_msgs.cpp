@@ -108,6 +108,8 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::ANT,
                       ublox_msgs, CfgANT);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::CFG, 
                       ublox_msgs, CfgCFG);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::DAT, 
+                      ublox_msgs, CfgDAT);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::DGNSS, 
                       ublox_msgs, CfgDGNSS);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::GNSS, 

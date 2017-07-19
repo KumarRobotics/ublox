@@ -37,6 +37,48 @@
 namespace ublox {
 
 template <typename ContainerAllocator>
+struct Serializer<ublox_msgs::CfgDAT_<ContainerAllocator> >
+{
+  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::CfgDAT_<ContainerAllocator> >::reference m)
+  {
+    ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.datumNum);
+    stream.next(m.datumName);
+    stream.next(m.majA);
+    stream.next(m.flat);
+    stream.next(m.dX);
+    stream.next(m.dY);
+    stream.next(m.dZ);
+    stream.next(m.rotX);
+    stream.next(m.rotY);
+    stream.next(m.rotZ);
+    stream.next(m.scale);
+  }
+
+  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::CfgDAT_<ContainerAllocator> >::param_type m)
+  {
+    // this is the size of CfgDAT set messages
+    // serializedLength is only used for writes so this is ok
+    return 44;
+  }
+
+  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::CfgDAT_<ContainerAllocator> >::param_type m)
+  {
+    ros::serialization::OStream stream(data, size);
+    // ignores datumNum & datumName
+    stream.next(m.majA);
+    stream.next(m.flat);
+    stream.next(m.dX);
+    stream.next(m.dY);
+    stream.next(m.dZ);
+    stream.next(m.rotX);
+    stream.next(m.rotY);
+    stream.next(m.rotZ);
+    stream.next(m.scale);
+  }
+};
+
+template <typename ContainerAllocator>
 struct Serializer<ublox_msgs::CfgGNSS_<ContainerAllocator> >
 {
   static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::CfgGNSS_<ContainerAllocator> >::reference m)
