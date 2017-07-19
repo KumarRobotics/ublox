@@ -8,12 +8,13 @@ ublox_version: 8
 baudrate: 19200             # C94-M8P specific
 uart_in: 0                  # No UART in for base
 uart_out: 32                # RTCM 3
-rate: 4                     #  in Hz
+rate: 4                     # in Hz, must be at least 1 Hz
+nav_rate: 4                 # in number of measurement cycles, should be 1 Hz
 
 dynamic_model: stationary   # Velocity restricted to 0 m/s. Zero dynamics 
                             # assumed.
-fix_mode: auto
-dr_limit: 0
+fix_mode: auto              # Options: auto, 2d, 3d
+dr_limit: 0                 # Dead-reckoning
 
 # TMODE3 Config
 tmode3: 1                   # Survey-In Mode
@@ -37,7 +38,7 @@ rtcm_ids: [5, 87, 77, 230]  # RTCM Messages to configure for Base station
                             # 0xF5 0xE6 GLONASS code-phase biases
                             # 0xF5 0xFE Reference station PVT 
                             #(u-blox proprietary RTCM Message)
-rtcm_rate: 1                # in Hz
+rtcm_rates: [1, 1, 1, 10]   # in number of navigation solutions
 
 # GNSS Config
 enable_glonass: true        # Supported by C94-M8P
