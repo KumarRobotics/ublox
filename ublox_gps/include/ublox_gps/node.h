@@ -99,6 +99,61 @@ int meas_rate, nav_rate;
 // IDs and rates of RTCM out messages to configure, lengths must match
 std::vector<int> rtcm_ids, rtcm_rates;
 
+
+template <typename V, typename T>
+bool checkMin(V val, T min, std::string name) {
+  if(val < min) {
+    std::stringstream oss;
+    oss << "Invalid settings: " << name << " must be > " << min;
+    throw std::runtime_error(oss.str());
+  }
+}
+
+template <typename V, typename T>
+bool checkRange(V val, T min, T max, std::string name) {
+  if(val < min || val > max) {
+    std::stringstream oss;
+    oss << "Invalid settings: " << name << " must be > " << min << 
+        " and < " << max;
+    throw std::runtime_error(oss.str());
+  }
+}
+
+template <typename V, typename T>
+bool checkRange(std::vector<V> val, T min, T max, std::string name) {
+  for(size_t i = 0; i < val.size(); i++) 
+    checkRange(val[i], min, max, name);
+}
+
+/**
+ * @brief Determine dynamic model from human-readable string.
+ * @param model One of the following (case-insensitive):
+ *  - portable
+ *  - stationary
+ *  - pedestrian
+ *  - automotive
+ *  - sea
+ *  - airborne1
+ *  - airborne2
+ *  - airborne4
+ *  - wristwatch
+ * @return DynamicModel
+ * @throws std::runtime_error on invalid argument.
+ */
+uint8_t
+modelFromString(const std::string& model);
+
+/**
+ * @brief Determine fix mode from human-readable string.
+ * @param mode One of the following (case-insensitive):
+ *  - 2d
+ *  - 3d
+ *  - auto
+ * @return FixMode
+ * @throws std::runtime_error on invalid argument.
+ */
+uint8_t fixModeFromString(const std::string& mode);
+
 /**
  * @brief Publish a ROS message of type MessageT. Should be used to publish
  * all messages which are simply read from U-blox and published.
@@ -250,6 +305,10 @@ class UbloxNode : public virtual UbloxInterface {
   // UART baudrate and in/out protocol (see CfgPRT message for constants)
   int baudrate_, uart_in_, uart_out_; 
   int rate_;
+
+  // User-defined Datum (only used if the set_dat param is true)
+  bool set_dat_;
+  ublox_msgs::CfgDAT cfg_dat_;
   
   // If true: enable the GNSS
   bool enable_sbas_, enable_ppp_;

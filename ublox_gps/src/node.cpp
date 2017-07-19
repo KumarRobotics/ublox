@@ -32,21 +32,64 @@
 using namespace ublox_node;
 
 //
-// U-Blox Node
+// ublox_node namespace
+//
+uint8_t ublox_node::modelFromString(const std::string& model) {
+  std::string lower = model;
+  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+  if(lower == "portable") {
+    return ublox_msgs::CfgNAV5::DYN_MODEL_PORTABLE;
+  } else if(lower == "stationary") {
+    return ublox_msgs::CfgNAV5::DYN_MODEL_STATIONARY;
+  } else if(lower == "pedestrian") {
+    return ublox_msgs::CfgNAV5::DYN_MODEL_PEDESTRIAN;
+  } else if(lower == "automotive") {
+    return ublox_msgs::CfgNAV5::DYN_MODEL_AUTOMOTIVE;
+  } else if(lower == "sea") {
+    return ublox_msgs::CfgNAV5::DYN_MODEL_SEA;
+  } else if(lower == "airborne1") {
+    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_1G;
+  } else if(lower == "airborne2") {
+    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_2G;
+  } else if(lower == "airborne4") {
+    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_4G;
+  } else if(lower == "wristwatch") {
+    return ublox_msgs::CfgNAV5::DYN_MODEL_WRIST_WATCH;
+  }
+
+  throw std::runtime_error("Invalid settings: " + lower + 
+                           " is not a valid dynamic model.");
+}
+
+uint8_t ublox_node::fixModeFromString(const std::string& mode) {
+  std::string lower = mode;
+  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+  if (lower == "2d") {
+    return ublox_msgs::CfgNAV5::FIX_MODE_2D_ONLY;
+  } else if (lower == "3d") {
+    return ublox_msgs::CfgNAV5::FIX_MODE_3D_ONLY;
+  } else if (lower == "auto") {
+    return ublox_msgs::CfgNAV5::FIX_MODE_AUTO;
+  }
+
+  throw std::runtime_error("Invalid settings: " + mode + 
+                           " is not a valid fix mode.");
+}
+
+//
+// u-blox ROS Node
 //
 UbloxNode::UbloxNode() {
-  // Create Ublox Node based on firmware version
   int ublox_version;
   nh->param("ublox_version", ublox_version, 6);
   ROS_INFO("U-Blox Firmware Version: %d", ublox_version);
-  boost::shared_ptr<UbloxInterface> firmware;
-  if(ublox_version <= 6)
-    firmware.reset(new UbloxFirmware6);
-  else if(ublox_version == 7)
-    firmware.reset(new UbloxFirmware7);
+  // Add UbloxInterface for firmware based on version
+  if (ublox_version <= 6)
+    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxFirmware6));
+  else if (ublox_version == 7)
+    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxFirmware7));
   else
-    firmware.reset(new UbloxFirmware8);
-  xware_.push_back(firmware);
+    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxFirmware8));
   // Initialize the node
   initialize();
 }
@@ -96,45 +139,54 @@ void UbloxNode::getRosParams() {
   nh->param("dynamic_model", dynamic_model_, std::string("portable"));
   nh->param("fix_mode", fix_mode_, std::string("auto"));
   nh->param("dr_limit", dr_limit_, 0); // Dead reckoning limit
-  
+
   if (enable_ppp_) 
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
 
-  if (rate_ <= 0) 
-    throw std::runtime_error("Invalid settings: rate must be > 0");
-
-  if (nav_rate <= 0) 
-    throw std::runtime_error("Invalid settings: nav_rate must be > 0");
-
-  if (dr_limit_ < 0 || dr_limit_ > 255)
-    throw std::runtime_error(std::string("Invalid settings: dr_limit must ") +
-                                         "be between 0 and 255");
- 
-  if (max_sbas_ < 0 || max_sbas_ > 255)
-    throw std::runtime_error(std::string("Invalid settings: max_sbas must ") +
-                                         "be between 0 and 255");
+  checkMin(rate_, 0, "rate");
+  checkMin(nav_rate, 0, "nav_rate");
+  checkRange(dr_limit_, 0, 255, "dr_limit");
+  checkRange(max_sbas_, 0, 255, "max_sbas");
 
   if(rtcm_ids.size() != rtcm_rates.size())
     throw std::runtime_error(std::string("Invalid settings: size of rtcm_ids") +
                              " must match size of rtcm_rates");
+  checkRange(rtcm_rates, 0, 255, "rtcm_rates");
+  checkRange(rtcm_ids, 0, 255, "rtcm_ids");
   
-  for(int i = 0; i < rtcm_rates.size(); i++) {
-    if(rtcm_rates[i] < 0 || rtcm_rates[i] > 255)
-      throw std::runtime_error(std::string("Invalid settings: rtcm_rates must ") 
-                               + "be between 0 and 255");    
-    if(rtcm_ids[i] < 0 || rtcm_ids[i] > 255)
-      throw std::runtime_error(std::string("Invalid settings: rtcm_ids must ") 
-                               + "be between 0 and 255");    
-  }
+  dmodel_ = modelFromString(dynamic_model_);
+  fmode_ = fixModeFromString(fix_mode_);
 
-  try {
-    dmodel_ = ublox_gps::modelFromString(dynamic_model_);
-    fmode_ = ublox_gps::fixModeFromString(fix_mode_);
-  } catch (std::exception& e) {
-    throw std::runtime_error("Invalid dynamic model or fix mode settings");
+  nh->param("dat/set", set_dat_, false);
+  if(set_dat_) {
+    std::vector<float> shift, rot;
+    if (!nh->getParam("dat/majA", cfg_dat_.majA)
+        || nh->getParam("dat/flat", cfg_dat_.flat)
+        || nh->getParam("dat/shift", shift)
+        || nh->getParam("dat/rot", rot)
+        || nh->getParam("dat/scale", cfg_dat_.scale))
+      throw std::runtime_error(std::string("dat/set is true, therefore ") +
+         "dat/majA, dat/flat, dat/shift, dat/rot, & dat/scale must be set");
+    if(shift.size() != 3 || rot.size() != 3)
+      throw std::runtime_error(std::string("size of dat/shift & dat/rot ") +
+                               "must be 3");
+    checkRange(cfg_dat_.majA, 6300000.0, 6500000.0, "dat/majA");
+    checkRange(cfg_dat_.flat, 0.0, 500.0, "dat/flat");
+    
+    checkRange(shift, 0.0, 500.0, "dat/shift");
+    cfg_dat_.dX = shift[0];
+    cfg_dat_.dY = shift[1];
+    cfg_dat_.dZ = shift[2];
+
+    checkRange(rot, -5000.0, 5000.0, "dat/rot");
+    cfg_dat_.rotX = rot[0];
+    cfg_dat_.rotY = rot[1];
+    cfg_dat_.rotZ = rot[2];
+    
+    checkRange(cfg_dat_.scale, 0.0, 50.0, "scale");
   }
   
-  //  measurement rate param for ublox, units of ms
+  // measurement period [ms]
   meas_rate = 1000 / rate_;
 }
 
@@ -361,6 +413,8 @@ bool UbloxNode::configureUblox() {
       ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
       throw std::runtime_error(ss.str());
     }
+    if(set_dat_ && !gps.configure(cfg_dat_))
+      throw std::runtime_error("Failed to set user-defined datum.");
     for (int i = 0; i < xware_.size(); i++)
       xware_[i]->configureUblox();
   } catch (std::exception& e) {

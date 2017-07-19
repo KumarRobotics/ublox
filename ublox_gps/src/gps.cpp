@@ -33,46 +33,6 @@ namespace ublox_gps {
 
 using namespace ublox_msgs;
 
-uint8_t modelFromString(const std::string& model) {
-  std::string lower = model;
-  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-  if(lower == "portable") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_PORTABLE;
-  } else if(lower == "stationary") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_STATIONARY;
-  } else if(lower == "pedestrian") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_PEDESTRIAN;
-  } else if(lower == "automotive") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AUTOMOTIVE;
-  } else if(lower == "sea") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_SEA;
-  } else if(lower == "airborne1") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_1G;
-  } else if(lower == "airborne2") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_2G;
-  } else if(lower == "airborne4") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_4G;
-  } else if(lower == "wristwatch") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_WRIST_WATCH;
-  }
-
-  throw std::runtime_error(lower + " is not a valid dynamic model.");
-}
-
-uint8_t fixModeFromString(const std::string& mode) {
-  std::string lower = mode;
-  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-  if (lower == "2d") {
-    return ublox_msgs::CfgNAV5::FIX_MODE_2D_ONLY;
-  } else if (lower == "3d") {
-    return ublox_msgs::CfgNAV5::FIX_MODE_3D_ONLY;
-  } else if (lower == "auto") {
-    return ublox_msgs::CfgNAV5::FIX_MODE_AUTO;
-  }
-
-  throw std::runtime_error(mode + " is not a valid fix mode.");
-}
-
 boost::posix_time::time_duration Gps::default_timeout_(
     boost::posix_time::seconds(Gps::kDefaultAckTimeout));
 
