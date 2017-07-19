@@ -9,17 +9,17 @@ Example .yaml configuration files are included in `ublox_gps/config`. Consult th
 
 The `ublox_gps` node supports the following parameters for all products and firmware version:
 * `device`: Path to the device in `/dev`. Defaults to `/dev/ttyACM0`.
-* `baudrate`: Bit rate of the serial communication. Defaults to 9600.
-* `uart_in`: UART1 in communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
-* `uart_out`: UART1 out communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
+* `uart1/baudrate`: Bit rate of the serial communication. Defaults to 9600.
+* `uart1/in`: UART1 in communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
+* `uart1/out`: UART1 out communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
 * `ublox_version`: Version of device: 6, 7 or 8. Defaults to 6. Please consult known issues section.
 * `frame_id`: ROS name prepended to frames produced by the node. Defaults to `gps`.
 * `rate`: Rate in Hz of measurements. Defaults to 4.
 * `nav_rate`: How often navigation solutions are published in number of measurement cycles. Defaults to 1.
 * `enable_ppp`: Enable precise-point-positioning system. Defaults to false.
-* `enable_sbas`: Enable satellite-based augmentation system. Defaults to false.
-* `max_sbas`: Maximum number of SBAS channels. Defaults to 0.
-* `sbas_usage`: See `CfgSBAS` message for details. Defaults to 0.
+* `cfg_gnss/sbas`: Enable satellite-based augmentation system. Defaults to false.
+* `sbas/max`: Maximum number of SBAS channels. Defaults to 0.
+* `sbas/usage`: See `CfgSBAS` message for details. Defaults to 0.
 * `dynamic_model`: Possible values below. Defaults to `portable`. See u-blox documentation for further description.
     * `portable`
     * `stationary`
@@ -32,30 +32,37 @@ The `ublox_gps` node supports the following parameters for all products and firm
     * `wristwatch`
 * `fix_mode`: Type of fixes supported: `2d`, `3d` or `both`.
 * `dr_limit`: Max time in seconds to use dead reckoning after signal is lost. Defaults to 0.
+* `dat`: Configuring the datum type (optional). See the CfgDAT message.
+    * `dat/set`: If true, the node will the datum based on the parameters below (required if true). Defaults to false. 
+    * `dat/majA`: Semi-major Axis [m]
+    * `dat/flat`: 1.0 / Flattening
+    * `dat/shift`: [X-axis, Y-axis, Z-axis] shift [m]
+    * `dat/rot`: [X, Y, Z] rotation [s]
+    * `dat/scale`: scale change [ppm]
 ### For devices with firmware >= 7:
-* `enable_gps`: Enable GPS receiver. Defaults to true.
-* `enable_glonass`: Enable GLONASS receiver. Defaults to false.
-* `enable_beidou`: Enable BeiDou receiver. Defaults to false.
-* `enable_qzss`: Enable QZSS receiver. Defaults to false.
-* `qzss_sig_cfg`: QZSS signal configuration. Defaults to L1CA. See `CfgGNSS` message for constants.
+* `cfg_gnss/gps`: Enable GPS receiver. Defaults to true.
+* `cfg_gnss/glonass`: Enable GLONASS receiver. Defaults to false.
+* `cfg_gnss/beidou`: Enable BeiDou receiver. Defaults to false.
+* `cfg_gnss/qzss`: Enable QZSS receiver. Defaults to false.
+* `cfg_gnss/qzss_sig_cfg`: QZSS signal configuration. Defaults to L1CA. See `CfgGNSS` message for constants.
 ### For devices with firmware >= 8:
-* `enable_galileo`: Enable Galileo receiver. Defaults to false.
-* `enable_imes`: Enable IMES receiver. Defaults to false.
-* `reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_SW`.
+* `cfg_gnss/galileo`: Enable Galileo receiver. Defaults to false.
+* `cfg_gnss/imes`: Enable IMES receiver. Defaults to false.
+* `cfg_gnss/reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_SW`.
 ### For UDR/ADR devices:
 * `use_adr`: Enable ADR/UDR. Defaults to true.
 * `nav_rate` should be set to 1 Hz.
 ### For HPG Reference devices:
 * `tmode3`: Time Mode, defaults to Survey-In. See CfgTMODE3 for constants.
-* `lla_flag`: True if the Fixed position is in Lat, Lon, Alt coordinates. False if ECEF. Must be set if `tmode3` is set to fixed. 
-* `arp_position`: Antenna Reference Point position. Must be set if `tmode3` is set to fixed. 
-* `arp_position_hp`: Antenna Reference Point High Precision position. Must be set if tmode3 is set to fixed. 
-* `fixed_pos_acc`: Fixed position accuracy. Must be set if `tmode3` is set to fixed. 
-* `svin_reset`: Whether or not to reset the survey in upon initialization. If false, it will only reset if the TMODE is disabled. Defaults to true.
-* `sv_in_min_dur`: The minimum Survey-In Duration time in seconds. Must be set if tmode3 is set to survey in.
-* `sv_in_acc_lim`: The minimum accuracy level of the survey in position in meters. MMust be set if `tmode3` is set to survey in.
+* `arp/lla_flag`: True if the Fixed position is in Lat, Lon, Alt coordinates. False if ECEF. Must be set if `tmode3` is set to fixed. 
+* `arp/position`: Antenna Reference Point position. Must be set if `tmode3` is set to fixed. 
+* `arp/position_hp`: Antenna Reference Point High Precision position. Must be set if tmode3 is set to fixed. 
+* `arp/acc`: Fixed position accuracy. Must be set if `tmode3` is set to fixed. 
+* `sv_in/reset`: Whether or not to reset the survey in upon initialization. If false, it will only reset if the TMODE is disabled. Defaults to true.
+* `sv_in/min_dur`: The minimum Survey-In Duration time in seconds. Must be set if tmode3 is set to survey in.
+* `sv_in/acc_lim`: The minimum accuracy level of the survey in position in meters. MMust be set if `tmode3` is set to survey in.
 ### For HPG Rover devices:
-* `DGNSS mode`: The Differential GNSS mode. Defaults to RTK FIXED. See `CfgDGNSS` message for constants.
+* `dgnss_mode`: The Differential GNSS mode. Defaults to RTK FIXED. See `CfgDGNSS` message for constants.
 ### For FTS & TIM devices:
 * currently unimplemented. See `UbloxFts` and `UbloxTim` classes in `ublox_gps` package `node.h` & `node.cpp` files.
 
@@ -74,53 +81,53 @@ Velocity in local ENU frame.
 To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
 
 ### INF messages
-* `~inf`: This acts as the default value for the INF parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-* `~inf_debug`: If true, configures UBX/NMEA ports to enable Debug messages and prints received INF Debug messages to `ROS_DEBUG` console.
-* `~inf_error`: If true, configures UBX/NMEA ports to enable Error messages and prints received INF Error messages to `ROS_ERROR` console.
-* `~inf_notice`: If true, configures UBX/NMEA ports to enable Notice messages and prints received INF Notice messages to `ROS_INFO` console.
-* `~inf_test`: If true, configures UBX/NMEA ports to enable Test messages and prints received INF Test messages to `ROS_INFO` console.
-* `~inf_warning`: If true, configures UBX/NMEA ports to enable Warning messages and prints received INF Warning messages to `ROS_WARN` console.
+* `inf`: This acts as the default value for the INF parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
+* `inf/debug`: If true, configures UBX/NMEA ports to enable Debug messages and prints received INF Debug messages to `ROS_DEBUG` console.
+* `inf/error`: If true, configures UBX/NMEA ports to enable Error messages and prints received INF Error messages to `ROS_ERROR` console.
+* `inf/notice`: If true, configures UBX/NMEA ports to enable Notice messages and prints received INF Notice messages to `ROS_INFO` console.
+* `inf/test`: If true, configures UBX/NMEA ports to enable Test messages and prints received INF Test messages to `ROS_INFO` console.
+* `inf/warning`: If true, configures UBX/NMEA ports to enable Warning messages and prints received INF Warning messages to `ROS_WARN` console.
 
 ### AID messages
-*`~aid`: This acts as the default value for the AID parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-* `~aid_alm`: Topic `~aidalm`
-* `~aid_eph`: Topic `~aideph`
-* `~aid_hui`: Topic `~aidhui`
+*`subscribe/aid`: This acts as the default value for the AID parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
+* `subscribe/aid/alm`: Topic `~aidalm`
+* `subscribe/aid/eph`: Topic `~aideph`
+* `subscribe/aid/hui`: Topic `~aidhui`
 
 ### RXM messages
-* `~rxm`: This acts as the default value for the RXM parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-* `~rxm_alm`: Topic `~rxmalm`
-* `~rxm_raw`: Topic `~rxmraw`
-* `~rxm_rtcm`: Topic `~rxmrtcm`
-* `~rxm_sfrb`: Topic `~rxmsfrb`
-* `~rxm_eph`: Topic `~rxmeph`
+* `subscribe/rxm`: This acts as the default value for the RXM parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
+* `subscribe/rxm/alm`: Topic `~rxmalm`
+* `subscribe/rxm/raw`: Topic `~rxmraw`
+* `subscribe/rxm/rtcm`: Topic `~rxmrtcm`
+* `subscribe/rxm/sfrb`: Topic `~rxmsfrb`
+* `subscribe/rxm/eph`: Topic `~rxmeph`
 
 ### MON messages
-* `~mon_hw`: Topic `~monhw`
+* `subscribe/mon/hw`: Topic `~monhw`
 
 ### NAV messages
-* `~nav_att`: Topic `~navatt` on ADR/UDR devices only
-* `~nav_clock`: Topic `~navclock`
-* `~nav_posecef`: Topic `~navposecef`
-* `~nav_posllh`: Topic `~navposllh`. Firmware <= 6 only. For 7 and above, use NavPVT
-* `~nav_pvt`: Topic `~navpvt`. Firmware >=7 only.
-* `~nav_relposned`: Topic `~navrelposned`
-* `~nav_sat`: Topic `~navsat`
-* `~nav_sol`: Topic `~navsol`. Firmware <= 6 only. For 7 and above, use NavPVT
-* `~nav_status`: Topic `~navstatus`
-* `~nav_svin`: Topic `~navsvin`
-* `~nav_svinfo`: Topic `~navsvinfo`
-* `~nav_velned`: Topic `~navvelned`. Firmware <= 6 only. For 7 and above, use NavPVT
+* `subscribe/nav/att`: Topic `~navatt` on ADR/UDR devices only
+* `subscribe/nav/clock`: Topic `~navclock`
+* `subscribe/nav/posecef`: Topic `~navposecef`
+* `subscribe/nav/posllh`: Topic `~navposllh`. Firmware <= 6 only. For 7 and above, use NavPVT
+* `subscribe/nav/pvt`: Topic `~navpvt`. Firmware >=7 only.
+* `subscribe/nav/relposned`: Topic `~navrelposned`
+* `subscribe/nav/sat`: Topic `~navsat`
+* `subscribe/nav/sol`: Topic `~navsol`. Firmware <= 6 only. For 7 and above, use NavPVT
+* `subscribe/nav/status`: Topic `~navstatus`
+* `subscribe/nav/svin`: Topic `~navsvin`
+* `subscribe/nav/svinfo`: Topic `~navsvinfo`
+* `subscribe/nav/velned`: Topic `~navvelned`. Firmware <= 6 only. For 7 and above, use NavPVT
 
 ### ESF messages
-* `~esf`: This acts as the default value for the RXM parameters below. It defaults to true for ADR/UDR devices. Individual messages can be turned off by setting the parameter below to false.
-* `~esf_ins`: Topic `~esfins`
-* `~esf_meas`: Topic `~esfmeas`
-* `~esf_raw`: Topic `~esfraw`
-* `~esf_status`: Topic `~esfstatus`
+* `subscribe/esf`: This acts as the default value for the RXM parameters below. It defaults to true for ADR/UDR devices. Individual messages can be turned off by setting the parameter below to false.
+* `subscribe/esf/ins`: Topic `~esfins`
+* `subscribe/esf/meas`: Topic `~esfmeas`
+* `subscribe/esf/raw`: Topic `~esfraw`
+* `subscribe/esf/status`: Topic `~esfstatus`
 
 ### HNR messages
-* `~hnr_pvt`: Topic `~hnrpvt`
+* `subscribe/hnr/pvt`: Topic `~hnrpvt`
 
 ## Launch
 
