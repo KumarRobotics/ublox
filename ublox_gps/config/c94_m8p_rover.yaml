@@ -37,14 +37,16 @@ inf: true                   # Whether to display INF messages
 subscribe:
   all: true
   aid: true
-  aid_hui: false
+  aid:
+    hui: false
 
-  nav_sol: true
-  nav_pvt: true
-  nav_status: true
-  nav_svinfo: true
-  nav_svin: true
-  nav_clk: true
-  nav_posecef: false
-  nav_velned: false
-  nav_relposned: true
+  nav:
+    sol: true
+    pvt: true
+    status: true
+    svinfo: true
+    svin: true
+    clk: true
+    posecef: false
+    velned: false
+    relposned: true

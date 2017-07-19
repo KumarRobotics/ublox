@@ -220,10 +220,10 @@ void UbloxNode::subscribe() {
   ROS_DEBUG("Subscribing to U-Blox messages");
   // subscribe messages
   nh->param("subscribe/all", enabled["all"], false);
-  nh->param("inf", enabled["inf"], true);
-  nh->param("subscribe/rxm", enabled["rxm"], enabled["all"]);
-  nh->param("subscribe/aid", enabled["aid"], enabled["all"]);
-  nh->param("subscribe/mon", enabled["mon"], enabled["all"]);
+  nh->param("inf/all", enabled["inf"], true);
+  nh->param("subscribe/rxm/all", enabled["rxm"], enabled["all"]);
+  nh->param("subscribe/aid/all", enabled["aid"], enabled["all"]);
+  nh->param("subscribe/mon/all", enabled["mon"], enabled["all"]);
   
   // Nav Messages
   nh->param("subscribe/nav/status", enabled["nav_status"], true);
@@ -1059,7 +1059,7 @@ bool UbloxAdrUdr::configureUblox() {
 }
 
 void UbloxAdrUdr::subscribe() {
-  nh->param("subscribe/esf", enabled["esf"], true);
+  nh->param("subscribe/esf/all", enabled["esf"], true);
 
   // Subscribe to NAV ATT messages
   nh->param("subscribe/nav/att", enabled["nav_att"], true);

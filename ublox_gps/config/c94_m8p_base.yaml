@@ -62,4 +62,5 @@ inf: true                   # Whether to display INF messages
 # Message subscriptions
 subscribe:
   all: true
-  aid_hui: false
+  aid:
+    hui: false

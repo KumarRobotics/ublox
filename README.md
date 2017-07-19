@@ -81,21 +81,24 @@ Velocity in local ENU frame.
 To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
 
 ### INF messages
-* `inf`: This acts as the default value for the INF parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
+* `inf/all`: This acts as the default value for the INF parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
 * `inf/debug`: If true, configures UBX/NMEA ports to enable Debug messages and prints received INF Debug messages to `ROS_DEBUG` console.
 * `inf/error`: If true, configures UBX/NMEA ports to enable Error messages and prints received INF Error messages to `ROS_ERROR` console.
 * `inf/notice`: If true, configures UBX/NMEA ports to enable Notice messages and prints received INF Notice messages to `ROS_INFO` console.
 * `inf/test`: If true, configures UBX/NMEA ports to enable Test messages and prints received INF Test messages to `ROS_INFO` console.
 * `inf/warning`: If true, configures UBX/NMEA ports to enable Warning messages and prints received INF Warning messages to `ROS_WARN` console.
 
+### All message
+* `subscribe/all`:  This acts as the default value for the RXM, AID, MON, etc. `subscribe/<class>/all` parameters below. It defaults to false. Individual message classes and messages can be turned off by setting the parameter described below to false.
+
 ### AID messages
-*`subscribe/aid`: This acts as the default value for the AID parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
+* `subscribe/aid/all`: This acts as the default value for the AID subscriber parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
 * `subscribe/aid/alm`: Topic `~aidalm`
 * `subscribe/aid/eph`: Topic `~aideph`
 * `subscribe/aid/hui`: Topic `~aidhui`
 
 ### RXM messages
-* `subscribe/rxm`: This acts as the default value for the RXM parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
+* `subscribe/rxm/all`: This acts as the default value for the RXM subscriber parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
 * `subscribe/rxm/alm`: Topic `~rxmalm`
 * `subscribe/rxm/raw`: Topic `~rxmraw`
 * `subscribe/rxm/rtcm`: Topic `~rxmrtcm`
@@ -103,6 +106,7 @@ To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
 * `subscribe/rxm/eph`: Topic `~rxmeph`
 
 ### MON messages
+* `subscribe/mon/all`: This acts as the default value for the MON subscriber parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
 * `subscribe/mon/hw`: Topic `~monhw`
 
 ### NAV messages
@@ -120,7 +124,7 @@ To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
 * `subscribe/nav/velned`: Topic `~navvelned`. Firmware <= 6 only. For 7 and above, use NavPVT
 
 ### ESF messages
-* `subscribe/esf`: This acts as the default value for the RXM parameters below. It defaults to true for ADR/UDR devices. Individual messages can be turned off by setting the parameter below to false.
+* `subscribe/esf/all`: This acts as the default value for the ESF subscriber parameters below. It defaults to true for ADR/UDR devices. Individual messages can be turned off by setting the parameter below to false.
 * `subscribe/esf/ins`: Topic `~esfins`
 * `subscribe/esf/meas`: Topic `~esfmeas`
 * `subscribe/esf/raw`: Topic `~esfraw`
