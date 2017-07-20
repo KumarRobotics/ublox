@@ -52,25 +52,28 @@
 #include <ublox_gps/gps.h>
 #include <ublox_gps/utils.h>
 
-// This file declares the UbloxInterface which contains functions applicable
-// to all Ublox firmware or hardware such as configuring the U-Blox and 
-// subscribe to messages.
-// It also declares UbloxNode which implements the UbloxInterface and acts as
-// the main class and ROS node. It implements functionality which is generic to
-// any U-Blox device, regardless of the firmware version or product type. 
-// The class is designed in compositional style; it contains instances of 
-// a list of UbloxInterfaces for device specific functionality, including
-// for the specific firmware and product version. During configuration,
-// UbloxNode calls the methods of each interface in the list.
-// UbloxFirmware is an abstract class which implements UbloxInterface and 
-// functions generic to all firmware (such as the initializing the diagnostics).
-// Subclasses of UbloxFirmware for firmware versions 6-8 are also declared in  
-// this file.
+// This file declares the ComponentInterface which acts as a high level 
+// interface for u-blox firmware, product categories, etc. It contains methods
+// to configure the u-blox and subscribe to u-blox messages.
+//
+// This file also declares UbloxNode which implements ComponentInterface and is 
+// the main class and ros node. it implements functionality which applies to
+// any u-blox device, regardless of the firmware version or product type. 
+// The class is designed in compositional style; it contains ComponentInterfaces 
+// which implement features specific to the device based on its firmware version
+// and product category. UbloxNode calls the public methods of each component.
+//
+// This file declares UbloxFirmware is an abstract class which implements
+// ComponentInterface and functions generic to all firmware (such as the 
+// initializing the fix diagnostics). Subclasses of UbloxFirmware for firmware 
+// versions 6-8 are also declared in this file.
+//
 // Lastly, this file declares classes for each product category which also 
-// implement U-Blox interface, currently only the class for High Precision 
+// implement u-blox interface, currently only the class for High Precision 
 // GNSS devices has been fully implemented and tested.
 
 namespace ublox_node {
+
 // Queue size for ROS publishers
 const static uint32_t kROSQueueSize = 1;
 const static uint16_t kDefaultMeasPeriod = 250; 
@@ -184,7 +187,7 @@ bool supportsGnss(std::string gnss) {
  * implemented for other features besides the hardware and firmware versions, 
  * e.g. such as for configuring an external device attached to the Ublox, etc. 
  */
-class UbloxInterface {
+class ComponentInterface {
  public:
   /**
    * @brief Get the ROS parameters.
@@ -208,16 +211,21 @@ class UbloxInterface {
   virtual void subscribe() = 0;
 };
 
+typedef boost::shared_ptr<ComponentInterface> ComponentPtr;
+
 /**
- * @brief This class represents U-Blox ROS node for *all* firmware and hardware 
- * versions. It gets the user parameters, configures the U-Blox 
- * device, subscribes to U-Blox messages, and configures the device hardware. 
+ * @brief This class represents u-blox ROS node for *all* firmware and product 
+ * versions. It loads the user parameters, configures the u-blox 
+ * device, subscribes to u-blox messages, and configures the device hardware. 
  * Functionality specific to a given product or firmware version, etc. should 
- * NOT be implemented in this class. Instead, the user should extend U-Blox 
- * interface, then add a pointer the object to the xware_ vector.
- * The UbloxNode will then call the interface functions.
+ * NOT be implemented in this class. Instead, the user should add the 
+ * functionality to the appropriate firmware or product class and if necessary, 
+ * create a class which implements u-blox interface, then add a pointer to
+ * to an instance of the class to the components vector.
+ * The UbloxNode calls the public methods of ComponentInterface for each value 
+ * in the components vector.
  */
-class UbloxNode : public virtual UbloxInterface {
+class UbloxNode : public virtual ComponentInterface {
  public:
   // how often (in seconds) to call poll messages
   const static double kPollDuration = 1.0;
@@ -229,8 +237,8 @@ class UbloxNode : public virtual UbloxInterface {
   const static double kTimeStampStatusMin = 0;
 
   /**
-   * @brief Set the firmware object (add to xware_) based on the ublox_version 
-   * param and call initialize.
+   * @brief Set the firmware object (add to components) based on the 
+   * ublox_version param and call initialize.
    */
   UbloxNode();
 
@@ -270,9 +278,15 @@ class UbloxNode : public virtual UbloxInterface {
 
   /**
    * Process the MonVer message. Find the protocol version, hardware type and 
-   * supported GNSS.
+   * supported GNSS. Add the appropriate firmware and product components.
    */
   void processMonVer();
+
+  /**
+   * @brief Add the interface for firmware specific configuration, subscribers, 
+   * & diagnostics. This assumes the protocol_version_ has been set.
+   */
+  void addFirmwareInterface();
 
   /**
    * @brief Add the interface which is used for product category 
@@ -298,35 +312,33 @@ class UbloxNode : public virtual UbloxInterface {
   // Used for diagnostic updater
   double min_freq, max_freq;
 
-  /* Variables set from parameter server */
+  // Variables set from parameter server
   std::string device_, dynamic_model_, fix_mode_;
   // Set from dynamic model & fix mode strings
   uint8_t dmodel_, fmode_;
-  // UART baudrate and in/out protocol (see CfgPRT message for constants)
+  // UART1 baudrate and in/out protocol (see CfgPRT message for constants)
   int baudrate_, uart_in_, uart_out_; 
   int rate_;
-
   // User-defined Datum (only used if the set_dat param is true)
   bool set_dat_;
   ublox_msgs::CfgDAT cfg_dat_;
-  
   // If true: enable the GNSS
   bool enable_sbas_, enable_ppp_;
   int sbas_usage_, max_sbas_, dr_limit_;
 
-  /** Determined From Mon VER */
+  // Determined From Mon VER
   float protocol_version_;
 
   // The node will call the functions in these interfaces for each object
   // in the vector, this allows the user to easily add new features
-  std::vector<boost::shared_ptr<UbloxInterface> > xware_;
+  std::vector<boost::shared_ptr<ComponentInterface> > components_;
 };
 
 /** 
  * @brief This abstract class is used to add functionality specific to a given
  * firmware version to the node.
  */
-class UbloxFirmware : public virtual UbloxInterface {
+class UbloxFirmware : public virtual ComponentInterface {
  public:
   /**
    * @brief Add the fix diagnostics to the updater.
@@ -342,7 +354,7 @@ class UbloxFirmware : public virtual UbloxInterface {
 };
 
 /**
- * Represents a U-Blox node for firmware version 6.
+ * U-Blox functionality for firmware version 6.
  */
 class UbloxFirmware6 : public UbloxFirmware {
  public:
@@ -459,7 +471,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     /** Fix Velocity */
     static ros::Publisher velocityPublisher =
         nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
-                                                                  kROSQueueSize);
+                                                                 kROSQueueSize);
     geometry_msgs::TwistWithCovarianceStamped velocity;
     velocity.header.stamp = fix.header.stamp;
     velocity.header.frame_id = frame_id;
@@ -543,7 +555,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
 };
 
 /**
- * Represents a U-Blox node for firmware version 7.
+ * U-Blox functionality for firmware version 7.
  */
 class UbloxFirmware7 : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  public:
@@ -566,7 +578,7 @@ class UbloxFirmware7 : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
 };
 
 /**
- * Represents a U-Blox node for firmware version 8.
+ *  U-Blox functionality for firmware version 8.
  */
 class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  public:
@@ -600,7 +612,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  * @brief Interface for Automotive Dead Reckoning (ADR) and Untethered
  * Dead Reckoning (UDR) Devices.
  */
-class UbloxAdrUdr: public UbloxInterface {
+class UbloxAdrUdr: public virtual ComponentInterface {
  public:
   /**
    * @brief Gets the ADR/UDR parameters, e.g. useAdr.
@@ -633,7 +645,7 @@ class UbloxAdrUdr: public UbloxInterface {
 /**
  * @brief Implements functions for FTS products. Currently unimplemented. TODO
  */
-class UbloxFts: public UbloxInterface {
+class UbloxFts: public virtual ComponentInterface {
   /**
    * @brief Gets the FTS parameters. Currently unimplemented.
    */
@@ -661,7 +673,7 @@ class UbloxFts: public UbloxInterface {
 /**
  * @brief Implements functions for High Precision GNSS Reference station.
  */
-class UbloxHpgRef: public UbloxInterface {
+class UbloxHpgRef: public virtual ComponentInterface {
  public:
   /**
    * @brief Gets the Reference Station GNSS parameters, e.g. tmode3.
@@ -738,7 +750,7 @@ class UbloxHpgRef: public UbloxInterface {
 /**
  * @brief Implements functions for High Precision GNSS Rover.
  */
-class UbloxHpgRov: public UbloxInterface {
+class UbloxHpgRov: public virtual ComponentInterface {
  public:
   // Constants for diagnostic updater
   const static double kRtcmFreqMin = 1;
@@ -796,7 +808,7 @@ class UbloxHpgRov: public UbloxInterface {
 /**
  * @brief Implements functions for Time Sync products.
  */
-class UbloxTim: public UbloxInterface {
+class UbloxTim: public virtual ComponentInterface {
   /**
    * @brief Gets the Time Sync parameters. Currently unimplemented.
    */

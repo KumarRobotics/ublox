@@ -135,9 +135,8 @@ To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
 
 ## Launch
 
-A sample launch file is provided in `ublox_gps.launch`. The two topics to which you should subscribe are `/gps/fix` and `/gps/fix_velocity`. The angular component of `fix_velocity` is unused.
-
-A second sample launch file `ublox_device.launch` loads the parameters from a yaml file in the config folder. The required arguments are `node_name` and `param_file_name`.
+A sample launch file `ublox_device.launch` loads the parameters from a `.yaml` file in the `ublox_gps/config` folder, sample configuraration files are included. The required arguments are `node_name` and `param_file_name`.
+The two topics to which you should subscribe are `~fix` and `~fix_velocity`. The angular component of `fix_velocity` is unused.
 
 ## Debugging
 
@@ -161,8 +160,8 @@ For debugging messages set the debug parameter to > 0. The range for debug is 0-
   - BUG FIX, The method which waited for ACKs now checks if the ACK is from the correct class and message ID.
   - Added messages for `CfgTMODE3`, `CfgHNR`, `CfgRST`, `CfgINF`, `NavATT`, `ESF` messages, `Inf` message (for all INF types), `HnrPVT`, `MgaGAL`, `NavSAT`, `MonHw`, `NavPVT7` (for firmware version 7).
   - Restructured Node class so that it now uses composition. The main node contains instances of classes which implement `UBloxInterface`, and calls the methods for each interface added to the node. The classes which implement the interface add new features that are not generic to all firmware versions or products. Each firmware version (6-8) has an interface, and each product category has one (SPG, HPG REF, HPG ROV, TIM, FTS, ADR/UDR). The product type is determined from parsing the `MonVER` message.
-  - Added implementations of `UbloxInterface` called `UbloxHpgRef` and `UbloxHpgRov` for HPG reference station and rover devices. The reference station tmode3 can be configured upon startup (see Options section) and the rover dgnss mode can be set. After survey in, once the reference station entire time mode, the nav_rate is set to the user desired value (it must be 1 Hz during survey-in) and the RTCM output messages are enabled. The state can be monitored through the rqt_runtime_monitor. These classes were tested on C94-M8P devices.
-  - Added an implementation of `UbloxInterface` called `UbloxAdrUdr` for ADR/UDR devices. It which subscribes to `NavATT` and ESF messages and configures useAdr. The diagnostics monitor specific to these devices is not implemented. This class has not been tested on a hardware device.
+  - Added implementations of `ComponentInterface` called `UbloxHpgRef` and `UbloxHpgRov` for HPG reference station and rover devices. The reference station tmode3 can be configured upon startup (see Options section) and the rover dgnss mode can be set. After survey in, once the reference station entire time mode, the nav_rate is set to the user desired value (it must be 1 Hz during survey-in) and the RTCM output messages are enabled. The state can be monitored through the rqt_runtime_monitor. These classes were tested on C94-M8P devices.
+  - Added an implementation of `ComponentInterface` called `UbloxAdrUdr` for ADR/UDR devices. It which subscribes to `NavATT` and ESF messages and configures useAdr. The diagnostics monitor specific to these devices is not implemented. This class has not been tested on a hardware device.
   - Added a partial implementation of `UbloxTim` for TIM devices which subscribes to `RxmRAWX` and `RxmSFRBX` messages. The `getRosParams()`, `configureUblox()`, and `initializeDiagnostics()` methods are unimplemented.
   - Added a skeleton class for `UbloxFts` for FTS devices which is unimplemented. See the `ublox_gps` `node.cpp` and `node.h` files.
   - Changed how GNSS is configured in firmware version 8. The documentation recommends a cold restart after reconfiguring the GNSS, and will reset the device if it receives a `CfgGNSS` message, even if the settings do not change. For firmware version 8, before reconfiguring, the node first checks if the current GNSS settings are the same as the desired settings. If so, it will not send a CfgGNSS message to the device. After reconfiguring, it will cold reset the device, based on the `reset_mode` configured by the user.
@@ -246,21 +245,13 @@ When declaring the message, for the first declaration, use `DECLARE_UBLOX_MESSAG
 
 ## Adding device / firmware specific functionality
 
-The `node.cpp` file in `ublox_gps` contains a main Node class called UbloxNode which acts as the ROS Node and handles the node initialization, publishers, and diagnostics. This Node is designed with composition architecture and contains a vector `xware` of instances of `UbloxInterface`. Classes which implement these interfaces extend the functionality of the node, and the UbloxNode calls the public class methods (`getRosParams()`, `configureUblox()`, `subscribe()`, and `initializeRosDiagnostics()`) for each instance in the `xware` vector in its `initialize()` method. Firmware classes and product category classes (e.g. `UbloxHpgRef`, `UbloxHpgRov`, `UbloxAdrUdr`) implement `UbloxInterface` and are added to the node class. The Firmware class is selected based on the `ublox_version` and the product category class is selected after parsing the `MonVER` message. `SPG` products do not have their own implementation of `UbloxInterface`, since the Firmware classes implement the default behavior for these devices.
+The `node.cpp` file in `ublox_gps` contains a main Node class called UbloxNode which acts as the ROS Node and handles the node initialization, publishers, and diagnostics. `UbloxNode` contains a vector `components_` of instances of `ComponentInterface`. The `UbloxNode::initialize()` calls each component's public interface methods. The node contains components for both the firmware version and the product category, which are added after parsing the `MonVER` message. Any class which implements `ComponentInterface` can be added to the `UbloxNode` `components_` vector and its methods will be called by `UbloxNode`. Simply add an implementation of `ComponentInterface` to the ublox_gps `node.h` and `node.cpp` files. Behavior specific to a given firmware or product should not be implemented in the `UbloxNode` class and instead should be implemented in an implementation of `ComponentInterface`.
 
-Currently there are only implementations of `UbloxInterface` specific to firmware versions 6-8 and `UbloxHpgRef`, `UbloxHpgRov`, `UbloxAdrUdr`, `UbloxTim`, `UbloxFts`. Since the class is designed in compositional style, any implementation of `UbloxInterface` can be added to the `UbloxNode` `xware` vector and its methods will be called by `UbloxNode`. Simply add an implementation of `UbloxInterface` to the ublox_gps `node.h` and `node.cpp` files. Be careful to keep parameters and configuration generic to specific firmware or product category in the correct class. 
+Currently there are implementations of `ComponentInterface` for firmware versions 6-8 and product categories `UbloxHpgRef`, `UbloxHpgRov`, `UbloxAdrUdr`, `UbloxTim`, `UbloxFts`.  SPG products do not have their own implementation of `ComponentInterface`, since the Firmware classes implement all of the behavior of SPG devices.
 
 `UbloxHpgRef` and `UbloxHpgRov` have been tested on the C94-M8P device. 
 
 ## Known Issues
-
-### Note on `ublox_version`:
-
-`ublox_version` is included as a temporary workaround, resulting from the problem that the ROS serializer cannot properly parse _all_ the u-blox packets (particularly those with dynamic arrays). It is presently difficult to read the supported features of each device.
-
-Consequently, the user should specify the version of their device in rosparam.
-
-A warning will be issued on the console indicating which options have been ignored.
 
 ## Unimplemented / Untested Devices
 
@@ -268,9 +259,10 @@ A warning will be issued on the console indicating which options have been ignor
 
 `UbloxFirmware7` has not been properly tested on a device with firmware version 7. `UbloxFirmware6` has been tested on a device with firmware version 8, but not with firmware version 6.
 
-## FAQs
+## Troubleshooting
 
-1. The ublox_gps node cannot open my device, even though I have correctly specified the path in `/dev` - why? Make sure you are the owner of the device, or a member of `dialout` group.
+1. Why can't the ublox_gps node open my device, even though I have correctly specified the path in `/dev`? 
+* Make sure you are the owner of the device, or a member of `dialout` group.
 
 ## Links
-Consult the [official protocol spec](http://www.u-blox.com/en/download/documents-a-resources/u-blox-6-gps-modules-resources.html) for details  on packets supported by u-blox devices.
+Consult the [official protocol spec](https://www.u-blox.com/sites/default/files/products/documents/u-blox8-M8_ReceiverDescrProtSpec_(UBX-13003221)_Public.pdf) for details on packets supported by u-blox devices.

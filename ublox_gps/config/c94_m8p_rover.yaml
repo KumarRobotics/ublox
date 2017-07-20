@@ -3,7 +3,6 @@
 debug: 1                    # Range 0-4 (0 means no debug statements will print)
 
 device: /dev/ttyACM1
-ublox_version: 8
 frame_id: gps
 rate: 4                     # in Hz
 nav_rate: 4                 # [# of measurement cycles], recommended 1 Hz, may 

@@ -80,33 +80,38 @@ uint8_t ublox_node::fixModeFromString(const std::string& mode) {
 // u-blox ROS Node
 //
 UbloxNode::UbloxNode() {
-  int ublox_version;
-  nh->param("ublox_version", ublox_version, 6);
-  ROS_INFO("U-Blox Firmware Version: %d", ublox_version);
-  // Add UbloxInterface for firmware based on version
-  if (ublox_version <= 6)
-    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxFirmware6));
-  else if (ublox_version == 7)
-    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxFirmware7));
-  else
-    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxFirmware8));
-  // Initialize the node
   initialize();
 }
+
+void UbloxNode::addFirmwareInterface() {
+  int ublox_version;
+  if (protocol_version_ < 14) {
+    components_.push_back(ComponentPtr(new UbloxFirmware6));
+    ublox_version = 6;
+  } else if (protocol_version_ >= 14 && protocol_version_ <= 15) {
+    components_.push_back(ComponentPtr(new UbloxFirmware7));
+    ublox_version = 7;
+  } else {
+    components_.push_back(ComponentPtr(new UbloxFirmware8));
+    ublox_version = 8;
+  }
+  ROS_INFO("U-Blox Firmware Version: %d", ublox_version);
+}
+
 
 void UbloxNode::addProductInterface(std::string product_category, 
                                     std::string ref_rov) {
   if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0)
-    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxHpgRef));
+    components_.push_back(ComponentPtr(new UbloxHpgRef));
   else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0)
-    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxHpgRov));
+    components_.push_back(ComponentPtr(new UbloxHpgRov));
   else if (product_category.compare("TIM") == 0)
-    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxTim));
+    components_.push_back(ComponentPtr(new UbloxTim));
   else if (product_category.compare("ADR") == 0 || 
           product_category.compare("UDR") == 0)
-    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxAdrUdr));
+    components_.push_back(ComponentPtr(new UbloxAdrUdr));
   else if (product_category.compare("FTS") == 0)
-    xware_.push_back(boost::shared_ptr<UbloxInterface>(new UbloxFts));
+    components_.push_back(ComponentPtr(new UbloxFts));
   else if(product_category.compare("SPG") != 0)
     ROS_WARN("Product category %s %s from MonVER message not recognized %s", 
              product_category.c_str(), ref_rov.c_str(),
@@ -293,8 +298,8 @@ void UbloxNode::subscribe() {
     gps.subscribe<ublox_msgs::AidHUI>(boost::bind(
         publish<ublox_msgs::AidHUI>, _1, "aidhui"), kSubscribeRate);
 
-  for(int i = 0; i < xware_.size(); i++)
-    xware_[i]->subscribe();
+  for(int i = 0; i < components_.size(); i++)
+    components_[i]->subscribe();
 }
 
 void UbloxNode::initializeRosDiagnostics() {
@@ -317,8 +322,8 @@ void UbloxNode::initializeRosDiagnostics() {
   freq_diag.reset(new diagnostic_updater::TopicDiagnostic(
       std::string("fix"), *updater, freq_param, time_param));
 
-  for(int i = 0; i < xware_.size(); i++)
-    xware_[i]->initializeRosDiagnostics();
+  for(int i = 0; i < components_.size(); i++)
+    components_[i]->initializeRosDiagnostics();
 }
 
 
@@ -343,12 +348,16 @@ void UbloxNode::processMonVer() {
   // Get the protocol version
   for(std::size_t i = 0; i < extension.size(); ++i) {
     std::size_t found = extension[i].find("PROTVER");
-    if (found!=std::string::npos) {
+    if (found != std::string::npos) {
       protocol_version_ = ::atof(
           extension[i].substr(8, extension[i].size()-8).c_str());
       break;
     }
   }
+  if (protocol_version_ == 0)
+    ROS_WARN("Failed to parse MonVER and determine protocol version. %s",
+             "Defaulting to firmware version 6.");
+  addFirmwareInterface();
 
   if(protocol_version_ < 18) {
     // Final line contains supported GNSS delimited by ;
@@ -415,8 +424,8 @@ bool UbloxNode::configureUblox() {
     }
     if(set_dat_ && !gps.configure(cfg_dat_))
       throw std::runtime_error("Failed to set user-defined datum.");
-    for (int i = 0; i < xware_.size(); i++)
-      xware_[i]->configureUblox();
+    for (int i = 0; i < components_.size(); i++)
+      components_[i]->configureUblox();
   } catch (std::exception& e) {
     ROS_FATAL("Error configuring device: %s", e.what());
     return false;
@@ -466,8 +475,8 @@ void UbloxNode::initialize() {
   // Must process Mon VER before setting firmware/hardware params
   processMonVer();
   // Must set firmware & hardware params before initializing diagnostics
-  for (int i = 0; i < xware_.size(); i++)
-    xware_[i]->getRosParams();
+  for (int i = 0; i < components_.size(); i++)
+    components_[i]->getRosParams();
   // Do this last
   initializeRosDiagnostics();
 
@@ -1056,6 +1065,7 @@ bool UbloxAdrUdr::configureUblox() {
   if(!gps.setUseAdr(use_adr_))
     throw std::runtime_error(std::string("Failed to ") 
                              + (use_adr_ ? "enable" : "disable") + "use_adr");
+  return true;
 }
 
 void UbloxAdrUdr::subscribe() {
