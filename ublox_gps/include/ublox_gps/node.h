@@ -143,8 +143,7 @@ bool checkRange(std::vector<V> val, T min, T max, std::string name) {
  * @return DynamicModel
  * @throws std::runtime_error on invalid argument.
  */
-uint8_t
-modelFromString(const std::string& model);
+uint8_t modelFromString(const std::string& model);
 
 /**
  * @brief Determine fix mode from human-readable string.
@@ -156,6 +155,18 @@ modelFromString(const std::string& model);
  * @throws std::runtime_error on invalid argument.
  */
 uint8_t fixModeFromString(const std::string& mode);
+
+/**
+ * @brief Get a uint8 ros param (checks the bounds and casts)
+ * @returns true if found, false if not found or out of bounds.
+ */
+bool getRosParam(const std::string& key, uint8_t &u);
+
+/**
+ * @brief Get a uint8 vector ros param (checks the bounds and casts), 
+ * @returns true if found, false if not found or out of bounds.
+ */
+bool getRosParam(const std::string& key, std::vector<uint8_t> &u);
 
 /**
  * @brief Publish a ROS message of type MessageT. Should be used to publish
@@ -275,6 +286,12 @@ class UbloxNode : public virtual ComponentInterface {
    * messages.
    */
   void initialize();
+
+  /**
+   * @brief Send a reset message the u-blox device & re-initialize the I/O.
+   * @return true if reset was successful, false otherwise.
+   */
+  bool resetDevice();
 
   /**
    * Process the MonVer message. Find the protocol version, hardware type and 
@@ -414,6 +431,10 @@ class UbloxFirmware6 : public UbloxFirmware {
   sensor_msgs::NavSatFix fix_;
   // The last Twist based on last_nav_vel_
   geometry_msgs::TwistWithCovarianceStamped velocity_;
+
+  // Used to configure NMEA (if set_nmea_), filled with ros params
+  ublox_msgs::CfgNMEA6 cfg_nmea_;
+  bool set_nmea_;
 };
 
 /**
@@ -525,7 +546,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     }
 
     // If fix not ok (w/in DOP & Accuracy Masks), raise the diagnostic level
-    if (!last_nav_pvt_.flags & ublox_msgs::NavPVT::FLAGS_GNSS_FIX_OK) {
+    if (!(last_nav_pvt_.flags & ublox_msgs::NavPVT::FLAGS_GNSS_FIX_OK)) {
       stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
       stat.message += ", fix not ok";
     } 
@@ -575,6 +596,11 @@ class UbloxFirmware7 : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
    * @brief Subscribes to NavPVT, RxmRAW, and RxmSFRB messages. 
    */
   void subscribe();
+  
+  private:
+    // Used to configure NMEA (if set_nmea_), filled with ros params
+    ublox_msgs::CfgNMEA7 cfg_nmea_;
+    bool set_nmea_;
 };
 
 /**
@@ -606,6 +632,9 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
   // Type of device reset, only used if GNSS configuration is changed
   // see CfgRST message for constants
   int reset_mode_;
+  // Used to configure NMEA (if set_nmea_), filled with ros params
+  ublox_msgs::CfgNMEA cfg_nmea_;
+  bool set_nmea_;
 };
 
 /**

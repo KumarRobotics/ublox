@@ -315,6 +315,11 @@ class Gps {
   boost::asio::io_service io_service_;
   boost::shared_ptr<boost::asio::serial_port> serial_handle_;
   boost::shared_ptr<boost::asio::ip::tcp::socket> tcp_handle_;
+
+  // I/O params needed in case of device reset
+  std::string device_;
+  unsigned int baudrate_;
+  uint16_t uart_in_, uart_out_;
 };
 
 template <typename T>
@@ -379,7 +384,6 @@ bool Gps::read(T& message, const boost::posix_time::time_duration& timeout) {
 template <typename ConfigT>
 bool Gps::configure(const ConfigT& message, bool wait) {
   if (!worker_) return false;
-
   acknowledge_ = WAIT;
   // Encode the message
   std::vector<unsigned char> out(kWriterSize);
@@ -393,6 +397,7 @@ bool Gps::configure(const ConfigT& message, bool wait) {
   worker_->send(out.data(), writer.end() - out.data());
 
   if (!wait) return true;
+
   // Wait for an acknowledgment and return whether or not it was received
   return waitForAcknowledge(default_timeout_, 
                             message.CLASS_ID,

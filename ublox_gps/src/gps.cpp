@@ -89,6 +89,12 @@ void Gps::initializeIo(std::string device,
                        unsigned int baudrate,
                        uint16_t uart_in,
                        uint16_t uart_out) {
+  // Save in case of device reset
+  device_ = device;
+  baudrate_ = baudrate;
+  uart_in_ = uart_in;
+  uart_out_ = uart_out;
+
   boost::smatch match;
 
   if (boost::regex_match(device, match,
@@ -158,17 +164,21 @@ bool Gps::reset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
   rst.navBbrMask = nav_bbr_mask;
   rst.resetMode = reset_mode;
 
-  // Don't wait for ACK
-  return configure(rst, false);
+  // Don't wait for ACK, return if it fails
+  if (!configure(rst, false)) 
+    return false;
+  // Reset the I/O
+  close();
+  initializeIo(device_, baudrate_, uart_in_, uart_out_);
+  return true;
 }
 
 bool Gps::configUart1(unsigned int baudrate, uint16_t in_proto_mask, 
                       uint16_t out_proto_mask) {
   if (!worker_) return true;
 
-  ROS_DEBUG("Setting UART1 In/Out Protocol: %u / %u", in_proto_mask, 
-            out_proto_mask);
-  ROS_DEBUG("Setting UART1 baud rate to %u", baudrate);
+  ROS_DEBUG("Configuring UART1 baud rate: %u, In/Out Protocol: %u / %u", 
+            baudrate, in_proto_mask, out_proto_mask);
 
   CfgPRT port;
   port.portID = CfgPRT::PORT_ID_UART1;
@@ -252,7 +262,8 @@ bool Gps::configTmode3Fixed(bool lla_flag,
 
   CfgTMODE3 tmode3;
   tmode3.flags = tmode3.FLAGS_MODE_FIXED & tmode3.FLAGS_MODE_MASK;
-  tmode3.flags |= lla_flag & tmode3.FLAGS_LLA;
+  tmode3.flags |= lla_flag ? tmode3.FLAGS_LLA : 0;
+
   // Set position
   if(lla_flag) {
     // Convert from deg to deg / 1e-7
@@ -296,6 +307,8 @@ bool Gps::disableTmode3() {
 }
 
 bool Gps::setRate(uint8_t class_id, uint8_t message_id, uint8_t rate) {
+  ROS_DEBUG_COND(debug >= 2, "Setting rate 0x%02x, 0x%02x, %u", class_id, 
+                 message_id, rate);
   ublox_msgs::CfgMSG msg;
   msg.msgClass = class_id;
   msg.msgID = message_id;
@@ -370,17 +383,24 @@ bool Gps::poll(uint8_t class_id, uint8_t message_id,
 
 bool Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout, 
                              uint8_t class_id, uint8_t msg_id) {
+  ROS_DEBUG_COND(debug >= 2, "Waiting for ACK 0x%02x / 0x%02x", 
+                 class_id, msg_id);
   boost::posix_time::ptime wait_until(
       boost::posix_time::second_clock::local_time() + timeout);
 
-  while (acknowledge_ == WAIT || acknowledge_class_id_ != class_id 
-         || acknowledge_msg_id_ != msg_id
-         && boost::posix_time::second_clock::local_time() < wait_until ) {
+  while (boost::posix_time::second_clock::local_time() < wait_until 
+         && (acknowledge_class_id_ != class_id 
+             || acknowledge_msg_id_ != msg_id 
+             || acknowledge_ == WAIT)) {
     worker_->wait(timeout);
   }
-  return acknowledge_ == ACK 
-         && acknowledge_class_id_ == class_id 
-         && acknowledge_msg_id_ == msg_id;
+  bool result = acknowledge_ == ACK 
+                && acknowledge_class_id_ == class_id 
+                && acknowledge_msg_id_ == msg_id;
+  // reset class/msg id
+  acknowledge_class_id_ = 0;
+  acknowledge_msg_id_ = 0;
+  return result;
 }
 
 void Gps::readCallback(unsigned char* data, std::size_t& size) {

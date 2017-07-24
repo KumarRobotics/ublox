@@ -76,6 +76,24 @@ uint8_t ublox_node::fixModeFromString(const std::string& mode) {
                            " is not a valid fix mode.");
 }
 
+bool ublox_node::getRosParam(const std::string& key, uint8_t &u) {
+  int param;
+  if (!nh->getParam(key, param)) return false;
+  if (param < 0 || param > 255) return false;
+  u = (uint8_t) param;
+  return true;
+}
+
+bool ublox_node::getRosParam(const std::string& key, std::vector<uint8_t> &u) {
+  std::vector<int> param;
+  if (!nh->getParam(key, param)) return false;
+  for (int i = 0; i < param.size(); i++)
+    if (param[i] < 0 || param[i] > 255) return false;
+  u.insert(u.begin(), param.begin(), param.end());
+  return true;
+}
+
+
 //
 // u-blox ROS Node
 //
@@ -108,7 +126,7 @@ void UbloxNode::addProductInterface(std::string product_category,
   else if (product_category.compare("TIM") == 0)
     components_.push_back(ComponentPtr(new UbloxTim));
   else if (product_category.compare("ADR") == 0 || 
-          product_category.compare("UDR") == 0)
+           product_category.compare("UDR") == 0)
     components_.push_back(ComponentPtr(new UbloxAdrUdr));
   else if (product_category.compare("FTS") == 0)
     components_.push_back(ComponentPtr(new UbloxFts));
@@ -424,6 +442,7 @@ bool UbloxNode::configureUblox() {
     }
     if(set_dat_ && !gps.configure(cfg_dat_))
       throw std::runtime_error("Failed to set user-defined datum.");
+    // Configure each component
     for (int i = 0; i < components_.size(); i++)
       components_[i]->configureUblox();
   } catch (std::exception& e) {
@@ -440,11 +459,11 @@ void UbloxNode::configureInf() {
   block.protocolID = block.PROTOCOL_ID_UBX;
   // Enable desired INF messages on each UBX port
   for (int i = 0; i < block.infMsgMask.size(); i++) {
-    block.infMsgMask[i] = enabled["inf_error"] & block.INF_MSG_ERROR |
-                          enabled["inf_warning"] & block.INF_MSG_WARNING |
-                          enabled["inf_notice"] & block.INF_MSG_NOTICE |
-                          enabled["inf_test"] & block.INF_MSG_TEST |
-                          enabled["inf_debug"] & block.INF_MSG_DEBUG;
+    block.infMsgMask[i] = enabled["inf_error"] ? block.INF_MSG_ERROR : 0 |
+                          enabled["inf_warning"] ? block.INF_MSG_WARNING : 0 |
+                          enabled["inf_notice"] ? block.INF_MSG_NOTICE : 0 |
+                          enabled["inf_test"] ? block.INF_MSG_TEST : 0 |
+                          enabled["inf_debug"] ? block.INF_MSG_DEBUG : 0;
   }
   msg.blocks.push_back(block);
 
@@ -454,11 +473,11 @@ void UbloxNode::configureInf() {
     block.protocolID = block.PROTOCOL_ID_UBX;
     // Enable desired INF messages on each NMEA port
     for (int i = 0; i < block.infMsgMask.size(); i++) {
-      block.infMsgMask[i] = enabled["inf_error"] & block.INF_MSG_ERROR |
-                            enabled["inf_warning"] & block.INF_MSG_WARNING |
-                            enabled["inf_notice"] & block.INF_MSG_NOTICE |
-                            enabled["inf_test"] & block.INF_MSG_TEST |
-                            enabled["inf_debug"] & block.INF_MSG_DEBUG;
+      block.infMsgMask[i] = enabled["inf_error"] ? block.INF_MSG_ERROR : 0 |
+                            enabled["inf_warning"] ? block.INF_MSG_WARNING : 0 |
+                            enabled["inf_notice"] ? block.INF_MSG_NOTICE : 0 |
+                            enabled["inf_test"] ? block.INF_MSG_TEST : 0 |
+                            enabled["inf_debug"] ? block.INF_MSG_DEBUG: 0;
     }
     msg.blocks.push_back(block);
   }
@@ -516,10 +535,28 @@ UbloxFirmware6::UbloxFirmware6() {}
 void UbloxFirmware6::getRosParams() {
   // Fix Service type, used when publishing fix status messages
   fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS;  
+  
+  nh->param("nmea/set", set_nmea_, false);
+  if (set_nmea_) {
+    bool consider;
+    if (!getRosParam("nmea/version", cfg_nmea_.version) ||
+        !getRosParam("nmea/numSV", cfg_nmea_.numSV) ||
+        !getRosParam("nmea/compat", cfg_nmea_.flags) ||
+        nh->getParam("nmea/consider", consider))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/version, nmea/numSV, nmea/compat, and " +
+          "nmea/consider must be set");
+    cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
+
+  }  
 }
 
 bool UbloxFirmware6::configureUblox() {  
   ROS_WARN("ublox_version < 7, ignoring GNSS settings");
+
+  if(set_nmea_ && !gps.configure(cfg_nmea_))
+    throw std::runtime_error("Failed to configure NMEA");
+
   return true;
 }
 
@@ -597,7 +634,7 @@ void UbloxFirmware6::fixDiagnostic(
     stat.message = "Time fix only";
   } 
   // If fix is not ok (within DOP & Accuracy Masks), raise the diagnostic level
-  if (!last_nav_sol_.flags & ublox_msgs::NavSOL::FLAGS_GPS_FIX_OK) {
+  if (!(last_nav_sol_.flags & ublox_msgs::NavSOL::FLAGS_GPS_FIX_OK)) {
     stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
     stat.message += ", fix not ok";
   } 
@@ -704,6 +741,9 @@ void UbloxFirmware6::publishNavSol(const ublox_msgs::NavSOL& m) {
 UbloxFirmware7::UbloxFirmware7() {}
 
 void UbloxFirmware7::getRosParams() {
+  //
+  // GNSS configuration
+  //
   int qzss_sig_cfg_default = 
       ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA;
   nh->param("cfg_gnss/qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_default);
@@ -737,6 +777,53 @@ void UbloxFirmware7::getRosParams() {
   // Fix Service type, used when publishing fix status messages
   fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS 
       + (enable_glonass_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GLONASS;
+
+  //
+  // NMEA Configuration
+  //
+  nh->param("nmea/set", set_nmea_, false);
+  if (set_nmea_) {
+    bool consider;
+
+    // Verify that parameters are set
+    if (!getRosParam("nmea/version", cfg_nmea_.nmeaVersion) ||
+        !getRosParam("nmea/num_sv", cfg_nmea_.numSV) ||
+        !getRosParam("nmea/sv_numbering", cfg_nmea_.svNumbering) ||
+        !getRosParam("nmea/compat", cfg_nmea_.flags) || // first bit of flag
+        !nh->getParam("nmea/consider", consider))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/version, nmea/numSV, nmea/svNumbering, " +
+          "nmea/compat, and nmea/consider must be set");
+
+    // set remaining flags
+    cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
+    // set filter
+    bool temp;
+    nh->param("nmea/filter/pos", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_POS : 0;
+    nh->param("nmea/filter/msk_pos", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_MSK_POS : 0;
+    nh->param("nmea/filter/time", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TIME : 0;
+    nh->param("nmea/filter/date", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_DATE : 0;
+    nh->param("nmea/filter/gps_only", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_GPS_ONLY : 0;
+    nh->param("nmea/filter/track", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TRACK : 0;
+    // set gnssToFilter
+    nh->param("nmea/gnssToFilter/gps", temp, false);
+    cfg_nmea_.gnssToFilter |= temp ? cfg_nmea_.GNSS_TO_FILTER_GPS : 0;
+    nh->param("nmea/gnssToFilter/sbas", temp, false);
+    cfg_nmea_.gnssToFilter |= temp ? cfg_nmea_.GNSS_TO_FILTER_SBAS : 0;
+    nh->param("nmea/gnssToFilter/qzss", temp, false);
+    cfg_nmea_.gnssToFilter |= temp ? cfg_nmea_.GNSS_TO_FILTER_QZSS : 0;
+    nh->param("nmea/gnssToFilter/glonass", temp, false);
+    cfg_nmea_.gnssToFilter |= temp ? cfg_nmea_.GNSS_TO_FILTER_GLONASS : 0;
+
+    getRosParam("nmea/main_talker_id", cfg_nmea_.mainTalkerId);
+    getRosParam("nmea/gsv_talker_id", cfg_nmea_.gsvTalkerId);
+  } 
 }
 
 bool UbloxFirmware7::configureUblox() {
@@ -762,7 +849,7 @@ bool UbloxFirmware7::configureUblox() {
     block.gnssId = block.GNSS_ID_GLONASS;
     block.resTrkCh = block.RES_TRK_CH_GLONASS;
     block.maxTrkCh = block.MAX_TRK_CH_GLONASS;
-    block.flags = enable_glonass_ | block.SIG_CFG_GLONASS_L1OF;
+    block.flags = enable_glonass_ ? block.SIG_CFG_GLONASS_L1OF : 0;
     cfgGNSSWrite.blocks.push_back(block);
     if (!gps.configure(cfgGNSSWrite)) {
       throw std::runtime_error(std::string("Failed to ") +
@@ -777,7 +864,7 @@ bool UbloxFirmware7::configureUblox() {
     block.gnssId = block.GNSS_ID_QZSS;
     block.resTrkCh = block.RES_TRK_CH_QZSS;
     block.maxTrkCh = block.MAX_TRK_CH_QZSS;
-    block.flags = enable_qzss_ | qzss_sig_cfg_; 
+    block.flags = enable_qzss_ ? qzss_sig_cfg_ : 0; 
     cfgGNSSWrite.blocks[0] = block;
     if (!gps.configure(cfgGNSSWrite)) {
       throw std::runtime_error(std::string("Failed to ") +
@@ -792,7 +879,7 @@ bool UbloxFirmware7::configureUblox() {
     block.gnssId = block.GNSS_ID_SBAS;
     block.resTrkCh = block.RES_TRK_CH_SBAS;
     block.maxTrkCh = block.MAX_TRK_CH_SBAS;
-    block.flags = enable_sbas_ | block.SIG_CFG_SBAS_L1CA;
+    block.flags = enable_sbas_ ? block.SIG_CFG_SBAS_L1CA : 0;
     cfgGNSSWrite.blocks[0] = block;
     if (!gps.configure(cfgGNSSWrite)) {
       throw std::runtime_error(std::string("Failed to ") +
@@ -800,6 +887,11 @@ bool UbloxFirmware7::configureUblox() {
                                " SBAS.");
     }
   }
+
+
+  if(set_nmea_ && !gps.configure(cfg_nmea_))
+    throw std::runtime_error("Failed to configure NMEA");
+
   return true;
 }
 
@@ -897,6 +989,65 @@ void UbloxFirmware8::getRosParams() {
       + (enable_glonass_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GLONASS
       + (enable_beidou_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_COMPASS
       + (enable_galileo_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GALILEO;
+
+  //
+  // NMEA Configuration
+  //
+  nh->param("nmea/set", set_nmea_, false);
+  if (set_nmea_) {
+    bool consider;
+    cfg_nmea_.version = cfg_nmea_.VERSION; // message version
+
+    // Verify that parameters are set
+    if (!getRosParam("nmea/version", cfg_nmea_.nmeaVersion) ||
+        !getRosParam("nmea/num_sv", cfg_nmea_.numSV) ||
+        !getRosParam("nmea/sv_numbering", cfg_nmea_.svNumbering) ||
+        !getRosParam("nmea/compat", cfg_nmea_.flags) || // first bit of flag
+        !nh->getParam("nmea/consider", consider))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/version, nmea/numSV, nmea/svNumbering, " +
+          "nmea/compat, and nmea/consider must be set");
+
+    // set remaining flags
+    cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
+    bool temp;
+    nh->param("nmea/limit82", temp, false);
+    cfg_nmea_.flags |= temp ? cfg_nmea_.FLAGS_LIMIT82 : 0;
+    nh->param("nmea/high_prec", temp, false);
+    cfg_nmea_.flags |= temp ? cfg_nmea_.FLAGS_HIGH_PREC : 0;
+    // set filter
+    nh->param("nmea/filter/pos", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_POS : 0;
+    nh->param("nmea/filter/msk_pos", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_MSK_POS : 0;
+    nh->param("nmea/filter/time", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TIME : 0;
+    nh->param("nmea/filter/date", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_DATE : 0;
+    nh->param("nmea/filter/gps_only", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_GPS_ONLY : 0;
+    nh->param("nmea/filter/track", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TRACK : 0;
+    // set gnssToFilter
+    nh->param("nmea/gnssToFilter/gps", temp, false);
+    cfg_nmea_.gnssToFilter |= temp ? cfg_nmea_.GNSS_TO_FILTER_GPS : 0;
+    nh->param("nmea/gnssToFilter/sbas", temp, false);
+    cfg_nmea_.gnssToFilter |= temp ? cfg_nmea_.GNSS_TO_FILTER_SBAS : 0;
+    nh->param("nmea/gnssToFilter/qzss", temp, false);
+    cfg_nmea_.gnssToFilter |= temp ? cfg_nmea_.GNSS_TO_FILTER_QZSS : 0;
+    nh->param("nmea/gnssToFilter/glonass", temp, false);
+    cfg_nmea_.gnssToFilter |= temp ? cfg_nmea_.GNSS_TO_FILTER_GLONASS : 0;
+    nh->param("nmea/gnssToFilter/beidou", temp, false);
+    cfg_nmea_.gnssToFilter |= temp ? cfg_nmea_.GNSS_TO_FILTER_BEIDOU : 0;
+
+    getRosParam("nmea/main_talker_id", cfg_nmea_.mainTalkerId);
+    getRosParam("nmea/gsv_talker_id", cfg_nmea_.gsvTalkerId);
+    
+    std::vector<uint8_t> bdsTalkerId;
+    getRosParam("nmea/bds_talker_id", bdsTalkerId);
+    cfg_nmea_.bdsTalkerId[0] = bdsTalkerId[0];
+    cfg_nmea_.bdsTalkerId[1] = bdsTalkerId[1];
+  } 
 }
 
 bool UbloxFirmware8::configureUblox() {
@@ -904,121 +1055,81 @@ bool UbloxFirmware8::configureUblox() {
   // Configure the GNSS, only if the configuration is different
   //
   // First, get the current GNSS configuration
-  ublox_msgs::CfgGNSS cfgGNSSRead;
-  if (gps.poll(cfgGNSSRead)) {
+  ublox_msgs::CfgGNSS cfg_gnss;
+  if (gps.poll(cfg_gnss)) {
     ROS_DEBUG("Read GNSS config.");
-    ROS_DEBUG("Num. tracking channels in hardware: %i", cfgGNSSRead.numTrkChHw);
-    ROS_DEBUG("Num. tracking channels to use: %i", cfgGNSSRead.numTrkChUse);
+    ROS_DEBUG("Num. tracking channels in hardware: %i", cfg_gnss.numTrkChHw);
+    ROS_DEBUG("Num. tracking channels to use: %i", cfg_gnss.numTrkChUse);
   } else {
     throw std::runtime_error("Failed to read the GNSS config.");
   }
 
-  // Then, check if the GNSS configuration is correct
+  // Then, check the configuration for each GNSS. If it is different, change it.
   bool correct = true;
-  for(int i = 0; i < cfgGNSSRead.blocks.size(); i++) {
-    ublox_msgs::CfgGNSS_Block block = cfgGNSSRead.blocks[i];
+  for (int i = 0; i < cfg_gnss.blocks.size(); i++) {
+    ublox_msgs::CfgGNSS_Block block = cfg_gnss.blocks[i];
     if (block.gnssId == block.GNSS_ID_GPS
-        && !enable_gps_ == block.flags & block.FLAGS_ENABLE) {
+        && enable_gps_ != (block.flags & block.FLAGS_ENABLE)) {
       correct = false;
-      break;
+      cfg_gnss.blocks[i].flags = 
+          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_gps_;
     } else if (block.gnssId == block.GNSS_ID_SBAS
-               && !enable_sbas_ == block.flags & block.FLAGS_ENABLE) {
+               && enable_sbas_ != (block.flags & block.FLAGS_ENABLE)) {
       correct = false;
-      break;
+      cfg_gnss.blocks[i].flags = 
+          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_sbas_;
     } else if (block.gnssId == block.GNSS_ID_GALILEO
-               && !enable_galileo_ == block.flags & block.FLAGS_ENABLE) {
+               && enable_galileo_ != (block.flags & block.FLAGS_ENABLE)) {
       correct = false;
-      break;
+      cfg_gnss.blocks[i].flags = 
+          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_galileo_;
     } else if (block.gnssId == block.GNSS_ID_BEIDOU
-               && !enable_beidou_ == block.flags & block.FLAGS_ENABLE) {
+               && enable_beidou_ != (block.flags & block.FLAGS_ENABLE)) {
       correct = false;
-      break;
+      cfg_gnss.blocks[i].flags = 
+          (cfg_gnss.blocks[i].flags & ~enable_beidou_) | enable_beidou_;
     } else if (block.gnssId == block.GNSS_ID_IMES
-               && !enable_imes_ == block.flags & block.FLAGS_ENABLE) {
+               && enable_imes_ != (block.flags & block.FLAGS_ENABLE)) {
       correct = false;
-      break;
+      cfg_gnss.blocks[i].flags = 
+          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_imes_;
     } else if (block.gnssId == block.GNSS_ID_QZSS
-               && !enable_qzss_ == block.flags & block.FLAGS_ENABLE 
+               && enable_qzss_ != (block.flags & block.FLAGS_ENABLE)
                || (enable_qzss_ 
-               && qzss_sig_cfg_ != block.flags & block.FLAGS_SIG_CFG_MASK)) {
+               && qzss_sig_cfg_ != (block.flags & block.FLAGS_SIG_CFG_MASK))) {
       correct = false;
-      break;
+      cfg_gnss.blocks[i].flags = 
+          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_qzss_;
+      if (enable_qzss_)
+        // Only change sig cfg if enabling
+        cfg_gnss.blocks[i].flags = qzss_sig_cfg_;
     } else if (block.gnssId == block.GNSS_ID_GLONASS
-               && !enable_glonass_ == block.flags & block.FLAGS_ENABLE) {
+               && enable_glonass_ != (block.flags & block.FLAGS_ENABLE)) {
       correct = false;
-      break;
+      cfg_gnss.blocks[i].flags = 
+          (cfg_gnss.blocks[i].flags & ~enable_glonass_) | enable_glonass_;
     }
   }
 
   // If the GNSS is already configured correctly, do not re-configure GNSS
   // since this requires a cold reset
-  if(correct) {
-    ROS_DEBUG("U-Blox GNSS settings are already as desired. %s",
-             "Device not re-configured.");
-    return true;
+  if (correct) {
+    ROS_DEBUG("U-Blox GNSS configuration is correct. GNSS not re-configured.");
+  } else {
+    // Configure the GNSS
+    ROS_DEBUG("Re-configuring GNSS.");
+    if (!gps.configure(cfg_gnss)) 
+      throw std::runtime_error(std::string("Failed to Configure GNSS"));
+    
+    ROS_WARN("GNSS re-configured, cold resetting device.");
+    if (!gps.reset(ublox_msgs::CfgRST::NAV_BBR_COLD_START, reset_mode_))
+      throw std::runtime_error(std::string("Failed to cold reset device ") +
+                               "after configuring GNSS");
   }
 
-  // Create configuration message
-  ublox_msgs::CfgGNSS cfgGNSSWrite;
-  cfgGNSSWrite.msgVer = 0;
-  cfgGNSSWrite.numTrkChHw = cfgGNSSRead.numTrkChHw;
-  cfgGNSSWrite.numTrkChUse = cfgGNSSRead.numTrkChUse;
-  // Configure GPS
-  ublox_msgs::CfgGNSS_Block gps_block;
-  gps_block.gnssId = gps_block.GNSS_ID_GPS;
-  gps_block.resTrkCh = gps_block.RES_TRK_CH_GPS;
-  gps_block.maxTrkCh = gps_block.MAX_TRK_CH_GPS;
-  gps_block.flags = enable_gps_ | gps_block.SIG_CFG_GPS_L1CA;
-  cfgGNSSWrite.blocks.push_back(gps_block);
-  // Configure SBAS
-  ublox_msgs::CfgGNSS_Block sbas_block;
-  sbas_block.gnssId = sbas_block.GNSS_ID_SBAS;
-  sbas_block.resTrkCh = sbas_block.RES_TRK_CH_SBAS;
-  sbas_block.maxTrkCh = sbas_block.MAX_TRK_CH_SBAS;
-  sbas_block.flags = enable_sbas_ | sbas_block.SIG_CFG_SBAS_L1CA;
-  cfgGNSSWrite.blocks.push_back(sbas_block);
-  // Configure Galileo
-  ublox_msgs::CfgGNSS_Block galileo_block;
-  galileo_block.gnssId = galileo_block.GNSS_ID_GALILEO;
-  galileo_block.maxTrkCh = galileo_block.MAX_TRK_CH_MAJOR_MIN;
-  galileo_block.flags = enable_galileo_ | galileo_block.SIG_CFG_GALILEO_E1OS;
-  cfgGNSSWrite.blocks.push_back(galileo_block);
-  // Configure Beidou
-  ublox_msgs::CfgGNSS_Block beidou_block;
-  beidou_block.gnssId = beidou_block.GNSS_ID_BEIDOU;
-  beidou_block.maxTrkCh = beidou_block.MAX_TRK_CH_MAJOR_MIN;
-  beidou_block.flags = enable_beidou_ | beidou_block.SIG_CFG_BEIDOU_B1I;
-  cfgGNSSWrite.blocks.push_back(beidou_block);
-  // Configure IMES
-  ublox_msgs::CfgGNSS_Block imes_block;
-  imes_block.gnssId = imes_block.GNSS_ID_IMES;
-  imes_block.maxTrkCh = imes_block.MAX_TRK_CH_MAJOR_MIN;
-  imes_block.flags = enable_imes_ | imes_block.SIG_CFG_IMES_L1;
-  cfgGNSSWrite.blocks.push_back(imes_block);
-  // Configure QZSS
-  ublox_msgs::CfgGNSS_Block qzss_block;
-  qzss_block.gnssId = qzss_block.GNSS_ID_QZSS;
-  qzss_block.resTrkCh = qzss_block.RES_TRK_CH_QZSS;
-  qzss_block.maxTrkCh = qzss_block.MAX_TRK_CH_QZSS;
-  qzss_block.flags = enable_qzss_ | qzss_sig_cfg_; 
-  cfgGNSSWrite.blocks.push_back(qzss_block);
-  // Configure GLONASS
-  ublox_msgs::CfgGNSS_Block glonass_block;
-  glonass_block.gnssId = glonass_block.GNSS_ID_GLONASS;
-  glonass_block.resTrkCh = glonass_block.RES_TRK_CH_GLONASS;
-  glonass_block.maxTrkCh = glonass_block.MAX_TRK_CH_GLONASS;
-  glonass_block.flags = enable_glonass_ | glonass_block.SIG_CFG_GLONASS_L1OF;
-  cfgGNSSWrite.blocks.push_back(glonass_block);
-  cfgGNSSWrite.numConfigBlocks = cfgGNSSWrite.blocks.size(); 
+  if(set_nmea_ && !gps.configure(cfg_nmea_))
+    throw std::runtime_error("Failed to configure NMEA");
 
-  // Configure the GNSS
-  if (!gps.configure(cfgGNSSWrite))
-    throw std::runtime_error(std::string("Failed to Configure GNSS"));
-  
-  ROS_WARN("GNSS re-configured, cold resetting device.");
-  if (!gps.reset(ublox_msgs::CfgRST::NAV_BBR_COLD_START, reset_mode_));
-    throw std::runtime_error(std::string("Failed to cold reset device ") +
-                             "after configuring GNSS");
   return true;
 }
 
