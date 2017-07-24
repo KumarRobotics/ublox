@@ -27,8 +27,8 @@ The `ublox_gps` node supports the following parameters for all products and firm
     * `automotive`
     * `sea`
     * `airborne1`: Airborne, max acceleration = 1G
-    * `airborne2`: Airborne, max acceleration = 1G
-    * `airborne4`: Airborne, max acceleration = 1G
+    * `airborne2`: Airborne, max acceleration = 2G
+    * `airborne4`: Airborne, max acceleration = 4G
     * `wristwatch`
 * `fix_mode`: Type of fixes supported: `2d`, `3d` or `both`.
 * `dr_limit`: Max time in seconds to use dead reckoning after signal is lost. Defaults to 0.
