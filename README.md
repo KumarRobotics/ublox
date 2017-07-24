@@ -12,12 +12,11 @@ The `ublox_gps` node supports the following parameters for all products and firm
 * `uart1/baudrate`: Bit rate of the serial communication. Defaults to 9600.
 * `uart1/in`: UART1 in communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
 * `uart1/out`: UART1 out communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
-* `ublox_version`: Version of device: 6, 7 or 8. Defaults to 6. Please consult known issues section.
 * `frame_id`: ROS name prepended to frames produced by the node. Defaults to `gps`.
 * `rate`: Rate in Hz of measurements. Defaults to 4.
 * `nav_rate`: How often navigation solutions are published in number of measurement cycles. Defaults to 1.
 * `enable_ppp`: Enable precise-point-positioning system. Defaults to false.
-* `cfg_gnss/sbas`: Enable satellite-based augmentation system. Defaults to false.
+* `gnss/sbas`: Enable satellite-based augmentation system. Defaults to false.
 * `sbas/max`: Maximum number of SBAS channels. Defaults to 0.
 * `sbas/usage`: See `CfgSBAS` message for details. Defaults to 0.
 * `dynamic_model`: Possible values below. Defaults to `portable`. See u-blox documentation for further description.
@@ -40,15 +39,15 @@ The `ublox_gps` node supports the following parameters for all products and firm
     * `dat/rot`: [X, Y, Z] rotation [s]
     * `dat/scale`: scale change [ppm]
 ### For devices with firmware >= 7:
-* `cfg_gnss/gps`: Enable GPS receiver. Defaults to true.
-* `cfg_gnss/glonass`: Enable GLONASS receiver. Defaults to false.
-* `cfg_gnss/beidou`: Enable BeiDou receiver. Defaults to false.
-* `cfg_gnss/qzss`: Enable QZSS receiver. Defaults to false.
-* `cfg_gnss/qzss_sig_cfg`: QZSS signal configuration. Defaults to L1CA. See `CfgGNSS` message for constants.
+* `gnss/gps`: Enable GPS receiver. Defaults to true.
+* `gnss/glonass`: Enable GLONASS receiver. Defaults to false.
+* `gnss/beidou`: Enable BeiDou receiver. Defaults to false.
+* `gnss/qzss`: Enable QZSS receiver. Defaults to false.
+* `gnss/qzss_sig_cfg`: QZSS signal configuration. Defaults to L1CA. See `CfgGNSS` message for constants.
 ### For devices with firmware >= 8:
-* `cfg_gnss/galileo`: Enable Galileo receiver. Defaults to false.
-* `cfg_gnss/imes`: Enable IMES receiver. Defaults to false.
-* `cfg_gnss/reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_SW`.
+* `gnss/galileo`: Enable Galileo receiver. Defaults to false.
+* `gnss/imes`: Enable IMES receiver. Defaults to false.
+* `gnss/reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_SW`.
 ### For UDR/ADR devices:
 * `use_adr`: Enable ADR/UDR. Defaults to true.
 * `nav_rate` should be set to 1 Hz.
@@ -135,7 +134,7 @@ To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
 
 ## Launch
 
-A sample launch file `ublox_device.launch` loads the parameters from a `.yaml` file in the `ublox_gps/config` folder, sample configuraration files are included. The required arguments are `node_name` and `param_file_name`.
+A sample launch file `ublox_device.launch` loads the parameters from a `.yaml` file in the `ublox_gps/config` folder, sample configuration files are included. The required arguments are `node_name` and `param_file_name`.
 The two topics to which you should subscribe are `~fix` and `~fix_velocity`. The angular component of `fix_velocity` is unused.
 
 ## Debugging
@@ -145,11 +144,15 @@ For debugging messages set the debug parameter to > 0. The range for debug is 0-
 # Version history
 
 * **1.1.1**:
+  - BUG FIX for acknowledgements. The last received ack message was accessed by multiple threads but was not atomic. This variable is now thread safe.
+  - BUG FIX for GNSS config for Firmware 8, the GNSS configuration is now verified & modified properly.
   - BUG FIX for fix diagnostics. NumSV was displaying incorrectly. For firmware versions >=7, the NavPVT flags variable is now compared to the constants from the NavPVT message not NavSOL.
-  - Changed rtcm_rate parameter to a vector instead of a scalar, now each RTCM id can be set to a different rate.
+  - Removed ublox_version param, value is now determined by parsing MonVER.
+  - Organized parameters into namespaces.
+  - Changed rtcm/rate parameter to a vector instead of a scalar, now each RTCM id can be set to a different rate.
   - Diagnostic variables are displayed more clearly with units included. 
   - For HPG Rovers, added diagnostic updater for Carrier Phase Solution.
-  - Added CfgNMEA message.
+  - Added CfgNMEA messages for each firmware version and a CfgDAT message, as well as parameters to configure the NMEA and Datum.
   - Added constants for NavSAT_SV flags bit mask.
 
 * **1.1.0**:

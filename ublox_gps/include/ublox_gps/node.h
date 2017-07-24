@@ -102,7 +102,6 @@ int meas_rate, nav_rate;
 // IDs and rates of RTCM out messages to configure, lengths must match
 std::vector<int> rtcm_ids, rtcm_rates;
 
-
 template <typename V, typename T>
 bool checkMin(V val, T min, std::string name) {
   if(val < min) {

@@ -499,7 +499,7 @@ void UbloxNode::initialize() {
   for (int i = 0; i < components_.size(); i++)
     components_[i]->getRosParams();
   // Do this last
-  initializeRosDiagnostics();
+  initializeRosDiagnostics();    
 
   if (configureUblox()) {
     ROS_INFO("U-Blox configured successfully.");
@@ -540,16 +540,24 @@ void UbloxFirmware6::getRosParams() {
   
   nh->param("nmea/set", set_nmea_, false);
   if (set_nmea_) {
-    bool consider;
-    if (!getRosParam("nmea/version", cfg_nmea_.version) ||
-        !getRosParam("nmea/numSV", cfg_nmea_.numSV) ||
-        !getRosParam("nmea/compat", cfg_nmea_.flags) ||
-        nh->getParam("nmea/consider", consider))
-      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
-          "true, therefore nmea/version, nmea/numSV, nmea/compat, and " +
-          "nmea/consider must be set");
-    cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
+    bool compat, consider;
 
+    if (!getRosParam("nmea/version", cfg_nmea_.version))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/version must be set");
+    if (!getRosParam("nmea/num_sv", cfg_nmea_.numSV))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+                "true, therefore nmea/num_sv must be set");
+    if (!nh->getParam("nmea/compat", compat))
+        throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/compat must be set");
+    if (!nh->getParam("nmea/consider", consider))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/consider must be set");
+
+    // set flags
+    cfg_nmea_.flags = compat ? cfg_nmea_.FLAGS_COMPAT : 0;
+    cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
   }  
 }
 
@@ -748,31 +756,31 @@ void UbloxFirmware7::getRosParams() {
   //
   int qzss_sig_cfg_default = 
       ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA;
-  nh->param("cfg_gnss/qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_default);
+  nh->param("gnss/qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_default);
   // GNSS enable/disable
-  nh->param("cfg_gnss/gps", enable_gps_, true);
-  nh->param("cfg_gnss/glonass", enable_glonass_, false);
-  nh->param("cfg_gnss/qzss", enable_qzss_, false);
-  nh->param("cfg_gnss/sbas", enable_sbas_, false);
+  nh->param("gnss/gps", enable_gps_, true);
+  nh->param("gnss/glonass", enable_glonass_, false);
+  nh->param("gnss/qzss", enable_qzss_, false);
+  nh->param("gnss/sbas", enable_sbas_, false);
   
   if(enable_gps_ && !supportsGnss("GPS")) 
-    ROS_WARN("cfg_gnss/gps is true, but GPS GNSS is not supported by this device");
+    ROS_WARN("gnss/gps is true, but GPS GNSS is not supported by this device");
   if(enable_glonass_ && !supportsGnss("GLO")) 
-    ROS_WARN("cfg_gnss/glonass is true, but GLONASS is not %s", 
+    ROS_WARN("gnss/glonass is true, but GLONASS is not %s", 
              "supported by this device");
   if(enable_qzss_ && !supportsGnss("QZSS")) 
-    ROS_WARN("cfg_gnss/qzss is true, but QZSS is not supported by this device");
+    ROS_WARN("gnss/qzss is true, but QZSS is not supported by this device");
   if(enable_sbas_ && !supportsGnss("SBAS")) 
-    ROS_WARN("cfg_gnss/sbas is true, but SBAS is not supported by this device");
+    ROS_WARN("gnss/sbas is true, but SBAS is not supported by this device");
   
   bool enable_galileo, enable_beidou, enable_imes;
-  nh->param("cfg_gnss/imes", enable_imes, false);
+  nh->param("gnss/imes", enable_imes, false);
   if(enable_galileo) 
     ROS_WARN("ublox_version < 8, ignoring Galileo GNSS Settings");
-  nh->param("cfg_gnss/galileo", enable_galileo, false);
+  nh->param("gnss/galileo", enable_galileo, false);
   if(enable_beidou) 
     ROS_WARN("ublox_version < 8, ignoring BeiDou Settings");
-  nh->param("cfg_gnss/beidou", enable_beidou, false);
+  nh->param("gnss/beidou", enable_beidou, false);
   if(enable_imes) 
     ROS_WARN("ublox_version < 8, ignoring IMES GNSS Settings");
 
@@ -785,19 +793,26 @@ void UbloxFirmware7::getRosParams() {
   //
   nh->param("nmea/set", set_nmea_, false);
   if (set_nmea_) {
-    bool consider;
+    bool compat, consider;
 
-    // Verify that parameters are set
-    if (!getRosParam("nmea/version", cfg_nmea_.nmeaVersion) ||
-        !getRosParam("nmea/num_sv", cfg_nmea_.numSV) ||
-        !getRosParam("nmea/sv_numbering", cfg_nmea_.svNumbering) ||
-        !getRosParam("nmea/compat", cfg_nmea_.flags) || // first bit of flag
-        !nh->getParam("nmea/consider", consider))
+    if (!getRosParam("nmea/version", cfg_nmea_.nmeaVersion))
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
-          "true, therefore nmea/version, nmea/numSV, nmea/svNumbering, " +
-          "nmea/compat, and nmea/consider must be set");
+          "true, therefore nmea/version must be set");
+    if (!getRosParam("nmea/num_sv", cfg_nmea_.numSV))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+                "true, therefore nmea/num_sv must be set");
+    if (!getRosParam("nmea/sv_numbering", cfg_nmea_.svNumbering))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/sv_numbering must be set");
+    if (!nh->getParam("nmea/compat", compat))
+        throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/compat must be set");
+    if (!nh->getParam("nmea/consider", consider))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/consider must be set");
 
-    // set remaining flags
+    // set flags
+    cfg_nmea_.flags = compat ? cfg_nmea_.FLAGS_COMPAT : 0;
     cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
     // set filter
     bool temp;
@@ -890,7 +905,6 @@ bool UbloxFirmware7::configureUblox() {
     }
   }
 
-
   if(set_nmea_ && !gps.configure(cfg_nmea_))
     throw std::runtime_error("Failed to configure NMEA");
 
@@ -952,39 +966,39 @@ UbloxFirmware8::UbloxFirmware8() {}
 
 void UbloxFirmware8::getRosParams() {
   // GNSS enable/disable
-  nh->param("cfg_gnss/gps", enable_gps_, true);
-  nh->param("cfg_gnss/galileo", enable_galileo_, false);
-  nh->param("cfg_gnss/beidou", enable_beidou_, false);
-  nh->param("cfg_gnss/imes", enable_imes_, false);
-  nh->param("cfg_gnss/glonass", enable_glonass_, false);
-  nh->param("cfg_gnss/qzss", enable_qzss_, false);
-  nh->param("cfg_gnss/sbas", enable_sbas_, false);
+  nh->param("gnss/gps", enable_gps_, true);
+  nh->param("gnss/galileo", enable_galileo_, false);
+  nh->param("gnss/beidou", enable_beidou_, false);
+  nh->param("gnss/imes", enable_imes_, false);
+  nh->param("gnss/glonass", enable_glonass_, false);
+  nh->param("gnss/qzss", enable_qzss_, false);
+  nh->param("gnss/sbas", enable_sbas_, false);
   // QZSS Signal Configuration
   qzss_sig_cfg_ = ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA; // Default
-  nh->param("cfg_gnss/qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_);
+  nh->param("gnss/qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_);
   // Reset type, device is only reset if GNSS configuration is changed
   reset_mode_ = ublox_msgs::CfgRST::RESET_MODE_SW; // default
-  nh->param("cfg_gnss/reset_mode", reset_mode_, reset_mode_);
+  nh->param("gnss/reset_mode", reset_mode_, reset_mode_);
 
   if (enable_gps_ && !supportsGnss("GPS")) 
-    ROS_WARN("cfg_gnss/gps is true, but GPS GNSS is not supported by %s",
+    ROS_WARN("gnss/gps is true, but GPS GNSS is not supported by %s",
              "this device");
   if (enable_glonass_ && !supportsGnss("GLO")) 
-    ROS_WARN("cfg_gnss/glonass is true, but GLONASS is not supported by %s",
+    ROS_WARN("gnss/glonass is true, but GLONASS is not supported by %s",
              "this device");
   if (enable_galileo_ && !supportsGnss("GAL")) 
-    ROS_WARN("cfg_gnss/galileo is true, but Galileo GNSS is not supported %s",
+    ROS_WARN("gnss/galileo is true, but Galileo GNSS is not supported %s",
              "by this device");
   if (enable_beidou_ && !supportsGnss("BDS")) 
-    ROS_WARN("cfg_gnss/beidou is true, but Beidou GNSS is not supported %s",
+    ROS_WARN("gnss/beidou is true, but Beidou GNSS is not supported %s",
              "by this device");
   if (enable_imes_ && !supportsGnss("IMES")) 
-    ROS_WARN("cfg_gnss/imes is true, but IMES GNSS is not supported by %s",
+    ROS_WARN("gnss/imes is true, but IMES GNSS is not supported by %s",
              "this device");
   if (enable_qzss_ && !supportsGnss("QZSS")) 
-    ROS_WARN("cfg_gnss/qzss is true, but QZSS is not supported by this device");
+    ROS_WARN("gnss/qzss is true, but QZSS is not supported by this device");
   if (enable_sbas_ && !supportsGnss("SBAS")) 
-    ROS_WARN("cfg_gnss/sbas is true, but SBAS is not supported by this device");
+    ROS_WARN("gnss/sbas is true, but SBAS is not supported by this device");
 
   // Fix Service type, used when publishing fix status messages
   fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS 
@@ -997,20 +1011,28 @@ void UbloxFirmware8::getRosParams() {
   //
   nh->param("nmea/set", set_nmea_, false);
   if (set_nmea_) {
-    bool consider;
+    bool compat, consider;
     cfg_nmea_.version = cfg_nmea_.VERSION; // message version
 
     // Verify that parameters are set
-    if (!getRosParam("nmea/version", cfg_nmea_.nmeaVersion) ||
-        !getRosParam("nmea/num_sv", cfg_nmea_.numSV) ||
-        !getRosParam("nmea/sv_numbering", cfg_nmea_.svNumbering) ||
-        !getRosParam("nmea/compat", cfg_nmea_.flags) || // first bit of flag
-        !nh->getParam("nmea/consider", consider))
+    if (!getRosParam("nmea/version", cfg_nmea_.nmeaVersion))
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
-          "true, therefore nmea/version, nmea/numSV, nmea/svNumbering, " +
-          "nmea/compat, and nmea/consider must be set");
+          "true, therefore nmea/version must be set");
+    if (!getRosParam("nmea/num_sv", cfg_nmea_.numSV))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+                "true, therefore nmea/num_sv must be set");
+    if (!getRosParam("nmea/sv_numbering", cfg_nmea_.svNumbering))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/sv_numbering must be set");
+    if (!nh->getParam("nmea/compat", compat))
+        throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/compat must be set");
+    if (!nh->getParam("nmea/consider", consider))
+      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
+          "true, therefore nmea/consider must be set");
 
-    // set remaining flags
+    // set flags
+    cfg_nmea_.flags = compat ? cfg_nmea_.FLAGS_COMPAT : 0;
     cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
     bool temp;
     nh->param("nmea/limit82", temp, false);
@@ -1051,6 +1073,7 @@ void UbloxFirmware8::getRosParams() {
     cfg_nmea_.bdsTalkerId[1] = bdsTalkerId[1];
   } 
 }
+
 
 bool UbloxFirmware8::configureUblox() {
   //
@@ -1131,6 +1154,9 @@ bool UbloxFirmware8::configureUblox() {
     return false; // closes connection
   }
 
+  //
+  // NMEA config
+  //
   if(set_nmea_ && !gps.configure(cfg_nmea_))
     throw std::runtime_error("Failed to configure NMEA");
 

@@ -21,7 +21,7 @@ uart1:
   in: 32                    # RTCM 3
   out: 0                    # No UART out for rover
 
-cfg_gnss:
+gnss:
   reset_mode: 1             # SW reset after GNSS re-configuration
   glonass: true             # Supported by C94-M8P
   beidou: false             # Supported by C94-M8P

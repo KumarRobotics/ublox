@@ -50,7 +50,7 @@ dat:
   set: false
 
 # GNSS Config
-cfg_gnss:
+gnss:
   glonass: true             # Supported by C94-M8P
   beidou: false             # Supported by C94-M8P
   qzss: false               # Supported by C94-M8P
