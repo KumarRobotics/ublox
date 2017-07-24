@@ -558,13 +558,28 @@ void UbloxFirmware6::getRosParams() {
     // set flags
     cfg_nmea_.flags = compat ? cfg_nmea_.FLAGS_COMPAT : 0;
     cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
+
+    // set filter
+    bool temp;
+    nh->param("nmea/filter/pos", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_POS : 0;
+    nh->param("nmea/filter/msk_pos", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_MSK_POS : 0;
+    nh->param("nmea/filter/time", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TIME : 0;
+    nh->param("nmea/filter/date", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_DATE : 0;
+    nh->param("nmea/filter/sbas", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_SBAS_FILT : 0;
+    nh->param("nmea/filter/track", temp, false);
+    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TRACK : 0;
   }  
 }
 
 bool UbloxFirmware6::configureUblox() {  
   ROS_WARN("ublox_version < 7, ignoring GNSS settings");
 
-  if(set_nmea_ && !gps.configure(cfg_nmea_))
+  if (set_nmea_ && !gps.configure(cfg_nmea_))
     throw std::runtime_error("Failed to configure NMEA");
 
   return true;
@@ -1157,7 +1172,7 @@ bool UbloxFirmware8::configureUblox() {
   //
   // NMEA config
   //
-  if(set_nmea_ && !gps.configure(cfg_nmea_))
+  if (set_nmea_ && !gps.configure(cfg_nmea_))
     throw std::runtime_error("Failed to configure NMEA");
 
   return true;

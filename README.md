@@ -7,7 +7,7 @@ The driver was originally written by Johannes Meyer. Changes made later are deta
 
 Example .yaml configuration files are included in `ublox_gps/config`. Consult the u-blox documentation for your device for the recommended settings.
 
-The `ublox_gps` node supports the following parameters for all products and firmware version:
+The `ublox_gps` node supports the following parameters for all products and firmware versions:
 * `device`: Path to the device in `/dev`. Defaults to `/dev/ttyACM0`.
 * `uart1/baudrate`: Bit rate of the serial communication. Defaults to 9600.
 * `uart1/in`: UART1 in communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
@@ -38,16 +38,57 @@ The `ublox_gps` node supports the following parameters for all products and firm
     * `dat/shift`: [X-axis, Y-axis, Z-axis] shift [m]
     * `dat/rot`: [X, Y, Z] rotation [s]
     * `dat/scale`: scale change [ppm]
+
+### For firmware version 6:
+* `nmea/set`: If true, the NMEA will be configured with the parameters below.
+* `nmea/version`: NMEA version. Must be set if `nmea/set` is true.
+* `nmea/num_sv`: Maximum Number of SVs to report per TalkerId. Must be set if `nmea/set` is true.
+* `nmea/compat`: Enable compatibility mode. Must be set if `nmea/set` is true.
+* `nmea/consider`: Enable considering mode. Must be set if `nmea/set` is true.
+* `nmea/filter`: Namespace for filter flags.
+    * `nmea/filter/pos`: Disable position filtering. Defaults to false.
+    * `nmea/filter/msk_pos`: Disable masked position filtering. Defaults to false.
+    * `nmea/filter/time`: Disable time filtering. Defaults to false.
+    * `nmea/filter/date`: Disable date filtering. Defaults to false.
+    * `nmea/filter/sbas`: Enable SBAS filtering. Defaults to false.
+    * `nmea/filter/track`: Disable track filtering. Defaults to false.
+
 ### For devices with firmware >= 7:
-* `gnss/gps`: Enable GPS receiver. Defaults to true.
-* `gnss/glonass`: Enable GLONASS receiver. Defaults to false.
-* `gnss/beidou`: Enable BeiDou receiver. Defaults to false.
-* `gnss/qzss`: Enable QZSS receiver. Defaults to false.
-* `gnss/qzss_sig_cfg`: QZSS signal configuration. Defaults to L1CA. See `CfgGNSS` message for constants.
+* `gnss` parameters:
+    * `gnss/gps`: Enable GPS receiver. Defaults to true.
+    * `gnss/glonass`: Enable GLONASS receiver. Defaults to false.
+    * `gnss/beidou`: Enable BeiDou receiver. Defaults to false.
+    * `gnss/qzss`: Enable QZSS receiver. Defaults to false.
+    * `gnss/qzss_sig_cfg`: QZSS signal configuration. Defaults to L1CA. See `CfgGNSS` message for constants.
+* `nmea` parameters:
+    * `nmea/set`: If true, the NMEA will be configured.
+    * `nmea/version`: NMEA version. Must be set if `nmea/set` is true.
+    * `nmea/num_sv`: Maximum Number of SVs to report per TalkerId. Must be set if `nmea/set` is true.
+    * `nmea/sv_numbering`: Configures the display of satellites that do not have an NMEA-defined value. Must be set if `nmea/set` is true.
+    * `nmea/compat`: Enable compatibility mode. Must be set if `nmea/set` is true.
+    * `nmea/consider`: Enable considering mode. Must be set if `nmea/set` is true.
+    * `nmea/limit82`: Enable strict limit to 82 characters maximum. Defaults to false.
+    * `nmea/high_prec`: Enable high precision mode. Defaults to false.
+    * `nmea/filter`: Namespace for filter flags.
+        * `nmea/filter/pos`: Enable position output for failed or invalid fixes. Defaults to false.
+        * `nmea/filter/msk_pos`: Enable position output for invalid fixes. Defaults to false.
+        * `nmea/filter/time`: Enable time output for invalid times. Defaults to false.
+        * `nmea/filter/date`: Enable date output for invalid dates. Defaults to false.
+        * `nmea/filter/gps_only`: Restrict output to GPS satellites only. Defaults to false.
+        * `nmea/filter/track`: Enable COG output even if COG is frozen. Defaults to false.
+    * `nmea/gnssToFilt`: Filters out satellites based on their GNSS.
+        * `nmea/gnssToFilt/gps`: Disable reporting of GPS satellites. Defaults to false.
+        * `nmea/gnssToFilt/sbas`: Disable reporting of SBAS satellites. Defaults to false.
+        * `nmea/gnssToFilt/qzss`: Disable reporting of QZSS satellites. Defaults to false.
+        * `nmea/gnssToFilt/glonass`: Disable reporting of GLONASS satellites. Defaults to false.
+        * `nmea/gnssToFilt/beidou`: Disable reporting of BeiDou satellites. Defaults to false.
+    * `nmea/main_talker_id`: This field enables the main Talker ID to be overridden. Defaults to 0.
+    * `nmea/gsv_talker_id`:  This field enables the GSV Talker ID to be overridden. Defaults to [0, 0].
 ### For devices with firmware >= 8:
 * `gnss/galileo`: Enable Galileo receiver. Defaults to false.
 * `gnss/imes`: Enable IMES receiver. Defaults to false.
 * `gnss/reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_SW`.
+* `nmea/bds_talker_id`: (See other NMEA configuration parameters above) Sets the two characters that should be used for the BeiDou Talker ID.
 ### For UDR/ADR devices:
 * `use_adr`: Enable ADR/UDR. Defaults to true.
 * `nav_rate` should be set to 1 Hz.
@@ -144,8 +185,8 @@ For debugging messages set the debug parameter to > 0. The range for debug is 0-
 # Version history
 
 * **1.1.1**:
-  - BUG FIX for acknowledgements. The last received ack message was accessed by multiple threads but was not atomic. This variable is now thread safe.
-  - BUG FIX for GNSS config for Firmware 8, the GNSS configuration is now verified & modified properly.
+  - BUG FIX for acknowledgments. The last received ack message was accessed by multiple threads but was not atomic. This variable is now thread safe.
+  - BUG FIX for GNSS configuration for Firmware 8, the GNSS configuration is now verified & modified properly.
   - BUG FIX for fix diagnostics. NumSV was displaying incorrectly. For firmware versions >=7, the NavPVT flags variable is now compared to the constants from the NavPVT message not NavSOL.
   - Removed ublox_version param, value is now determined by parsing MonVER.
   - Organized parameters into namespaces.
