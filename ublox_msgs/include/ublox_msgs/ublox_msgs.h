@@ -74,6 +74,8 @@
 #include <ublox_msgs/CfgNAV5.h>
 #include <ublox_msgs/CfgNAVX5.h>
 #include <ublox_msgs/CfgNMEA.h>
+#include <ublox_msgs/CfgNMEA6.h>
+#include <ublox_msgs/CfgNMEA7.h>
 #include <ublox_msgs/CfgPRT.h>
 #include <ublox_msgs/CfgRATE.h>
 #include <ublox_msgs/CfgRST.h>

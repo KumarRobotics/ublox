@@ -72,6 +72,10 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::VELECEF,
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::VELNED, 
                       ublox_msgs, NavVELNED);
 
+// INF messages are declared differently because they all have the same 
+// protocol, so only 1 ROS message is used. DECLARE_UBLOX_MESSAGE can only
+// be called once, and DECLARE_UBLOX_MESSAGE_ID is called for the following
+// messages
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::INF, ublox_msgs::Message::INF::ERROR, 
                       ublox_msgs, Inf);
 DECLARE_UBLOX_MESSAGE_ID(ublox_msgs::Class::INF, 
@@ -126,6 +130,10 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::NAVX5,
                       ublox_msgs, CfgNAVX5);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::NMEA, 
                       ublox_msgs, CfgNMEA);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::NMEA, 
+                      ublox_msgs, CfgNMEA6);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::NMEA, 
+                      ublox_msgs, CfgNMEA7);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::PRT, 
                       ublox_msgs, CfgPRT);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::RATE, 
