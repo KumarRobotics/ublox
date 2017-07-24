@@ -39,6 +39,9 @@
 #include <boost/asio/serial_port.hpp>
 #include <boost/regex.hpp>
 #include <boost/asio/io_service.hpp>
+#include <boost/atomic.hpp>
+#include <boost/thread/mutex.hpp>
+
 
 #include <ros/console.h>
 
@@ -284,6 +287,15 @@ class Gps {
                           uint8_t class_id, uint8_t msg_id);
 
  private:
+  // Types for ACK/NACK messages, WAIT is used when waiting for an ACK
+  enum AckType { NACK, ACK, WAIT }; 
+  
+  // Stores ACK/NACK messages
+  struct Ack {
+    AckType type;
+    uint8_t msg_id;
+    uint8_t class_id;
+  };
 
   void setWorker(const boost::shared_ptr<Worker>& worker);
   /**
@@ -303,10 +315,10 @@ class Gps {
 
   boost::shared_ptr<Worker> worker_;
   bool configured_;
-  enum { WAIT, ACK, NACK } acknowledge_; 
-  uint8_t acknowledge_class_id_;
-  uint8_t acknowledge_msg_id_;
+
   static boost::posix_time::time_duration default_timeout_;
+  // Stores last received ACK, accessed by multiple threads
+  mutable boost::atomic<Ack> ack_;
 
   Callbacks callbacks_;
   boost::mutex callback_mutex_;
@@ -384,7 +396,12 @@ bool Gps::read(T& message, const boost::posix_time::time_duration& timeout) {
 template <typename ConfigT>
 bool Gps::configure(const ConfigT& message, bool wait) {
   if (!worker_) return false;
-  acknowledge_ = WAIT;
+
+  // Reset ack
+  Ack ack;
+  ack.type = WAIT;
+  ack_.store(ack, boost::memory_order_seq_cst);
+
   // Encode the message
   std::vector<unsigned char> out(kWriterSize);
   ublox::Writer writer(out.data(), out.size());

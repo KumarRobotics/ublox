@@ -388,18 +388,17 @@ bool Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout,
   boost::posix_time::ptime wait_until(
       boost::posix_time::second_clock::local_time() + timeout);
 
+  Ack ack = ack_.load(boost::memory_order_seq_cst);
   while (boost::posix_time::second_clock::local_time() < wait_until 
-         && (acknowledge_class_id_ != class_id 
-             || acknowledge_msg_id_ != msg_id 
-             || acknowledge_ == WAIT)) {
+         && (ack.class_id != class_id 
+             || ack.msg_id != msg_id 
+             || ack.type == WAIT)) {
     worker_->wait(timeout);
+    ack = ack_.load(boost::memory_order_seq_cst);
   }
-  bool result = acknowledge_ == ACK 
-                && acknowledge_class_id_ == class_id 
-                && acknowledge_msg_id_ == msg_id;
-  // reset class/msg id
-  acknowledge_class_id_ = 0;
-  acknowledge_msg_id_ = 0;
+  bool result = ack.type == ACK 
+                && ack.class_id == class_id 
+                && ack.msg_id == msg_id;
   return result;
 }
 
@@ -429,13 +428,16 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
     if (reader.classId() == ublox_msgs::Class::ACK) {
       // Process ACK/NACK messages
       const uint8_t * data = reader.data();
-      acknowledge_ = (reader.messageId() == ublox_msgs::Message::ACK::NACK) 
-                     ? NACK : ACK;
-      acknowledge_class_id_ = data[0];
-      acknowledge_msg_id_ = data[1];
-      if (acknowledge_ == ACK && debug >= 2)
-        ROS_DEBUG("U-blox: received ACK: 0x%02x / 0x%02x", data[0], data[1]);
-      else if(acknowledge_ == NACK)
+      Ack ack;
+      ack.type = (reader.messageId() == ublox_msgs::Message::ACK::ACK) 
+                  ? ACK : NACK;
+      ack.class_id = data[0];
+      ack.msg_id = data[1];
+      // store the ack atomically
+      ack_.store(ack, boost::memory_order_seq_cst);
+      ROS_DEBUG_COND(ack.type == ACK && debug >= 2, 
+                     "U-blox: received ACK: 0x%02x / 0x%02x", data[0], data[1]);
+      if(ack. == NACK)
         ROS_ERROR("U-blox: received NACK: 0x%02x / 0x%02x", data[0], data[1]);
     }
   }
