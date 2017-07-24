@@ -327,11 +327,6 @@ class Gps {
   boost::asio::io_service io_service_;
   boost::shared_ptr<boost::asio::serial_port> serial_handle_;
   boost::shared_ptr<boost::asio::ip::tcp::socket> tcp_handle_;
-
-  // I/O params needed in case of device reset
-  std::string device_;
-  unsigned int baudrate_;
-  uint16_t uart_in_, uart_out_;
 };
 
 template <typename T>

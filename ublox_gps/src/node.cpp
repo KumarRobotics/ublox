@@ -443,8 +443,10 @@ bool UbloxNode::configureUblox() {
     if(set_dat_ && !gps.configure(cfg_dat_))
       throw std::runtime_error("Failed to set user-defined datum.");
     // Configure each component
-    for (int i = 0; i < components_.size(); i++)
-      components_[i]->configureUblox();
+    for (int i = 0; i < components_.size(); i++) {
+      if(!components_[i]->configureUblox())
+        return false;
+    }
   } catch (std::exception& e) {
     ROS_FATAL("Error configuring device: %s", e.what());
     return false;
@@ -1102,7 +1104,8 @@ bool UbloxFirmware8::configureUblox() {
           (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_qzss_;
       if (enable_qzss_)
         // Only change sig cfg if enabling
-        cfg_gnss.blocks[i].flags = qzss_sig_cfg_;
+        cfg_gnss.blocks[i].flags |= qzss_sig_cfg_;
+      ROS_WARN("QZSS, %d %d", block.flags & block.FLAGS_ENABLE, enable_qzss_);
     } else if (block.gnssId == block.GNSS_ID_GLONASS
                && enable_glonass_ != (block.flags & block.FLAGS_ENABLE)) {
       correct = false;
@@ -1119,12 +1122,13 @@ bool UbloxFirmware8::configureUblox() {
     // Configure the GNSS
     ROS_DEBUG("Re-configuring GNSS.");
     if (!gps.configure(cfg_gnss)) 
-      throw std::runtime_error(std::string("Failed to Configure GNSS"));
-    
+      throw std::runtime_error(std::string("Failed to configure GNSS"));
     ROS_WARN("GNSS re-configured, cold resetting device.");
+    ros::Duration(2.0).sleep();
     if (!gps.reset(ublox_msgs::CfgRST::NAV_BBR_COLD_START, reset_mode_))
       throw std::runtime_error(std::string("Failed to cold reset device ") +
                                "after configuring GNSS");
+    return false; // closes connection
   }
 
   if(set_nmea_ && !gps.configure(cfg_nmea_))

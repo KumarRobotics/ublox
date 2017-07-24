@@ -89,12 +89,6 @@ void Gps::initializeIo(std::string device,
                        unsigned int baudrate,
                        uint16_t uart_in,
                        uint16_t uart_out) {
-  // Save in case of device reset
-  device_ = device;
-  baudrate_ = baudrate;
-  uart_in_ = uart_in;
-  uart_out_ = uart_out;
-
   boost::smatch match;
 
   if (boost::regex_match(device, match,
@@ -158,7 +152,8 @@ void Gps::close() {
 }
 
 bool Gps::reset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
-  ROS_DEBUG("Resetting Device");
+  ROS_WARN("Resetting Device. Node must be relaunched. %s", 
+           "Device address may change.");
 
   CfgRST rst;
   rst.navBbrMask = nav_bbr_mask;
@@ -167,9 +162,6 @@ bool Gps::reset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
   // Don't wait for ACK, return if it fails
   if (!configure(rst, false)) 
     return false;
-  // Reset the I/O
-  close();
-  initializeIo(device_, baudrate_, uart_in_, uart_out_);
   return true;
 }
 
@@ -437,7 +429,7 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
       ack_.store(ack, boost::memory_order_seq_cst);
       ROS_DEBUG_COND(ack.type == ACK && debug >= 2, 
                      "U-blox: received ACK: 0x%02x / 0x%02x", data[0], data[1]);
-      if(ack. == NACK)
+      if(ack.type == NACK)
         ROS_ERROR("U-blox: received NACK: 0x%02x / 0x%02x", data[0], data[1]);
     }
   }
