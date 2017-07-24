@@ -75,7 +75,9 @@ class Gps {
                     unsigned int baudrate,
                     uint16_t uart_in,
                     uint16_t uart_out);
-
+  /**
+   * @brief Closes the I/O port.
+   */
   void close();
 
   /**
@@ -250,7 +252,11 @@ class Gps {
       typename CallbackHandler_<T>::Callback callback, 
       unsigned int message_id);
 
-
+  /**
+   * Read a u-blox message of the given type.
+   * @param message the received u-blox message
+   * @param timeout the amount of time to wait for the desired message
+   */
   template <typename T>
   bool read(T& message,
             const boost::posix_time::time_duration& timeout = default_timeout_);
@@ -259,10 +265,25 @@ class Gps {
   bool isConfigured() const { return isInitialized() && configured_; }
   bool isOpen() const { return worker_->isOpen(); }
 
+  /**
+   * Poll a u-blox message of the given type.
+   * @param message the received u-blox message output
+   * @param payload the poll message payload sent to the device
+   * defaults to empty
+   * @param timeout the amount of time to wait for the desired message
+   */
   template <typename ConfigT>
   bool poll(ConfigT& message,
             const std::vector<uint8_t>& payload = std::vector<uint8_t>(),
             const boost::posix_time::time_duration& timeout = default_timeout_);
+  /**
+   * Poll a u-blox message.
+   * @param class_id the u-blox message class id
+   * @param message_id the u-blox message id
+   * @param payload the poll message payload sent to the device,
+   * defaults to empty
+   * @param timeout the amount of time to wait for the desired message
+   */
   bool poll(uint8_t class_id, uint8_t message_id,
             const std::vector<uint8_t>& payload = std::vector<uint8_t>());
 
@@ -298,10 +319,12 @@ class Gps {
   };
 
   void setWorker(const boost::shared_ptr<Worker>& worker);
+  
   /**
    * @brief Initialize TCP I/O.
    */
   void initializeTcp();
+  
   /**
    * @brief Initialize the Serial I/O port.
    * @param baudrate the desired baud rate of the port
@@ -311,6 +334,12 @@ class Gps {
   void initializeSerial(unsigned int baudrate,
                         uint16_t uart_in,
                         uint16_t uart_out);
+  /**
+   * @brief Processes u-blox messages in the given buffer & clears the read
+   * messages from the buffer.
+   * @param data the buffer of u-blox messages to process
+   * @param size the size of the buffer
+   */
   void readCallback(unsigned char* data, std::size_t& size);
 
   boost::shared_ptr<Worker> worker_;
