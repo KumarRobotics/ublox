@@ -122,7 +122,7 @@ class Gps {
    * @param rates the send rates for each RTCM message ID, valid range: [0, 255]
    * @return true on ACK, false on other conditions.
    */
-  bool configRtcm(std::vector<int> ids, std::vector<int> rates);
+  bool configRtcm(std::vector<uint8_t> ids, std::vector<uint8_t> rates);
 
   /**
    * @brief Configure the SBAS settings.

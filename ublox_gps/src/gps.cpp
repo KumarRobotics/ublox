@@ -219,7 +219,7 @@ bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
   return configure(rate);
 }
 
-bool Gps::configRtcm(std::vector<int> ids, std::vector<int> rates) {
+bool Gps::configRtcm(std::vector<uint8_t> ids, std::vector<uint8_t> rates) {
   for(size_t i = 0; i < ids.size(); ++i) {
     ROS_DEBUG("Setting RTCM %d Rate %u", ids[i], rates[i]);
     if(!setRate(ublox_msgs::Class::RTCM, (uint8_t)ids[i], rates[i])) {

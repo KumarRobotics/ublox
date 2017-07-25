@@ -76,23 +76,47 @@ uint8_t ublox_node::fixModeFromString(const std::string& mode) {
                            " is not a valid fix mode.");
 }
 
-bool ublox_node::getRosParam(const std::string& key, uint8_t &u) {
+template <typename U, typename V>
+void ublox_node::getRosParam(const std::string& key, U &u, V default_val) {
+  if(!getRosParam(key, u))
+    u = default_val;
+}
+
+template <typename U>
+bool ublox_node::getRosParam(const std::string& key, U &u) {
   int param;
   if (!nh->getParam(key, param)) return false;
-  if (param < 0 || param > 255) return false;
-  u = (uint8_t) param;
+  // Check the bounds
+  U max = ~0;
+  if (param < 0 || param > max) {
+    std::ostringstream oss;
+    oss << "Invalid settings: " << key << " must be in range [0, " << max 
+        << "]."; 
+    throw std::runtime_error(oss.str());
+  }
+  // set the output
+  u = (U) param;
   return true;
 }
 
-bool ublox_node::getRosParam(const std::string& key, std::vector<uint8_t> &u) {
+template <typename U>
+bool ublox_node::getRosParam(const std::string& key, std::vector<U> &u) {
   std::vector<int> param;
   if (!nh->getParam(key, param)) return false;
-  for (int i = 0; i < param.size(); i++)
-    if (param[i] < 0 || param[i] > 255) return false;
+  // Check the bounds
+  U max = ~0;
+  for (int i = 0; i < param.size(); i++) {
+    if (param[i] < 0 || param[i] > max) {
+      std::ostringstream oss;
+      oss << "Invalid settings: " << key << "[" << i <<"]" 
+          << " must be in range [0, " << max << "].";
+      throw std::runtime_error(oss.str());
+    }
+  }
+  // set the output
   u.insert(u.begin(), param.begin(), param.end());
   return true;
 }
-
 
 //
 // u-blox ROS Node
@@ -137,46 +161,40 @@ void UbloxNode::addProductInterface(std::string product_category,
 }
 
 void UbloxNode::getRosParams() {
-  int uart_in_default = ublox_msgs::CfgPRT::PROTO_UBX 
-                        | ublox_msgs::CfgPRT::PROTO_NMEA 
-                        | ublox_msgs::CfgPRT::PROTO_RTCM;
-  int uart_out_default = ublox_msgs::CfgPRT::PROTO_UBX;
+  // int uart_in_default = ;
   nh->param("device", device_, std::string("/dev/ttyACM0"));
   nh->param("frame_id", frame_id, std::string("gps"));
   // UART 1 params
-  nh->param("uart1/baudrate", baudrate_, 9600);
-  nh->param("uart1/in", uart_in_, uart_in_default);
-  nh->param("uart1/out", uart_out_, uart_out_default);
+  getRosParam("uart1/baudrate", baudrate_, 9600);
+  getRosParam("uart1/in", uart_in_, ublox_msgs::CfgPRT::PROTO_UBX 
+                                    | ublox_msgs::CfgPRT::PROTO_NMEA
+                                    | ublox_msgs::CfgPRT::PROTO_RTCM);
+  getRosParam("uart1/out", uart_out_, ublox_msgs::CfgPRT::PROTO_UBX);
   // Measurement rate params
-  nh->param("rate", rate_, 4);  // in Hz
-  nh->param("nav_rate", nav_rate, 1);  // # of measurement rate cycles
+  nh->param("rate", rate_, 4.0);  // in Hz
+  getRosParam("nav_rate", nav_rate, 1);  // # of measurement rate cycles
   // RTCM params
-  nh->param("rtcm/ids", rtcm_ids, rtcm_ids);  // RTCM output message IDs 
-  nh->param("rtcm/rates", rtcm_rates, rtcm_rates);  // RTCM output message rates
+  getRosParam("rtcm/ids", rtcm_ids);  // RTCM output message IDs 
+  getRosParam("rtcm/rates", rtcm_rates);  // RTCM output message rates
   // PPP: Advanced Setting
   nh->param("enable_ppp", enable_ppp_, false);
   // SBAS params, only for some devices
   nh->param("sbas", enable_sbas_, false);
-  nh->param("sbas/max", max_sbas_, 0); // Maximum number of SBAS channels
-  nh->param("sbas/usage", sbas_usage_, 0);
+  getRosParam("sbas/max", max_sbas_, 0); // Maximum number of SBAS channels
+  getRosParam("sbas/usage", sbas_usage_, 0);
   nh->param("dynamic_model", dynamic_model_, std::string("portable"));
   nh->param("fix_mode", fix_mode_, std::string("auto"));
-  nh->param("dr_limit", dr_limit_, 0); // Dead reckoning limit
+  getRosParam("dr_limit", dr_limit_, 0); // Dead reckoning limit
 
   if (enable_ppp_) 
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
 
   checkMin(rate_, 0, "rate");
-  checkMin(nav_rate, 0, "nav_rate");
-  checkRange(dr_limit_, 0, 255, "dr_limit");
-  checkRange(max_sbas_, 0, 255, "max_sbas");
 
   if(rtcm_ids.size() != rtcm_rates.size())
     throw std::runtime_error(std::string("Invalid settings: size of rtcm_ids") +
                              " must match size of rtcm_rates");
-  checkRange(rtcm_rates, 0, 255, "rtcm_rates");
-  checkRange(rtcm_ids, 0, 255, "rtcm_ids");
-  
+    
   dmodel_ = modelFromString(dynamic_model_);
   fmode_ = fixModeFromString(fix_mode_);
 
@@ -327,7 +345,8 @@ void UbloxNode::initializeRosDiagnostics() {
   updater.reset(new diagnostic_updater::Updater());
   updater->setHardwareID("ublox");
 
-  const double target_freq = ((double)rate_) / nav_rate;  //  actual update frequency
+  // actual update frequency
+  const double target_freq = rate_ / nav_rate;  
   min_freq = target_freq;
   max_freq = target_freq;
   double timeStampStatusMax = meas_rate * 1e-3 * 1.10;
@@ -493,6 +512,7 @@ void UbloxNode::initialize() {
   // Params must be set before initializing IO
   getRosParams();
   gps.initializeIo(device_, baudrate_, uart_in_, uart_out_);
+
   // Must process Mon VER before setting firmware/hardware params
   processMonVer();
   // Must set firmware & hardware params before initializing diagnostics
@@ -769,13 +789,12 @@ void UbloxFirmware7::getRosParams() {
   //
   // GNSS configuration
   //
-  int qzss_sig_cfg_default = 
-      ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA;
-  nh->param("gnss/qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_default);
   // GNSS enable/disable
   nh->param("gnss/gps", enable_gps_, true);
   nh->param("gnss/glonass", enable_glonass_, false);
   nh->param("gnss/qzss", enable_qzss_, false);
+  getRosParam("gnss/qzss_sig_cfg", qzss_sig_cfg_, 
+              ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA);
   nh->param("gnss/sbas", enable_sbas_, false);
   
   if(enable_gps_ && !supportsGnss("GPS")) 
@@ -989,11 +1008,11 @@ void UbloxFirmware8::getRosParams() {
   nh->param("gnss/qzss", enable_qzss_, false);
   nh->param("gnss/sbas", enable_sbas_, false);
   // QZSS Signal Configuration
-  qzss_sig_cfg_ = ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA; // Default
-  nh->param("gnss/qzss_sig_cfg", qzss_sig_cfg_, qzss_sig_cfg_);
+  getRosParam("gnss/qzss_sig_cfg", qzss_sig_cfg_, 
+              ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA);
   // Reset type, device is only reset if GNSS configuration is changed
-  reset_mode_ = ublox_msgs::CfgRST::RESET_MODE_SW; // default
-  nh->param("gnss/reset_mode", reset_mode_, reset_mode_);
+  reset_mode_ = ublox_msgs::CfgRST::RESET_MODE_GNSS; // default
+  getRosParam("gnss/reset_mode", reset_mode_, reset_mode_);
 
   if (enable_gps_ && !supportsGnss("GPS")) 
     ROS_WARN("gnss/gps is true, but GPS GNSS is not supported by %s",
@@ -1143,7 +1162,6 @@ bool UbloxFirmware8::configureUblox() {
       if (enable_qzss_)
         // Only change sig cfg if enabling
         cfg_gnss.blocks[i].flags |= qzss_sig_cfg_;
-      ROS_WARN("QZSS, %d %d", block.flags & block.FLAGS_ENABLE, enable_qzss_);
     } else if (block.gnssId == block.GNSS_ID_GLONASS
                && enable_glonass_ != (block.flags & block.FLAGS_ENABLE)) {
       correct = false;
@@ -1271,8 +1289,8 @@ void UbloxHpgRef::getRosParams() {
   if(nav_rate * meas_rate != 1000)
     ROS_WARN("For HPG Ref devices, nav_rate should be exactly 1 Hz.");
 
-  tmode3_ =  ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN; // default
-  nh->param("tmode3", tmode3_, tmode3_);
+  if(!getRosParam("tmode3", tmode3_))
+    throw std::runtime_error("Invalid settings: TMODE3 must be set");
 
   if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_FIXED) {
     if(!nh->getParam("arp/position", arp_position_))
@@ -1291,11 +1309,11 @@ void UbloxHpgRef::getRosParams() {
     }
   } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
     nh->param("sv_in/reset", svin_reset_, true);
-    if(!nh->getParam("sv_in/min_dur", sv_in_min_dur_))
-      throw std::runtime_error(std::string("Invalid settings: sv_in_min_dur ") 
+    if(!getRosParam("sv_in/min_dur", sv_in_min_dur_))
+      throw std::runtime_error(std::string("Invalid settings: sv_in/min_dur ") 
                                + "must be set if TMODE3 is survey-in");
     if(!nh->getParam("sv_in/acc_lim", sv_in_acc_lim_))
-      throw std::runtime_error(std::string("Invalid settings: sv_in_acc_lim ") 
+      throw std::runtime_error(std::string("Invalid settings: sv_in/acc_lim ") 
                                + "must be set if TMODE3 is survey-in");
   } else if(tmode3_ != ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
     throw std::runtime_error(std::string("tmode3 param invalid. See CfgTMODE3") 
@@ -1345,7 +1363,7 @@ bool UbloxHpgRef::configureUblox() {
     }
     // Reset the Survey In    
     // For Survey in, meas rate must be at least 1 Hz
-    uint16_t meas_rate_temp = std::min(meas_rate, 1000); // [ms]
+    uint16_t meas_rate_temp = meas_rate < 1000 ? meas_rate : 1000; // [ms]
     // If measurement period isn't a factor of 1000, set to default
     if(1000 % meas_rate_temp != 0)
       meas_rate_temp = kDefaultMeasPeriod;
@@ -1457,8 +1475,8 @@ void UbloxHpgRef::tmode3Diagnostics(
 //
 void UbloxHpgRov::getRosParams() {
   // default to float, see CfgDGNSS message for details
-  dgnss_mode_ = ublox_msgs::CfgDGNSS::DGNSS_MODE_RTK_FIXED;
-  nh->param("dgnss_mode", dgnss_mode_, dgnss_mode_); 
+  getRosParam("dgnss_mode", dgnss_mode_, 
+              ublox_msgs::CfgDGNSS::DGNSS_MODE_RTK_FIXED); 
 }
 
 bool UbloxHpgRov::configureUblox() {

@@ -98,9 +98,9 @@ std::string frame_id;
 // The fix status service type, set based on the enabled GNSS
 int fix_status_service;
 // The measurement and navigation rate, see CfgRate message
-int meas_rate, nav_rate;
+uint16_t meas_rate, nav_rate;
 // IDs and rates of RTCM out messages to configure, lengths must match
-std::vector<int> rtcm_ids, rtcm_rates;
+std::vector<uint8_t> rtcm_ids, rtcm_rates;
 
 template <typename V, typename T>
 bool checkMin(V val, T min, std::string name) {
@@ -156,16 +156,33 @@ uint8_t modelFromString(const std::string& model);
 uint8_t fixModeFromString(const std::string& mode);
 
 /**
- * @brief Get a uint8 ros param (checks the bounds and casts)
- * @returns true if found, false if not found or out of bounds.
+ * @brief Get a unsigned integer value from the parameter server.
+ * @param key the key to be used in the parameter server's dictionary
+ * @param u storage for the retrieved value.
+ * @throws std::runtime_error if the parameter is out of bounds
+ * @returns true if found, false if not found.
  */
-bool getRosParam(const std::string& key, uint8_t &u);
+template <typename U>
+bool getRosParam(const std::string& key, U &u);
 
 /**
- * @brief Get a uint8 vector ros param (checks the bounds and casts), 
- * @returns true if found, false if not found or out of bounds.
+ * @brief Get a unsigned integer value from the parameter server.
+ * @param key the key to be used in the parameter server's dictionary
+ * @param u storage for the retrieved value.
+ * @param val value to use if the server doesn't contain this parameter.
+ * @throws std::runtime_error if the parameter is out of bounds
+ * @returns true if found, false if not found.
  */
-bool getRosParam(const std::string& key, std::vector<uint8_t> &u);
+template <typename U, typename V>
+void getRosParam(const std::string& key, U &u, V default_val);
+
+/**
+ * @brief Get a unsigned integer vector from the parameter server.
+ * @throws std::runtime_error if the parameter is out of bounds.
+ * @returns true if found, false if not found.
+ */
+template <typename U>
+bool getRosParam(const std::string& key, std::vector<U> &u);
 
 /**
  * @brief Publish a ROS message of type MessageT. Should be used to publish
@@ -333,14 +350,15 @@ class UbloxNode : public virtual ComponentInterface {
   // Set from dynamic model & fix mode strings
   uint8_t dmodel_, fmode_;
   // UART1 baudrate and in/out protocol (see CfgPRT message for constants)
-  int baudrate_, uart_in_, uart_out_; 
-  int rate_;
+  uint32_t baudrate_;
+  uint16_t uart_in_, uart_out_; 
+  double rate_;
   // User-defined Datum (only used if the set_dat param is true)
   bool set_dat_;
   ublox_msgs::CfgDAT cfg_dat_;
   // If true: enable the GNSS
   bool enable_sbas_, enable_ppp_;
-  int sbas_usage_, max_sbas_, dr_limit_;
+  uint8_t sbas_usage_, max_sbas_, dr_limit_;
 
   // Determined From Mon VER
   float protocol_version_;
@@ -571,7 +589,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   // Whether or not to enable the given GNSS
   bool enable_gps_, enable_glonass_, enable_qzss_, enable_sbas_;
   // The QZSS Signal configuration, see CfgGNSS message
-  int qzss_sig_cfg_;
+  uint32_t qzss_sig_cfg_;
 };
 
 /**
@@ -630,7 +648,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
   bool enable_galileo_, enable_beidou_, enable_imes_;
   // Type of device reset, only used if GNSS configuration is changed
   // see CfgRST message for constants
-  int reset_mode_;
+  uint8_t reset_mode_;
   // Used to configure NMEA (if set_nmea_), filled with ros params
   ublox_msgs::CfgNMEA cfg_nmea_;
   bool set_nmea_;
@@ -750,7 +768,7 @@ class UbloxHpgRef: public virtual ComponentInterface {
   ublox_msgs::NavSVIN last_nav_svin_;
 
   // TMODE3 to set, e.g. disabled, survey-in, fixed
-  int tmode3_;
+  uint8_t tmode3_;
   
   // TMODE3 = Fixed mode settings
   // True if coordinates are in LLA, false if ECEF
@@ -767,7 +785,7 @@ class UbloxHpgRef: public virtual ComponentInterface {
   // there's no fix and survey in is disabled
   bool svin_reset_;
   // Measurement period used during Survey-In [s]
-  int sv_in_min_dur_;
+  uint32_t sv_in_min_dur_;
   // Survey in accuracy limit [m]
   float sv_in_acc_lim_;
 
@@ -828,7 +846,7 @@ class UbloxHpgRov: public virtual ComponentInterface {
   double rtcm_freq_min, rtcm_freq_max;
 
   // The DGNSS mode, see CfgDGNSS message for possible values
-  int dgnss_mode_;
+  uint8_t dgnss_mode_;
 
   boost::shared_ptr<diagnostic_updater::HeaderlessTopicDiagnostic> freq_rtcm_;
 };
