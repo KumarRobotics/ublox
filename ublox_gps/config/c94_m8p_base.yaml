@@ -51,6 +51,7 @@ dat:
 
 # GNSS Config
 gnss:
+  reset_mode: 2             # Controlled Software reset
   glonass: true             # Supported by C94-M8P
   beidou: false             # Supported by C94-M8P
   qzss: false               # Supported by C94-M8P

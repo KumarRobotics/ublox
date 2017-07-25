@@ -22,7 +22,7 @@ uart1:
   out: 0                    # No UART out for rover
 
 gnss:
-  reset_mode: 1             # SW reset after GNSS re-configuration
+  reset_mode: 2             # Controlled Software reset
   glonass: true             # Supported by C94-M8P
   beidou: false             # Supported by C94-M8P
   qzss: false               # Supported by C94-M8P
