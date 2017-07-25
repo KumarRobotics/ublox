@@ -190,6 +190,7 @@ For debugging messages set the debug parameter to > 0. The range for debug is 0-
   - BUG FIX for fix diagnostics. NumSV was displaying incorrectly. For firmware versions >=7, the NavPVT flags variable is now compared to the constants from the NavPVT message not NavSOL.
   - Removed ublox_version param, value is now determined by parsing MonVER.
   - Organized parameters into namespaces.
+  - Better parameter checking. Checks that unsigned ints and vectors of unsigned ints are in bounds.
   - Changed rtcm/rate parameter to a vector instead of a scalar, now each RTCM id can be set to a different rate.
   - Diagnostic variables are displayed more clearly with units included. 
   - For HPG Rovers, added diagnostic updater for Carrier Phase Solution.
