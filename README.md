@@ -87,7 +87,7 @@ The `ublox_gps` node supports the following parameters for all products and firm
 ### For devices with firmware >= 8:
 * `gnss/galileo`: Enable Galileo receiver. Defaults to false.
 * `gnss/imes`: Enable IMES receiver. Defaults to false.
-* `gnss/reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_SW`.
+* `gnss/reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_GNSS`.
 * `nmea/bds_talker_id`: (See other NMEA configuration parameters above) Sets the two characters that should be used for the BeiDou Talker ID.
 ### For UDR/ADR devices:
 * `use_adr`: Enable ADR/UDR. Defaults to true.
