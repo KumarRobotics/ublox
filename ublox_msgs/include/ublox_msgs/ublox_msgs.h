@@ -64,6 +64,7 @@
 
 #include <ublox_msgs/CfgANT.h>
 #include <ublox_msgs/CfgCFG.h>
+#include <ublox_msgs/CfgDAT.h>
 #include <ublox_msgs/CfgDGNSS.h>
 #include <ublox_msgs/CfgGNSS.h>
 #include <ublox_msgs/CfgHNR.h>
@@ -73,6 +74,8 @@
 #include <ublox_msgs/CfgNAV5.h>
 #include <ublox_msgs/CfgNAVX5.h>
 #include <ublox_msgs/CfgNMEA.h>
+#include <ublox_msgs/CfgNMEA6.h>
+#include <ublox_msgs/CfgNMEA7.h>
 #include <ublox_msgs/CfgPRT.h>
 #include <ublox_msgs/CfgRATE.h>
 #include <ublox_msgs/CfgRST.h>
@@ -191,6 +194,7 @@ namespace Message {
   namespace CFG {
     static const uint8_t ANT = CfgANT::MESSAGE_ID;
     static const uint8_t CFG = CfgCFG::MESSAGE_ID;
+    static const uint8_t DAT = CfgDAT::MESSAGE_ID;
     static const uint8_t GNSS = CfgGNSS::MESSAGE_ID;
     static const uint8_t HNR = CfgHNR::MESSAGE_ID;
     static const uint8_t INF = CfgINF::MESSAGE_ID;

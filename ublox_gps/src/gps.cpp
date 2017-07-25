@@ -33,46 +33,6 @@ namespace ublox_gps {
 
 using namespace ublox_msgs;
 
-uint8_t modelFromString(const std::string& model) {
-  std::string lower = model;
-  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-  if(lower == "portable") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_PORTABLE;
-  } else if(lower == "stationary") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_STATIONARY;
-  } else if(lower == "pedestrian") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_PEDESTRIAN;
-  } else if(lower == "automotive") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AUTOMOTIVE;
-  } else if(lower == "sea") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_SEA;
-  } else if(lower == "airborne1") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_1G;
-  } else if(lower == "airborne2") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_2G;
-  } else if(lower == "airborne4") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_4G;
-  } else if(lower == "wristwatch") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_WRIST_WATCH;
-  }
-
-  throw std::runtime_error(lower + " is not a valid dynamic model.");
-}
-
-uint8_t fixModeFromString(const std::string& mode) {
-  std::string lower = mode;
-  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-  if (lower == "2d") {
-    return ublox_msgs::CfgNAV5::FIX_MODE_2D_ONLY;
-  } else if (lower == "3d") {
-    return ublox_msgs::CfgNAV5::FIX_MODE_3D_ONLY;
-  } else if (lower == "auto") {
-    return ublox_msgs::CfgNAV5::FIX_MODE_AUTO;
-  }
-
-  throw std::runtime_error(mode + " is not a valid fix mode.");
-}
-
 boost::posix_time::time_duration Gps::default_timeout_(
     boost::posix_time::seconds(Gps::kDefaultAckTimeout));
 
@@ -192,23 +152,25 @@ void Gps::close() {
 }
 
 bool Gps::reset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
-  ROS_DEBUG("Resetting Device");
+  ROS_WARN("Resetting Device. Node must be relaunched. %s", 
+           "Device address may change.");
 
   CfgRST rst;
   rst.navBbrMask = nav_bbr_mask;
   rst.resetMode = reset_mode;
 
-  // Don't wait for ACK
-  return configure(rst, false);
+  // Don't wait for ACK, return if it fails
+  if (!configure(rst, false)) 
+    return false;
+  return true;
 }
 
 bool Gps::configUart1(unsigned int baudrate, uint16_t in_proto_mask, 
                       uint16_t out_proto_mask) {
   if (!worker_) return true;
 
-  ROS_DEBUG("Setting UART1 In/Out Protocol: %u / %u", in_proto_mask, 
-            out_proto_mask);
-  ROS_DEBUG("Setting UART1 baud rate to %u", baudrate);
+  ROS_DEBUG("Configuring UART1 baud rate: %u, In/Out Protocol: %u / %u", 
+            baudrate, in_proto_mask, out_proto_mask);
 
   CfgPRT port;
   port.portID = CfgPRT::PORT_ID_UART1;
@@ -257,7 +219,7 @@ bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
   return configure(rate);
 }
 
-bool Gps::configRtcm(std::vector<int> ids, std::vector<int> rates) {
+bool Gps::configRtcm(std::vector<uint8_t> ids, std::vector<uint8_t> rates) {
   for(size_t i = 0; i < ids.size(); ++i) {
     ROS_DEBUG("Setting RTCM %d Rate %u", ids[i], rates[i]);
     if(!setRate(ublox_msgs::Class::RTCM, (uint8_t)ids[i], rates[i])) {
@@ -292,7 +254,8 @@ bool Gps::configTmode3Fixed(bool lla_flag,
 
   CfgTMODE3 tmode3;
   tmode3.flags = tmode3.FLAGS_MODE_FIXED & tmode3.FLAGS_MODE_MASK;
-  tmode3.flags |= lla_flag & tmode3.FLAGS_LLA;
+  tmode3.flags |= lla_flag ? tmode3.FLAGS_LLA : 0;
+
   // Set position
   if(lla_flag) {
     // Convert from deg to deg / 1e-7
@@ -336,6 +299,8 @@ bool Gps::disableTmode3() {
 }
 
 bool Gps::setRate(uint8_t class_id, uint8_t message_id, uint8_t rate) {
+  ROS_DEBUG_COND(debug >= 2, "Setting rate 0x%02x, 0x%02x, %u", class_id, 
+                 message_id, rate);
   ublox_msgs::CfgMSG msg;
   msg.msgClass = class_id;
   msg.msgID = message_id;
@@ -410,17 +375,23 @@ bool Gps::poll(uint8_t class_id, uint8_t message_id,
 
 bool Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout, 
                              uint8_t class_id, uint8_t msg_id) {
+  ROS_DEBUG_COND(debug >= 2, "Waiting for ACK 0x%02x / 0x%02x", 
+                 class_id, msg_id);
   boost::posix_time::ptime wait_until(
       boost::posix_time::second_clock::local_time() + timeout);
 
-  while (acknowledge_ == WAIT || acknowledge_class_id_ != class_id 
-         || acknowledge_msg_id_ != msg_id
-         && boost::posix_time::second_clock::local_time() < wait_until ) {
+  Ack ack = ack_.load(boost::memory_order_seq_cst);
+  while (boost::posix_time::second_clock::local_time() < wait_until 
+         && (ack.class_id != class_id 
+             || ack.msg_id != msg_id 
+             || ack.type == WAIT)) {
     worker_->wait(timeout);
+    ack = ack_.load(boost::memory_order_seq_cst);
   }
-  return acknowledge_ == ACK 
-         && acknowledge_class_id_ == class_id 
-         && acknowledge_msg_id_ == msg_id;
+  bool result = ack.type == ACK 
+                && ack.class_id == class_id 
+                && ack.msg_id == msg_id;
+  return result;
 }
 
 void Gps::readCallback(unsigned char* data, std::size_t& size) {
@@ -449,13 +420,16 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
     if (reader.classId() == ublox_msgs::Class::ACK) {
       // Process ACK/NACK messages
       const uint8_t * data = reader.data();
-      acknowledge_ = (reader.messageId() == ublox_msgs::Message::ACK::NACK) 
-                     ? NACK : ACK;
-      acknowledge_class_id_ = data[0];
-      acknowledge_msg_id_ = data[1];
-      if (acknowledge_ == ACK && debug >= 2)
-        ROS_DEBUG("U-blox: received ACK: 0x%02x / 0x%02x", data[0], data[1]);
-      else if(acknowledge_ == NACK)
+      Ack ack;
+      ack.type = (reader.messageId() == ublox_msgs::Message::ACK::ACK) 
+                  ? ACK : NACK;
+      ack.class_id = data[0];
+      ack.msg_id = data[1];
+      // store the ack atomically
+      ack_.store(ack, boost::memory_order_seq_cst);
+      ROS_DEBUG_COND(ack.type == ACK && debug >= 2, 
+                     "U-blox: received ACK: 0x%02x / 0x%02x", data[0], data[1]);
+      if(ack.type == NACK)
         ROS_ERROR("U-blox: received NACK: 0x%02x / 0x%02x", data[0], data[1]);
     }
   }

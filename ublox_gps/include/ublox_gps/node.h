@@ -52,25 +52,28 @@
 #include <ublox_gps/gps.h>
 #include <ublox_gps/utils.h>
 
-// This file declares the UbloxInterface which contains functions applicable
-// to all Ublox firmware or hardware such as configuring the U-Blox and 
-// subscribe to messages.
-// It also declares UbloxNode which implements the UbloxInterface and acts as
-// the main class and ROS node. It implements functionality which is generic to
-// any U-Blox device, regardless of the firmware version or product type. 
-// The class is designed in compositional style; it contains instances of 
-// a list of UbloxInterfaces for device specific functionality, including
-// for the specific firmware and product version. During configuration,
-// UbloxNode calls the methods of each interface in the list.
-// UbloxFirmware is an abstract class which implements UbloxInterface and 
-// functions generic to all firmware (such as the initializing the diagnostics).
-// Subclasses of UbloxFirmware for firmware versions 6-8 are also declared in  
-// this file.
+// This file declares the ComponentInterface which acts as a high level 
+// interface for u-blox firmware, product categories, etc. It contains methods
+// to configure the u-blox and subscribe to u-blox messages.
+//
+// This file also declares UbloxNode which implements ComponentInterface and is 
+// the main class and ros node. it implements functionality which applies to
+// any u-blox device, regardless of the firmware version or product type. 
+// The class is designed in compositional style; it contains ComponentInterfaces 
+// which implement features specific to the device based on its firmware version
+// and product category. UbloxNode calls the public methods of each component.
+//
+// This file declares UbloxFirmware is an abstract class which implements
+// ComponentInterface and functions generic to all firmware (such as the 
+// initializing the fix diagnostics). Subclasses of UbloxFirmware for firmware 
+// versions 6-8 are also declared in this file.
+//
 // Lastly, this file declares classes for each product category which also 
-// implement U-Blox interface, currently only the class for High Precision 
+// implement u-blox interface, currently only the class for High Precision 
 // GNSS devices has been fully implemented and tested.
 
 namespace ublox_node {
+
 // Queue size for ROS publishers
 const static uint32_t kROSQueueSize = 1;
 const static uint16_t kDefaultMeasPeriod = 250; 
@@ -95,9 +98,142 @@ std::string frame_id;
 // The fix status service type, set based on the enabled GNSS
 int fix_status_service;
 // The measurement and navigation rate, see CfgRate message
-int meas_rate, nav_rate;
+uint16_t meas_rate, nav_rate;
 // IDs and rates of RTCM out messages to configure, lengths must match
-std::vector<int> rtcm_ids, rtcm_rates;
+std::vector<uint8_t> rtcm_ids, rtcm_rates;
+
+/**
+ * @brief Determine dynamic model from human-readable string.
+ * @param model One of the following (case-insensitive):
+ *  - portable
+ *  - stationary
+ *  - pedestrian
+ *  - automotive
+ *  - sea
+ *  - airborne1
+ *  - airborne2
+ *  - airborne4
+ *  - wristwatch
+ * @return DynamicModel
+ * @throws std::runtime_error on invalid argument.
+ */
+uint8_t modelFromString(const std::string& model);
+
+/**
+ * @brief Determine fix mode from human-readable string.
+ * @param mode One of the following (case-insensitive):
+ *  - 2d
+ *  - 3d
+ *  - auto
+ * @return FixMode
+ * @throws std::runtime_error on invalid argument.
+ */
+uint8_t fixModeFromString(const std::string& mode);
+
+/**
+ * @brief Check that the parameter is above the minimum.
+ * @param val the value to check
+ * @param min the minimum for this value
+ * @param name the name of the parameter
+ * @throws std::runtime_error if it is below the minimum
+ */
+template <typename V, typename T>
+void checkMin(V val, T min, std::string name) {
+  if(val < min) {
+    std::stringstream oss;
+    oss << "Invalid settings: " << name << " must be > " << min;
+    throw std::runtime_error(oss.str());
+  }
+}
+
+/**
+ * @brief Check that the parameter is in the range.
+ * @param val the value to check
+ * @param min the minimum for this value
+ * @param max the maximum for this value
+ * @param name the name of the parameter
+ * @throws std::runtime_error if it is out of bounds
+ */
+template <typename V, typename T>
+void checkRange(V val, T min, T max, std::string name) {
+  if(val < min || val > max) {
+    std::stringstream oss;
+    oss << "Invalid settings: " << name << " must be in range [" << min << 
+        ", " << max << "].";
+    throw std::runtime_error(oss.str());
+  }
+}
+
+/**
+ * @brief Check that the elements of the vector are in the range.
+ * @param val the vector to check
+ * @param min the minimum for this value
+ * @param max the maximum for this value
+ * @param name the name of the parameter
+ * @throws std::runtime_error value it is out of bounds
+ */
+template <typename V, typename T>
+bool checkRange(std::vector<V> val, T min, T max, std::string name) {
+  for(size_t i = 0; i < val.size(); i++)  {
+    std::stringstream oss;
+    oss << name << "[" << i << "]";
+    checkRange(val[i], min, max, name);
+  }
+}
+
+/**
+ * @brief Get a unsigned integer value from the parameter server.
+ * @param key the key to be used in the parameter server's dictionary
+ * @param u storage for the retrieved value.
+ * @throws std::runtime_error if the parameter is out of bounds
+ * @returns true if found, false if not found.
+ */
+template <typename U>
+bool getRosParam(const std::string& key, U &u) {
+  int param;
+  if (!nh->getParam(key, param)) return false;
+  // Check the bounds
+  U min = 0;
+  U max = ~0;
+  checkRange(param, min, max, key);
+  // set the output
+  u = (U) param;
+  return true;
+}
+
+/**
+ * @brief Get a unsigned integer value from the parameter server.
+ * @param key the key to be used in the parameter server's dictionary
+ * @param u storage for the retrieved value.
+ * @param val value to use if the server doesn't contain this parameter.
+ * @throws std::runtime_error if the parameter is out of bounds
+ * @returns true if found, false if not found.
+ */
+template <typename U, typename V>
+void getRosParam(const std::string& key, U &u, V default_val) {
+  if(!getRosParam(key, u))
+    u = default_val;
+}
+
+/**
+ * @brief Get a unsigned integer vector from the parameter server.
+ * @throws std::runtime_error if the parameter is out of bounds.
+ * @returns true if found, false if not found.
+ */
+template <typename U>
+bool getRosParam(const std::string& key, std::vector<U> &u) {
+  std::vector<int> param;
+  if (!nh->getParam(key, param)) return false;
+  
+  // Check the bounds
+  U min = 0;
+  U max = ~0;
+  checkRange(param, min, max, key);
+
+  // set the output
+  u.insert(u.begin(), param.begin(), param.end());
+  return true;
+}
 
 /**
  * @brief Publish a ROS message of type MessageT. Should be used to publish
@@ -129,7 +265,7 @@ bool supportsGnss(std::string gnss) {
  * implemented for other features besides the hardware and firmware versions, 
  * e.g. such as for configuring an external device attached to the Ublox, etc. 
  */
-class UbloxInterface {
+class ComponentInterface {
  public:
   /**
    * @brief Get the ROS parameters.
@@ -153,16 +289,21 @@ class UbloxInterface {
   virtual void subscribe() = 0;
 };
 
+typedef boost::shared_ptr<ComponentInterface> ComponentPtr;
+
 /**
- * @brief This class represents U-Blox ROS node for *all* firmware and hardware 
- * versions. It gets the user parameters, configures the U-Blox 
- * device, subscribes to U-Blox messages, and configures the device hardware. 
+ * @brief This class represents u-blox ROS node for *all* firmware and product 
+ * versions. It loads the user parameters, configures the u-blox 
+ * device, subscribes to u-blox messages, and configures the device hardware. 
  * Functionality specific to a given product or firmware version, etc. should 
- * NOT be implemented in this class. Instead, the user should extend U-Blox 
- * interface, then add a pointer the object to the xware_ vector.
- * The UbloxNode will then call the interface functions.
+ * NOT be implemented in this class. Instead, the user should add the 
+ * functionality to the appropriate firmware or product class and if necessary, 
+ * create a class which implements u-blox interface, then add a pointer to
+ * to an instance of the class to the components vector.
+ * The UbloxNode calls the public methods of ComponentInterface for each value 
+ * in the components vector.
  */
-class UbloxNode : public virtual UbloxInterface {
+class UbloxNode : public virtual ComponentInterface {
  public:
   // how often (in seconds) to call poll messages
   const static double kPollDuration = 1.0;
@@ -174,8 +315,8 @@ class UbloxNode : public virtual UbloxInterface {
   const static double kTimeStampStatusMin = 0;
 
   /**
-   * @brief Set the firmware object (add to xware_) based on the ublox_version 
-   * param and call initialize.
+   * @brief Set the firmware object (add to components) based on the 
+   * ublox_version param and call initialize.
    */
   UbloxNode();
 
@@ -214,10 +355,22 @@ class UbloxNode : public virtual UbloxInterface {
   void initialize();
 
   /**
+   * @brief Send a reset message the u-blox device & re-initialize the I/O.
+   * @return true if reset was successful, false otherwise.
+   */
+  bool resetDevice();
+
+  /**
    * Process the MonVer message. Find the protocol version, hardware type and 
-   * supported GNSS.
+   * supported GNSS. Add the appropriate firmware and product components.
    */
   void processMonVer();
+
+  /**
+   * @brief Add the interface for firmware specific configuration, subscribers, 
+   * & diagnostics. This assumes the protocol_version_ has been set.
+   */
+  void addFirmwareInterface();
 
   /**
    * @brief Add the interface which is used for product category 
@@ -243,31 +396,34 @@ class UbloxNode : public virtual UbloxInterface {
   // Used for diagnostic updater
   double min_freq, max_freq;
 
-  /* Variables set from parameter server */
+  // Variables set from parameter server
   std::string device_, dynamic_model_, fix_mode_;
   // Set from dynamic model & fix mode strings
   uint8_t dmodel_, fmode_;
-  // UART baudrate and in/out protocol (see CfgPRT message for constants)
-  int baudrate_, uart_in_, uart_out_; 
-  int rate_;
-  
+  // UART1 baudrate and in/out protocol (see CfgPRT message for constants)
+  uint32_t baudrate_;
+  uint16_t uart_in_, uart_out_; 
+  double rate_;
+  // User-defined Datum (only used if the set_dat param is true)
+  bool set_dat_;
+  ublox_msgs::CfgDAT cfg_dat_;
   // If true: enable the GNSS
   bool enable_sbas_, enable_ppp_;
-  int sbas_usage_, max_sbas_, dr_limit_;
+  uint8_t sbas_usage_, max_sbas_, dr_limit_;
 
-  /** Determined From Mon VER */
+  // Determined From Mon VER
   float protocol_version_;
 
   // The node will call the functions in these interfaces for each object
   // in the vector, this allows the user to easily add new features
-  std::vector<boost::shared_ptr<UbloxInterface> > xware_;
+  std::vector<boost::shared_ptr<ComponentInterface> > components_;
 };
 
 /** 
  * @brief This abstract class is used to add functionality specific to a given
  * firmware version to the node.
  */
-class UbloxFirmware : public virtual UbloxInterface {
+class UbloxFirmware : public virtual ComponentInterface {
  public:
   /**
    * @brief Add the fix diagnostics to the updater.
@@ -283,7 +439,7 @@ class UbloxFirmware : public virtual UbloxInterface {
 };
 
 /**
- * Represents a U-Blox node for firmware version 6.
+ * U-Blox functionality for firmware version 6.
  */
 class UbloxFirmware6 : public UbloxFirmware {
  public:
@@ -343,6 +499,10 @@ class UbloxFirmware6 : public UbloxFirmware {
   sensor_msgs::NavSatFix fix_;
   // The last Twist based on last_nav_vel_
   geometry_msgs::TwistWithCovarianceStamped velocity_;
+
+  // Used to configure NMEA (if set_nmea_), filled with ros params
+  ublox_msgs::CfgNMEA6 cfg_nmea_;
+  bool set_nmea_;
 };
 
 /**
@@ -400,7 +560,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     /** Fix Velocity */
     static ros::Publisher velocityPublisher =
         nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
-                                                                  kROSQueueSize);
+                                                                 kROSQueueSize);
     geometry_msgs::TwistWithCovarianceStamped velocity;
     velocity.header.stamp = fix.header.stamp;
     velocity.header.frame_id = frame_id;
@@ -454,7 +614,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     }
 
     // If fix not ok (w/in DOP & Accuracy Masks), raise the diagnostic level
-    if (!last_nav_pvt_.flags & ublox_msgs::NavPVT::FLAGS_GNSS_FIX_OK) {
+    if (!(last_nav_pvt_.flags & ublox_msgs::NavPVT::FLAGS_GNSS_FIX_OK)) {
       stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
       stat.message += ", fix not ok";
     } 
@@ -480,11 +640,11 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   // Whether or not to enable the given GNSS
   bool enable_gps_, enable_glonass_, enable_qzss_, enable_sbas_;
   // The QZSS Signal configuration, see CfgGNSS message
-  int qzss_sig_cfg_;
+  uint32_t qzss_sig_cfg_;
 };
 
 /**
- * Represents a U-Blox node for firmware version 7.
+ * U-Blox functionality for firmware version 7.
  */
 class UbloxFirmware7 : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  public:
@@ -504,10 +664,15 @@ class UbloxFirmware7 : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
    * @brief Subscribes to NavPVT, RxmRAW, and RxmSFRB messages. 
    */
   void subscribe();
+  
+  private:
+    // Used to configure NMEA (if set_nmea_), filled with ros params
+    ublox_msgs::CfgNMEA7 cfg_nmea_;
+    bool set_nmea_;
 };
 
 /**
- * Represents a U-Blox node for firmware version 8.
+ *  U-Blox functionality for firmware version 8.
  */
 class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  public:
@@ -534,14 +699,17 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
   bool enable_galileo_, enable_beidou_, enable_imes_;
   // Type of device reset, only used if GNSS configuration is changed
   // see CfgRST message for constants
-  int reset_mode_;
+  uint8_t reset_mode_;
+  // Used to configure NMEA (if set_nmea_), filled with ros params
+  ublox_msgs::CfgNMEA cfg_nmea_;
+  bool set_nmea_;
 };
 
 /**
  * @brief Interface for Automotive Dead Reckoning (ADR) and Untethered
  * Dead Reckoning (UDR) Devices.
  */
-class UbloxAdrUdr: public UbloxInterface {
+class UbloxAdrUdr: public virtual ComponentInterface {
  public:
   /**
    * @brief Gets the ADR/UDR parameters, e.g. useAdr.
@@ -574,7 +742,7 @@ class UbloxAdrUdr: public UbloxInterface {
 /**
  * @brief Implements functions for FTS products. Currently unimplemented. TODO
  */
-class UbloxFts: public UbloxInterface {
+class UbloxFts: public virtual ComponentInterface {
   /**
    * @brief Gets the FTS parameters. Currently unimplemented.
    */
@@ -602,7 +770,7 @@ class UbloxFts: public UbloxInterface {
 /**
  * @brief Implements functions for High Precision GNSS Reference station.
  */
-class UbloxHpgRef: public UbloxInterface {
+class UbloxHpgRef: public virtual ComponentInterface {
  public:
   /**
    * @brief Gets the Reference Station GNSS parameters, e.g. tmode3.
@@ -651,7 +819,7 @@ class UbloxHpgRef: public UbloxInterface {
   ublox_msgs::NavSVIN last_nav_svin_;
 
   // TMODE3 to set, e.g. disabled, survey-in, fixed
-  int tmode3_;
+  uint8_t tmode3_;
   
   // TMODE3 = Fixed mode settings
   // True if coordinates are in LLA, false if ECEF
@@ -668,7 +836,7 @@ class UbloxHpgRef: public UbloxInterface {
   // there's no fix and survey in is disabled
   bool svin_reset_;
   // Measurement period used during Survey-In [s]
-  int sv_in_min_dur_;
+  uint32_t sv_in_min_dur_;
   // Survey in accuracy limit [m]
   float sv_in_acc_lim_;
 
@@ -679,7 +847,7 @@ class UbloxHpgRef: public UbloxInterface {
 /**
  * @brief Implements functions for High Precision GNSS Rover.
  */
-class UbloxHpgRov: public UbloxInterface {
+class UbloxHpgRov: public virtual ComponentInterface {
  public:
   // Constants for diagnostic updater
   const static double kRtcmFreqMin = 1;
@@ -729,7 +897,7 @@ class UbloxHpgRov: public UbloxInterface {
   double rtcm_freq_min, rtcm_freq_max;
 
   // The DGNSS mode, see CfgDGNSS message for possible values
-  int dgnss_mode_;
+  uint8_t dgnss_mode_;
 
   boost::shared_ptr<diagnostic_updater::HeaderlessTopicDiagnostic> freq_rtcm_;
 };
@@ -737,7 +905,7 @@ class UbloxHpgRov: public UbloxInterface {
 /**
  * @brief Implements functions for Time Sync products.
  */
-class UbloxTim: public UbloxInterface {
+class UbloxTim: public virtual ComponentInterface {
   /**
    * @brief Gets the Time Sync parameters. Currently unimplemented.
    */
