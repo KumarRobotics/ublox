@@ -76,48 +76,6 @@ uint8_t ublox_node::fixModeFromString(const std::string& mode) {
                            " is not a valid fix mode.");
 }
 
-template <typename U, typename V>
-void ublox_node::getRosParam(const std::string& key, U &u, V default_val) {
-  if(!getRosParam(key, u))
-    u = default_val;
-}
-
-template <typename U>
-bool ublox_node::getRosParam(const std::string& key, U &u) {
-  int param;
-  if (!nh->getParam(key, param)) return false;
-  // Check the bounds
-  U max = ~0;
-  if (param < 0 || param > max) {
-    std::ostringstream oss;
-    oss << "Invalid settings: " << key << " must be in range [0, " << max 
-        << "]."; 
-    throw std::runtime_error(oss.str());
-  }
-  // set the output
-  u = (U) param;
-  return true;
-}
-
-template <typename U>
-bool ublox_node::getRosParam(const std::string& key, std::vector<U> &u) {
-  std::vector<int> param;
-  if (!nh->getParam(key, param)) return false;
-  // Check the bounds
-  U max = ~0;
-  for (int i = 0; i < param.size(); i++) {
-    if (param[i] < 0 || param[i] > max) {
-      std::ostringstream oss;
-      oss << "Invalid settings: " << key << "[" << i <<"]" 
-          << " must be in range [0, " << max << "].";
-      throw std::runtime_error(oss.str());
-    }
-  }
-  // set the output
-  u.insert(u.begin(), param.begin(), param.end());
-  return true;
-}
-
 //
 // u-blox ROS Node
 //

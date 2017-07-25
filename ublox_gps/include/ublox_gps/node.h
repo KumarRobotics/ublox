@@ -102,31 +102,6 @@ uint16_t meas_rate, nav_rate;
 // IDs and rates of RTCM out messages to configure, lengths must match
 std::vector<uint8_t> rtcm_ids, rtcm_rates;
 
-template <typename V, typename T>
-bool checkMin(V val, T min, std::string name) {
-  if(val < min) {
-    std::stringstream oss;
-    oss << "Invalid settings: " << name << " must be > " << min;
-    throw std::runtime_error(oss.str());
-  }
-}
-
-template <typename V, typename T>
-bool checkRange(V val, T min, T max, std::string name) {
-  if(val < min || val > max) {
-    std::stringstream oss;
-    oss << "Invalid settings: " << name << " must be > " << min << 
-        " and < " << max;
-    throw std::runtime_error(oss.str());
-  }
-}
-
-template <typename V, typename T>
-bool checkRange(std::vector<V> val, T min, T max, std::string name) {
-  for(size_t i = 0; i < val.size(); i++) 
-    checkRange(val[i], min, max, name);
-}
-
 /**
  * @brief Determine dynamic model from human-readable string.
  * @param model One of the following (case-insensitive):
@@ -156,6 +131,57 @@ uint8_t modelFromString(const std::string& model);
 uint8_t fixModeFromString(const std::string& mode);
 
 /**
+ * @brief Check that the parameter is above the minimum.
+ * @param val the value to check
+ * @param min the minimum for this value
+ * @param name the name of the parameter
+ * @throws std::runtime_error if it is below the minimum
+ */
+template <typename V, typename T>
+void checkMin(V val, T min, std::string name) {
+  if(val < min) {
+    std::stringstream oss;
+    oss << "Invalid settings: " << name << " must be > " << min;
+    throw std::runtime_error(oss.str());
+  }
+}
+
+/**
+ * @brief Check that the parameter is in the range.
+ * @param val the value to check
+ * @param min the minimum for this value
+ * @param max the maximum for this value
+ * @param name the name of the parameter
+ * @throws std::runtime_error if it is out of bounds
+ */
+template <typename V, typename T>
+void checkRange(V val, T min, T max, std::string name) {
+  if(val < min || val > max) {
+    std::stringstream oss;
+    oss << "Invalid settings: " << name << " must be in range [" << min << 
+        ", " << max << "].";
+    throw std::runtime_error(oss.str());
+  }
+}
+
+/**
+ * @brief Check that the elements of the vector are in the range.
+ * @param val the vector to check
+ * @param min the minimum for this value
+ * @param max the maximum for this value
+ * @param name the name of the parameter
+ * @throws std::runtime_error value it is out of bounds
+ */
+template <typename V, typename T>
+bool checkRange(std::vector<V> val, T min, T max, std::string name) {
+  for(size_t i = 0; i < val.size(); i++)  {
+    std::stringstream oss;
+    oss << name << "[" << i << "]";
+    checkRange(val[i], min, max, name);
+  }
+}
+
+/**
  * @brief Get a unsigned integer value from the parameter server.
  * @param key the key to be used in the parameter server's dictionary
  * @param u storage for the retrieved value.
@@ -163,7 +189,17 @@ uint8_t fixModeFromString(const std::string& mode);
  * @returns true if found, false if not found.
  */
 template <typename U>
-bool getRosParam(const std::string& key, U &u);
+bool getRosParam(const std::string& key, U &u) {
+  int param;
+  if (!nh->getParam(key, param)) return false;
+  // Check the bounds
+  U min = 0;
+  U max = ~0;
+  checkRange(param, min, max, key);
+  // set the output
+  u = (U) param;
+  return true;
+}
 
 /**
  * @brief Get a unsigned integer value from the parameter server.
@@ -174,7 +210,10 @@ bool getRosParam(const std::string& key, U &u);
  * @returns true if found, false if not found.
  */
 template <typename U, typename V>
-void getRosParam(const std::string& key, U &u, V default_val);
+void getRosParam(const std::string& key, U &u, V default_val) {
+  if(!getRosParam(key, u))
+    u = default_val;
+}
 
 /**
  * @brief Get a unsigned integer vector from the parameter server.
@@ -182,7 +221,19 @@ void getRosParam(const std::string& key, U &u, V default_val);
  * @returns true if found, false if not found.
  */
 template <typename U>
-bool getRosParam(const std::string& key, std::vector<U> &u);
+bool getRosParam(const std::string& key, std::vector<U> &u) {
+  std::vector<int> param;
+  if (!nh->getParam(key, param)) return false;
+  
+  // Check the bounds
+  U min = 0;
+  U max = ~0;
+  checkRange(param, min, max, key);
+
+  // set the output
+  u.insert(u.begin(), param.begin(), param.end());
+  return true;
+}
 
 /**
  * @brief Publish a ROS message of type MessageT. Should be used to publish
