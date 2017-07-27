@@ -8,7 +8,7 @@ The driver was originally written by Johannes Meyer. Changes made later are deta
 Example .yaml configuration files are included in `ublox_gps/config`. Consult the u-blox documentation for your device for the recommended settings.
 
 The `ublox_gps` node supports the following parameters for all products and firmware versions:
-* `device`: Path to the device in `/dev`. Defaults to `/dev/ttyACM0`.
+* `device`: Path to the device port. Defaults to `/dev/ttyACM0`.
 * `uart1/baudrate`: Bit rate of the serial communication. Defaults to 9600.
 * `uart1/in`: UART1 in communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
 * `uart1/out`: UART1 out communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
@@ -84,14 +84,20 @@ The `ublox_gps` node supports the following parameters for all products and firm
         * `nmea/gnssToFilt/beidou`: Disable reporting of BeiDou satellites. Defaults to false.
     * `nmea/main_talker_id`: This field enables the main Talker ID to be overridden. Defaults to 0.
     * `nmea/gsv_talker_id`:  This field enables the GSV Talker ID to be overridden. Defaults to [0, 0].
+
 ### For devices with firmware >= 8:
-* `gnss/galileo`: Enable Galileo receiver. Defaults to false.
-* `gnss/imes`: Enable IMES receiver. Defaults to false.
-* `gnss/reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_GNSS`.
+* `save_on_shutdown`: If true, the node will send a `UBX-UPD-SOS` command to save the BBR to flash memory on shutdown. Defaults to false. 
+* `clear_bbr`: If true, the node will send a `UBX-UPD-SOS` command to clear the flash memory during configuration. Defaults to false.
+* Additional `gnss` params
+  * `gnss/galileo`: Enable Galileo receiver. Defaults to false.
+  * `gnss/imes`: Enable IMES receiver. Defaults to false.
+  * `gnss/reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_GNSS`.
 * `nmea/bds_talker_id`: (See other NMEA configuration parameters above) Sets the two characters that should be used for the BeiDou Talker ID.
+
 ### For UDR/ADR devices:
 * `use_adr`: Enable ADR/UDR. Defaults to true.
 * `nav_rate` should be set to 1 Hz.
+
 ### For HPG Reference devices:
 * `tmode3`: Time Mode, defaults to Survey-In. See CfgTMODE3 for constants.
 * `arp/lla_flag`: True if the Fixed position is in Lat, Lon, Alt coordinates. False if ECEF. Must be set if `tmode3` is set to fixed. 
@@ -101,8 +107,10 @@ The `ublox_gps` node supports the following parameters for all products and firm
 * `sv_in/reset`: Whether or not to reset the survey in upon initialization. If false, it will only reset if the TMODE is disabled. Defaults to true.
 * `sv_in/min_dur`: The minimum Survey-In Duration time in seconds. Must be set if tmode3 is set to survey in.
 * `sv_in/acc_lim`: The minimum accuracy level of the survey in position in meters. MMust be set if `tmode3` is set to survey in.
+
 ### For HPG Rover devices:
 * `dgnss_mode`: The Differential GNSS mode. Defaults to RTK FIXED. See `CfgDGNSS` message for constants.
+
 ### For FTS & TIM devices:
 * currently unimplemented. See `UbloxFts` and `UbloxTim` classes in `ublox_gps` package `node.h` & `node.cpp` files.
 
@@ -154,7 +162,7 @@ To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
 * `subscribe/nav/clock`: Topic `~navclock`
 * `subscribe/nav/posecef`: Topic `~navposecef`
 * `subscribe/nav/posllh`: Topic `~navposllh`. Firmware <= 6 only. For 7 and above, use NavPVT
-* `subscribe/nav/pvt`: Topic `~navpvt`. Firmware >=7 only.
+* `subscribe/nav/pvt`: Topic `~navpvt`. Firmware >= 7 only.
 * `subscribe/nav/relposned`: Topic `~navrelposned`
 * `subscribe/nav/sat`: Topic `~navsat`
 * `subscribe/nav/sol`: Topic `~navsol`. Firmware <= 6 only. For 7 and above, use NavPVT
@@ -178,12 +186,12 @@ To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
 A sample launch file `ublox_device.launch` loads the parameters from a `.yaml` file in the `ublox_gps/config` folder, sample configuration files are included. The required arguments are `node_name` and `param_file_name`.
 The two topics to which you should subscribe are `~fix` and `~fix_velocity`. The angular component of `fix_velocity` is unused.
 
-## Debugging
-
-For debugging messages set the debug parameter to > 0. The range for debug is 0-4. At level 1 it prints configuration messages and checksum errors, at level 2 it also prints ACK/NACK messages and sent messages. At level 3 it prints the received bytes being decoded by a specific message reader. At level 4 it prints the incoming buffer before it is split by message header.
-
 # Version history
 
+* **1.1.2**:
+  - BUG FIX for NavSatFix messages for firmware >=7. The NavSatFix now only uses the NavPVT message time if it is valid, otherwise it uses ROS time.
+  - Added `UBX-UPD` messages. For firmware version 8, the node can now save the flash memory on shutdown and clear the flash memory during configuration based on ROS params.
+  - Added respawn parameters to example launch file.
 * **1.1.1**:
   - BUG FIX for acknowledgments. The last received ack message was accessed by multiple threads but was not atomic. This variable is now thread safe.
   - BUG FIX for GNSS configuration for Firmware 8, the GNSS configuration is now verified & modified properly.
@@ -268,6 +276,7 @@ For debugging messages set the debug parameter to > 0. The range for debug is 0-
   - Forked from https://github.com/tu-darmstadt-ros-pkg/ublox
   - Updated to use catkin.
 
+# Adding new features
 ## Adding new messages
 1. Create the .msg file and add it to `ublox_msgs/msg`. Make sure the file includes the constants `CLASS_ID` and `MESSAGE_ID`. 
 
@@ -296,7 +305,14 @@ Currently there are implementations of `ComponentInterface` for firmware version
 
 `UbloxHpgRef` and `UbloxHpgRov` have been tested on the C94-M8P device. 
 
-## Known Issues
+## Adding new parameters
+1. Modify the `getRosParams()` method in the appropriate implementation of UbloxComponent (e.g. UbloxNode, UbloxFirmware8, UbloxHpgRef, etc.) and get the parameter. Group multiple related parameters into a namespace. Use all lower case names for parameters and namespaces separated with underscores. 
+* If the type is an unsigned integer (of any size), use the `ublox_node::getRosParam` method which will verify the bounds of the parameter.
+2. If the parameter is used during configuration also modify the `UbloxComponent`'s `configureUblox()` method to send the appropriate configuration message. Do not send configuration messages in `getRosParams()`.
+3. Modify this README file and add the parameter name and description in the appropriate section. State whether there is a default value or if the parameter is required.
+4. Modify one of the sample `.yaml` configuration files in `ublox_gps/config` to include the parameter or add a new sample `.yaml` for your device.
+
+# Known Issues
 
 ## Unimplemented / Untested Devices
 
@@ -304,10 +320,14 @@ Currently there are implementations of `ComponentInterface` for firmware version
 
 `UbloxFirmware7` has not been properly tested on a device with firmware version 7. `UbloxFirmware6` has been tested on a device with firmware version 8, but not with firmware version 6.
 
+## Debugging
+
+For debugging messages set the debug parameter to > 0. The range for debug is 0-4. At level 1 it prints configuration messages and checksum errors, at level 2 it also prints ACK/NACK messages and sent messages. At level 3 it prints the received bytes being decoded by a specific message reader. At level 4 it prints the incoming buffer before it is split by message header.
+
 ## Troubleshooting
 
 1. Why can't the ublox_gps node open my device, even though I have correctly specified the path in `/dev`? 
 * Make sure you are the owner of the device, or a member of `dialout` group.
 
-## Links
+# Links
 Consult the [official protocol spec](https://www.u-blox.com/sites/default/files/products/documents/u-blox8-M8_ReceiverDescrProtSpec_(UBX-13003221)_Public.pdf) for details on packets supported by u-blox devices.
