@@ -40,8 +40,6 @@
 #include <boost/regex.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/atomic.hpp>
-#include <boost/thread/mutex.hpp>
-
 
 #include <ros/console.h>
 
