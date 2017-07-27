@@ -512,40 +512,56 @@ template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
   /**
-   * Publish a NavPVT message. Also publishes Fix and Twist messages and
-   * updates the fix diagnostics.
+   * @brief Publish a NavPVT message as well as NavSatFix and 
+   * TwistWithCovarianceStamped messages.
+   * This function also updates the fix diagnostics. 
+   * If a fixed carrier phase solution is available, the NavSatFix status is set 
+   * to GBAS fixed.
    * @param m the message to publish
    */
-  // template<typename NavPVT>
   void publishNavPvt(const NavPVT& m) {
+    // NavPVT publisher
     static ros::Publisher publisher =
         nh->advertise<NavPVT>("navpvt", kROSQueueSize);
     publisher.publish(m);
 
-    /** Fix message */
+    //
+    // NavSatFix message
+    //
     static ros::Publisher fixPublisher =
         nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
-    // timestamp
+
     sensor_msgs::NavSatFix fix;
-    fix.header.stamp.sec = toUtcSeconds(m);
-    fix.header.stamp.nsec = m.nano;
-
-    bool fixOk = m.flags & m.FLAGS_GNSS_FIX_OK;
-    uint8_t cpSoln = m.flags & m.CARRIER_PHASE_FIXED;
-
     fix.header.frame_id = frame_id;
+    // set the timestamp
+    uint8_t valid_time = m.VALID_DATE | m.VALID_TIME | m.VALID_FULLY_RESOLVED;
+    if (m.valid & valid_time == valid_time 
+        && m.flags2 & m.FLAGS2_CONFIRMED_AVAILABLE) {
+      // Use NavPVT timestamp since it is valid
+      fix.header.stamp.sec = toUtcSeconds(m);
+      fix.header.stamp.nsec = m.nano;
+    } else {
+      // Use ROS time since NavPVT timestamp is not valid
+      fix.header.stamp = ros::Time::now();
+    }
+    // Set the LLA
     fix.latitude = m.lat * 1e-7; // to deg
     fix.longitude = m.lon * 1e-7; // to deg
     fix.altitude = m.height * 1e-3; // to [m]
+    // Set the Fix status
+    bool fixOk = m.flags & m.FLAGS_GNSS_FIX_OK;
     if (fixOk && m.fixType >= m.FIX_TYPE_2D) {
       fix.status.status = fix.status.STATUS_FIX;
-      if(cpSoln == m.CARRIER_PHASE_FIXED)
+      if(m.flags & m.CARRIER_PHASE_FIXED)
         fix.status.status = fix.status.STATUS_GBAS_FIX;
     }
     else {
       fix.status.status = fix.status.STATUS_NO_FIX;
     }
-
+    // Set the service based on GNSS configuration
+    fix.status.service = fix_status_service;
+    
+    // Set the position covariance
     const double varH = pow(m.hAcc / 1000.0, 2); // to [m^2]
     const double varV = pow(m.vAcc / 1000.0, 2); // to [m^2]
     fix.position_covariance[0] = varH;
@@ -554,10 +570,11 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     fix.position_covariance_type =
         sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
 
-    fix.status.service = fix_status_service;
     fixPublisher.publish(fix);
 
-    /** Fix Velocity */
+    //
+    // Twist message
+    //
     static ros::Publisher velocityPublisher =
         nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
                                                                  kROSQueueSize);
@@ -569,9 +586,8 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     velocity.twist.twist.linear.x = m.velE * 1e-3;
     velocity.twist.twist.linear.y = m.velN * 1e-3;
     velocity.twist.twist.linear.z = -m.velD * 1e-3;
-
+    // Set the covariance
     const double covSpeed = pow(m.sAcc * 1e-3, 2);
-
     const int cols = 6;
     velocity.twist.covariance[cols * 0 + 0] = covSpeed;
     velocity.twist.covariance[cols * 1 + 1] = covSpeed;
@@ -580,7 +596,9 @@ class UbloxFirmware7Plus : public UbloxFirmware {
 
     velocityPublisher.publish(velocity);
 
-    /** Update diagnostics **/
+    //
+    // Update diagnostics 
+    //
     last_nav_pvt_ = m;
     freq_diag->tick(fix.header.stamp);
     updater->update();
