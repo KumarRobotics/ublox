@@ -333,6 +333,29 @@ class Gps {
   };
 
   void setWorker(const boost::shared_ptr<Worker>& worker);
+
+  /**
+   * @brief Subscribe to ACK/NACK messages and UPD-SOS-ACK messages.
+   */
+  void subscribeAcks();
+
+  /**
+   * @brief Callback handler for UBX-ACK message.
+   * @param m the message to process
+   */
+  void processAck(const ublox_msgs::Ack &m);
+  
+  /**
+   * @brief Callback handler for UBX-NACK message.
+   * @param m the message to process
+   */
+  void processNack(const ublox_msgs::Ack &m);
+
+  /**
+   * @brief Callback handler for UBX-UPD-SOS-ACK message.
+   * @param m the message to process
+   */
+  void processUpdSosAck(const ublox_msgs::UpdSOS_Ack &m);
   
   /**
    * @brief Initialize TCP I/O.
@@ -348,13 +371,6 @@ class Gps {
   void initializeSerial(unsigned int baudrate,
                         uint16_t uart_in,
                         uint16_t uart_out);
-  /**
-   * @brief Processes u-blox messages in the given buffer & clears the read
-   * messages from the buffer.
-   * @param data the buffer of u-blox messages to process
-   * @param size the size of the buffer
-   */
-  void readCallback(unsigned char* data, std::size_t& size);
 
   /**
    * @brief Send a stop message to the receiver and instruct it to dump its 
@@ -377,7 +393,7 @@ class Gps {
   // Stores last received ACK, accessed by multiple threads
   mutable boost::atomic<Ack> ack_;
 
-  // Call back handlers for u-blox messages
+  // Callback handlers for u-blox messages
   CallbackHandlers callbacks_;
 
   // Asynchronous IO objects

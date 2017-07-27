@@ -61,6 +61,7 @@
 #include <ublox_msgs/RxmSVSI.h>
 
 #include <ublox_msgs/Inf.h>
+#include <ublox_msgs/Ack.h>
 
 #include <ublox_msgs/CfgANT.h>
 #include <ublox_msgs/CfgCFG.h>

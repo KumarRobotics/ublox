@@ -89,9 +89,12 @@ class CallbackHandler_ : public CallbackHandler {
 };
 
 class CallbackHandlers {
-  typedef std::multimap<std::pair<uint8_t, uint8_t>,
-                        boost::shared_ptr<CallbackHandler> > Callbacks;
  public:
+  /**
+   * @brief Add a callback handler for the given message type.
+   * @param callback the callback handler for the message
+   * @typedef.a ublox_msgs message with CLASS_ID and MESSAGE_ID constants
+   */
   template <typename T>
   void insert(typename CallbackHandler_<T>::Callback callback) {
     boost::mutex::scoped_lock lock(callback_mutex_);
@@ -101,6 +104,14 @@ class CallbackHandlers {
                      boost::shared_ptr<CallbackHandler>(handler)));
   }
 
+  /**
+   * @brief Add a callback handler for the given message type and ID. This is 
+   * used for messages in which have the same structure (and therefore msg file)
+   * and same class ID but different message IDs. (e.g. INF, ACK)
+   * @param callback the callback handler for the message
+   * @param message_id the ID of the message
+   * @typedef.a ublox_msgs message with a CLASS_ID constant
+   */
   template <typename T>
   void insert(
       typename CallbackHandler_<T>::Callback callback, 
@@ -112,6 +123,10 @@ class CallbackHandlers {
                      boost::shared_ptr<CallbackHandler>(handler)));
   }
 
+  /**
+   * @brief Calls the callback handler for the message in the reader.
+   * @param reader a reader containing a u-blox message
+   */
   void handle(ublox::Reader& reader) {
     // Find the callback handlers for the message & decode it
     boost::mutex::scoped_lock lock(callback_mutex_);
@@ -122,6 +137,11 @@ class CallbackHandlers {
       callback->second->handle(reader);
   }
 
+  /**
+   * Read a u-blox message of the given type.
+   * @param message the received u-blox message
+   * @param timeout the amount of time to wait for the desired message
+   */
   template <typename T>
   bool read(T& message, const boost::posix_time::time_duration& timeout) {
     bool result = false;
@@ -146,7 +166,38 @@ class CallbackHandlers {
     return result;
   }
 
+  /**
+   * @brief Processes u-blox messages in the given buffer & clears the read
+   * messages from the buffer.
+   * @param data the buffer of u-blox messages to process
+   * @param size the size of the buffer
+   */
+  void readCallback(unsigned char* data, std::size_t& size) {
+    ublox::Reader reader(data, size);
+    // Read all U-Blox messages in buffer
+    while (reader.search() != reader.end() && reader.found()) {
+      if (debug >= 3) {
+        // Print the received bytes
+        std::ostringstream oss;
+        for (ublox::Reader::iterator it = reader.pos();
+             it != reader.pos() + reader.length() + 8; ++it)
+          oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
+        ROS_DEBUG("U-blox: reading %d bytes\n%s", reader.length() + 8, 
+                 oss.str().c_str());
+      }
+
+      handle(reader);
+    }
+
+    // delete read bytes from ASIO input buffer
+    std::copy(reader.pos(), reader.end(), data);
+    size -= reader.pos() - data;
+  }
+
  private:
+  typedef std::multimap<std::pair<uint8_t, uint8_t>,
+                        boost::shared_ptr<CallbackHandler> > Callbacks;
+
   // Call back handlers for u-blox messages
   Callbacks callbacks_;
   boost::mutex callback_mutex_;

@@ -36,15 +36,66 @@ using namespace ublox_msgs;
 boost::posix_time::time_duration Gps::default_timeout_(
     boost::posix_time::seconds(Gps::kDefaultAckTimeout));
 
-Gps::Gps() : configured_(false) {}
+Gps::Gps() : configured_(false) { subscribeAcks(); }
 
 Gps::~Gps() { close(); }
 
 void Gps::setWorker(const boost::shared_ptr<Worker>& worker) {
   if (worker_) return;
   worker_ = worker;
-  worker_->setCallback(boost::bind(&Gps::readCallback, this, _1, _2));
+  worker_->setCallback(boost::bind(&CallbackHandlers::readCallback, 
+                                   &callbacks_, _1, _2));
   configured_ = static_cast<bool>(worker);
+}
+
+void Gps::subscribeAcks() {
+  // Set NACK handler
+  subscribeId<ublox_msgs::Ack>(boost::bind(&Gps::processNack, this, _1), 
+                               ublox_msgs::Message::ACK::NACK);
+  // Set ACK handler
+  subscribeId<ublox_msgs::Ack>(boost::bind(&Gps::processAck, this, _1), 
+                               ublox_msgs::Message::ACK::ACK);
+  // Set UPD-SOS-ACK handler
+  subscribe<ublox_msgs::UpdSOS_Ack>(
+      boost::bind(&Gps::processUpdSosAck, this, _1));
+}
+
+void Gps::processAck(const ublox_msgs::Ack &m) {
+  // Process ACK/NACK messages
+  Ack ack;
+  ack.type = ACK;
+  ack.class_id = m.clsID;
+  ack.msg_id = m.msgID;
+  // store the ack atomically
+  ack_.store(ack, boost::memory_order_seq_cst);
+  ROS_DEBUG_COND(debug >= 2, "U-blox: received ACK: 0x%02x / 0x%02x", 
+                 m.clsID, m.msgID);
+}
+
+void Gps::processNack(const ublox_msgs::Ack &m) {
+  // Process ACK/NACK messages
+  Ack ack;
+  ack.type = NACK;
+  ack.class_id = m.clsID;
+  ack.msg_id = m.msgID;
+  // store the ack atomically
+  ack_.store(ack, boost::memory_order_seq_cst);
+  ROS_ERROR("U-blox: received NACK: 0x%02x / 0x%02x", m.clsID, m.msgID);
+}
+
+void Gps::processUpdSosAck(const ublox_msgs::UpdSOS_Ack &m) {
+  if (m.cmd == UpdSOS_Ack::CMD_BACKUP_CREATE_ACK) {
+    Ack ack;
+    ack.type = (m.response == m.BACKUP_CREATE_ACK) ? ACK : NACK;
+    ack.class_id = m.CLASS_ID;
+    ack.msg_id = m.MESSAGE_ID;
+    // store the ack atomically
+    ack_.store(ack, boost::memory_order_seq_cst);
+    ROS_DEBUG_COND(ack.type == ACK && debug >= 2, 
+                   "U-blox: received UPD SOS Backup ACK");
+    if(ack.type == NACK)
+      ROS_ERROR("U-blox: received UPD SOS Backup NACK");
+  }
 }
 
 void Gps::initializeSerial(unsigned int baudrate,
@@ -420,60 +471,4 @@ bool Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout,
                 && ack.msg_id == msg_id;
   return result;
 }
-
-void Gps::readCallback(unsigned char* data, std::size_t& size) {
-  ublox::Reader reader(data, size);
-  // Read all U-Blox messages in buffer
-  while (reader.search() != reader.end() && reader.found()) {
-    if (debug >= 3) {
-      // Print the received bytes
-      std::ostringstream oss;
-      for (ublox::Reader::iterator it = reader.pos();
-           it != reader.pos() + reader.length() + 8; ++it)
-        oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
-      ROS_DEBUG("U-blox: reading %d bytes\n%s", reader.length() + 8, 
-               oss.str().c_str());
-    }
-
-    callbacks_.handle(reader);
-
-    if (reader.classId() == ublox_msgs::Class::ACK) {
-      // Process ACK/NACK messages
-      const uint8_t * data = reader.data();
-      Ack ack;
-      ack.type = (reader.messageId() == ublox_msgs::Message::ACK::ACK) 
-                  ? ACK : NACK;
-      ack.class_id = data[0];
-      ack.msg_id = data[1];
-      // store the ack atomically
-      ack_.store(ack, boost::memory_order_seq_cst);
-      ROS_DEBUG_COND(ack.type == ACK && debug >= 2, 
-                     "U-blox: received ACK: 0x%02x / 0x%02x", data[0], data[1]);
-      if(ack.type == NACK)
-        ROS_ERROR("U-blox: received NACK: 0x%02x / 0x%02x", data[0], data[1]);
-    } else if(reader.classId() == ublox_msgs::Class::UPD 
-              && reader.messageId() == ublox_msgs::Message::UPD::SOS) {
-      // Received a UPD ACK
-      // Process ACK/NACK messages
-      if (data[0] == UpdSOS_Ack::CMD_BACKUP_CREATE_ACK) {
-        const uint8_t * data = reader.data();
-        Ack ack;
-        ack.type = (data[4] == UpdSOS_Ack::BACKUP_CREATE_ACK) ? ACK : NACK;
-        ack.class_id = ublox_msgs::Class::UPD;
-        ack.msg_id = ublox_msgs::Message::UPD::SOS;
-        // store the ack atomically
-        ack_.store(ack, boost::memory_order_seq_cst);
-        ROS_DEBUG_COND(ack.type == ACK && debug >= 2, 
-                       "U-blox: received UPD SOS Backup ACK");
-        if(ack.type == NACK)
-          ROS_ERROR("U-blox: received UPD SOS Backup NACK");
-      }
-    }
-  }
-
-  // delete read bytes from ASIO input buffer
-  std::copy(reader.pos(), reader.end(), data);
-  size -= reader.pos() - data;
-}
-
 }  // namespace ublox_gps
