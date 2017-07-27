@@ -244,19 +244,16 @@ class Gps {
    * given message
    * @param the callback handler for the message
    * @param rate the rate in Hz of the message
-   * @return
    */
   template <typename T>
-  Callbacks::iterator subscribe(typename CallbackHandler_<T>::Callback callback,
-                                unsigned int rate);
+  void subscribe(typename CallbackHandler_<T>::Callback callback,
+                 unsigned int rate);
   /**
    * @brief Subscribe to the given Ublox message.
    * @param the callback handler for the message
-   * @return
    */
   template <typename T>
-  Callbacks::iterator subscribe(
-      typename CallbackHandler_<T>::Callback callback);
+  void subscribe(typename CallbackHandler_<T>::Callback callback);
 
   /**
    * @brief Subscribe to the message with the given ID. This is used for 
@@ -264,12 +261,10 @@ class Gps {
    * e.g. INF messages.
    * @param the callback handler for the message
    * @param message_id the U-Blox message ID
-   * @return
    */
   template <typename T>
-  Callbacks::iterator subscribeId(
-      typename CallbackHandler_<T>::Callback callback, 
-      unsigned int message_id);
+  void subscribeId(typename CallbackHandler_<T>::Callback callback,
+                   unsigned int message_id);
 
   /**
    * Read a u-blox message of the given type.
@@ -383,8 +378,7 @@ class Gps {
   mutable boost::atomic<Ack> ack_;
 
   // Call back handlers for u-blox messages
-  Callbacks callbacks_;
-  boost::mutex callback_mutex_;
+  CallbackHandlers callbacks_;
 
   // Asynchronous IO objects
   boost::asio::io_service io_service_;
@@ -393,30 +387,21 @@ class Gps {
 };
 
 template <typename T>
-Callbacks::iterator Gps::subscribe(
+void Gps::subscribe(
     typename CallbackHandler_<T>::Callback callback, unsigned int rate) {
-  if (!setRate(T::CLASS_ID, T::MESSAGE_ID, rate)) return Callbacks::iterator();
-  return subscribe<T>(callback);
+  if (!setRate(T::CLASS_ID, T::MESSAGE_ID, rate)) return;
+  subscribe<T>(callback);
 }
 
 template <typename T>
-Callbacks::iterator Gps::subscribe(
-    typename CallbackHandler_<T>::Callback callback) {
-  boost::mutex::scoped_lock lock(callback_mutex_);
-  CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
-  return callbacks_.insert(
-      std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
-                     boost::shared_ptr<CallbackHandler>(handler)));
+void Gps::subscribe(typename CallbackHandler_<T>::Callback callback) {
+  callbacks_.insert<T>(callback);
 }
 
 template <typename T>
-Callbacks::iterator Gps::subscribeId(
-    typename CallbackHandler_<T>::Callback callback, unsigned int message_id) {
-  boost::mutex::scoped_lock lock(callback_mutex_);
-  CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
-  return callbacks_.insert(
-      std::make_pair(std::make_pair(T::CLASS_ID, message_id),
-                     boost::shared_ptr<CallbackHandler>(handler)));
+void Gps::subscribeId(typename CallbackHandler_<T>::Callback callback, 
+                      unsigned int message_id) {
+  callbacks_.insert<T>(callback, message_id);
 }
 
 template <typename ConfigT>
@@ -429,26 +414,8 @@ bool Gps::poll(ConfigT& message,
 
 template <typename T>
 bool Gps::read(T& message, const boost::posix_time::time_duration& timeout) {
-  bool result = false;
   if (!worker_) return false;
-
-  // Create a callback handler for this message
-  callback_mutex_.lock();
-  CallbackHandler_<T>* handler = new CallbackHandler_<T>();
-  Callbacks::iterator callback = callbacks_.insert(
-      (std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
-                      boost::shared_ptr<CallbackHandler>(handler))));
-  callback_mutex_.unlock();
-  // Wait for the message
-  if (handler->wait(timeout)) {
-    message = handler->get();
-    result = true;
-  }
-  // Remove the callback handler
-  callback_mutex_.lock();
-  callbacks_.erase(callback);
-  callback_mutex_.unlock();
-  return result;
+  return callbacks_.read(message, timeout);
 }
 
 template <typename ConfigT>

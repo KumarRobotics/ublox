@@ -435,14 +435,7 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
                oss.str().c_str());
     }
 
-    // Find the callback handlers for the message & decode it
-    callback_mutex_.lock();
-    Callbacks::key_type key =
-        std::make_pair(reader.classId(), reader.messageId());
-    for (Callbacks::iterator callback = callbacks_.lower_bound(key);
-         callback != callbacks_.upper_bound(key); ++callback)
-      callback->second->handle(reader);
-    callback_mutex_.unlock();
+    callbacks_.handle(reader);
 
     if (reader.classId() == ublox_msgs::Class::ACK) {
       // Process ACK/NACK messages

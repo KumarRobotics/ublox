@@ -88,8 +88,69 @@ class CallbackHandler_ : public CallbackHandler {
   T message_;
 };
 
-typedef std::multimap<std::pair<uint8_t, uint8_t>,
-                      boost::shared_ptr<CallbackHandler> > Callbacks;
+class CallbackHandlers {
+  typedef std::multimap<std::pair<uint8_t, uint8_t>,
+                        boost::shared_ptr<CallbackHandler> > Callbacks;
+ public:
+  template <typename T>
+  void insert(typename CallbackHandler_<T>::Callback callback) {
+    boost::mutex::scoped_lock lock(callback_mutex_);
+    CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
+    callbacks_.insert(
+      std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
+                     boost::shared_ptr<CallbackHandler>(handler)));
+  }
+
+  template <typename T>
+  void insert(
+      typename CallbackHandler_<T>::Callback callback, 
+      unsigned int message_id) {
+    boost::mutex::scoped_lock lock(callback_mutex_);
+    CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
+    callbacks_.insert(
+      std::make_pair(std::make_pair(T::CLASS_ID, message_id),
+                     boost::shared_ptr<CallbackHandler>(handler)));
+  }
+
+  void handle(ublox::Reader& reader) {
+    // Find the callback handlers for the message & decode it
+    boost::mutex::scoped_lock lock(callback_mutex_);
+    Callbacks::key_type key =
+        std::make_pair(reader.classId(), reader.messageId());
+    for (Callbacks::iterator callback = callbacks_.lower_bound(key);
+         callback != callbacks_.upper_bound(key); ++callback)
+      callback->second->handle(reader);
+  }
+
+  template <typename T>
+  bool read(T& message, const boost::posix_time::time_duration& timeout) {
+    bool result = false;
+    // Create a callback handler for this message
+    callback_mutex_.lock();
+    CallbackHandler_<T>* handler = new CallbackHandler_<T>();
+    Callbacks::iterator callback = callbacks_.insert(
+      (std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
+                      boost::shared_ptr<CallbackHandler>(handler))));
+    callback_mutex_.unlock();
+
+    // Wait for the message
+    if (handler->wait(timeout)) {
+      message = handler->get();
+      result = true;
+    }
+    
+    // Remove the callback handler
+    callback_mutex_.lock();
+    callbacks_.erase(callback);
+    callback_mutex_.unlock();
+    return result;
+  }
+
+ private:
+  // Call back handlers for u-blox messages
+  Callbacks callbacks_;
+  boost::mutex callback_mutex_;
+};
 
 }  // namespace ublox_gps
 
