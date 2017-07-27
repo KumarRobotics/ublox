@@ -192,6 +192,7 @@ The two topics to which you should subscribe are `~fix` and `~fix_velocity`. The
   - BUG FIX for NavSatFix messages for firmware >=7. The NavSatFix now only uses the NavPVT message time if it is valid, otherwise it uses ROS time.
   - Added `UBX-UPD` messages. For firmware version 8, the node can now save the flash memory on shutdown and clear the flash memory during configuration based on ROS params.
   - Added respawn parameters to example launch file.
+  - Migrated all callback handling to `callback.h` from `gps.h` and `gps.cpp`. ACK messages are now processed through callback handlers.
 * **1.1.1**:
   - BUG FIX for acknowledgments. The last received ack message was accessed by multiple threads but was not atomic. This variable is now thread safe.
   - BUG FIX for GNSS configuration for Firmware 8, the GNSS configuration is now verified & modified properly.
