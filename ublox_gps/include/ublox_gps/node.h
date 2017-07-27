@@ -355,6 +355,11 @@ class UbloxNode : public virtual ComponentInterface {
   void initialize();
 
   /**
+   * @brief Shutdown the node. Closes the serial port.
+   */
+  void shutdown();
+
+  /**
    * @brief Send a reset message the u-blox device & re-initialize the I/O.
    * @return true if reset was successful, false otherwise.
    */
@@ -397,23 +402,27 @@ class UbloxNode : public virtual ComponentInterface {
   double min_freq, max_freq;
 
   // Variables set from parameter server
+  // Device port, dynamic model type, and fix mode type
   std::string device_, dynamic_model_, fix_mode_;
   // Set from dynamic model & fix mode strings
   uint8_t dmodel_, fmode_;
   // UART1 baudrate and in/out protocol (see CfgPRT message for constants)
   uint32_t baudrate_;
   uint16_t uart_in_, uart_out_; 
+  // The measurement rate in Hz
   double rate_;
-  // User-defined Datum (only used if the set_dat param is true)
+  // If true, set configure the User-Defined Datum
   bool set_dat_;
+  // User-defined Datum 
   ublox_msgs::CfgDAT cfg_dat_;
-  // If true: enable the GNSS
+  // If true: enable the feature
   bool enable_sbas_, enable_ppp_;
+  // SBAS parameters (see CfgSBAS) and dead reckoning LIMITED
   uint8_t sbas_usage_, max_sbas_, dr_limit_;
 
   // Determined From Mon VER
   float protocol_version_;
-
+  
   // The node will call the functions in these interfaces for each object
   // in the vector, this allows the user to easily add new features
   std::vector<boost::shared_ptr<ComponentInterface> > components_;
@@ -718,9 +727,15 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
   // Type of device reset, only used if GNSS configuration is changed
   // see CfgRST message for constants
   uint8_t reset_mode_;
-  // Used to configure NMEA (if set_nmea_), filled with ros params
-  ublox_msgs::CfgNMEA cfg_nmea_;
+  // If true, the node will configure the NMEA settings
   bool set_nmea_;
+  // Desired NMEA configuration, set from ROS parameters
+  ublox_msgs::CfgNMEA cfg_nmea_;
+  // If true, node will send command to saves the BBR to flash memory on 
+  // shutdown
+  bool save_on_shutdown_;
+  // If true, node will send command to clear the flash memory during config
+  bool clear_bbr_;
 };
 
 /**

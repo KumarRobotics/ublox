@@ -147,6 +147,12 @@ void Gps::initializeIo(std::string device,
 }
 
 void Gps::close() {
+  if(save_on_shutdown_) {
+    if(saveOnShutdown())
+      ROS_INFO("U-Blox Flash BBR saved");
+    else
+      ROS_INFO("U-Blox Flash BBR failed to save");
+  }
   worker_.reset();
   configured_ = false;
 }
@@ -163,6 +169,27 @@ bool Gps::reset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
   if (!configure(rst, false)) 
     return false;
   return true;
+}
+
+bool Gps::saveOnShutdown() {
+  // Command the receiver to stop
+  CfgRST rst;
+  rst.navBbrMask = rst.NAV_BBR_HOT_START;
+  rst.resetMode = rst.RESET_MODE_GNSS_STOP;
+  if(!configure(rst))
+    return false;
+  // Command saving the contents of BBR to flash memory
+  // And wait for UBX-UPD-SOS-ACK
+  UpdSOS backup; 
+  return configure(backup);
+}
+
+bool Gps::clearBbr() {
+  // Command saving the contents of BBR to flash memory
+  // And wait for UBX-UPD-SOS-ACK
+  UpdSOS sos; 
+  sos.cmd = sos.CMD_FLASH_BACKUP_CLEAR;
+  return configure(sos);
 }
 
 bool Gps::configUart1(unsigned int baudrate, uint16_t in_proto_mask, 
@@ -431,6 +458,23 @@ void Gps::readCallback(unsigned char* data, std::size_t& size) {
                      "U-blox: received ACK: 0x%02x / 0x%02x", data[0], data[1]);
       if(ack.type == NACK)
         ROS_ERROR("U-blox: received NACK: 0x%02x / 0x%02x", data[0], data[1]);
+    } else if(reader.classId() == ublox_msgs::Class::UPD 
+              && reader.messageId() == ublox_msgs::Message::UPD::SOS) {
+      // Received a UPD ACK
+      // Process ACK/NACK messages
+      if (data[0] == UpdSOS_Ack::CMD_BACKUP_CREATE_ACK) {
+        const uint8_t * data = reader.data();
+        Ack ack;
+        ack.type = (data[4] == UpdSOS_Ack::BACKUP_CREATE_ACK) ? ACK : NACK;
+        ack.class_id = ublox_msgs::Class::UPD;
+        ack.msg_id = ublox_msgs::Message::UPD::SOS;
+        // store the ack atomically
+        ack_.store(ack, boost::memory_order_seq_cst);
+        ROS_DEBUG_COND(ack.type == ACK && debug >= 2, 
+                       "U-blox: received UPD SOS Backup ACK");
+        if(ack.type == NACK)
+          ROS_ERROR("U-blox: received UPD SOS Backup NACK");
+      }
     }
   }
 

@@ -119,7 +119,6 @@ void UbloxNode::addProductInterface(std::string product_category,
 }
 
 void UbloxNode::getRosParams() {
-  // int uart_in_default = ;
   nh->param("device", device_, std::string("/dev/ttyACM0"));
   nh->param("frame_id", frame_id, std::string("gps"));
   // UART 1 params
@@ -493,6 +492,10 @@ void UbloxNode::initialize() {
     poller.start();
     ros::spin();
   }
+  shutdown();
+}
+
+void UbloxNode::shutdown() {
   if (gps.isInitialized()) {
     gps.close();
     ROS_INFO("Closed connection to %s.", device_.c_str());
@@ -957,6 +960,10 @@ void UbloxFirmware7::subscribe() {
 UbloxFirmware8::UbloxFirmware8() {}
 
 void UbloxFirmware8::getRosParams() {
+  // UPD SOS configuration
+  nh->param("clear_bbr", clear_bbr_, false);
+  gps.setSaveOnShutdown(nh->param("save_on_shutdown", false));
+
   // GNSS enable/disable
   nh->param("gnss/gps", enable_gps_, true);
   nh->param("gnss/galileo", enable_galileo_, false);
@@ -1068,6 +1075,11 @@ void UbloxFirmware8::getRosParams() {
 
 
 bool UbloxFirmware8::configureUblox() {
+  if(clear_bbr_) {
+    // clear flash memory
+    if(!gps.clearBbr())
+      ROS_ERROR("u-blox failed to clear flash memory");
+  }
   //
   // Configure the GNSS, only if the configuration is different
   //

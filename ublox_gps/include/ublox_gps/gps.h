@@ -51,18 +51,29 @@
 #include <ublox_gps/callback.h>
 
 namespace ublox_gps {
-// Possible baudrates for U-Blox devices
+// Possible baudrates for u-blox devices
 const static unsigned int kBaudrates[] = {4800, 9600, 19200, 38400, 
                                           57600, 115200, 230400, 460800};
 
 class Gps {
  public:
+  // Sleep time [ms] after setting the baudrate
   const static int kSetBaudrateSleepMs = 500;
+  // Default timeout for ACK messages in seconds
   const static double kDefaultAckTimeout = 1.0;
+  // Size of write buffer for output messages
   const static int kWriterSize = 1024;
 
   Gps();
   virtual ~Gps();
+
+  /**
+   * @brief If called, when the node shuts down, it will send a command to
+   * save the flash memory.
+   */
+  bool setSaveOnShutdown(bool save_on_shutdown) {
+    save_on_shutdown_ = save_on_shutdown;
+  }
 
   /**
    * @brief Initialize the I/O port, if TCP, baudrate, and uart_in/uart_out 
@@ -76,7 +87,8 @@ class Gps {
                     uint16_t uart_in,
                     uint16_t uart_out);
   /**
-   * @brief Closes the I/O port.
+   * @brief Closes the I/O port, and initiates save on shutdown procedure
+   * if enabled.
    */
   void close();
 
@@ -87,6 +99,13 @@ class Gps {
    * @return true if the message was successfully sent, false otherwise
    */
   bool reset(uint16_t nav_bbr_mask, uint16_t reset_mode);
+
+  /**
+   * @brief Send a message to the receiver to delete the BBR data stored in 
+   * flash.
+   * @return true if sent message and received ACK, false otherwise
+   */
+  bool clearBbr();
   
   /**
    * @brief Configure the UART1 Port.
@@ -342,13 +361,28 @@ class Gps {
    */
   void readCallback(unsigned char* data, std::size_t& size);
 
-  boost::shared_ptr<Worker> worker_;
-  bool configured_;
+  /**
+   * @brief Send a stop message to the receiver and instruct it to dump its 
+   * current state to the attached flash memory (where fitted) as part of the 
+   * shutdown procedure. 
+   * This data is then automatically retrieved when the receiver is restarted. 
+   * Executes the procedure recommended in the u-blox 8 documentation.
+   * @return true if the receiver reset & saved the BBR contents to flash
+   */
+  bool saveOnShutdown();
 
+  boost::shared_ptr<Worker> worker_;
+  // Whether or not the I/O port has been configured 
+  bool configured_;
+  // Whether or not to call save on shutdown upon shutdown
+  bool save_on_shutdown_;
+
+  // The default timeout for ACK messages
   static boost::posix_time::time_duration default_timeout_;
   // Stores last received ACK, accessed by multiple threads
   mutable boost::atomic<Ack> ack_;
 
+  // Call back handlers for u-blox messages
   Callbacks callbacks_;
   boost::mutex callback_mutex_;
 
