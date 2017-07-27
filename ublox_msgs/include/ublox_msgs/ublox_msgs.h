@@ -82,6 +82,9 @@
 #include <ublox_msgs/CfgSBAS.h>
 #include <ublox_msgs/CfgTMODE3.h>
 
+#include <ublox_msgs/UpdSOS.h>
+#include <ublox_msgs/UpdSOS_Ack.h>
+
 #include <ublox_msgs/MonGNSS.h>
 #include <ublox_msgs/MonHW.h>
 #include <ublox_msgs/MonVER.h>
@@ -116,6 +119,10 @@ namespace Class {
   // Configuration Input Messages: Set Dynamic Model, Set DOP Mask, Set Baud 
   // Rate, etc.
   static const uint8_t CFG = 0x06; 
+  // Firmware Update Messages: i.e. Memory/Flash erase/write, Reboot, Flash 
+  // identification, etc..
+  // Used to update the firmware and identify any attached flash device
+  static const uint8_t UPD = 0x09;
   // Monitoring Messages: Comunication Status, CPU Load, Stack Usage, Task 
   // Status
   static const uint8_t MON = 0x0A; 
@@ -208,6 +215,11 @@ namespace Message {
     static const uint8_t RST = CfgRST::MESSAGE_ID;
     static const uint8_t SBAS = CfgSBAS::MESSAGE_ID;
     static const uint8_t TMODE3 = CfgTMODE3::MESSAGE_ID;
+  }
+
+  namespace UPD {
+    // SOS and SOS_Ack have the same message ID, but different lengths
+    static const uint8_t SOS = UpdSOS::MESSAGE_ID;
   }
   
   namespace MON {
