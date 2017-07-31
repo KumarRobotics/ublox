@@ -122,26 +122,26 @@ void UbloxNode::getRosParams() {
   nh->param("device", device_, std::string("/dev/ttyACM0"));
   nh->param("frame_id", frame_id, std::string("gps"));
   // UART 1 params
-  getRosParam("uart1/baudrate", baudrate_, 9600);
-  getRosParam("uart1/in", uart_in_, ublox_msgs::CfgPRT::PROTO_UBX 
+  getRosUint("uart1/baudrate", baudrate_, 9600);
+  getRosUint("uart1/in", uart_in_, ublox_msgs::CfgPRT::PROTO_UBX 
                                     | ublox_msgs::CfgPRT::PROTO_NMEA
                                     | ublox_msgs::CfgPRT::PROTO_RTCM);
-  getRosParam("uart1/out", uart_out_, ublox_msgs::CfgPRT::PROTO_UBX);
+  getRosUint("uart1/out", uart_out_, ublox_msgs::CfgPRT::PROTO_UBX);
   // Measurement rate params
   nh->param("rate", rate_, 4.0);  // in Hz
-  getRosParam("nav_rate", nav_rate, 1);  // # of measurement rate cycles
+  getRosUint("nav_rate", nav_rate, 1);  // # of measurement rate cycles
   // RTCM params
-  getRosParam("rtcm/ids", rtcm_ids);  // RTCM output message IDs 
-  getRosParam("rtcm/rates", rtcm_rates);  // RTCM output message rates
+  getRosUint("rtcm/ids", rtcm_ids);  // RTCM output message IDs 
+  getRosUint("rtcm/rates", rtcm_rates);  // RTCM output message rates
   // PPP: Advanced Setting
   nh->param("enable_ppp", enable_ppp_, false);
   // SBAS params, only for some devices
   nh->param("sbas", enable_sbas_, false);
-  getRosParam("sbas/max", max_sbas_, 0); // Maximum number of SBAS channels
-  getRosParam("sbas/usage", sbas_usage_, 0);
+  getRosUint("sbas/max", max_sbas_, 0); // Maximum number of SBAS channels
+  getRosUint("sbas/usage", sbas_usage_, 0);
   nh->param("dynamic_model", dynamic_model_, std::string("portable"));
   nh->param("fix_mode", fix_mode_, std::string("auto"));
-  getRosParam("dr_limit", dr_limit_, 0); // Dead reckoning limit
+  getRosUint("dr_limit", dr_limit_, 0); // Dead reckoning limit
 
   if (enable_ppp_) 
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
@@ -523,10 +523,10 @@ void UbloxFirmware6::getRosParams() {
   if (set_nmea_) {
     bool compat, consider;
 
-    if (!getRosParam("nmea/version", cfg_nmea_.version))
+    if (!getRosUint("nmea/version", cfg_nmea_.version))
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/version must be set");
-    if (!getRosParam("nmea/num_sv", cfg_nmea_.numSV))
+    if (!getRosUint("nmea/num_sv", cfg_nmea_.numSV))
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
                 "true, therefore nmea/num_sv must be set");
     if (!nh->getParam("nmea/compat", compat))
@@ -754,7 +754,7 @@ void UbloxFirmware7::getRosParams() {
   nh->param("gnss/gps", enable_gps_, true);
   nh->param("gnss/glonass", enable_glonass_, false);
   nh->param("gnss/qzss", enable_qzss_, false);
-  getRosParam("gnss/qzss_sig_cfg", qzss_sig_cfg_, 
+  getRosUint("gnss/qzss_sig_cfg", qzss_sig_cfg_, 
               ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA);
   nh->param("gnss/sbas", enable_sbas_, false);
   
@@ -790,13 +790,13 @@ void UbloxFirmware7::getRosParams() {
   if (set_nmea_) {
     bool compat, consider;
 
-    if (!getRosParam("nmea/version", cfg_nmea_.nmeaVersion))
+    if (!getRosUint("nmea/version", cfg_nmea_.nmeaVersion))
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/version must be set");
-    if (!getRosParam("nmea/num_sv", cfg_nmea_.numSV))
+    if (!getRosUint("nmea/num_sv", cfg_nmea_.numSV))
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
                 "true, therefore nmea/num_sv must be set");
-    if (!getRosParam("nmea/sv_numbering", cfg_nmea_.svNumbering))
+    if (!getRosUint("nmea/sv_numbering", cfg_nmea_.svNumbering))
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/sv_numbering must be set");
     if (!nh->getParam("nmea/compat", compat))
@@ -833,8 +833,8 @@ void UbloxFirmware7::getRosParams() {
     nh->param("nmea/gnssToFilter/glonass", temp, false);
     cfg_nmea_.gnssToFilter |= temp ? cfg_nmea_.GNSS_TO_FILTER_GLONASS : 0;
 
-    getRosParam("nmea/main_talker_id", cfg_nmea_.mainTalkerId);
-    getRosParam("nmea/gsv_talker_id", cfg_nmea_.gsvTalkerId);
+    getRosUint("nmea/main_talker_id", cfg_nmea_.mainTalkerId);
+    getRosUint("nmea/gsv_talker_id", cfg_nmea_.gsvTalkerId);
   } 
 }
 
@@ -973,11 +973,11 @@ void UbloxFirmware8::getRosParams() {
   nh->param("gnss/qzss", enable_qzss_, false);
   nh->param("gnss/sbas", enable_sbas_, false);
   // QZSS Signal Configuration
-  getRosParam("gnss/qzss_sig_cfg", qzss_sig_cfg_, 
+  getRosUint("gnss/qzss_sig_cfg", qzss_sig_cfg_, 
               ublox_msgs::CfgGNSS_Block::SIG_CFG_QZSS_L1CA);
   // Reset type, device is only reset if GNSS configuration is changed
   reset_mode_ = ublox_msgs::CfgRST::RESET_MODE_GNSS; // default
-  getRosParam("gnss/reset_mode", reset_mode_, reset_mode_);
+  getRosUint("gnss/reset_mode", reset_mode_, reset_mode_);
 
   if (enable_gps_ && !supportsGnss("GPS")) 
     ROS_WARN("gnss/gps is true, but GPS GNSS is not supported by %s",
@@ -1014,13 +1014,13 @@ void UbloxFirmware8::getRosParams() {
     cfg_nmea_.version = cfg_nmea_.VERSION; // message version
 
     // Verify that parameters are set
-    if (!getRosParam("nmea/version", cfg_nmea_.nmeaVersion))
+    if (!getRosUint("nmea/version", cfg_nmea_.nmeaVersion))
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/version must be set");
-    if (!getRosParam("nmea/num_sv", cfg_nmea_.numSV))
+    if (!getRosUint("nmea/num_sv", cfg_nmea_.numSV))
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
                 "true, therefore nmea/num_sv must be set");
-    if (!getRosParam("nmea/sv_numbering", cfg_nmea_.svNumbering))
+    if (!getRosUint("nmea/sv_numbering", cfg_nmea_.svNumbering))
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/sv_numbering must be set");
     if (!nh->getParam("nmea/compat", compat))
@@ -1063,11 +1063,11 @@ void UbloxFirmware8::getRosParams() {
     nh->param("nmea/gnssToFilter/beidou", temp, false);
     cfg_nmea_.gnssToFilter |= temp ? cfg_nmea_.GNSS_TO_FILTER_BEIDOU : 0;
 
-    getRosParam("nmea/main_talker_id", cfg_nmea_.mainTalkerId);
-    getRosParam("nmea/gsv_talker_id", cfg_nmea_.gsvTalkerId);
+    getRosUint("nmea/main_talker_id", cfg_nmea_.mainTalkerId);
+    getRosUint("nmea/gsv_talker_id", cfg_nmea_.gsvTalkerId);
     
     std::vector<uint8_t> bdsTalkerId;
-    getRosParam("nmea/bds_talker_id", bdsTalkerId);
+    getRosUint("nmea/bds_talker_id", bdsTalkerId);
     cfg_nmea_.bdsTalkerId[0] = bdsTalkerId[0];
     cfg_nmea_.bdsTalkerId[1] = bdsTalkerId[1];
   } 
@@ -1259,14 +1259,14 @@ void UbloxHpgRef::getRosParams() {
   if(nav_rate * meas_rate != 1000)
     ROS_WARN("For HPG Ref devices, nav_rate should be exactly 1 Hz.");
 
-  if(!getRosParam("tmode3", tmode3_))
+  if(!getRosUint("tmode3", tmode3_))
     throw std::runtime_error("Invalid settings: TMODE3 must be set");
 
   if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_FIXED) {
     if(!nh->getParam("arp/position", arp_position_))
       throw std::runtime_error(std::string("Invalid settings: arp/position ") 
                                + "must be set if TMODE3 is fixed");
-    if(!nh->getParam("arp/position_hp", arp_position_hp_))
+    if(!getRosInt("arp/position_hp", arp_position_hp_))
       throw std::runtime_error(std::string("Invalid settings: arp/position_hp ") 
                                + "must be set if TMODE3 is fixed");
     if(!nh->getParam("arp/acc", fixed_pos_acc_))
@@ -1279,7 +1279,7 @@ void UbloxHpgRef::getRosParams() {
     }
   } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
     nh->param("sv_in/reset", svin_reset_, true);
-    if(!getRosParam("sv_in/min_dur", sv_in_min_dur_))
+    if(!getRosUint("sv_in/min_dur", sv_in_min_dur_))
       throw std::runtime_error(std::string("Invalid settings: sv_in/min_dur ") 
                                + "must be set if TMODE3 is survey-in");
     if(!nh->getParam("sv_in/acc_lim", sv_in_acc_lim_))
@@ -1445,7 +1445,7 @@ void UbloxHpgRef::tmode3Diagnostics(
 //
 void UbloxHpgRov::getRosParams() {
   // default to float, see CfgDGNSS message for details
-  getRosParam("dgnss_mode", dgnss_mode_, 
+  getRosUint("dgnss_mode", dgnss_mode_, 
               ublox_msgs::CfgDGNSS::DGNSS_MODE_RTK_FIXED); 
 }
 

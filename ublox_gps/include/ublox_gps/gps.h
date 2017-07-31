@@ -158,14 +158,15 @@ class Gps {
    * @param arp_position a vector of size 3 representing the ARP position in 
    * ECEF coordinates [m] or LLA coordinates [deg]
    * @param arp_position_hp a vector of size 3 a vector of size 3 representing  
-   * the ARP position in ECEF coordinates [m] or LLA coordinates [deg]
+   * the ARP position in ECEF coordinates [0.1 mm] or LLA coordinates 
+   * [deg * 1e-9]
    * @param lla_flag true if position is given in LAT/LON/ALT, false if ECEF
    * @param fixed_pos_acc Fixed position 3D accuracy [m]
    * @return true on ACK, false if settings are incorrect or on other conditions
    */
   bool configTmode3Fixed(bool lla_flag,
                          std::vector<float> arp_position, 
-                         std::vector<float> arp_position_hp,
+                         std::vector<int8_t> arp_position_hp,
                          float fixed_pos_acc);
 
   /**

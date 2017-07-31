@@ -189,7 +189,7 @@ bool checkRange(std::vector<V> val, T min, T max, std::string name) {
  * @returns true if found, false if not found.
  */
 template <typename U>
-bool getRosParam(const std::string& key, U &u) {
+bool getRosUint(const std::string& key, U &u) {
   int param;
   if (!nh->getParam(key, param)) return false;
   // Check the bounds
@@ -210,8 +210,8 @@ bool getRosParam(const std::string& key, U &u) {
  * @returns true if found, false if not found.
  */
 template <typename U, typename V>
-void getRosParam(const std::string& key, U &u, V default_val) {
-  if(!getRosParam(key, u))
+void getRosUint(const std::string& key, U &u, V default_val) {
+  if(!getRosUint(key, u))
     u = default_val;
 }
 
@@ -221,7 +221,7 @@ void getRosParam(const std::string& key, U &u, V default_val) {
  * @returns true if found, false if not found.
  */
 template <typename U>
-bool getRosParam(const std::string& key, std::vector<U> &u) {
+bool getRosUint(const std::string& key, std::vector<U> &u) {
   std::vector<int> param;
   if (!nh->getParam(key, param)) return false;
   
@@ -232,6 +232,60 @@ bool getRosParam(const std::string& key, std::vector<U> &u) {
 
   // set the output
   u.insert(u.begin(), param.begin(), param.end());
+  return true;
+}
+
+/**
+ * @brief Get a integer (size 8 or 16) value from the parameter server.
+ * @param key the key to be used in the parameter server's dictionary
+ * @param u storage for the retrieved value.
+ * @throws std::runtime_error if the parameter is out of bounds
+ * @returns true if found, false if not found.
+ */
+template <typename I>
+bool getRosInt(const std::string& key, I &u) {
+  int param;
+  if (!nh->getParam(key, param)) return false;
+  // Check the bounds
+  I min = 1 << (sizeof(I) * 8 - 1);
+  I max = (I)~(min);
+  checkRange(param, min, max, key);
+  // set the output
+  u = (I) param;
+  return true;
+}
+
+/**
+ * @brief Get an integer value (size 8 or 16) from the parameter server.
+ * @param key the key to be used in the parameter server's dictionary
+ * @param u storage for the retrieved value.
+ * @param val value to use if the server doesn't contain this parameter.
+ * @throws std::runtime_error if the parameter is out of bounds
+ * @returns true if found, false if not found.
+ */
+template <typename U, typename V>
+void getRosInt(const std::string& key, U &u, V default_val) {
+  if(!getRosInt(key, u))
+    u = default_val;
+}
+
+/**
+ * @brief Get a int (size 8 or 16) vector from the parameter server.
+ * @throws std::runtime_error if the parameter is out of bounds.
+ * @returns true if found, false if not found.
+ */
+template <typename I>
+bool getRosInt(const std::string& key, std::vector<I> &i) {
+  std::vector<int> param;
+  if (!nh->getParam(key, param)) return false;
+  
+  // Check the bounds
+  I min = 1 << (sizeof(I) * 8 - 1);
+  I max = (I)~(min);
+  checkRange(param, min, max, key);
+
+  // set the output
+  i.insert(i.begin(), param.begin(), param.end());
   return true;
 }
 
@@ -857,10 +911,10 @@ class UbloxHpgRef: public virtual ComponentInterface {
   // TMODE3 = Fixed mode settings
   // True if coordinates are in LLA, false if ECEF
   bool lla_flag_; 
-  // Antenna Reference Point Position [m]
+  // Antenna Reference Point Position [m] or [deg]
   std::vector<float> arp_position_;
-  // Antenna Reference Point Position - High Precision [0.1 mm]
-  std::vector<float> arp_position_hp_;
+  // Antenna Reference Point Position - High Precision [0.1 mm] or [deg * 1e-9]
+  std::vector<int8_t> arp_position_hp_;
   // Fixed Position Accuracy [m]
   float fixed_pos_acc_;
   

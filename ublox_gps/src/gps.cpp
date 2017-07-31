@@ -320,7 +320,7 @@ bool Gps::configSbas(bool enable, uint8_t usage, uint8_t max_sbas) {
 
 bool Gps::configTmode3Fixed(bool lla_flag,
                             std::vector<float> arp_position, 
-                            std::vector<float> arp_position_hp,
+                            std::vector<int8_t> arp_position_hp,
                             float fixed_pos_acc) {
   if(arp_position.size() != 3 || arp_position_hp.size() != 3) {
     ROS_ERROR("Configuring TMODE3 to Fixed: size of position %s",
@@ -336,24 +336,21 @@ bool Gps::configTmode3Fixed(bool lla_flag,
 
   // Set position
   if(lla_flag) {
-    // Convert from deg to deg / 1e-7
+    // Convert from [deg] to [deg * 1e-7]
     tmode3.ecefXOrLat = (int)round(arp_position[0] * 1e7);
     tmode3.ecefYOrLon = (int)round(arp_position[1] * 1e7);
     tmode3.ecefZOrAlt = (int)round(arp_position[2] * 1e7);
-    tmode3.ecefXOrLatHP = (int)round(arp_position_hp[0] * 1e7);
-    tmode3.ecefYOrLonHP = (int)round(arp_position_hp[1] * 1e7);
-    tmode3.ecefZOrAltHP = (int)round(arp_position_hp[2] * 1e7);
   } else {
     // Convert from m to cm
     tmode3.ecefXOrLat = (int)round(arp_position[0] * 1e2);
     tmode3.ecefYOrLon = (int)round(arp_position[1] * 1e2);
     tmode3.ecefZOrAlt = (int)round(arp_position[2] * 1e2);
-    tmode3.ecefXOrLatHP = (int)round(arp_position_hp[0] * 1e2);
-    tmode3.ecefYOrLonHP = (int)round(arp_position_hp[1] * 1e2);
-    tmode3.ecefZOrAltHP = (int)round(arp_position_hp[2] * 1e2);
   }
+  tmode3.ecefXOrLatHP = arp_position_hp[0];
+  tmode3.ecefYOrLonHP = arp_position_hp[1];
+  tmode3.ecefZOrAltHP = arp_position_hp[2];
   // Convert from m to [0.1 mm]
-  tmode3.fixedPosAcc = (int)round(fixed_pos_acc * 1e4);
+  tmode3.fixedPosAcc = (uint32_t)round(fixed_pos_acc * 1e4);
   return configure(tmode3);
 }
 
