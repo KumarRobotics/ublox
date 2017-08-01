@@ -98,17 +98,34 @@ void Gps::processUpdSosAck(const ublox_msgs::UpdSOS_Ack &m) {
   }
 }
 
-void Gps::initializeSerial(unsigned int baudrate,
-                           uint16_t uart_in,
-                           uint16_t uart_out) {
+void Gps::initializeSerial(std::string port, unsigned int baudrate,
+                           uint16_t uart_in, uint16_t uart_out) {
+  
+  boost::shared_ptr<boost::asio::io_service> io_service(
+      new boost::asio::io_service);
+  boost::shared_ptr<boost::asio::serial_port> serial(
+      new boost::asio::serial_port(*io_service));
+
+  // open serial port
+  try {
+    serial->open(port);
+  } catch (std::runtime_error& e) {
+    throw std::runtime_error("U-Blox: Could not open serial port :" 
+                             + port + " " + e.what());
+  }
+
+  ROS_INFO("U-Blox: Opened serial port %s", port.c_str());
+  
+  // Set the I/O worker
   if (worker_) return;
   setWorker(boost::shared_ptr<Worker>(
-      new AsyncWorker<boost::asio::serial_port>(*serial_handle_, io_service_)));
+      new AsyncWorker<boost::asio::serial_port>(serial, io_service)));
 
   configured_ = false;
 
+  // Set the baudrate
   boost::asio::serial_port_base::baud_rate current_baudrate;
-  serial_handle_->get_option(current_baudrate);
+  serial->get_option(current_baudrate);
   // Incrementally increase the baudrate to the desired value
   for (int i = 0; i < sizeof(kBaudrates)/sizeof(kBaudrates[0]); i++) {
     if (current_baudrate.value() == baudrate)
@@ -116,11 +133,11 @@ void Gps::initializeSerial(unsigned int baudrate,
     // Don't step down, unless the desired baudrate is lower
     if(current_baudrate.value() > kBaudrates[i] && baudrate > kBaudrates[i])
       continue;
-    serial_handle_->set_option(
+    serial->set_option(
         boost::asio::serial_port_base::baud_rate(kBaudrates[i]));
     boost::this_thread::sleep(
         boost::posix_time::milliseconds(kSetBaudrateSleepMs));
-    serial_handle_->get_option(current_baudrate);
+    serial->get_option(current_baudrate);
     ROS_DEBUG("U-Blox: Set ASIO baudrate to %u", current_baudrate.value());
   }
   configured_ = configUart1(baudrate, uart_in, uart_out);
@@ -129,72 +146,38 @@ void Gps::initializeSerial(unsigned int baudrate,
   }
 }
 
-void Gps::initializeTcp() {
+void Gps::initializeTcp(std::string host, std::string port) {
+  boost::shared_ptr<boost::asio::io_service> io_service(
+      new boost::asio::io_service);
+  boost::asio::ip::tcp::resolver::iterator endpoint;
+
+  try {
+    boost::asio::ip::tcp::resolver resolver(*io_service);
+    endpoint =
+        resolver.resolve(boost::asio::ip::tcp::resolver::query(host, port));
+  } catch (std::runtime_error& e) {
+    throw std::runtime_error("U-Blox: Could not resolve" + host + " " +
+                             port + " " + e.what());
+  }
+
+  boost::shared_ptr<boost::asio::ip::tcp::socket> socket(
+    new boost::asio::ip::tcp::socket(*io_service));
+
+  try {
+    socket->connect(*endpoint);
+  } catch (std::runtime_error& e) {
+    throw std::runtime_error("U-Blox: Could not connect to " + 
+                             endpoint->host_name() + ":" + 
+                             endpoint->service_name() + ": " + e.what());
+  }
+
+  ROS_INFO("U-Blox: Connected to %s:%s.", endpoint->host_name().c_str(),
+           endpoint->service_name().c_str());
+  
   if (worker_) return;
   setWorker(boost::shared_ptr<Worker>(
-      new AsyncWorker<boost::asio::ip::tcp::socket>(*tcp_handle_, 
-                                                    io_service_)));
-}
-
-void Gps::initializeIo(std::string device,
-                       unsigned int baudrate,
-                       uint16_t uart_in,
-                       uint16_t uart_out) {
-  boost::smatch match;
-
-  if (boost::regex_match(device, match,
-                         boost::regex("(tcp|udp)://(.+):(\\d+)"))) {
-    std::string proto(match[1]);
-    std::string host(match[2]);
-    std::string port(match[3]);
-    ROS_INFO("Connecting to %s://%s:%s ...", proto.c_str(), host.c_str(),
-             port.c_str());
-
-    if (proto == "tcp") {
-      boost::asio::ip::tcp::resolver::iterator endpoint;
-
-      try {
-        boost::asio::ip::tcp::resolver resolver(io_service_);
-        endpoint =
-            resolver.resolve(boost::asio::ip::tcp::resolver::query(host, port));
-      } catch (std::runtime_error& e) {
-        throw std::runtime_error("U-Blox: Could not resolve" + host + " " +
-                                 port + " " + e.what());
-      }
-
-      boost::asio::ip::tcp::socket* socket =
-          new boost::asio::ip::tcp::socket(io_service_);
-      tcp_handle_.reset(socket);
-
-      try {
-        socket->connect(*endpoint);
-      } catch (std::runtime_error& e) {
-        throw std::runtime_error("U-Blox: Could not connect to " + 
-                                 endpoint->host_name() + ":" + 
-                                 endpoint->service_name() + ": " + e.what());
-      }
-
-      ROS_INFO("U-Blox: Connected to %s:%s.", endpoint->host_name().c_str(),
-               endpoint->service_name().c_str());
-      initializeTcp();
-    } else {
-      throw std::runtime_error("Protocol '" + proto + "' is unsupported");
-    }
-  } else {
-    boost::asio::serial_port* serial = new boost::asio::serial_port(io_service_);
-    serial_handle_.reset(serial);
-
-    // open serial port
-    try {
-      serial->open(device);
-    } catch (std::runtime_error& e) {
-      throw std::runtime_error("U-Blox: Could not open serial port :" 
-                               + device + " " + e.what());
-    }
-
-    ROS_INFO("U-Blox: Opened serial port %s", device.c_str());
-    initializeSerial(baudrate, uart_in, uart_out);
-  }
+      new AsyncWorker<boost::asio::ip::tcp::socket>(socket, 
+                                                    io_service)));
 }
 
 void Gps::close() {

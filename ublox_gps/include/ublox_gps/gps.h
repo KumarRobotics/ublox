@@ -49,24 +49,26 @@
 #include <ublox_gps/callback.h>
 
 namespace ublox_gps {
-const static unsigned int kBaudrates[] = {4800, 
-                                          9600, 
-                                          19200, 
-                                          38400, 
-                                          57600, 
-                                          115200, 
-                                          230400, 
-                                          460800}; //!< Possible baudrates for 
-                                                   //!< u-blox devices
-
+//! Possible baudrates for u-blox devices
+const static unsigned int kBaudrates[] = { 4800, 
+                                           9600, 
+                                           19200, 
+                                           38400, 
+                                           57600, 
+                                           115200, 
+                                           230400, 
+                                           460800 }; 
+/**
+ * @brief Handles communication with and configuration of the u-blox device
+ */
 class Gps {
  public:
-  const static int kSetBaudrateSleepMs = 500; //!< Sleep time [ms] after setting 
-                                              //!< the baudrate
-  const static double kDefaultAckTimeout = 1.0; //!< Default timeout for ACK 
-                                                //!< messages in seconds
-  const static int kWriterSize = 1024; //!< Size of write buffer for output 
-                                       //!< messages
+  //! Sleep time [ms] after setting the baudrate
+  const static int kSetBaudrateSleepMs = 500; 
+  //! Default timeout for ACK messages in seconds
+  const static double kDefaultAckTimeout = 1.0; 
+  //! Size of write buffer for output messages
+  const static int kWriterSize = 1024; 
 
   Gps();
   virtual ~Gps();
@@ -80,16 +82,24 @@ class Gps {
   }
 
   /**
-   * @brief Initialize the I/O port, if TCP, baudrate, and uart_in/uart_out 
-   * values will be ignored.
-   * @param baudrate the desired baudrate of the port
-   * @param uart_in The UART in protocol, see CfgPRT for values
-   * @param uart_in The UART out protocol, see CfgPRT for values
+   * @brief Initialize TCP I/O.
+   * @param host the TCP host
+   * @param port the TCP port
    */
-  void initializeIo(std::string device,
-                    unsigned int baudrate,
-                    uint16_t uart_in,
-                    uint16_t uart_out);
+  void initializeTcp(std::string host, std::string port);
+  
+  /**
+   * @brief Initialize the Serial I/O port.
+   * @param port the device port address
+   * @param baudrate the desired baud rate of the port
+   * @param uart_in the UART In protocol, see CfgPRT for options
+   * @param uart_out the UART Out protocol, see CfgPRT for options
+   */
+  void initializeSerial(std::string port,
+                        unsigned int baudrate,
+                        uint16_t uart_in,
+                        uint16_t uart_out);
+
   /**
    * @brief Closes the I/O port, and initiates save on shutdown procedure
    * if enabled.
@@ -328,16 +338,24 @@ class Gps {
                           uint8_t class_id, uint8_t msg_id);
 
  private:
-  // Types for ACK/NACK messages, WAIT is used when waiting for an ACK
-  enum AckType { NACK, ACK, WAIT }; 
+  //! Types for ACK/NACK messages, WAIT is used when waiting for an ACK
+  enum AckType { 
+    NACK, //! Not acknowledged
+    ACK, //! Acknowledge
+    WAIT //! Waiting for ACK
+  }; 
   
-  // Stores ACK/NACK messages
+  //! Stores ACK/NACK messages
   struct Ack {
-    AckType type;
-    uint8_t msg_id;
-    uint8_t class_id;
+    AckType type; //!< The ACK type
+    uint8_t class_id; //!< The class ID of the ACK
+    uint8_t msg_id; //!< The message ID of the ACK
   };
 
+  /**
+   * @brief Set the I/O worker
+   * @param an I/O handler
+   */
   void setWorker(const boost::shared_ptr<Worker>& worker);
 
   /**
@@ -362,47 +380,33 @@ class Gps {
    * @param m the message to process
    */
   void processUpdSosAck(const ublox_msgs::UpdSOS_Ack &m);
-  
-  /**
-   * @brief Initialize TCP I/O.
-   */
-  void initializeTcp();
-  
-  /**
-   * @brief Initialize the Serial I/O port.
-   * @param baudrate the desired baud rate of the port
-   * @param uart_in the UART In protocol, see CfgPRT for options
-   * @param uart_out the UART Out protocol, see CfgPRT for options
-   */
-  void initializeSerial(unsigned int baudrate,
-                        uint16_t uart_in,
-                        uint16_t uart_out);
 
   /**
-   * @brief Send a stop message to the receiver and instruct it to dump its 
+   * @brief Execute save on shutdown procedure.
+   *
+   * @details Execute the procedure recommended in the u-blox 8 documentation.
+   * Send a stop message to the receiver and instruct it to dump its 
    * current state to the attached flash memory (where fitted) as part of the 
-   * shutdown procedure. 
-   * This data is then automatically retrieved when the receiver is restarted. 
-   * Executes the procedure recommended in the u-blox 8 documentation.
+   * shutdown procedure. The flash data is automatically retrieved when the 
+   * receiver is restarted. 
    * @return true if the receiver reset & saved the BBR contents to flash
    */
   bool saveOnShutdown();
 
+  //! Processes I/O stream data
   boost::shared_ptr<Worker> worker_;
-  bool configured_; //!< Whether or not the I/O port has been configured
-  bool save_on_shutdown_; //!< Whether or not to save Flash BBR on shutdown
+  //! Whether or not the I/O port has been configured
+  bool configured_; 
+  //! Whether or not to save Flash BBR on shutdown
+  bool save_on_shutdown_; 
 
-  // The default timeout for ACK messages
+  //! The default timeout for ACK messages
   static boost::posix_time::time_duration default_timeout_;
-  mutable boost::atomic<Ack> ack_; //!< Stores last received ACK
-                                   //!< accessed by multiple threads
+  //! Stores last received ACK accessed by multiple threads
+  mutable boost::atomic<Ack> ack_; 
 
-  CallbackHandlers callbacks_; //!< Callback handlers for u-blox messages
-
-  // Asynchronous IO objects
-  boost::asio::io_service io_service_;
-  boost::shared_ptr<boost::asio::serial_port> serial_handle_;
-  boost::shared_ptr<boost::asio::ip::tcp::socket> tcp_handle_;
+  //! Callback handlers for u-blox messages
+  CallbackHandlers callbacks_; 
 };
 
 template <typename T>

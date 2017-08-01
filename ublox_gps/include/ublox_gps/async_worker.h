@@ -58,7 +58,8 @@ class AsyncWorker : public Worker {
    * @param io_service the I/O service
    * @param buffer_size the size of the input and output buffers
    */
-  AsyncWorker(StreamT& stream, boost::asio::io_service& io_service,
+  AsyncWorker(boost::shared_ptr<StreamT> stream, 
+              boost::shared_ptr<boost::asio::io_service> io_service,
               std::size_t buffer_size = 8192);
   virtual ~AsyncWorker();
 
@@ -80,7 +81,7 @@ class AsyncWorker : public Worker {
    */
   void wait(const boost::posix_time::time_duration& timeout);
 
-  bool isOpen() const { return stream_.is_open(); }
+  bool isOpen() const { return stream_->is_open(); }
 
  protected:
   /**
@@ -105,8 +106,8 @@ class AsyncWorker : public Worker {
    */
   void doClose();
 
-  StreamT& stream_; //!< The I/O stream
-  boost::asio::io_service& io_service_; //!< The I/O service
+  boost::shared_ptr<StreamT> stream_; //!< The I/O stream
+  boost::shared_ptr<boost::asio::io_service> io_service_; //!< The I/O service
 
   Mutex read_mutex_; //!< Lock for the input buffer
   boost::condition read_condition_;
@@ -126,25 +127,27 @@ class AsyncWorker : public Worker {
 };
 
 template <typename StreamT>
-AsyncWorker<StreamT>::AsyncWorker(StreamT& stream,
-                                  boost::asio::io_service& io_service,
-                                  std::size_t buffer_size)
-    : stream_(stream), io_service_(io_service), stopping_(false) {
+AsyncWorker<StreamT>::AsyncWorker(boost::shared_ptr<StreamT> stream,
+        boost::shared_ptr<boost::asio::io_service> io_service,
+        std::size_t buffer_size)
+    : stopping_(false) {
+  stream_ = stream;
+  io_service_ = io_service;
   in_.resize(buffer_size);
   in_buffer_size_ = 0;
 
   out_.reserve(buffer_size);
 
-  io_service_.post(boost::bind(&AsyncWorker<StreamT>::doRead, this));
+  io_service_->post(boost::bind(&AsyncWorker<StreamT>::doRead, this));
   background_thread_.reset(new boost::thread(
-      boost::bind(&boost::asio::io_service::run, &io_service_)));
+      boost::bind(&boost::asio::io_service::run, io_service_)));
 }
 
 template <typename StreamT>
 AsyncWorker<StreamT>::~AsyncWorker() {
-  io_service_.post(boost::bind(&AsyncWorker<StreamT>::doClose, this));
+  io_service_->post(boost::bind(&AsyncWorker<StreamT>::doClose, this));
   background_thread_->join();
-  io_service_.reset();
+  io_service_->reset();
 }
 
 template <typename StreamT>
@@ -162,7 +165,7 @@ bool AsyncWorker<StreamT>::send(const unsigned char* data,
   }
   out_.insert(out_.end(), data, data + size);
 
-  io_service_.post(boost::bind(&AsyncWorker<StreamT>::doWrite, this));
+  io_service_->post(boost::bind(&AsyncWorker<StreamT>::doWrite, this));
   return true;
 }
 
@@ -174,7 +177,7 @@ void AsyncWorker<StreamT>::doWrite() {
     return;
   }
   // Write all the data in the out buffer
-  boost::asio::write(stream_, boost::asio::buffer(out_.data(), out_.size()));
+  boost::asio::write(*stream_, boost::asio::buffer(out_.data(), out_.size()));
 
   if (debug >= 2) {
     // Print the data that was sent
@@ -192,7 +195,7 @@ void AsyncWorker<StreamT>::doWrite() {
 template <typename StreamT>
 void AsyncWorker<StreamT>::doRead() {
   ScopedLock lock(read_mutex_);
-  stream_.async_read_some(
+  stream_->async_read_some(
       boost::asio::buffer(in_.data() + in_buffer_size_,
                           in_.size() - in_buffer_size_),
                           boost::bind(&AsyncWorker<StreamT>::readEnd, this,
@@ -228,7 +231,7 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
   }
 
   if (!stopping_)
-    io_service_.post(boost::bind(&AsyncWorker<StreamT>::doRead, this));
+    io_service_->post(boost::bind(&AsyncWorker<StreamT>::doRead, this));
 }
 
 template <typename StreamT>
@@ -236,7 +239,7 @@ void AsyncWorker<StreamT>::doClose() {
   ScopedLock lock(read_mutex_);
   stopping_ = true;
   boost::system::error_code error;
-  stream_.cancel(error);
+  stream_->cancel(error);
 }
 
 template <typename StreamT>

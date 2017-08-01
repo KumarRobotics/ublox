@@ -465,11 +465,29 @@ void UbloxNode::configureInf() {
     ROS_WARN("Failed to configure INF messages");
 }
 
+void UbloxNode::initializeIo() {
+  boost::smatch match;
+  if (boost::regex_match(device_, match,
+                         boost::regex("(tcp|udp)://(.+):(\\d+)"))) {
+    std::string proto(match[1]);
+    if (proto == "tcp") {
+      std::string host(match[2]);
+      std::string port(match[3]);
+      ROS_INFO("Connecting to %s://%s:%s ...", proto.c_str(), host.c_str(),
+               port.c_str());
+      gps.initializeTcp(host, port);
+    } else {
+      throw std::runtime_error("Protocol '" + proto + "' is unsupported");
+    }
+  } else {
+    gps.initializeSerial(device_, baudrate_, uart_in_, uart_out_);
+  }
+}
+
 void UbloxNode::initialize() {
   // Params must be set before initializing IO
   getRosParams();
-  gps.initializeIo(device_, baudrate_, uart_in_, uart_out_);
-
+  initializeIo();
   // Must process Mon VER before setting firmware/hardware params
   processMonVer();
   // Must set firmware & hardware params before initializing diagnostics
