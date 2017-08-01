@@ -123,7 +123,7 @@ class Gps {
   
   /**
    * @brief Configure the UART1 Port.
-   * @param ids the baudrate of the port
+   * @param baudrate the baudrate of the port
    * @param in_proto_mask the in protocol mask, see CfgPRT message
    * @param out_proto_mask the out protocol mask, see CfgPRT message
    * @return true on ACK, false on other conditions.
@@ -139,6 +139,16 @@ class Gps {
    * @return true on ACK, false on other conditions.
    */
   bool disableUart1(ublox_msgs::CfgPRT& prev_cfg);
+
+  /**
+   * @brief Configure the USB Port.
+   * @param tx_ready the TX ready pin configuration, see CfgPRT message
+   * @param in_proto_mask the in protocol mask, see CfgPRT message
+   * @param out_proto_mask the out protocol mask, see CfgPRT message
+   * @return true on ACK, false on other conditions.
+   */
+  bool configUsb(uint16_t tx_ready, uint16_t in_proto_mask,
+                 uint16_t out_proto_mask);
 
   /**
    * @brief Configure the device navigation and measurement rate settings.

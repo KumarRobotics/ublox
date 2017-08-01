@@ -269,6 +269,22 @@ bool Gps::disableUart1(CfgPRT& prev_config) {
   return configure(port);
 }
 
+bool Gps::configUsb(uint16_t tx_ready,
+                    uint16_t in_proto_mask, 
+                    uint16_t out_proto_mask) {
+  if (!worker_) return true;
+
+  ROS_DEBUG("Configuring USB tx_ready: %u, In/Out Protocol: %u / %u", 
+            tx_ready, in_proto_mask, out_proto_mask);
+
+  CfgPRT port;
+  port.portID = CfgPRT::PORT_ID_USB;
+  port.txReady = tx_ready;
+  port.inProtoMask = in_proto_mask;
+  port.outProtoMask = out_proto_mask;
+  return configure(port);
+}
+
 bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
   ROS_DEBUG("Configuring measurement rate to %u and nav rate to %u", meas_rate, 
            nav_rate);

@@ -505,7 +505,16 @@ class UbloxNode : public virtual ComponentInterface {
   //! UART in protocol (see CfgPRT message for constants)
   uint16_t uart_in_; 
   //! UART out protocol (see CfgPRT message for constants)
-  uint16_t uart_out_; 
+  uint16_t uart_out_;
+  //! USB TX Ready Pin configuration (see CfgPRT message for constants)
+  uint16_t usb_tx_;
+  //! Whether to configure the USB port 
+  /*! Set to true if usb_in & usb_out parameters are set */
+  bool set_usb_;
+  //! USB in protocol (see CfgPRT message for constants)
+  uint16_t usb_in_;
+  //! USB out protocol (see CfgPRT message for constants)
+  uint16_t usb_out_ ;
   //! The measurement rate in Hz
   double rate_; 
   //! If true, set configure the User-Defined Datum

@@ -127,6 +127,19 @@ void UbloxNode::getRosParams() {
                                     | ublox_msgs::CfgPRT::PROTO_NMEA
                                     | ublox_msgs::CfgPRT::PROTO_RTCM);
   getRosUint("uart1/out", uart_out_, ublox_msgs::CfgPRT::PROTO_UBX);
+  // USB params
+  if (nh->hasParam("usb/in") || nh->hasParam("usb/out")) {
+    set_usb_ = true;
+    if(!getRosUint("usb/in", usb_in_)) {
+      throw std::runtime_error(std::string("usb/out is set, therefore ") + 
+        "usb/in must be set");
+    }
+    if(!getRosUint("usb/out", usb_out_)) {
+      throw std::runtime_error(std::string("usb/in is set, therefore ") + 
+        "usb/out must be set");
+    }
+    getRosUint("usb/tx_ready", usb_tx_, 0);
+  }
   // Measurement rate params
   nh->param("rate", rate_, 4.0);  // in Hz
   getRosUint("nav_rate", nav_rate, 1);  // # of measurement rate cycles
@@ -389,6 +402,9 @@ bool UbloxNode::configureUblox() {
   try {
     if (!gps.isInitialized())
       throw std::runtime_error("Failed to initialize.");
+    if(set_usb_) {
+      gps.configUsb(usb_tx_, usb_in_, usb_out_);
+    }
     if (!gps.configRate(meas_rate, nav_rate)) {
       std::stringstream ss;
       ss << "Failed to set measurement rate to " << meas_rate 
