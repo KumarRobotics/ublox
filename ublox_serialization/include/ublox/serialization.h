@@ -37,14 +37,25 @@
 
 #include "checksum.h"
 
+///
+/// This file defines the Serializer template class which encodes and decodes
+/// specific message types. 
+/// The Reader class decodes messages and from a buffer and the Writer class 
+/// encodes messages and writes them to a buffer.
+/// It also declares macros for declaring Messages. The Message class
+/// maps ROS messages types to class and message ID(s).
+///
+
 namespace ublox {
 
-static const uint8_t DEFAULT_SYNC_A = 0xB5; //!< u-blox message Sync A char
-static const uint8_t DEFAULT_SYNC_B = 0x62; //!< u-blox message Sync B char
-static const uint8_t kHeaderLength = 6; //!< Number of bytes in a message header
-                                       //!< (Sync chars + class ID + message ID)
-static const uint8_t kWrapperLength = 8; //!< Number of bytes in the message 
-                                         //!< header and checksum 
+//! u-blox message Sync A char
+static const uint8_t DEFAULT_SYNC_A = 0xB5; 
+//! u-blox message Sync B char
+static const uint8_t DEFAULT_SYNC_B = 0x62; 
+//! Number of bytes in a message header (Sync chars + class ID + message ID)
+static const uint8_t kHeaderLength = 6; 
+//! Number of checksum bytes in the u-blox message
+static const uint8_t kChecksumLength = 2; 
 
 /**
  * @brief Encodes and decodes messages.
@@ -52,15 +63,17 @@ static const uint8_t kWrapperLength = 8; //!< Number of bytes in the message
 template <typename T>
 struct Serializer {
   /**
-   * @brief Decode the message from the data.
-   * @param data a pointer to the start of the message
-   * @param count the number of bytes in the message
+   * @brief Decode the message payload from the data buffer.
+   * @param data a pointer to the start of the message payload
+   * @param count the number of bytes in the message payload
    * @param message the output message
    */
   static void read(const uint8_t *data, uint32_t count, 
                    typename boost::call_traits<T>::reference message);
   /**
-   * @brief Get the length of the message in bytes.
+   * @brief Get the length of the message payload in bytes.
+   * 
+   * @details The payload does not include the header or checksum.
    * @param message the message to get the length of
    * @return the length of the message in bytes.
    */
@@ -68,8 +81,8 @@ struct Serializer {
       typename boost::call_traits<T>::param_type message);
   
   /**
-   * @brief Encode the message as a byte array.
-   * @param data a buffer to fill with the message bytes
+   * @brief Encode the message payload as a byte array.
+   * @param data a buffer to fill with the message payload bytes
    * @param size the length of the buffer
    * @param message the output message
    */
@@ -77,14 +90,30 @@ struct Serializer {
                     typename boost::call_traits<T>::param_type message);
 };
 
+/**
+ * @brief Keeps track of which class and message IDs can be decoded by a given
+ * message type.
+ */
 template <typename T>
 class Message {
  public:
+  /**
+   * @brief Can this message type decode a u-blox message with the given ID?
+   * @param class_id the class ID of the u-blox message
+   * @param message_id the message ID of the u-blox message
+   * @return whether or not this message type decode the u-blox message
+   */
   static bool canDecode(uint8_t class_id, uint8_t message_id) {
     return std::find(keys_.begin(), keys_.end(), 
                      std::make_pair(class_id, message_id)) != keys_.end();
   }
-
+  
+  /**
+   * @brief Indicate that this message type can decode u-blox messages with the 
+   * given ID
+   * @param class_id the class ID of the u-blox message
+   * @param message_id the message ID of the u-blox message
+   */
   static void addKey(uint8_t class_id, uint8_t message_id) {
     keys_.push_back(std::make_pair(class_id, message_id));
   }
@@ -100,10 +129,31 @@ class Message {
   static std::vector<std::pair<uint8_t,uint8_t> > keys_;
 };
 
-struct Options
-{
-  Options() : sync_a(DEFAULT_SYNC_A), sync_b(DEFAULT_SYNC_B) {}
-  uint8_t sync_a, sync_b;
+/**
+ * @brief Options for the Reader and Writer for encoding and decoding messages.
+ */
+struct Options {
+  /**
+   * The default options for a u-blox message.
+   */
+  Options() : sync_a(DEFAULT_SYNC_A), sync_b(DEFAULT_SYNC_B), 
+              header_length(kHeaderLength), checksum_length(kChecksumLength) {}
+  //! The sync_a byte value identifying the start of a message
+  uint8_t sync_a; 
+  //! The sync_b byte value identifying the start of a message
+  uint8_t sync_b; 
+  //! The length of the message header in bytes (everything before the payload)
+  uint8_t header_length; 
+  //! The length of the checksum in bytes
+  uint8_t checksum_length; 
+  
+  /**
+   * @brief Get the number of bytes in the header and footer.
+   * @return the number of bytes in the header and footer
+   */
+  int wrapper_length() {
+    return header_length + checksum_length; 
+  }
 };
 
 /** 
@@ -111,12 +161,22 @@ struct Options
  */
 class Reader {
  public:
+  /**
+   * @param data a buffer containing u-blox messages
+   * @param count the size of the buffer
+   * @param options A struct containing the parameters sync_a and sync_b  
+   * which represent the sync bytes indicating the beginning of the message
+   */
   Reader(const uint8_t *data, uint32_t count, 
          const Options &options = Options()) : 
       data_(data), count_(count), found_(false), options_(options) {}
 
   typedef const uint8_t *iterator;
 
+  /**
+   * @brief Search the buffer for the beginning of the next u-blox message
+   * @return a pointer to the start of the next u-blox message
+   */
   iterator search()
   {
     if (found_) next();
@@ -131,35 +191,46 @@ class Reader {
     return data_;
   }
 
-  // @returns true if A message with the correct header & length has been found
+  /**
+   * @brief Has a u-blox message been found in the buffer?
+   * @returns true if A message with the correct header & length has been found
+   */
   bool found()
   {
     if (found_) return true;
     // Verify message is long enough to have sync chars, id, length & checksum
-    if (count_ < kWrapperLength) return false;
+    if (count_ < options_.wrapper_length()) return false;
     // Verify the header bits
     if (data_[0] != options_.sync_a || data_[1] != options_.sync_b) 
       return false;
     // Verify that the buffer length is long enough based on the received
     // message length
-    if (count_ < length() + kWrapperLength) return false;
+    if (count_ < length() + options_.wrapper_length()) return false;
 
     found_ = true;
     return true;
   }
 
-  // @brief Go to the next message, uses the received message length.
-  // Warning: will not go to the correct byte location if the received message
-  // length is incorrect, still needs to be called after this.
+  /**
+   * @brief Go to the start of the next message based on the received message 
+   * length.
+   *
+   * @details Warning: Does not go to the correct byte location if the received 
+   * message length is incorrect. If this is the case, search must be called.
+   */
   iterator next() {
     if (found()) {
-      uint32_t size = length() + 8;
+      uint32_t size = length() + options_.wrapper_length();
       data_ += size; count_ -= size;
     }
     found_ = false;
     return data_;
   }
 
+  /**
+   * @brief Get the current position in the read buffer.
+   * @return the current position of the read buffer
+   */
   iterator pos() {
     return data_;
   }
@@ -170,10 +241,25 @@ class Reader {
 
   uint8_t classId() { return data_[2]; }
   uint8_t messageId() { return data_[3]; }
+
+  /**
+   * @brief Get the length of the u-blox message payload.
+   *
+   * @details Payload length does not include the header or checksum length.
+   * Determines the length from the header of the u-blox message.
+   * @return the length of the message payload
+   */
   uint32_t length() { return (data_[5] << 8) + data_[4]; }
-  const uint8_t *data() { return data_ + kHeaderLength; }
+  const uint8_t *data() { return data_ + options_.header_length; }
+  
+  /**
+   * @brief Get the checksum of the u-blox message.
+   *
+   * @return the checksum of the u-blox message
+   */
   uint16_t checksum() { 
-    return *reinterpret_cast<const uint16_t *>(data_ + kHeaderLength + length()); 
+    return *reinterpret_cast<const uint16_t *>(data_ + options_.header_length +
+                                               length()); 
   }
 
   /**
@@ -196,25 +282,40 @@ class Reader {
       return false;
     }
 
-    Serializer<T>::read(data_ + kHeaderLength, length(), message);
+    Serializer<T>::read(data_ + options_.header_length, length(), message);
     return true;
   }
 
-  template <typename T> bool hasType() {
+  /**
+   * @brief Can the given message type decode the current message in the buffer?
+   * @return whether the given message type can decode the current message in 
+   * the buffer
+   */
+  template <typename T> 
+  bool hasType() {
     if (!found()) return false;
     return Message<T>::canDecode(classId(), messageId());
   }
 
+  /**
+   * @brief Does the u-blox message have the given class and message ID?
+   * @return Whether or not the u-blox message has the given class and message 
+   * ID
+   */
   bool isMessage(uint8_t class_id, uint8_t message_id) {
     if (!found()) return false;
-    return (data_[2] == class_id && data_[3] == message_id);
+    return (classId() == class_id && messageId() == message_id);
   }
 
  private:
-  const uint8_t *data_;
-  uint32_t count_;
-  bool found_;
-  Options options_;
+  //! The buffer of message bytes
+  const uint8_t *data_; 
+  //! the number of bytes in the buffer, //! decrement as the buffer is read
+  uint32_t count_; 
+  //! Whether or not a message has been found
+  bool found_; 
+  //! Options representing the sync char values, etc.
+  Options options_; 
 };
 
 /** 
@@ -222,10 +323,16 @@ class Reader {
  */
 class Writer {
  public:
+  typedef uint8_t *iterator;
+
+  /**
+   * @brief Construct a Writer with the given buffer.
+   * @param data a buffer for messages
+   * @param size the size of the buffer
+   * @param options options representing the message sync chars, etc.
+   */
   Writer(uint8_t *data, uint32_t size, const Options &options = Options()) : 
       data_(data), size_(size), options_(options) {}
-
-  typedef uint8_t *iterator;
 
   /**
    * @brief Encode the u-blox message.
@@ -237,30 +344,36 @@ class Writer {
   template <typename T> bool write(const T& message, 
                                    uint8_t class_id = T::CLASS_ID, 
                                    uint8_t message_id = T::MESSAGE_ID) {
+    // Check for buffer overflow
     uint32_t length = Serializer<T>::serializedLength(message);
-    if (size_ < length + kWrapperLength) {
-      ROS_ERROR("U-Blox write %u / %u: size < length + 8", class_id, message_id);
+    if (size_ < length + options_.wrapper_length()) {
+      ROS_ERROR("u-blox write buffer overflow. Message %u / %u not written", 
+                class_id, message_id);
       return false;
     }
-    Serializer<T>::write(data_ + kHeaderLength, size_ - kHeaderLength, message);
+    // Encode the message and add it to the buffer
+    Serializer<T>::write(data_ + options_.header_length, 
+                         size_ - options_.header_length, message);
     return write(0, length, class_id, message_id);
   }
 
   /**
-   * @brief Encode the u-blox message.
-   * @param message the output message buffer
-   * @param length the length of the message
+   * @brief Wrap the encoded message payload with a header and checksum and
+   * add it to the buffer.
+   * @param message the encoded message payload (no header or checksum)
+   * @param length the length of the message payload
    * @param class_id the u-blox class ID
    * @param message_id the u-blox message ID
    * @return true if the message was encoded correctly, false otherwise
    */
   bool write(const uint8_t* message, uint32_t length, uint8_t class_id, 
              uint8_t message_id) {
-    if (size_ < length + kWrapperLength) {
-      ROS_ERROR("U-Blox write %u / %u: size < length + 8", class_id, message_id);
+    if (size_ < length + options_.wrapper_length()) {
+      ROS_ERROR("u-blox write buffer overflow. Message %u / %u not written", 
+                class_id, message_id);
       return false;
     }
-    uint8_t *start = data_;
+    iterator start = data_;
 
     // write header
     *data_++ = options_.sync_a;
@@ -269,7 +382,7 @@ class Writer {
     *data_++ = message_id;
     *data_++ = length & 0xFF;
     *data_++ = (length >> 8) & 0xFF;
-    size_ -= kHeaderLength;
+    size_ -= options_.header_length;
 
     // write message
     if (message) std::copy(message, message + length, data_);
@@ -281,7 +394,7 @@ class Writer {
     calculateChecksum(start + 2, length + 4, ck_a, ck_b);
     *data_++ = ck_a;
     *data_++ = ck_b;
-    size_ -= 2;
+    size_ -= options_.checksum_length;
 
     return true;
   }
@@ -291,13 +404,18 @@ class Writer {
   }
 
  private:
-  uint8_t *data_;
-  uint32_t size_;
-  Options options_;
+  //! The buffer of message bytes
+  iterator data_; 
+  //! The number of remaining bytes in the buffer
+  /*! Decrements as messages are written to the buffer */
+  uint32_t size_; 
+  //! Options representing the sync char values, etc.
+  Options options_; 
 };
 
 } // namespace ublox
 
+// Use to declare u-blox messages and message serializers
 #define DECLARE_UBLOX_MESSAGE(class_id, message_id, package, message) \
   template class ublox::Serializer<package::message>; \
   template class ublox::Message<package::message>; \

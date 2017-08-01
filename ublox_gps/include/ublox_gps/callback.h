@@ -53,23 +53,30 @@ class CallbackHandler {
     boost::mutex::scoped_lock lock(mutex_);
     return condition_.timed_wait(lock, timeout);
   }
-  boost::mutex mutex_;
-  boost::condition_variable condition_;
+
+ protected:
+  boost::mutex mutex_; //!< Lock for the handler
+  boost::condition_variable condition_; //!< Condition for the handler lock
 };
 
 /**
  * @brief A callback handler for a u-blox message.
- * @typename T the message type
+ * @typedef T the message type
  */
 template <typename T>
 class CallbackHandler_ : public CallbackHandler {
  public:
-  typedef boost::function<void(const T&)> Callback;
+  typedef boost::function<void(const T&)> Callback; //!< A callback function
+
   /** 
    * @brief Initialize the Callback Handler with a callback function
    * @param func a callback function for the message, defaults to none
    */
   CallbackHandler_(const Callback& func = Callback()) : func_(func) {}
+  
+  /**
+   * @brief Get the last received message.
+   */
   virtual const T& get() { return message_; }
 
   /**
@@ -103,12 +110,12 @@ class CallbackHandler_ : public CallbackHandler {
   }
   
  private:
-  Callback func_;
-  T message_;
+  Callback func_; //!< the callback function to handle the message
+  T message_; //!< The last received message
 };
 
 /**
- * @brief A set of callback handlers used to handle incoming u-blox messages.
+ * @brief Callback handlers for incoming u-blox messages.
  */
 class CallbackHandlers {
  public:
@@ -160,7 +167,7 @@ class CallbackHandlers {
   }
 
   /**
-   * Read a u-blox message of the given type.
+   * @brief Read a u-blox message of the given type.
    * @param message the received u-blox message
    * @param timeout the amount of time to wait for the desired message
    */

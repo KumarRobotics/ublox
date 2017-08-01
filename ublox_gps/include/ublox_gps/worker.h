@@ -34,16 +34,36 @@
 
 namespace ublox_gps {
 
+/**
+ * @brief Handles I/O reading and writing.
+ */
 class Worker {
  public:
   typedef boost::function<void(unsigned char*, std::size_t&)> Callback;
   virtual ~Worker() {}
 
+  /**
+   * @brief Set the callback function for received messages.
+   * @param callback the callback function which process messages in the buffer
+   */
   virtual void setCallback(const Callback& callback) = 0;
 
+  /**
+   * @brief Send the data in the buffer.
+   * @param data the bytes to send
+   * @param size the size of the buffer
+   */
   virtual bool send(const unsigned char* data, const unsigned int size) = 0;
+  
+  /**
+   * @brief Wait for an incoming message.
+   * @param timeout the maximum time to wait.
+   */
   virtual void wait(const boost::posix_time::time_duration& timeout) = 0;
 
+  /**
+   * @brief Whether or not the I/O stream is open.
+   */
   virtual bool isOpen() const = 0;
 };
 

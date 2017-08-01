@@ -34,9 +34,11 @@
 #include <ublox/serialization.h>
 #include <ublox_msgs/ublox_msgs.h>
 
+///
 /// This file declares custom serializers for u-blox messages with dynamic 
 /// lengths and messages where the get/set messages have different sizes, but
 /// share the same parameters, such as CfgDAT.
+///
 
 namespace ublox {
 
