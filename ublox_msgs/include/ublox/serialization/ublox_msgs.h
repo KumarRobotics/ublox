@@ -34,13 +34,22 @@
 #include <ublox/serialization.h>
 #include <ublox_msgs/ublox_msgs.h>
 
+/// This file declares custom serializers for u-blox messages with dynamic 
+/// lengths and messages where the get/set messages have different sizes, but
+/// share the same parameters, such as CfgDAT.
+
 namespace ublox {
 
+///
+/// @brief Serializes the CfgDAT message which has a different length for 
+/// get/set.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::CfgDAT_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::CfgDAT_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::CfgDAT_<ContainerAllocator> > {
+  typedef boost::call_traits<ublox_msgs::CfgDAT_<ContainerAllocator> > 
+      CallTraits;
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.datumNum);
     stream.next(m.datumName);
@@ -55,15 +64,14 @@ struct Serializer<ublox_msgs::CfgDAT_<ContainerAllocator> >
     stream.next(m.scale);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::CfgDAT_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     // this is the size of CfgDAT set messages
     // serializedLength is only used for writes so this is ok
     return 44;
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::CfgDAT_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     ros::serialization::OStream stream(data, size);
     // ignores datumNum & datumName
     stream.next(m.majA);
@@ -78,11 +86,16 @@ struct Serializer<ublox_msgs::CfgDAT_<ContainerAllocator> >
   }
 };
 
+///
+/// @brief Serializes the CfgGNSS message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::CfgGNSS_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::CfgGNSS_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::CfgGNSS_<ContainerAllocator> > {
+  typedef ublox_msgs::CfgGNSS_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.msgVer);
     stream.next(m.numTrkChHw);
@@ -93,13 +106,12 @@ struct Serializer<ublox_msgs::CfgGNSS_<ContainerAllocator> >
       ros::serialization::deserialize(stream, m.blocks[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::CfgGNSS_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 4 + 8 * m.numConfigBlocks;
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::CfgGNSS_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     if(m.blocks.size() != m.numConfigBlocks) {
       ROS_ERROR("CfgGNSS numConfigBlocks must equal blocks size");
     }
@@ -107,17 +119,23 @@ struct Serializer<ublox_msgs::CfgGNSS_<ContainerAllocator> >
     stream.next(m.msgVer);
     stream.next(m.numTrkChHw);
     stream.next(m.numTrkChUse);
-    stream.next(static_cast<typename ublox_msgs::CfgGNSS_<ContainerAllocator>::_numConfigBlocks_type>(m.blocks.size()));
+    stream.next(
+        static_cast<typename Msg::_numConfigBlocks_type>(m.blocks.size()));
     for(std::size_t i = 0; i < m.blocks.size(); ++i) 
       ros::serialization::serialize(stream, m.blocks[i]);
   }
 };
 
+///
+/// @brief Serializes the CfgInf message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::CfgINF_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::CfgINF_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::CfgINF_<ContainerAllocator> > {
+  typedef boost::call_traits<ublox_msgs::CfgINF_<ContainerAllocator> > 
+      CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count,
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     int num_blocks = count / 10;
     m.blocks.resize(num_blocks);
@@ -125,75 +143,76 @@ struct Serializer<ublox_msgs::CfgINF_<ContainerAllocator> >
       ros::serialization::deserialize(stream, m.blocks[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::CfgINF_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 10 * m.blocks.size();
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::CfgINF_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     ros::serialization::OStream stream(data, size);
     for(std::size_t i = 0; i < m.blocks.size(); ++i) 
       ros::serialization::serialize(stream, m.blocks[i]);
   }
 };
 
+///
+/// @brief Serializes the Inf message which has a dynamic length string.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::Inf_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::Inf_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::Inf_<ContainerAllocator> > {
+  typedef boost::call_traits<ublox_msgs::Inf_<ContainerAllocator> > CallTraits;
+  
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     m.str.resize(count);
     for (int i = 0; i < count; ++i)
       ros::serialization::deserialize(stream, m.str[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::Inf_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return m.str.size();
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::Inf_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     ros::serialization::OStream stream(data, size);
     for(std::size_t i = 0; i < m.str.size(); ++i) 
       ros::serialization::serialize(stream, m.str[i]);
   }
 };
 
+///
+/// @brief Serializes the MonVER message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::MonVER_<ContainerAllocator> >
-{
+struct Serializer<ublox_msgs::MonVER_<ContainerAllocator> > {
+  typedef ublox_msgs::MonVER_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
   static void read(const uint8_t *data, uint32_t count, 
-      typename boost::call_traits<ublox_msgs::MonVER_<ContainerAllocator> >::reference m)
-  {
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.swVersion);
     stream.next(m.hwVersion);
 
     m.extension.clear();
-    try {
-      typename ublox_msgs::MonVER_<ContainerAllocator>::_extension_type::value_type temp;
-      while(true) {
-        // Read each extension string, will throw exception when end is reached
-        stream.next(temp);
-        m.extension.push_back(temp);
-      }
-    } catch(ros::serialization::StreamOverrunException& e) {
-      // This is expected once the end of the extension array is reached
+    int N = (count - 40) / 30;
+    m.extension.reserve(N);
+    typename Msg::_extension_type::value_type ext;
+    for (int i = 0; i < N; i++) {
+      // Read each extension string
+      stream.next(ext);
+      m.extension.push_back(ext);
     }
   }
 
-  static uint32_t serializedLength(
-      typename boost::call_traits<ublox_msgs::MonVER_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength(typename CallTraits::param_type m) {
     return 40 + (30 * m.extension.size());
   }
 
   static void write(uint8_t *data, uint32_t size, 
-      typename boost::call_traits<ublox_msgs::MonVER_<ContainerAllocator> >::param_type m)
-  {
+                    typename CallTraits::param_type m) {
     ros::serialization::OStream stream(data, size);
     stream.next(m.swVersion);
     stream.next(m.hwVersion);
@@ -202,11 +221,16 @@ struct Serializer<ublox_msgs::MonVER_<ContainerAllocator> >
   }
 };
 
+///
+/// @brief Serializes the NavDGPS message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::NavDGPS_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::NavDGPS_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::NavDGPS_<ContainerAllocator> > {
+  typedef ublox_msgs::NavDGPS_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.iTOW);
     stream.next(m.age);
@@ -220,13 +244,12 @@ struct Serializer<ublox_msgs::NavDGPS_<ContainerAllocator> >
       ros::serialization::deserialize(stream, m.sv[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::NavDGPS_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 16 + 12 * m.numCh;
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::NavDGPS_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     if(m.sv.size() != m.numCh) {
       ROS_ERROR("NavDGPS numCh must equal sv size");
     }
@@ -235,7 +258,7 @@ struct Serializer<ublox_msgs::NavDGPS_<ContainerAllocator> >
     stream.next(m.age);
     stream.next(m.baseId);
     stream.next(m.baseHealth);
-    stream.next(static_cast<typename ublox_msgs::NavDGPS_<ContainerAllocator>::_numCh_type>(m.sv.size()));
+    stream.next(static_cast<typename Msg::_numCh_type>(m.sv.size()));
     stream.next(m.status);
     stream.next(m.reserved1);
     for(std::size_t i = 0; i < m.sv.size(); ++i) 
@@ -243,11 +266,17 @@ struct Serializer<ublox_msgs::NavDGPS_<ContainerAllocator> >
   }
 };
 
+
+///
+/// @brief Serializes the NavSBAS message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::NavSBAS_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::NavSBAS_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::NavSBAS_<ContainerAllocator> > {
+  typedef ublox_msgs::NavSBAS_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.iTOW);
     stream.next(m.geo);
@@ -261,13 +290,12 @@ struct Serializer<ublox_msgs::NavSBAS_<ContainerAllocator> >
       ros::serialization::deserialize(stream, m.sv[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::NavSBAS_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 12 + 12 * m.cnt;
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::NavSBAS_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     if(m.sv.size() != m.cnt) {
       ROS_ERROR("NavSBAS cnt must equal sv size");
     }
@@ -277,18 +305,23 @@ struct Serializer<ublox_msgs::NavSBAS_<ContainerAllocator> >
     stream.next(m.mode);
     stream.next(m.sys);
     stream.next(m.service);
-    stream.next(static_cast<typename ublox_msgs::NavSBAS_<ContainerAllocator>::_cnt_type>(m.sv.size()));
+    stream.next(static_cast<typename Msg::_cnt_type>(m.sv.size()));
     stream.next(m.reserved0);
     for(std::size_t i = 0; i < m.sv.size(); ++i) 
       ros::serialization::serialize(stream, m.sv[i]);
   }
 };
 
+///
+/// @brief Serializes the NavSAT message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::NavSAT_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::NavSAT_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::NavSAT_<ContainerAllocator> > {
+  typedef ublox_msgs::NavSAT_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.iTOW);
     stream.next(m.version);
@@ -299,31 +332,35 @@ struct Serializer<ublox_msgs::NavSAT_<ContainerAllocator> >
       ros::serialization::deserialize(stream, m.sv[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::NavSAT_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 8 + 12 * m.numSvs;
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::NavSAT_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     if(m.sv.size() != m.numSvs) {
       ROS_ERROR("NavSAT numSvs must equal sv size");
     }
     ros::serialization::OStream stream(data, size);
     stream.next(m.iTOW);
     stream.next(m.version);
-    stream.next(static_cast<typename ublox_msgs::NavSAT_<ContainerAllocator>::_numSvs_type>(m.sv.size()));
+    stream.next(static_cast<typename Msg::_numSvs_type>(m.sv.size()));
     stream.next(m.reserved0);
     for(std::size_t i = 0; i < m.sv.size(); ++i) 
       ros::serialization::serialize(stream, m.sv[i]);
   }
 };
 
+///
+/// @brief Serializes the NavDGPS message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::NavSVINFO_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::NavSVINFO_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::NavSVINFO_<ContainerAllocator> > {
+  typedef ublox_msgs::NavSVINFO_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.iTOW);
     stream.next(m.numCh);
@@ -334,19 +371,18 @@ struct Serializer<ublox_msgs::NavSVINFO_<ContainerAllocator> >
       ros::serialization::deserialize(stream, m.sv[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::NavSVINFO_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 8 + 12 * m.numCh;
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::NavSVINFO_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     if(m.sv.size() != m.numCh) {
       ROS_ERROR("NavSVINFO numCh must equal sv size");
     }
     ros::serialization::OStream stream(data, size);
     stream.next(m.iTOW);
-    stream.next(static_cast<typename ublox_msgs::NavSVINFO_<ContainerAllocator>::_numCh_type>(m.sv.size()));
+    stream.next(static_cast<typename Msg::_numCh_type>(m.sv.size()));
     stream.next(m.globalFlags);
     stream.next(m.reserved2);
     for(std::size_t i = 0; i < m.sv.size(); ++i) 
@@ -354,11 +390,16 @@ struct Serializer<ublox_msgs::NavSVINFO_<ContainerAllocator> >
   }
 };
 
+///
+/// @brief Serializes the RxmRAW message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::RxmRAW_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::RxmRAW_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::RxmRAW_<ContainerAllocator> > {
+  typedef ublox_msgs::RxmRAW_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.rcvTOW);
     stream.next(m.week);
@@ -369,31 +410,35 @@ struct Serializer<ublox_msgs::RxmRAW_<ContainerAllocator> >
       ros::serialization::deserialize(stream, m.sv[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::RxmRAW_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 8 + 24 * m.numSV;
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmRAW_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     if(m.sv.size() != m.numSV) {
       ROS_ERROR("RxmRAW numSV must equal sv size");
     }
     ros::serialization::OStream stream(data, size);
     stream.next(m.rcvTOW);
     stream.next(m.week);
-    stream.next(static_cast<typename ublox_msgs::RxmRAW_<ContainerAllocator>::_numSV_type>(m.sv.size()));
+    stream.next(static_cast<typename Msg::_numSV_type>(m.sv.size()));
     stream.next(m.reserved1);
     for(std::size_t i = 0; i < m.sv.size(); ++i) 
       ros::serialization::serialize(stream, m.sv[i]);
   }
 };
 
+///
+/// @brief Serializes the RxmRAWX message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::RxmRAWX_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::RxmRAWX_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::RxmRAWX_<ContainerAllocator> > {
+  typedef ublox_msgs::RxmRAWX_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.rcvTOW);
     stream.next(m.week);
@@ -407,13 +452,12 @@ struct Serializer<ublox_msgs::RxmRAWX_<ContainerAllocator> >
       ros::serialization::deserialize(stream, m.meas[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::RxmRAWX_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 16 + 32 * m.numMeas;
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmRAWX_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     if(m.meas.size() != m.numMeas) {
       ROS_ERROR("RxmRAWX numMeas must equal meas size");
     }
@@ -421,7 +465,7 @@ struct Serializer<ublox_msgs::RxmRAWX_<ContainerAllocator> >
     stream.next(m.rcvTOW);
     stream.next(m.week);
     stream.next(m.leapS);
-    stream.next(static_cast<typename ublox_msgs::RxmRAWX_<ContainerAllocator>::_numMeas_type>(m.meas.size()));
+    stream.next(static_cast<typename Msg::_numMeas_type>(m.meas.size()));
     stream.next(m.recStat);
     stream.next(m.version);
     stream.next(m.reserved1);
@@ -430,11 +474,16 @@ struct Serializer<ublox_msgs::RxmRAWX_<ContainerAllocator> >
   }
 };
 
+///
+/// @brief Serializes the RxmSFRBX message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::RxmSFRBX_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::RxmSFRBX_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::RxmSFRBX_<ContainerAllocator> > {
+  typedef ublox_msgs::RxmSFRBX_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.gnssId);
     stream.next(m.svId);
@@ -449,13 +498,12 @@ struct Serializer<ublox_msgs::RxmSFRBX_<ContainerAllocator> >
       ros::serialization::deserialize(stream, m.dwrd[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::RxmSFRBX_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 8 + 4 * m.numWords;
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmSFRBX_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     if(m.dwrd.size() != m.numWords) {
       ROS_ERROR("RxmSFRBX numWords must equal dwrd size");
     }
@@ -464,7 +512,7 @@ struct Serializer<ublox_msgs::RxmSFRBX_<ContainerAllocator> >
     stream.next(m.svId);
     stream.next(m.reserved0);
     stream.next(m.freqId);
-    stream.next(static_cast<typename ublox_msgs::RxmSFRBX_<ContainerAllocator>::_numWords_type>(m.dwrd.size()));
+    stream.next(static_cast<typename Msg::_numWords_type>(m.dwrd.size()));
     stream.next(m.chn);
     stream.next(m.version);
     stream.next(m.reserved1);
@@ -473,11 +521,16 @@ struct Serializer<ublox_msgs::RxmSFRBX_<ContainerAllocator> >
   }
 };
 
+///
+/// @brief Serializes the RxmSVSI message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::RxmSVSI_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::RxmSVSI_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::RxmSVSI_<ContainerAllocator> > {
+  typedef ublox_msgs::RxmSVSI_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.iTOW);
     stream.next(m.week);
@@ -488,13 +541,12 @@ struct Serializer<ublox_msgs::RxmSVSI_<ContainerAllocator> >
       ros::serialization::deserialize(stream, m.sv[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::RxmSVSI_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 8 + 6 * m.numSV;
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmSVSI_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     if(m.sv.size() != m.numSV) {
       ROS_ERROR("RxmSVSI numSV must equal sv size");
     }
@@ -502,40 +554,43 @@ struct Serializer<ublox_msgs::RxmSVSI_<ContainerAllocator> >
     stream.next(m.iTOW);
     stream.next(m.week);
     stream.next(m.numVis);
-    stream.next(static_cast<typename ublox_msgs::RxmSVSI_<ContainerAllocator>::_numSV_type>(m.sv.size()));
+    stream.next(static_cast<typename Msg::_numSV_type>(m.sv.size()));
     for(std::size_t i = 0; i < m.sv.size(); ++i) 
       ros::serialization::serialize(stream, m.sv[i]);
   }
 };
 
+///
+/// @brief Serializes the RxmALM message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::RxmALM_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::RxmALM_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::RxmALM_<ContainerAllocator> > {
+  typedef ublox_msgs::RxmALM_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.svid);
     stream.next(m.week);
 
     m.dwrd.clear();
-    try {
-      typename ublox_msgs::RxmALM_<ContainerAllocator>::_dwrd_type::value_type temp;
-
+    if(count == 40) {
+      typename Msg::_dwrd_type::value_type temp;
+      m.dwrd.resize(8);
       for(std::size_t i = 0; i < 8; ++i) {
         stream.next(temp);
         m.dwrd.push_back(temp);
       }
-    } catch(ros::serialization::StreamOverrunException& e) {
     }
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::RxmALM_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 8 + (4 * m.dwrd.size());
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmALM_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     ros::serialization::OStream stream(data, size);
     stream.next(m.svid);
     stream.next(m.week);
@@ -544,11 +599,17 @@ struct Serializer<ublox_msgs::RxmALM_<ContainerAllocator> >
   }
 };
 
+///
+/// @brief Serializes the RxmEPH message which has a repeated block.
+///
 template <typename ContainerAllocator>
 struct Serializer<ublox_msgs::RxmEPH_<ContainerAllocator> >
 {
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::RxmEPH_<ContainerAllocator> >::reference m)
-  {
+  typedef ublox_msgs::RxmEPH_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.svid);
     stream.next(m.how);
@@ -556,34 +617,35 @@ struct Serializer<ublox_msgs::RxmEPH_<ContainerAllocator> >
     m.sf2d.clear();
     m.sf3d.clear();
 
-    try {
-      typename ublox_msgs::RxmEPH_<ContainerAllocator>::_sf1d_type::value_type temp1;
-      typename ublox_msgs::RxmEPH_<ContainerAllocator>::_sf2d_type::value_type temp2;
-      typename ublox_msgs::RxmEPH_<ContainerAllocator>::_sf3d_type::value_type temp3;
+    if (count == 104) {
+      typename Msg::_sf1d_type::value_type temp1;
+      typename Msg::_sf2d_type::value_type temp2;
+      typename Msg::_sf3d_type::value_type temp3;
 
+      m.sf1d.resize(8);
       for(std::size_t i = 0; i < 8; ++i) {
         stream.next(temp1);
         m.sf1d.push_back(temp1);
       }
+      m.sf2d.resize(8);
       for(std::size_t i = 0; i < 8; ++i) {
         stream.next(temp2);
         m.sf2d.push_back(temp2);
       }
+      m.sf3d.resize(8);
       for(std::size_t i = 0; i < 8; ++i) {
         stream.next(temp3);
         m.sf3d.push_back(temp3);
       }
-    } catch(ros::serialization::StreamOverrunException& e) {
     }
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::RxmEPH_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 8 + (4 * m.sf1d.size()) + (4 * m.sf2d.size()) + (4 * m.sf3d.size());
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::RxmEPH_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     ros::serialization::OStream stream(data, size);
     stream.next(m.svid);
     stream.next(m.how);
@@ -596,36 +658,37 @@ struct Serializer<ublox_msgs::RxmEPH_<ContainerAllocator> >
   }
 };
 
-/////////////////////////////////////////////////
-
+///
+/// @brief Serializes the AidALM message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::AidALM_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::AidALM_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::AidALM_<ContainerAllocator> > {
+  typedef ublox_msgs::AidALM_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.svid);
     stream.next(m.week);
 
     m.dwrd.clear();
-    try {
-      typename ublox_msgs::AidALM_<ContainerAllocator>::_dwrd_type::value_type temp;
-
+    if (count == 40) {
+      typename Msg::_dwrd_type::value_type temp;
+      m.dwrd.resize(8);
       for(std::size_t i = 0; i < 8; ++i) {
         stream.next(temp);
         m.dwrd.push_back(temp);
       }
-    } catch(ros::serialization::StreamOverrunException& e) {
-    }
+    } 
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::AidALM_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 8 + (4 * m.dwrd.size());
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::AidALM_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     ros::serialization::OStream stream(data, size);
     stream.next(m.svid);
     stream.next(m.week);
@@ -634,11 +697,17 @@ struct Serializer<ublox_msgs::AidALM_<ContainerAllocator> >
   }
 };
 
+///
+/// @brief Serializes the AidEPH message which has a repeated block.
+///
 template <typename ContainerAllocator>
 struct Serializer<ublox_msgs::AidEPH_<ContainerAllocator> >
 {
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::AidEPH_<ContainerAllocator> >::reference m)
-  {
+  typedef ublox_msgs::AidEPH_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.svid);
     stream.next(m.how);
@@ -646,34 +715,34 @@ struct Serializer<ublox_msgs::AidEPH_<ContainerAllocator> >
     m.sf2d.clear();
     m.sf3d.clear();
 
-    try {
-      typename ublox_msgs::AidEPH_<ContainerAllocator>::_sf1d_type::value_type temp1;
-      typename ublox_msgs::AidEPH_<ContainerAllocator>::_sf2d_type::value_type temp2;
-      typename ublox_msgs::AidEPH_<ContainerAllocator>::_sf3d_type::value_type temp3;
-
+    if (count == 104) {
+      typename Msg::_sf1d_type::value_type temp1;
+      typename Msg::_sf2d_type::value_type temp2;
+      typename Msg::_sf3d_type::value_type temp3;
+      m.sf1d.resize(8);
       for(std::size_t i = 0; i < 8; ++i) {
         stream.next(temp1);
         m.sf1d.push_back(temp1);
       }
+      m.sf2d.resize(8);
       for(std::size_t i = 0; i < 8; ++i) {
         stream.next(temp2);
         m.sf2d.push_back(temp2);
       }
+      m.sf3d.resize(8);
       for(std::size_t i = 0; i < 8; ++i) {
         stream.next(temp3);
         m.sf3d.push_back(temp3);
       }
-    } catch(ros::serialization::StreamOverrunException& e) {
     }
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::AidEPH_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 8 + (4 * m.sf1d.size()) + (4 * m.sf2d.size()) + (4 * m.sf3d.size());
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::AidEPH_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     ros::serialization::OStream stream(data, size);
     stream.next(m.svid);
     stream.next(m.how);
@@ -686,11 +755,17 @@ struct Serializer<ublox_msgs::AidEPH_<ContainerAllocator> >
   }
 };
 
+///
+/// @brief Serializes the EsfMEAS message which has a repeated block and an
+/// optional block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::EsfMEAS_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::EsfMEAS_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::EsfMEAS_<ContainerAllocator> > {
+  typedef boost::call_traits<ublox_msgs::EsfMEAS_<ContainerAllocator> > 
+      CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.timeTag);
     stream.next(m.flags);
@@ -709,14 +784,12 @@ struct Serializer<ublox_msgs::EsfMEAS_<ContainerAllocator> >
     }
   }
 
-
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::EsfMEAS_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 4 + 8 * m.data.size() + 4 * m.calibTtag.size();
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::EsfMEAS_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     ros::serialization::OStream stream(data, size);
     stream.next(m.timeTag);
     stream.next(m.flags);
@@ -728,11 +801,16 @@ struct Serializer<ublox_msgs::EsfMEAS_<ContainerAllocator> >
   }
 };
 
+///
+/// @brief Serializes the EsfRAW message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::EsfRAW_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::EsfRAW_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::EsfRAW_<ContainerAllocator> > {
+  typedef boost::call_traits<ublox_msgs::EsfRAW_<ContainerAllocator> > 
+      CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.reserved0);
     m.blocks.clear();
@@ -743,13 +821,12 @@ struct Serializer<ublox_msgs::EsfRAW_<ContainerAllocator> >
   }
 
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::EsfRAW_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 4 + 8 * m.blocks.size();
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::EsfRAW_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     ros::serialization::OStream stream(data, size);
     stream.next(m.reserved0);
     for(std::size_t i = 0; i < m.blocks.size(); ++i) 
@@ -757,11 +834,16 @@ struct Serializer<ublox_msgs::EsfRAW_<ContainerAllocator> >
   }
 };
 
+///
+/// @brief Serializes the EsfSTATUS message which has a repeated block.
+///
 template <typename ContainerAllocator>
-struct Serializer<ublox_msgs::EsfSTATUS_<ContainerAllocator> >
-{
-  static void read(const uint8_t *data, uint32_t count, typename boost::call_traits<ublox_msgs::EsfSTATUS_<ContainerAllocator> >::reference m)
-  {
+struct Serializer<ublox_msgs::EsfSTATUS_<ContainerAllocator> > {
+  typedef ublox_msgs::EsfSTATUS_<ContainerAllocator> Msg;
+  typedef boost::call_traits<Msg> CallTraits;
+
+  static void read(const uint8_t *data, uint32_t count, 
+                   typename CallTraits::reference m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.iTOW);
     stream.next(m.version);
@@ -773,13 +855,12 @@ struct Serializer<ublox_msgs::EsfSTATUS_<ContainerAllocator> >
       ros::serialization::deserialize(stream, m.sens[i]);
   }
 
-  static uint32_t serializedLength (typename boost::call_traits<ublox_msgs::EsfSTATUS_<ContainerAllocator> >::param_type m)
-  {
+  static uint32_t serializedLength (typename CallTraits::param_type m) {
     return 16 + 4 * m.numSens;
   }
 
-  static void write(uint8_t *data, uint32_t size, typename boost::call_traits<ublox_msgs::EsfSTATUS_<ContainerAllocator> >::param_type m)
-  {
+  static void write(uint8_t *data, uint32_t size, 
+                    typename CallTraits::param_type m) {
     if(m.sens.size() != m.numSens) {
       ROS_ERROR("Writing EsfSTATUS message: numSens must equal size of sens");
     }
@@ -788,7 +869,7 @@ struct Serializer<ublox_msgs::EsfSTATUS_<ContainerAllocator> >
     stream.next(m.version);
     stream.next(m.fusionMode);
     stream.next(m.reserved2);
-    stream.next(static_cast<typename ublox_msgs::EsfSTATUS_<ContainerAllocator>::_numSens_type>(m.sens.size()));
+    stream.next(static_cast<typename Msg::_numSens_type>(m.sens.size()));
     for(std::size_t i = 0; i < m.sens.size(); ++i) 
       ros::serialization::serialize(stream, m.sens[i]);
   }
