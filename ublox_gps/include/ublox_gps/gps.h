@@ -49,18 +49,24 @@
 #include <ublox_gps/callback.h>
 
 namespace ublox_gps {
-// Possible baudrates for u-blox devices
-const static unsigned int kBaudrates[] = {4800, 9600, 19200, 38400, 
-                                          57600, 115200, 230400, 460800};
+const static unsigned int kBaudrates[] = {4800, 
+                                          9600, 
+                                          19200, 
+                                          38400, 
+                                          57600, 
+                                          115200, 
+                                          230400, 
+                                          460800}; //!< Possible baudrates for 
+                                                   //!< u-blox devices
 
 class Gps {
  public:
-  // Sleep time [ms] after setting the baudrate
-  const static int kSetBaudrateSleepMs = 500;
-  // Default timeout for ACK messages in seconds
-  const static double kDefaultAckTimeout = 1.0;
-  // Size of write buffer for output messages
-  const static int kWriterSize = 1024;
+  const static int kSetBaudrateSleepMs = 500; //!< Sleep time [ms] after setting 
+                                              //!< the baudrate
+  const static double kDefaultAckTimeout = 1.0; //!< Default timeout for ACK 
+                                                //!< messages in seconds
+  const static int kWriterSize = 1024; //!< Size of write buffer for output 
+                                       //!< messages
 
   Gps();
   virtual ~Gps();
@@ -152,9 +158,10 @@ class Gps {
   bool configSbas(bool enable, uint8_t usage, uint8_t max_sbas);
 
   /**
-   * @brief Set the TMODE3 settings to fixed at the given antenna reference
-   * point (ARP) position in either Latitude Longitude Altitude (LLA) or 
-   * ECEF coordinates.
+   * @brief Set the TMODE3 settings to fixed.
+   * 
+   * @details Sets the at the given antenna reference point (ARP) position in 
+   * either Latitude Longitude Altitude (LLA) or ECEF coordinates.
    * @param arp_position a vector of size 3 representing the ARP position in 
    * ECEF coordinates [m] or LLA coordinates [deg]
    * @param arp_position_hp a vector of size 3 a vector of size 3 representing  
@@ -382,18 +389,15 @@ class Gps {
   bool saveOnShutdown();
 
   boost::shared_ptr<Worker> worker_;
-  // Whether or not the I/O port has been configured 
-  bool configured_;
-  // Whether or not to call save on shutdown upon shutdown
-  bool save_on_shutdown_;
+  bool configured_; //!< Whether or not the I/O port has been configured
+  bool save_on_shutdown_; //!< Whether or not to save Flash BBR on shutdown
 
   // The default timeout for ACK messages
   static boost::posix_time::time_duration default_timeout_;
-  // Stores last received ACK, accessed by multiple threads
-  mutable boost::atomic<Ack> ack_;
+  mutable boost::atomic<Ack> ack_; //!< Stores last received ACK
+                                   //!< accessed by multiple threads
 
-  // Callback handlers for u-blox messages
-  CallbackHandlers callbacks_;
+  CallbackHandlers callbacks_; //!< Callback handlers for u-blox messages
 
   // Asynchronous IO objects
   boost::asio::io_service io_service_;

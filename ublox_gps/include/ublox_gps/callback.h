@@ -36,9 +36,19 @@
 
 namespace ublox_gps {
 
+/**
+ * @brief A callback handler for a u-blox message.
+ */
 class CallbackHandler {
  public:
+  /**
+   * @brief Decode the u-blox message.
+   */
   virtual void handle(ublox::Reader& reader) = 0;
+
+  /**
+   * @brief Wait for on the condition.
+   */
   bool wait(const boost::posix_time::time_duration& timeout) {
     boost::mutex::scoped_lock lock(mutex_);
     return condition_.timed_wait(lock, timeout);
@@ -47,15 +57,24 @@ class CallbackHandler {
   boost::condition_variable condition_;
 };
 
+/**
+ * @brief A callback handler for a u-blox message.
+ * @typename T the message type
+ */
 template <typename T>
 class CallbackHandler_ : public CallbackHandler {
  public:
   typedef boost::function<void(const T&)> Callback;
+  /** 
+   * @brief Initialize the Callback Handler with a callback function
+   * @param func a callback function for the message, defaults to none
+   */
   CallbackHandler_(const Callback& func = Callback()) : func_(func) {}
   virtual const T& get() { return message_; }
 
   /**
    * @brief Decode the U-Blox message & call the callback function if it exists.
+   * @param reader a reader to decode the message buffer
    */
   void handle(ublox::Reader& reader) {
     boost::mutex::scoped_lock(mutex_);
@@ -88,6 +107,9 @@ class CallbackHandler_ : public CallbackHandler {
   T message_;
 };
 
+/**
+ * @brief A set of callback handlers used to handle incoming u-blox messages.
+ */
 class CallbackHandlers {
  public:
   /**

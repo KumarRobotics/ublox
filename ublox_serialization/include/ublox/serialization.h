@@ -39,20 +39,40 @@
 
 namespace ublox {
 
-static const uint8_t DEFAULT_SYNC_A = 0xB5;
-static const uint8_t DEFAULT_SYNC_B = 0x62;
-// Number of bytes in a message header (Sync chars + class ID + message ID)
-static const uint8_t kHeaderLength = 6;
-// Number of bytes in the message header and checksum 
-static const uint8_t kWrapperLength = 8;
+static const uint8_t DEFAULT_SYNC_A = 0xB5; //!< u-blox message Sync A char
+static const uint8_t DEFAULT_SYNC_B = 0x62; //!< u-blox message Sync B char
+static const uint8_t kHeaderLength = 6; //!< Number of bytes in a message header
+                                       //!< (Sync chars + class ID + message ID)
+static const uint8_t kWrapperLength = 8; //!< Number of bytes in the message 
+                                         //!< header and checksum 
 
-
+/**
+ * @brief Encodes and decodes messages.
+ */
 template <typename T>
 struct Serializer {
+  /**
+   * @brief Decode the message from the data.
+   * @param data a pointer to the start of the message
+   * @param count the number of bytes in the message
+   * @param message the output message
+   */
   static void read(const uint8_t *data, uint32_t count, 
                    typename boost::call_traits<T>::reference message);
+  /**
+   * @brief Get the length of the message in bytes.
+   * @param message the message to get the length of
+   * @return the length of the message in bytes.
+   */
   static uint32_t serializedLength(
       typename boost::call_traits<T>::param_type message);
+  
+  /**
+   * @brief Encode the message as a byte array.
+   * @param data a buffer to fill with the message bytes
+   * @param size the length of the buffer
+   * @param message the output message
+   */
   static void write(uint8_t *data, uint32_t size, 
                     typename boost::call_traits<T>::param_type message);
 };
@@ -86,6 +106,9 @@ struct Options
   uint8_t sync_a, sync_b;
 };
 
+/** 
+ * @brief Decodes byte messages into u-blox ROS messages.
+ */
 class Reader {
  public:
   Reader(const uint8_t *data, uint32_t count, 
@@ -153,6 +176,11 @@ class Reader {
     return *reinterpret_cast<const uint16_t *>(data_ + kHeaderLength + length()); 
   }
 
+  /**
+   * @brief Decode the given message.
+   * @param message the output message
+   * @param search whether or not to skip to the next message in the buffer
+   */
   template <typename T>
   bool read(typename boost::call_traits<T>::reference message, 
             bool search = false) {
@@ -189,6 +217,9 @@ class Reader {
   Options options_;
 };
 
+/** 
+ * @brief Encodes a u-blox ROS message as a byte array.
+ */
 class Writer {
  public:
   Writer(uint8_t *data, uint32_t size, const Options &options = Options()) : 
@@ -196,6 +227,13 @@ class Writer {
 
   typedef uint8_t *iterator;
 
+  /**
+   * @brief Encode the u-blox message.
+   * @param message the message to encode
+   * @param class_id the u-blox class ID, defaults to the message CLASS_ID
+   * @param message_id the u-blox message ID, defaults to the message MESSAGE_ID
+   * @return true if the message was encoded correctly, false otherwise
+   */
   template <typename T> bool write(const T& message, 
                                    uint8_t class_id = T::CLASS_ID, 
                                    uint8_t message_id = T::MESSAGE_ID) {
@@ -208,6 +246,14 @@ class Writer {
     return write(0, length, class_id, message_id);
   }
 
+  /**
+   * @brief Encode the u-blox message.
+   * @param message the output message buffer
+   * @param length the length of the message
+   * @param class_id the u-blox class ID
+   * @param message_id the u-blox message ID
+   * @return true if the message was encoded correctly, false otherwise
+   */
   bool write(const uint8_t* message, uint32_t length, uint8_t class_id, 
              uint8_t message_id) {
     if (size_ < length + kWrapperLength) {

@@ -99,14 +99,14 @@ The `ublox_gps` node supports the following parameters for all products and firm
 * `nav_rate` should be set to 1 Hz.
 
 ### For HPG Reference devices:
-* `tmode3`: Time Mode, defaults to Survey-In. See CfgTMODE3 for constants.
-* `arp/lla_flag`: True if the Fixed position is in Lat, Lon, Alt coordinates. False if ECEF. Must be set if `tmode3` is set to fixed. 
-* `arp/position`: Antenna Reference Point position. Must be set if `tmode3` is set to fixed. 
-* `arp/position_hp`: Antenna Reference Point High Precision position. Must be set if tmode3 is set to fixed. 
-* `arp/acc`: Fixed position accuracy. Must be set if `tmode3` is set to fixed. 
+* `tmode3`: Time Mode. Required. See CfgTMODE3 for constants.
+* `arp/lla_flag`: True if the Fixed position is in Lat, Lon, Alt coordinates. False if ECEF. Required if `tmode3` is set to fixed. 
+* `arp/position`: Antenna Reference Point position in [m] or [deg]. Required if `tmode3` is set to fixed. 
+* `arp/position_hp`: Antenna Reference Point High Precision position in [0.1 mm] or [deg * 1e-9]. Required if tmode3 is set to fixed. 
+* `arp/acc`: Fixed position accuracy in [m]. Required if `tmode3` is set to fixed. 
 * `sv_in/reset`: Whether or not to reset the survey in upon initialization. If false, it will only reset if the TMODE is disabled. Defaults to true.
-* `sv_in/min_dur`: The minimum Survey-In Duration time in seconds. Must be set if tmode3 is set to survey in.
-* `sv_in/acc_lim`: The minimum accuracy level of the survey in position in meters. MMust be set if `tmode3` is set to survey in.
+* `sv_in/min_dur`: The minimum Survey-In Duration time in seconds. Required tmode3 is set to survey in.
+* `sv_in/acc_lim`: The minimum accuracy level of the survey in position in meters. Required `tmode3` is set to survey in.
 
 ### For HPG Rover devices:
 * `dgnss_mode`: The Differential GNSS mode. Defaults to RTK FIXED. See `CfgDGNSS` message for constants.
@@ -308,7 +308,8 @@ Currently there are implementations of `ComponentInterface` for firmware version
 
 ## Adding new parameters
 1. Modify the `getRosParams()` method in the appropriate implementation of UbloxComponent (e.g. UbloxNode, UbloxFirmware8, UbloxHpgRef, etc.) and get the parameter. Group multiple related parameters into a namespace. Use all lower case names for parameters and namespaces separated with underscores. 
-* If the type is an unsigned integer (of any size), use the `ublox_node::getRosParam` method which will verify the bounds of the parameter.
+* If the type is an unsigned integer (of any size) or vector of unsigned integers, use the `ublox_node::getRosUint` method which will verify the bounds of the parameter.
+* If the type is an int8 or int16 or vector of int8's or int16s, use the `ublox_nod::getRosInt` method which will verify the bounds of the parameter. (This method can also be used for int32's but ROS has methods to get int32 params as well).
 2. If the parameter is used during configuration also modify the `UbloxComponent`'s `configureUblox()` method to send the appropriate configuration message. Do not send configuration messages in `getRosParams()`.
 3. Modify this README file and add the parameter name and description in the appropriate section. State whether there is a default value or if the parameter is required.
 4. Modify one of the sample `.yaml` configuration files in `ublox_gps/config` to include the parameter or add a new sample `.yaml` for your device.

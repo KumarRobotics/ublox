@@ -9,7 +9,9 @@ extern "C" {
   #include "ublox_gps/mkgmtime.h"
 }
 
-// Convert date/time to UTC time in seconds
+/**
+ * @brief Convert date/time to UTC time in seconds.
+ */
 template<typename NavPVT>
 long toUtcSeconds(const NavPVT& msg) {
   // Create TM struct for mkgmtime
