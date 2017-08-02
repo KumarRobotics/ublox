@@ -195,6 +195,7 @@ The two topics to which you should subscribe are `~fix` and `~fix_velocity`. The
   - Added `UBX-UPD` messages. For firmware version 8, the node can now save the flash memory on shutdown and clear the flash memory during configuration based on ROS params.
   - Added `CfgGPS` message.
   - Added respawn parameters to example launch file.
+  - Changed name of "subscribe" parameter namespace to "publish" for clarity.
   - Migrated all callback handling to `callback.h` from `gps.h` and `gps.cpp`. ACK messages are now processed through callback handlers.
   - Modified how the I/O stream is initialized so that the node now handles parsing the port string.
   - Cleaned up ublox custom serialization classes by adding typedefs and using count to determine repeating block statements instead of using try-catch statements to serialize stream.

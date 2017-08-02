@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package format='2'>
   <name>ublox_gps</name>
-  <version>1.1.0</version>
+  <version>1.1.2</version>
   <description>
-     Driver for ublox GPS devices.
+     Driver for u-blox GPS devices.
   </description>
   <author>Johannes Meyer</author>
   <maintainer email="gcross.code@icloud.com">Gareth Cross</maintainer>
