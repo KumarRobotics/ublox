@@ -36,6 +36,7 @@
 // Boost
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
 // ROS includes
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -72,6 +73,11 @@
 // implement u-blox interface, currently only the class for High Precision 
 // GNSS devices has been fully implemented and tested.
 
+/**
+ * @namespace ublox_node
+ * This namespace is for the ROS u-blox node and handles anything regarding
+ * ROS parameters, message passing, diagnostics, etc.
+ */
 namespace ublox_node {
 
 //! Queue size for ROS publishers
@@ -307,8 +313,8 @@ bool getRosInt(const std::string& key, std::vector<I> &i) {
  */
 template <typename MessageT>
 void publish(const MessageT& m, const std::string& topic) {
-  static ros::Publisher publisher =
-      nh->advertise<MessageT>(topic, kROSQueueSize);
+  static ros::Publisher publisher = nh->advertise<MessageT>(topic, 
+                                                            kROSQueueSize);
   publisher.publish(m);
 }
 
@@ -350,7 +356,7 @@ class ComponentInterface {
   virtual void initializeRosDiagnostics() = 0;
 
   /**
-   * @brief Subscribe to u-blox messages and publish as ROS messages.
+   * @brief Subscribe to u-blox messages and publish to ROS topics.
    */
   virtual void subscribe() = 0;
 };
@@ -585,24 +591,29 @@ class UbloxFirmware6 : public UbloxFirmware {
   
  private:
   /**
-   * @brief Publish a NavPOSLLh message & update the fix diagnostics & 
-   * last known position.
-   * @param m the message to publish
+   * @brief Publish the fix and call the fix diagnostic updater.
+   * 
+   * @details Also updates the last known position and publishes the NavPosLLH 
+   * message if publishing is enabled.
+   * @param m the message to process
    */
-  void publishNavPosLlh(const ublox_msgs::NavPOSLLH& m);
+  void callbackNavPosLlh(const ublox_msgs::NavPOSLLH& m);
   
   /**
-   * @brief Publish a NavVELNED message & update the last known velocity.
-   * @param m the message to publish
+   * @brief Update the last known velocity.
+   *
+   * @details Publish the message if publishing is enabled.
+   * @param m the message to process
    */
-  void publishNavVelNed(const ublox_msgs::NavVELNED& m);
+  void callbackNavVelNed(const ublox_msgs::NavVELNED& m);
 
   /**
-   * @brief Publish a NavSOL message and update the number of SVs used for the 
-   * fix.
-   * @param m the message to publish
+   * @brief Update the number of SVs used for the fix.
+   *
+   * @details Publish the message if publishing is enabled.
+   * @param m the message to process
    */
-  void publishNavSol(const ublox_msgs::NavSOL& m);
+  void callbackNavSol(const ublox_msgs::NavSOL& m);
 
   //! The last received navigation position
   ublox_msgs::NavPOSLLH last_nav_pos_; 
@@ -634,18 +645,20 @@ template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
   /**
-   * @brief Publish a NavPVT message as well as NavSatFix and 
-   * TwistWithCovarianceStamped messages.
+   * @brief Publish a NavSatFix and TwistWithCovarianceStamped messages.
    * 
-   * @details This function also updates the fix diagnostics. If a fixed carrier 
-   * phase solution is available, the NavSatFix status is set to GBAS fixed.
+   * @details If a fixed carrier phase solution is available, the NavSatFix 
+   * status is set to GBAS fixed. If NavPVT publishing is enabled, the message
+   * is published. This function also calls the ROS diagnostics updater.
    * @param m the message to publish
    */
-  void publishNavPvt(const NavPVT& m) {
-    // NavPVT publisher
-    static ros::Publisher publisher =
-        nh->advertise<NavPVT>("navpvt", kROSQueueSize);
-    publisher.publish(m);
+  void callbackNavPvt(const NavPVT& m) {
+    if(enabled["nav_pvt"]) {
+      // NavPVT publisher
+      static ros::Publisher publisher = nh->advertise<NavPVT>("navpvt", 
+                                                              kROSQueueSize);
+      publisher.publish(m);
+    }
 
     //
     // NavSatFix message
@@ -729,7 +742,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
  protected:
 
   /**
-   * @brief Update the fix diagnostics from PVT message.
+   * @brief Update the fix diagnostics from Nav PVT message.
    */
   void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) {
     // check the last message, convert to diagnostic
@@ -791,7 +804,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
 };
 
 /**
- * @brief  Implements functions for firmware version 7.
+ * @brief Implements functions for firmware version 7.
  */
 class UbloxFirmware7 : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  public:
@@ -997,14 +1010,14 @@ class UbloxHpgRef: public virtual ComponentInterface {
   void initializeRosDiagnostics();
 
   /**
-   * @brief Publish received Nav SVIN messages and updates diagnostics. 
+   * @brief Update the last received NavSVIN message and call diagnostic updater
    *
    * @details When the survey in finishes, it changes the measurement & 
    * navigation rate to the user configured values and enables the user 
-   * configured RTCM messages.
-   * @param m the message to publish
+   * configured RTCM messages. Publish received Nav SVIN messages if enabled.
+   * @param m the message to process
    */
-  void publishNavSvIn(ublox_msgs::NavSVIN m);
+  void callbackNavSvIn(ublox_msgs::NavSVIN m);
 
  protected:
   /**
@@ -1116,11 +1129,11 @@ class UbloxHpgRov: public virtual ComponentInterface {
       diagnostic_updater::DiagnosticStatusWrapper& stat);
 
   /**
-   * @brief Publish received NavRELPOSNED messages.
+   * @brief Set the last received message and call rover diagnostic updater
    *
-   * @details Saves the last received message and updates the rover diagnostics.
+   * @details Publish received NavRELPOSNED messages if enabled
    */
-  void publishNavRelPosNed(const ublox_msgs::NavRELPOSNED &m);
+  void callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m);
 
 
   //! Last relative position (used for diagnostic updater)

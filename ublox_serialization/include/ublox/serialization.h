@@ -46,6 +46,11 @@
 /// maps ROS messages types to class and message ID(s).
 ///
 
+
+/**
+ * @namespace ublox
+ * This namespace is for u-blox message serialization.
+ */
 namespace ublox {
 
 //! u-blox message Sync A char

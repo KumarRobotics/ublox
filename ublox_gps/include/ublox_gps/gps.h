@@ -29,25 +29,29 @@
 
 #ifndef UBLOX_GPS_H
 #define UBLOX_GPS_H
-
+// STL
 #include <map>
 #include <vector>
 #include <locale>
 #include <stdexcept>
-
+// Boost
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/serial_port.hpp>
-#include <boost/regex.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/atomic.hpp>
-
+// ROS
 #include <ros/console.h>
-
+// Other u-blox packages
 #include <ublox/serialization/ublox_msgs.h>
-
+// u-blox gps
 #include <ublox_gps/async_worker.h>
 #include <ublox_gps/callback.h>
 
+/**
+ * @namespace ublox_gps
+ * This namespace is for I/O communication with the u-blox device, including
+ * read callbacks. 
+ */
 namespace ublox_gps {
 //! Possible baudrates for u-blox devices
 const static unsigned int kBaudrates[] = { 4800, 

@@ -55,12 +55,14 @@ gnss:
   glonass: true             # Supported by C94-M8P
   beidou: false             # Supported by C94-M8P
   qzss: false               # Supported by C94-M8P
-  sbas: false               # Not supported by C94-M8P
 
-inf: true                   # Whether to display INF messages
+inf: 
+  all: true                   # Whether to display all INF messages in console
 
-# Message subscriptions
-subscribe:
+# Enable u-blox message publishers
+publish:
   all: true
   aid:
     hui: false
+  nav:
+    posecef: false

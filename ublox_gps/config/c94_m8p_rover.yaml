@@ -26,26 +26,17 @@ gnss:
   glonass: true             # Supported by C94-M8P
   beidou: false             # Supported by C94-M8P
   qzss: false               # Supported by C94-M8P
-  sbas: false               # Not supported by C94-M8P
 
 dgnss_mode: 3               # Fixed mode
 
-inf: true                   # Whether to display INF messages
+inf: 
+  all: true                   # Whether to display all INF messages in console
 
-# Subscriptions
-subscribe:
+# Enable u-blox message publishers
+publish:
   all: true
-  aid: true
   aid:
     hui: false
 
   nav:
-    sol: true
-    pvt: true
-    status: true
-    svinfo: true
-    svin: true
-    clk: true
     posecef: false
-    velned: false
-    relposned: true

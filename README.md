@@ -124,62 +124,63 @@ Navigation Satellite fix.
 
 Velocity in local ENU frame.
 
+## INF messages
+To enable printing INF messages to the ROS console, set the parameters below.
+* `inf/all`: This is the default value for the INF parameters below, which enable printing u-blox `INF` messages to the ROS console. It defaults to true. Individual message types can be turned off by setting their corresponding parameter to false.
+* `inf/debug`: Whether to configure the UBX and NMEA ports to send Debug messages and print received `INF-Debug` messages to `ROS_DEBUG` console.
+* `inf/error`: Whether to enable Error messages for the UBX and NMEA ports and print received `INF-Error` messages to `ROS_ERROR` console.
+* `inf/notice`: Whether to enable Notice messages for the UBX and NMEA ports and print received `INF-Notice messages to `ROS_INFO` console.
+* `inf/test`: Whether to enable Test messages for the UBX and NMEA ports and print received `INF-Test` messages to `ROS_INFO` console.
+* `inf/warning`: Whether to enable Warning messages for the UBX and NMEA ports and print received `INF-Warning` messages to the `ROS_WARN` console.
+
 ## Additional Topics
+To publish a given u-blox message to a ROS topic, set the parameter shown below to true. The node sets the rate of the u-blox messages to 1 measurement cycle. 
 
-To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
-
-### INF messages
-* `inf/all`: This acts as the default value for the INF parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-* `inf/debug`: If true, configures UBX/NMEA ports to enable Debug messages and prints received INF Debug messages to `ROS_DEBUG` console.
-* `inf/error`: If true, configures UBX/NMEA ports to enable Error messages and prints received INF Error messages to `ROS_ERROR` console.
-* `inf/notice`: If true, configures UBX/NMEA ports to enable Notice messages and prints received INF Notice messages to `ROS_INFO` console.
-* `inf/test`: If true, configures UBX/NMEA ports to enable Test messages and prints received INF Test messages to `ROS_INFO` console.
-* `inf/warning`: If true, configures UBX/NMEA ports to enable Warning messages and prints received INF Warning messages to `ROS_WARN` console.
-
-### All message
-* `subscribe/all`:  This acts as the default value for the RXM, AID, MON, etc. `subscribe/<class>/all` parameters below. It defaults to false. Individual message classes and messages can be turned off by setting the parameter described below to false.
+### All messages
+* `publish/all`: This is the default value for `publish/<class>/all` parameters below. It defaults to false. Individual message classes and messages can be enabled or disabled by setting the parameters described below to false.
 
 ### AID messages
-* `subscribe/aid/all`: This acts as the default value for the AID subscriber parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-* `subscribe/aid/alm`: Topic `~aidalm`
-* `subscribe/aid/eph`: Topic `~aideph`
-* `subscribe/aid/hui`: Topic `~aidhui`
+* `publish/aid/all`: This is the default value for the `publish/aid/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
+* `publish/aid/alm`: Topic `~aidalm`
+* `publish/aid/eph`: Topic `~aideph`
+* `publish/aid/hui`: Topic `~aidhui`
 
 ### RXM messages
-* `subscribe/rxm/all`: This acts as the default value for the RXM subscriber parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-* `subscribe/rxm/alm`: Topic `~rxmalm`
-* `subscribe/rxm/raw`: Topic `~rxmraw`
-* `subscribe/rxm/rtcm`: Topic `~rxmrtcm`
-* `subscribe/rxm/sfrb`: Topic `~rxmsfrb`
-* `subscribe/rxm/eph`: Topic `~rxmeph`
+* `publish/rxm/all`: This is the default value for the `publish/rxm/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
+* `publish/rxm/alm`: Topic `~rxmalm`
+* `publish/rxm/eph`: Topic `~rxmeph`
+* `publish/rxm/raw`: Topic `~rxmraw`. Type is either `RxmRAW` or `RxmRAWX` depending on firmware version.
+* `publish/rxm/rtcm`: Topic `~rxmrtcm`. **Firmware >= 8 only**
+* `publish/rxm/sfrb`: Topic `~rxmsfrb`. Type is either `RxmSFRB` or `RxmSFRBX` depending on firmware version.
 
 ### MON messages
-* `subscribe/mon/all`: This acts as the default value for the MON subscriber parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-* `subscribe/mon/hw`: Topic `~monhw`
+* `publish/mon/all`: This is the default value for the `publish/mon/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
+* `publish/mon/hw`: Topic `~monhw`
 
 ### NAV messages
-* `subscribe/nav/att`: Topic `~navatt` on ADR/UDR devices only
-* `subscribe/nav/clock`: Topic `~navclock`
-* `subscribe/nav/posecef`: Topic `~navposecef`
-* `subscribe/nav/posllh`: Topic `~navposllh`. Firmware <= 6 only. For 7 and above, use NavPVT
-* `subscribe/nav/pvt`: Topic `~navpvt`. Firmware >= 7 only.
-* `subscribe/nav/relposned`: Topic `~navrelposned`
-* `subscribe/nav/sat`: Topic `~navsat`
-* `subscribe/nav/sol`: Topic `~navsol`. Firmware <= 6 only. For 7 and above, use NavPVT
-* `subscribe/nav/status`: Topic `~navstatus`
-* `subscribe/nav/svin`: Topic `~navsvin`
-* `subscribe/nav/svinfo`: Topic `~navsvinfo`
-* `subscribe/nav/velned`: Topic `~navvelned`. Firmware <= 6 only. For 7 and above, use NavPVT
+* `publish/nav/all`: This is the default value for the `publish/mon/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
+* `publish/nav/att`: Topic `~navatt`. **ADR/UDR devices only**
+* `publish/nav/clock`: Topic `~navclock`
+* `publish/nav/posecef`: Topic `~navposecef`
+* `publish/nav/posllh`: Topic `~navposllh`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
+* `publish/nav/pvt`: Topic `~navpvt`. **Firmware >= 7 only.**
+* `publish/nav/relposned`: Topic `~navrelposned`. **HPG Rover devices only**
+* `publish/nav/sat`: Topic `~navsat`
+* `publish/nav/sol`: Topic `~navsol`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
+* `publish/nav/status`: Topic `~navstatus`
+* `publish/nav/svin`: Topic `~navsvin`. **HPG Reference Station Devices only**
+* `publish/nav/svinfo`: Topic `~navsvinfo`
+* `publish/nav/velned`: Topic `~navvelned`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
 
 ### ESF messages
-* `subscribe/esf/all`: This acts as the default value for the ESF subscriber parameters below. It defaults to true for ADR/UDR devices. Individual messages can be turned off by setting the parameter below to false.
-* `subscribe/esf/ins`: Topic `~esfins`
-* `subscribe/esf/meas`: Topic `~esfmeas`
-* `subscribe/esf/raw`: Topic `~esfraw`
-* `subscribe/esf/status`: Topic `~esfstatus`
+* `publish/esf/all`: This is the default value for the `publish/esf/<message>` parameters below. It defaults to `publish/all` for **ADR/UDR devices**. Individual messages can be enabled or disabled by setting the parameters below.
+* `publish/esf/ins`: Topic `~esfins`
+* `publish/esf/meas`: Topic `~esfmeas`
+* `publish/esf/raw`: Topic `~esfraw`
+* `publish/esf/status`: Topic `~esfstatus`
 
 ### HNR messages
-* `subscribe/hnr/pvt`: Topic `~hnrpvt`
+* `publish/hnr/pvt`: Topic `~hnrpvt`. **ADR/UDR devices only**
 
 ## Launch
 
@@ -190,9 +191,14 @@ The two topics to which you should subscribe are `~fix` and `~fix_velocity`. The
 
 * **1.1.2**:
   - BUG FIX for NavSatFix messages for firmware >=7. The NavSatFix now only uses the NavPVT message time if it is valid, otherwise it uses ROS time.
+  - BUG FIX for TMODE3 Fixed mode configuration. The ARP High Precision position is now configured correctly. 
   - Added `UBX-UPD` messages. For firmware version 8, the node can now save the flash memory on shutdown and clear the flash memory during configuration based on ROS params.
+  - Added `CfgGPS` message.
   - Added respawn parameters to example launch file.
   - Migrated all callback handling to `callback.h` from `gps.h` and `gps.cpp`. ACK messages are now processed through callback handlers.
+  - Modified how the I/O stream is initialized so that the node now handles parsing the port string.
+  - Cleaned up ublox custom serialization classes by adding typedefs and using count to determine repeating block statements instead of using try-catch statements to serialize stream.
+  - Added doxygen documentation
 * **1.1.1**:
   - BUG FIX for acknowledgments. The last received ack message was accessed by multiple threads but was not atomic. This variable is now thread safe.
   - BUG FIX for GNSS configuration for Firmware 8, the GNSS configuration is now verified & modified properly.
