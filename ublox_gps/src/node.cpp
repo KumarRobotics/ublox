@@ -316,20 +316,9 @@ void UbloxNode::initializeRosDiagnostics() {
   updater.reset(new diagnostic_updater::Updater());
   updater->setHardwareID("ublox");
 
-  // actual update frequency
-  const double target_freq = rate_ / nav_rate;  
-  min_freq = target_freq;
-  max_freq = target_freq;
-  double timeStampStatusMax = meas_rate * 1e-3 * 1.10;
-  diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
-                                                      kFixFreqTol, 
-                                                      kFixFreqWindow);
-  diagnostic_updater::TimeStampStatusParam time_param(kTimeStampStatusMin,
-                                                      timeStampStatusMax);
   // configure diagnostic updater for frequency
-  freq_diag.reset(new diagnostic_updater::TopicDiagnostic(
-      std::string("fix"), *updater, freq_param, time_param));
-
+  freq_diag = FixDiagnostic(std::string("fix"), kFixFreqTol, 
+                            kFixFreqWindow, kTimeStampStatusMin);
   for(int i = 0; i < components_.size(); i++)
     components_[i]->initializeRosDiagnostics();
 }
@@ -503,6 +492,10 @@ void UbloxNode::initialize() {
   initializeIo();
   // Must process Mon VER before setting firmware/hardware params
   processMonVer();
+  if(protocol_version_ <= 14) {
+    if(nh->param("raw_data", false))
+      components_.push_back(ComponentPtr(new RawDataProduct));
+  }
   // Must set firmware & hardware params before initializing diagnostics
   for (int i = 0; i < components_.size(); i++)
     components_[i]->getRosParams();
@@ -620,32 +613,6 @@ void UbloxFirmware6::subscribe() {
     gps.subscribe<ublox_msgs::NavSVINFO>(boost::bind(
         publish<ublox_msgs::NavSVINFO>, _1, "navsvinfo"), 
         kNavSvInfoSubscribeRate);
-
-  // Subscribe to RXM Raw, raw data product variants only
-  nh->param("publish/rxm/raw", enabled["rxm_raw"],
-                 enabled["all"] || enabled["rxm"]);
-  if (enabled["rxm_raw"])
-    gps.subscribe<ublox_msgs::RxmRAW>(boost::bind(
-        publish<ublox_msgs::RxmRAW>, _1, "rxmraw"), kSubscribeRate);
-
-  // Subscribe to RXM SFRB, raw data product variants only
-  nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"],
-                 enabled["all"] || enabled["rxm"]);
-  if (enabled["rxm_sfrb"])
-    gps.subscribe<ublox_msgs::RxmSFRB>(boost::bind(
-        publish<ublox_msgs::RxmSFRB>, _1, "rxmsfrb"), kSubscribeRate);
-
-  // Subscribe to RXM EPH, raw data product variants only
-  nh->param("publish/rxm/eph", enabled["rxm_eph"], enabled["rxm"]);
-  if (enabled["rxm_eph"])
-    gps.subscribe<ublox_msgs::RxmEPH>(boost::bind(
-        publish<ublox_msgs::RxmEPH>, _1, "rxmeph"), kSubscribeRate);
-
-  // Subscribe to RXM ALM, raw data product variants only
-  nh->param("publish/rxm/alm", enabled["rxm_alm"], enabled["rxm"]);
-  if (enabled["rxm_alm"])
-    gps.subscribe<ublox_msgs::RxmALM>(boost::bind(
-        publish<ublox_msgs::RxmALM>, _1, "rxmalm"), kSubscribeRate);
 }
 
 void UbloxFirmware6::fixDiagnostic(
@@ -729,7 +696,7 @@ void UbloxFirmware6::callbackNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
   fixPublisher.publish(fix_);
   last_nav_pos_ = m;
   //  update diagnostics
-  freq_diag->tick(fix_.header.stamp);
+  freq_diag.diagnostic->tick(fix_.header.stamp);
   updater->update();
 }
 
@@ -958,32 +925,6 @@ void UbloxFirmware7::subscribe() {
   if (enabled["mon_hw"])
     gps.subscribe<ublox_msgs::MonHW>(boost::bind(
         publish<ublox_msgs::MonHW>, _1, "monhw"), kSubscribeRate);
-
-  // Subscribe to RXM Raw, raw data product variants only
-  nh->param("publish/rxm/raw", enabled["rxm_raw"],
-                 enabled["all"] || enabled["rxm"]);
-  if (enabled["rxm_raw"])
-    gps.subscribe<ublox_msgs::RxmRAW>(boost::bind(
-        publish<ublox_msgs::RxmRAW>, _1, "rxmraw"), kSubscribeRate);
-
-  // Subscribe to RXM SFRB, raw data product variants only
-  nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"],
-                 enabled["all"] || enabled["rxm"]);
-  if (enabled["rxm_sfrb"])
-    gps.subscribe<ublox_msgs::RxmSFRB>(boost::bind(
-        publish<ublox_msgs::RxmSFRB>, _1, "rxmsfrb"), kSubscribeRate);
-
-  // Subscribe to RXM EPH, raw data product variants only
-  nh->param("publish/rxm/eph", enabled["rxm_eph"], enabled["rxm"]);
-  if (enabled["rxm_eph"])
-    gps.subscribe<ublox_msgs::RxmEPH>(boost::bind(
-        publish<ublox_msgs::RxmEPH>, _1, "rxmeph"), kSubscribeRate);
-
-  // Subscribe to RXM ALM, raw data product variants only
-  nh->param("publish/rxm/alm", enabled["rxm_alm"], enabled["rxm"]);
-  if (enabled["rxm_alm"])
-    gps.subscribe<ublox_msgs::RxmALM>(boost::bind(
-        publish<ublox_msgs::RxmALM>, _1, "rxmalm"), kSubscribeRate);
 }
 
 //
@@ -1218,14 +1159,60 @@ void UbloxFirmware8::subscribe() {
         publish<ublox_msgs::MonHW>, _1, "monhw"), kSubscribeRate);
 
   // Subscribe to RTCM messages
-  nh->param("publish/rxm/rtcm", enabled["rxm_rtcm"], 
-            enabled["all"] || enabled["rxm"]);
+  nh->param("publish/rxm/rtcm", enabled["rxm_rtcm"], enabled["rxm"]);
   if (enabled["rxm_rtcm"])
     gps.subscribe<ublox_msgs::RxmRTCM>(boost::bind(
         publish<ublox_msgs::RxmRTCM>, _1, "rxmrtcm"), kSubscribeRate);
 }
 
 //
+// Raw Data Products
+//
+void RawDataProduct::subscribe() {
+  // Defaults to true instead of to all
+  nh->param("publish/rxm/all", enabled["rxm"], true);
+
+  // Subscribe to RXM Raw
+  nh->param("publish/rxm/raw", enabled["rxm_raw"], enabled["rxm"]);
+  if (enabled["rxm_raw"])
+    gps.subscribe<ublox_msgs::RxmRAW>(boost::bind(
+        publish<ublox_msgs::RxmRAW>, _1, "rxmraw"), kSubscribeRate);
+
+  // Subscribe to RXM SFRB
+  nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], enabled["rxm"]);
+  if (enabled["rxm_sfrb"])
+    gps.subscribe<ublox_msgs::RxmSFRB>(boost::bind(
+        publish<ublox_msgs::RxmSFRB>, _1, "rxmsfrb"), kSubscribeRate);
+
+  // Subscribe to RXM EPH
+  nh->param("publish/rxm/eph", enabled["rxm_eph"], enabled["rxm"]);
+  if (enabled["rxm_eph"])
+    gps.subscribe<ublox_msgs::RxmEPH>(boost::bind(
+        publish<ublox_msgs::RxmEPH>, _1, "rxmeph"), kSubscribeRate);
+
+  // Subscribe to RXM ALM
+  nh->param("publish/rxm/almRaw", enabled["rxm_alm"], enabled["rxm"]);
+  if (enabled["rxm_alm"])
+    gps.subscribe<ublox_msgs::RxmALM>(boost::bind(
+        publish<ublox_msgs::RxmALM>, _1, "rxmalm"), kSubscribeRate);
+}
+
+void RawDataProduct::initializeRosDiagnostics() {
+  if (enabled["rxm_raw"])
+    freq_diagnostics_.push_back(UbloxDiagnostic("rxmraw", kRtcmFreqTol, 
+                                               kRtcmFreqWindow));
+  if (enabled["rxm_sfrb"])
+    freq_diagnostics_.push_back(UbloxDiagnostic("rxmsfrb", kRtcmFreqTol, 
+                                               kRtcmFreqWindow));
+  if (enabled["rxm_eph"])
+    freq_diagnostics_.push_back(UbloxDiagnostic("rxmeph", kRtcmFreqTol, 
+                                               kRtcmFreqWindow));
+  if (enabled["rxm_alm"])
+    freq_diagnostics_.push_back(UbloxDiagnostic("rxmalm", kRtcmFreqTol, 
+                                               kRtcmFreqWindow));
+}
+
+
 // U-Blox ADR devices, partially implemented
 //
 void UbloxAdrUdr::getRosParams() {
@@ -1498,15 +1485,9 @@ void UbloxHpgRov::subscribe() {
 }
 
 void UbloxHpgRov::initializeRosDiagnostics() {
-  rtcm_freq_min = kRtcmFreqMin;
-  rtcm_freq_max = kRtcmFreqMax;
-  // Add diagnostics for frequency of RTCM messages
-  diagnostic_updater::FrequencyStatusParam freq_param(&rtcm_freq_min, 
-                                                      &rtcm_freq_max,
-                                                      kRtcmFreqTol, 
-                                                      kRtcmFreqWindow);
-  freq_rtcm_.reset(new diagnostic_updater::HeaderlessTopicDiagnostic(
-      std::string("rxmrtcm"), *updater, freq_param));
+  freq_rtcm_ = UbloxDiagnostic(std::string("rxmrtcm"), 
+                               kRtcmFreqMin, kRtcmFreqMax,
+                               kRtcmFreqTol, kRtcmFreqWindow);
   updater->add("Carrier Phase Solution", this, 
                 &UbloxHpgRov::carrierPhaseDiagnostics);
   updater->force_update();
@@ -1562,15 +1543,13 @@ void UbloxHpgRov::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
 //
 void UbloxTim::subscribe() {
   // Subscribe to RawX messages
-  nh->param("publish/rxm/raw", enabled["rxm_raw"],
-            enabled["all"] || enabled["rxm"]);
+  nh->param("publish/rxm/raw", enabled["rxm_raw"], enabled["rxm"]);
   if (enabled["rxm_raw"])
     gps.subscribe<ublox_msgs::RxmRAWX>(boost::bind(
         publish<ublox_msgs::RxmRAWX>, _1, "rxmraw"), kSubscribeRate);
 
   // Subscribe to SFRBX messages
-  nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], 
-            enabled["all"] || enabled["rxm"]);
+  nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], enabled["rxm"]);
   if (enabled["rxm_sfrb"])
     gps.subscribe<ublox_msgs::RxmSFRBX>(boost::bind(
         publish<ublox_msgs::RxmSFRBX>, _1, "rxmsfrb"), kSubscribeRate);

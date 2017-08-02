@@ -92,8 +92,6 @@ const static uint32_t kNavSvInfoSubscribeRate = 20;
 // ROS objects
 //! ROS diagnostic updater
 boost::shared_ptr<diagnostic_updater::Updater> updater; 
-//! fix frequency diagnostic updater
-boost::shared_ptr<diagnostic_updater::TopicDiagnostic> freq_diag; 
 //! Node Handle for GPS node
 boost::shared_ptr<ros::NodeHandle> nh; 
 
@@ -115,6 +113,72 @@ uint16_t nav_rate;
 std::vector<uint8_t> rtcm_ids; 
 //! Rates of RTCM out messages. Size must be the same as rtcm_ids
 std::vector<uint8_t> rtcm_rates; 
+
+
+
+struct UbloxDiagnostic {
+  UbloxDiagnostic() {}
+
+  //! Maximum Timestamp delay
+  UbloxDiagnostic (std::string name, double freq_tol, int freq_window) {
+    const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
+    min_freq = target_freq;
+    max_freq = target_freq;
+    diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
+                                                        freq_tol, freq_window);
+    diagnostic = new diagnostic_updater::HeaderlessTopicDiagnostic(name, 
+                                                                   *updater,
+                                                                   freq_param);
+  } 
+  //! Maximum Timestamp delay
+  UbloxDiagnostic (std::string name, double freq_min, double freq_max,
+                   double freq_tol, int freq_window) {
+    min_freq = freq_min;
+    max_freq = freq_max;
+    diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
+                                                        freq_tol, freq_window);
+    diagnostic = new diagnostic_updater::HeaderlessTopicDiagnostic(name, 
+                                                                   *updater,
+                                                                   freq_param);
+  } 
+
+  //! Topic frequency diagnostic updater
+  diagnostic_updater::HeaderlessTopicDiagnostic *diagnostic; 
+  //! Minimum allow frequency of topic
+  double min_freq;
+  //! Maximum allow frequency of topic
+  double max_freq; 
+};
+
+struct FixDiagnostic {
+  FixDiagnostic() {}
+
+  //! Maximum Timestamp delay
+  FixDiagnostic (std::string name, double freq_tol, int freq_window,
+                 double stamp_min) {
+    const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
+    min_freq = target_freq;
+    max_freq = target_freq;
+    diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
+                                                        freq_tol, freq_window);
+    double stamp_max = meas_rate * 1e-3 * (1 + freq_tol);
+    diagnostic_updater::TimeStampStatusParam time_param(stamp_min, stamp_max);
+    diagnostic = new diagnostic_updater::TopicDiagnostic(name, 
+                                                         *updater, 
+                                                         freq_param, 
+                                                         time_param);
+  } 
+
+  //! Topic frequency diagnostic updater
+  diagnostic_updater::TopicDiagnostic *diagnostic; 
+  //! Minimum allow frequency of topic
+  double min_freq;
+  //! Maximum allow frequency of topic
+  double max_freq; 
+};
+
+//! fix frequency diagnostic updater
+FixDiagnostic freq_diag; 
 
 /**
  * @brief Determine dynamic model from human-readable string.
@@ -488,11 +552,6 @@ class UbloxNode : public virtual ComponentInterface {
    */
   std::vector<boost::shared_ptr<ComponentInterface> > components_;
 
-  //! Used for diagnostic updater, set from constants
-  double min_freq;
-  //! Used for diagnostic updater, set from constants
-  double max_freq; 
-
   //! Determined From Mon VER
   float protocol_version_; 
   // Variables set from parameter server
@@ -735,7 +794,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     // Update diagnostics 
     //
     last_nav_pvt_ = m;
-    freq_diag->tick(fix.header.stamp);
+    freq_diag.diagnostic->tick(fix.header.stamp);
     updater->update();
   }
 
@@ -893,6 +952,42 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
   bool save_on_shutdown_; 
   //! Whether to clear the flash memory during configuration
   bool clear_bbr_; 
+};
+
+/**
+ * @brief Implements functions for Raw Data products.
+ */
+class RawDataProduct: public virtual ComponentInterface {
+ public:
+  static const double kRtcmFreqTol = 0.15;
+  static const int kRtcmFreqWindow = 25;
+  
+  /**
+   * @brief Does nothing since there are no Raw Data product specific settings.
+   */
+  void getRosParams() {}
+
+  /**
+   * @brief Does nothing since there are no Raw Data product specific settings.
+   * @return always returns true
+   */
+  bool configureUblox() { return true; }
+
+  /**
+   * @brief Subscribe to Raw Data Product messages and set up ROS publishers.
+   *
+   * @details Subscribe to RxmALM, RxmEPH, RxmRAW, and RxmSFRB messages.
+   */
+  void subscribe();
+
+  /**
+   * @brief Adds frequency diagnostics for RTCM topics.
+   */
+  void initializeRosDiagnostics();
+
+ private:
+  //! Topic diagnostic updaters
+  std::vector<UbloxDiagnostic> freq_diagnostics_; 
 };
 
 /**
@@ -1139,18 +1234,12 @@ class UbloxHpgRov: public virtual ComponentInterface {
   //! Last relative position (used for diagnostic updater)
   ublox_msgs::NavRELPOSNED last_rel_pos_; 
 
-  // For RTCM frequency diagnostic updater
-  //! Diagnostic: RTCM frequency min (set from constant)
-  double rtcm_freq_min; 
-  //! Diagnostic: RTCM frequency max (set from constant)
-  double rtcm_freq_max; 
-
   //! The DGNSS mode
   /*! see CfgDGNSS message for possible values */
   uint8_t dgnss_mode_; 
 
   // The RTCM topic frequency diagnostic updater
-  boost::shared_ptr<diagnostic_updater::HeaderlessTopicDiagnostic> freq_rtcm_;
+  UbloxDiagnostic freq_rtcm_;
 };
 
 /**

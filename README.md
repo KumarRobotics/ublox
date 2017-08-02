@@ -9,6 +9,7 @@ Example .yaml configuration files are included in `ublox_gps/config`. Consult th
 
 The `ublox_gps` node supports the following parameters for all products and firmware versions:
 * `device`: Path to the device port. Defaults to `/dev/ttyACM0`.
+* `raw_data`: Whether it is a raw data product. Defaults to false. Firmware <= 7.03 only.
 * `uart1/baudrate`: Bit rate of the serial communication. Defaults to 9600.
 * `uart1/in`: UART1 in communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
 * `uart1/out`: UART1 out communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
