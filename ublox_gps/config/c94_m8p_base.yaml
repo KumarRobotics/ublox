@@ -2,6 +2,11 @@
 
 debug: 1                    # Range 0-4 (0 means no debug statements will print)
 
+save:
+  mask: 3103                # Save I/O, Message, INF Message, Nav, Receiver 
+                            # Manager, Antenna, and Logging Configuration
+  device: 4                 # Save to EEPROM
+
 device: /dev/ttyACM0
 frame_id: gps_base
 dynamic_model: stationary   # Velocity restricted to 0 m/s. Zero dynamics 
@@ -51,16 +56,17 @@ dat:
 
 # GNSS Config
 gnss:
-  reset_mode: 2             # Controlled Software reset
   glonass: true             # Supported by C94-M8P
   beidou: false             # Supported by C94-M8P
   qzss: false               # Supported by C94-M8P
-  sbas: false               # Not supported by C94-M8P
 
-inf: true                   # Whether to display INF messages
+inf: 
+  all: true                   # Whether to display all INF messages in console
 
-# Message subscriptions
-subscribe:
+# Enable u-blox message publishers
+publish:
   all: true
   aid:
     hui: false
+  nav:
+    posecef: false

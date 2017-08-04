@@ -29,68 +29,128 @@
 
 #ifndef UBLOX_GPS_H
 #define UBLOX_GPS_H
-
+// STL
 #include <map>
 #include <vector>
 #include <locale>
 #include <stdexcept>
-
+// Boost
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/serial_port.hpp>
-#include <boost/regex.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/atomic.hpp>
-#include <boost/thread/mutex.hpp>
-
-
+// ROS
 #include <ros/console.h>
-
+// Other u-blox packages
 #include <ublox/serialization/ublox_msgs.h>
-
+// u-blox gps
 #include <ublox_gps/async_worker.h>
 #include <ublox_gps/callback.h>
 
+/**
+ * @namespace ublox_gps
+ * This namespace is for I/O communication with the u-blox device, including
+ * read callbacks. 
+ */
 namespace ublox_gps {
-// Possible baudrates for U-Blox devices
-const static unsigned int kBaudrates[] = {4800, 9600, 19200, 38400, 
-                                          57600, 115200, 230400, 460800};
-
+//! Possible baudrates for u-blox devices
+const static unsigned int kBaudrates[] = { 4800, 
+                                           9600, 
+                                           19200, 
+                                           38400, 
+                                           57600, 
+                                           115200, 
+                                           230400, 
+                                           460800 }; 
+/**
+ * @brief Handles communication with and configuration of the u-blox device
+ */
 class Gps {
  public:
-  const static int kSetBaudrateSleepMs = 500;
-  const static double kDefaultAckTimeout = 1.0;
-  const static int kWriterSize = 1024;
+  //! Sleep time [ms] after setting the baudrate
+  const static int kSetBaudrateSleepMs = 500; 
+  //! Default timeout for ACK messages in seconds
+  const static double kDefaultAckTimeout = 1.0; 
+  //! Size of write buffer for output messages
+  const static int kWriterSize = 1024; 
 
   Gps();
   virtual ~Gps();
 
   /**
-   * @brief Initialize the I/O port, if TCP, baudrate, and uart_in/uart_out 
-   * values will be ignored.
-   * @param baudrate the desired baudrate of the port
-   * @param uart_in The UART in protocol, see CfgPRT for values
-   * @param uart_in The UART out protocol, see CfgPRT for values
+   * @brief If called, when the node shuts down, it will send a command to
+   * save the flash memory.
    */
-  void initializeIo(std::string device,
-                    unsigned int baudrate,
-                    uint16_t uart_in,
-                    uint16_t uart_out);
+  bool setSaveOnShutdown(bool save_on_shutdown) {
+    save_on_shutdown_ = save_on_shutdown;
+  }
+
   /**
-   * @brief Closes the I/O port.
+   * @brief Initialize TCP I/O.
+   * @param host the TCP host
+   * @param port the TCP port
+   */
+  void initializeTcp(std::string host, std::string port);
+  
+  /**
+   * @brief Initialize the Serial I/O port.
+   * @param port the device port address
+   * @param baudrate the desired baud rate of the port
+   * @param uart_in the UART In protocol, see CfgPRT for options
+   * @param uart_out the UART Out protocol, see CfgPRT for options
+   */
+  void initializeSerial(std::string port, unsigned int baudrate,
+                        uint16_t uart_in, uint16_t uart_out);
+
+  /**
+   * @brief Reset the Serial I/O port after u-blox reset.
+   * @param port the device port address
+   * @param baudrate the desired baud rate of the port
+   * @param uart_in the UART In protocol, see CfgPRT for options
+   * @param uart_out the UART Out protocol, see CfgPRT for options
+   */
+  void resetSerial(std::string port);
+
+  /**
+   * @brief Closes the I/O port, and initiates save on shutdown procedure
+   * if enabled.
    */
   void close();
 
   /**
-   * @brief Send a reset message to the u-blox-device
+   * @brief Reset I/O communications.
+   * @param wait Time to wait before restarting communications
+   */
+  void reset(const boost::posix_time::time_duration& wait);
+
+  /**
+   * @brief Send a reset message to the u-blox device.
    * @param nav_bbr_mask The BBR sections to clear, see CfgRST message
    * @param reset_mode The reset type, see CfgRST message
    * @return true if the message was successfully sent, false otherwise
    */
-  bool reset(uint16_t nav_bbr_mask, uint16_t reset_mode);
-  
+  bool configReset(uint16_t nav_bbr_mask, uint16_t reset_mode);
+
+  /**
+   * @brief Configure the GNSS, cold reset the device, and reset the I/O.
+   * @param gnss the desired GNSS configuration
+   * @param wait the time to wait after resetting I/O before restarting
+   * @return true if the GNSS was configured, the device was reset, and the 
+   * I/O reset successfully
+   */
+  bool configGnss(ublox_msgs::CfgGNSS gnss, 
+                  const boost::posix_time::time_duration& wait);
+
+  /**
+   * @brief Send a message to the receiver to delete the BBR data stored in 
+   * flash.
+   * @return true if sent message and received ACK, false otherwise
+   */
+  bool clearBbr();
+
   /**
    * @brief Configure the UART1 Port.
-   * @param ids the baudrate of the port
+   * @param baudrate the baudrate of the port
    * @param in_proto_mask the in protocol mask, see CfgPRT message
    * @param out_proto_mask the out protocol mask, see CfgPRT message
    * @return true on ACK, false on other conditions.
@@ -106,6 +166,16 @@ class Gps {
    * @return true on ACK, false on other conditions.
    */
   bool disableUart1(ublox_msgs::CfgPRT& prev_cfg);
+
+  /**
+   * @brief Configure the USB Port.
+   * @param tx_ready the TX ready pin configuration, see CfgPRT message
+   * @param in_proto_mask the in protocol mask, see CfgPRT message
+   * @param out_proto_mask the out protocol mask, see CfgPRT message
+   * @return true on ACK, false on other conditions.
+   */
+  bool configUsb(uint16_t tx_ready, uint16_t in_proto_mask,
+                 uint16_t out_proto_mask);
 
   /**
    * @brief Configure the device navigation and measurement rate settings.
@@ -135,20 +205,22 @@ class Gps {
   bool configSbas(bool enable, uint8_t usage, uint8_t max_sbas);
 
   /**
-   * @brief Set the TMODE3 settings to fixed at the given antenna reference
-   * point (ARP) position in either Latitude Longitude Altitude (LLA) or 
-   * ECEF coordinates.
+   * @brief Set the TMODE3 settings to fixed.
+   * 
+   * @details Sets the at the given antenna reference point (ARP) position in 
+   * either Latitude Longitude Altitude (LLA) or ECEF coordinates.
    * @param arp_position a vector of size 3 representing the ARP position in 
    * ECEF coordinates [m] or LLA coordinates [deg]
    * @param arp_position_hp a vector of size 3 a vector of size 3 representing  
-   * the ARP position in ECEF coordinates [m] or LLA coordinates [deg]
+   * the ARP position in ECEF coordinates [0.1 mm] or LLA coordinates 
+   * [deg * 1e-9]
    * @param lla_flag true if position is given in LAT/LON/ALT, false if ECEF
    * @param fixed_pos_acc Fixed position 3D accuracy [m]
    * @return true on ACK, false if settings are incorrect or on other conditions
    */
   bool configTmode3Fixed(bool lla_flag,
                          std::vector<float> arp_position, 
-                         std::vector<float> arp_position_hp,
+                         std::vector<int8_t> arp_position_hp,
                          float fixed_pos_acc);
 
   /**
@@ -225,19 +297,16 @@ class Gps {
    * given message
    * @param the callback handler for the message
    * @param rate the rate in Hz of the message
-   * @return
    */
   template <typename T>
-  Callbacks::iterator subscribe(typename CallbackHandler_<T>::Callback callback,
-                                unsigned int rate);
+  void subscribe(typename CallbackHandler_<T>::Callback callback,
+                 unsigned int rate);
   /**
    * @brief Subscribe to the given Ublox message.
    * @param the callback handler for the message
-   * @return
    */
   template <typename T>
-  Callbacks::iterator subscribe(
-      typename CallbackHandler_<T>::Callback callback);
+  void subscribe(typename CallbackHandler_<T>::Callback callback);
 
   /**
    * @brief Subscribe to the message with the given ID. This is used for 
@@ -245,12 +314,10 @@ class Gps {
    * e.g. INF messages.
    * @param the callback handler for the message
    * @param message_id the U-Blox message ID
-   * @return
    */
   template <typename T>
-  Callbacks::iterator subscribeId(
-      typename CallbackHandler_<T>::Callback callback, 
-      unsigned int message_id);
+  void subscribeId(typename CallbackHandler_<T>::Callback callback,
+                   unsigned int message_id);
 
   /**
    * Read a u-blox message of the given type.
@@ -308,81 +375,95 @@ class Gps {
                           uint8_t class_id, uint8_t msg_id);
 
  private:
-  // Types for ACK/NACK messages, WAIT is used when waiting for an ACK
-  enum AckType { NACK, ACK, WAIT }; 
+  //! Types for ACK/NACK messages, WAIT is used when waiting for an ACK
+  enum AckType { 
+    NACK, //! Not acknowledged
+    ACK, //! Acknowledge
+    WAIT //! Waiting for ACK
+  }; 
   
-  // Stores ACK/NACK messages
+  //! Stores ACK/NACK messages
   struct Ack {
-    AckType type;
-    uint8_t msg_id;
-    uint8_t class_id;
+    AckType type; //!< The ACK type
+    uint8_t class_id; //!< The class ID of the ACK
+    uint8_t msg_id; //!< The message ID of the ACK
   };
 
+  /**
+   * @brief Set the I/O worker
+   * @param an I/O handler
+   */
   void setWorker(const boost::shared_ptr<Worker>& worker);
-  
-  /**
-   * @brief Initialize TCP I/O.
-   */
-  void initializeTcp();
-  
-  /**
-   * @brief Initialize the Serial I/O port.
-   * @param baudrate the desired baud rate of the port
-   * @param uart_in the UART In protocol, see CfgPRT for options
-   * @param uart_out the UART Out protocol, see CfgPRT for options
-   */
-  void initializeSerial(unsigned int baudrate,
-                        uint16_t uart_in,
-                        uint16_t uart_out);
-  /**
-   * @brief Processes u-blox messages in the given buffer & clears the read
-   * messages from the buffer.
-   * @param data the buffer of u-blox messages to process
-   * @param size the size of the buffer
-   */
-  void readCallback(unsigned char* data, std::size_t& size);
 
+  /**
+   * @brief Subscribe to ACK/NACK messages and UPD-SOS-ACK messages.
+   */
+  void subscribeAcks();
+
+  /**
+   * @brief Callback handler for UBX-ACK message.
+   * @param m the message to process
+   */
+  void processAck(const ublox_msgs::Ack &m);
+  
+  /**
+   * @brief Callback handler for UBX-NACK message.
+   * @param m the message to process
+   */
+  void processNack(const ublox_msgs::Ack &m);
+
+  /**
+   * @brief Callback handler for UBX-UPD-SOS-ACK message.
+   * @param m the message to process
+   */
+  void processUpdSosAck(const ublox_msgs::UpdSOS_Ack &m);
+
+  /**
+   * @brief Execute save on shutdown procedure.
+   *
+   * @details Execute the procedure recommended in the u-blox 8 documentation.
+   * Send a stop message to the receiver and instruct it to dump its 
+   * current state to the attached flash memory (where fitted) as part of the 
+   * shutdown procedure. The flash data is automatically retrieved when the 
+   * receiver is restarted. 
+   * @return true if the receiver reset & saved the BBR contents to flash
+   */
+  bool saveOnShutdown();
+
+  //! Processes I/O stream data
   boost::shared_ptr<Worker> worker_;
-  bool configured_;
+  //! Whether or not the I/O port has been configured
+  bool configured_; 
+  //! Whether or not to save Flash BBR on shutdown
+  bool save_on_shutdown_; 
 
+  //! The default timeout for ACK messages
   static boost::posix_time::time_duration default_timeout_;
-  // Stores last received ACK, accessed by multiple threads
-  mutable boost::atomic<Ack> ack_;
+  //! Stores last received ACK accessed by multiple threads
+  mutable boost::atomic<Ack> ack_; 
 
-  Callbacks callbacks_;
-  boost::mutex callback_mutex_;
+  //! Callback handlers for u-blox messages
+  CallbackHandlers callbacks_; 
 
-  // Asynchronous IO objects
-  boost::asio::io_service io_service_;
-  boost::shared_ptr<boost::asio::serial_port> serial_handle_;
-  boost::shared_ptr<boost::asio::ip::tcp::socket> tcp_handle_;
+  std::string host_, port_;
 };
 
 template <typename T>
-Callbacks::iterator Gps::subscribe(
+void Gps::subscribe(
     typename CallbackHandler_<T>::Callback callback, unsigned int rate) {
-  if (!setRate(T::CLASS_ID, T::MESSAGE_ID, rate)) return Callbacks::iterator();
-  return subscribe<T>(callback);
+  if (!setRate(T::CLASS_ID, T::MESSAGE_ID, rate)) return;
+  subscribe<T>(callback);
 }
 
 template <typename T>
-Callbacks::iterator Gps::subscribe(
-    typename CallbackHandler_<T>::Callback callback) {
-  boost::mutex::scoped_lock lock(callback_mutex_);
-  CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
-  return callbacks_.insert(
-      std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
-                     boost::shared_ptr<CallbackHandler>(handler)));
+void Gps::subscribe(typename CallbackHandler_<T>::Callback callback) {
+  callbacks_.insert<T>(callback);
 }
 
 template <typename T>
-Callbacks::iterator Gps::subscribeId(
-    typename CallbackHandler_<T>::Callback callback, unsigned int message_id) {
-  boost::mutex::scoped_lock lock(callback_mutex_);
-  CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
-  return callbacks_.insert(
-      std::make_pair(std::make_pair(T::CLASS_ID, message_id),
-                     boost::shared_ptr<CallbackHandler>(handler)));
+void Gps::subscribeId(typename CallbackHandler_<T>::Callback callback, 
+                      unsigned int message_id) {
+  callbacks_.insert<T>(callback, message_id);
 }
 
 template <typename ConfigT>
@@ -395,26 +476,8 @@ bool Gps::poll(ConfigT& message,
 
 template <typename T>
 bool Gps::read(T& message, const boost::posix_time::time_duration& timeout) {
-  bool result = false;
   if (!worker_) return false;
-
-  // Create a callback handler for this message
-  callback_mutex_.lock();
-  CallbackHandler_<T>* handler = new CallbackHandler_<T>();
-  Callbacks::iterator callback = callbacks_.insert(
-      (std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
-                      boost::shared_ptr<CallbackHandler>(handler))));
-  callback_mutex_.unlock();
-  // Wait for the message
-  if (handler->wait(timeout)) {
-    message = handler->get();
-    result = true;
-  }
-  // Remove the callback handler
-  callback_mutex_.lock();
-  callbacks_.erase(callback);
-  callback_mutex_.unlock();
-  return result;
+  return callbacks_.read(message, timeout);
 }
 
 template <typename ConfigT>

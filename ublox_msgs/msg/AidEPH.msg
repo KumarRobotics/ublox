@@ -20,7 +20,8 @@
 uint8 CLASS_ID = 11
 uint8 MESSAGE_ID = 49
 
-uint32 svid             # SV ID for which this ephemeris data is (Valid Range: 1 .. 32).
+uint32 svid             # SV ID for which this ephemeris data is 
+                        # (Valid Range: 1 .. 32).
 uint32 how              # Hand-Over Word of first Subframe. This is
                         # required if data is sent to the receiver.
                         # 0 indicates that no Ephemeris Data is following.

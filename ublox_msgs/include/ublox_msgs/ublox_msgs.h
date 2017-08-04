@@ -61,6 +61,7 @@
 #include <ublox_msgs/RxmSVSI.h>
 
 #include <ublox_msgs/Inf.h>
+#include <ublox_msgs/Ack.h>
 
 #include <ublox_msgs/CfgANT.h>
 #include <ublox_msgs/CfgCFG.h>
@@ -81,9 +82,14 @@
 #include <ublox_msgs/CfgRST.h>
 #include <ublox_msgs/CfgSBAS.h>
 #include <ublox_msgs/CfgTMODE3.h>
+#include <ublox_msgs/CfgUSB.h>
+
+#include <ublox_msgs/UpdSOS.h>
+#include <ublox_msgs/UpdSOS_Ack.h>
 
 #include <ublox_msgs/MonGNSS.h>
 #include <ublox_msgs/MonHW.h>
+#include <ublox_msgs/MonHW6.h>
 #include <ublox_msgs/MonVER.h>
 
 #include <ublox_msgs/AidALM.h>
@@ -103,40 +109,42 @@
 namespace ublox_msgs {
 
 namespace Class {
-  // Navigation Result Messages: Position, Speed, Time, Acceleration, Heading, 
-  // DOP, SVs used
-  static const uint8_t NAV = 0x01; 
-  // Receiver Manager Messages: Satellite Status, RTC Status
-  static const uint8_t RXM = 0x02; 
-  // Information Messages: Printf-Style Messages, with IDs such as Error, 
-  // Warning, Notice
-  static const uint8_t INF = 0x04; 
-  // Ack/Nack Messages: Acknowledge or Reject messages to CFG input messages
-  static const uint8_t ACK = 0x05; 
-  // Configuration Input Messages: Set Dynamic Model, Set DOP Mask, Set Baud 
-  // Rate, etc.
-  static const uint8_t CFG = 0x06; 
-  // Monitoring Messages: Comunication Status, CPU Load, Stack Usage, Task 
-  // Status
-  static const uint8_t MON = 0x0A; 
-  // AssistNow Aiding Messages: Ephemeris, Almanac, other A-GPS data input
-  static const uint8_t AID = 0x0B; 
-  // Timing Messages: Timepulse Output, Timemark Results
-  static const uint8_t TIM = 0x0D; 
-  // External Sensor Fusion Messages: External sensor measurements and status 
-  // information
-  static const uint8_t ESF = 0x10; 
-  // Multiple GNSS Assistance Messages: Assistance data for various GNSS
-  static const uint8_t MGA = 0x13;
-  // Logging Messages: Log creation, deletion, info and retrieval
-  static const uint8_t LOG = 0x21;
-  // Security Feature Messages
-  static const uint8_t SEC = 0x27;
-  // High Rate Navigation Results Messages: High rate time, position, speed, 
-  // heading
-  static const uint8_t HNR = 0x28;
-  // RTCM Configuration Messages
-  static const uint8_t RTCM = 0xF5;
+  static const uint8_t NAV = 0x01; //!< Navigation Result Messages: Position, 
+                                   //!< Speed, Time, Acceleration, Heading, 
+                                   //!< DOP, SVs used
+  static const uint8_t RXM = 0x02; //!< Receiver Manager Messages: 
+                                   //!< Satellite Status, RTC Status
+  static const uint8_t INF = 0x04; //!< Information Messages: 
+                                   //!< Printf-Style Messages, with IDs such as
+                                   //!< Error, Warning, Notice
+  static const uint8_t ACK = 0x05; //!< Ack/Nack Messages: Acknowledge or Reject 
+                                   //!< messages to CFG input messages
+  static const uint8_t CFG = 0x06; //!< Configuration Input Messages: Set 
+                                   //!< Dynamic Model, Set DOP Mask, Set Baud 
+                                   //!< Rate, etc.
+  static const uint8_t UPD = 0x09; //!< Firmware Update Messages: i.e. 
+                                   //!< Memory/Flash erase/write, Reboot, Flash 
+                                   //!< identification, etc.
+                                   //!< Used to update the firmware and identify 
+                                   //!< any attached flash device
+  static const uint8_t MON = 0x0A; //!< Monitoring Messages: Communication 
+                                   //!< Status, CPU Load, Stack Usage, 
+                                   //!< Task Status
+  static const uint8_t AID = 0x0B; //!< AssistNow Aiding Messages: Ephemeris, 
+                                   //!< Almanac, other A-GPS data input
+  static const uint8_t TIM = 0x0D; //!< Timing Messages: Timepulse Output, 
+                                   //!< Timemark Results
+  static const uint8_t ESF = 0x10; //!< External Sensor Fusion Messages: 
+                                   //!< External sensor measurements and status 
+                                   //!< information
+  static const uint8_t MGA = 0x13; //!< Multiple GNSS Assistance Messages: 
+                                   //!< Assistance data for various GNSS
+  static const uint8_t LOG = 0x21; //!< Logging Messages: Log creation, 
+                                   //!< deletion, info and retrieval
+  static const uint8_t SEC = 0x27; //!< Security Feature Messages
+  static const uint8_t HNR = 0x28; //!< High Rate Navigation Results Messages: 
+                                   //!< High rate time, position, speed, heading
+  static const uint8_t RTCM = 0xF5; //!< RTCM Configuration Messages
 }
 
 namespace Message {
@@ -208,6 +216,12 @@ namespace Message {
     static const uint8_t RST = CfgRST::MESSAGE_ID;
     static const uint8_t SBAS = CfgSBAS::MESSAGE_ID;
     static const uint8_t TMODE3 = CfgTMODE3::MESSAGE_ID;
+    static const uint8_t USB = CfgUSB::MESSAGE_ID;
+  }
+
+  namespace UPD {
+    //! SOS and SOS_Ack have the same message ID, but different lengths
+    static const uint8_t SOS = UpdSOS::MESSAGE_ID;
   }
   
   namespace MON {
@@ -232,6 +246,6 @@ namespace Message {
   }
 }
 
-} // namespace ublox_msgs
+} //!< namespace ublox_msgs
 
-#endif // UBLOX_MSGS_H
+#endif //!< UBLOX_MSGS_H

@@ -33,6 +33,13 @@
 
 namespace ublox {
 
+/**
+ * @brief calculate the checksum of a u-blox_message
+ * @param data the start of the u-blox message 
+ * @param data the size of the u-blox message
+ * @param ck_a the checksum a output
+ * @param ck_b the checksum b output
+ */
 static inline void calculateChecksum(const uint8_t *data, 
                                      uint32_t size, 
                                      uint8_t &ck_a, 
@@ -45,6 +52,13 @@ static inline void calculateChecksum(const uint8_t *data,
   }
 }
 
+/**
+ * @brief calculate the checksum of a u-blox_message.
+ * @param data the start of the u-blox message 
+ * @param data the size of the u-blox message
+ * @param checksum the checksum output
+ * @return the checksum
+ */
 static inline uint16_t calculateChecksum(const uint8_t *data, 
                                          uint32_t size, 
                                          uint16_t &checksum) {

@@ -8,7 +8,14 @@ The driver was originally written by Johannes Meyer. Changes made later are deta
 Example .yaml configuration files are included in `ublox_gps/config`. Consult the u-blox documentation for your device for the recommended settings.
 
 The `ublox_gps` node supports the following parameters for all products and firmware versions:
-* `device`: Path to the device in `/dev`. Defaults to `/dev/ttyACM0`.
+* `device`: Path to the device port. Defaults to `/dev/ttyACM0`.
+* `raw_data`: Whether the device is a raw data product. Defaults to false. Firmware <= 7.03 only.
+* `load`: Parameters for loading the configuration to non-volatile memory. See `ublox_msgs/CfgCFG.msg`
+    * `load/mask`: uint32_t. Mask of the configurations to load.
+    * `load/device`: uint32_t. Mask which selects the devices for the load command.
+* `save`: Parameters for saving the configuration to non-volatile memory. See `ublox_msgs/CfgCFG.msg`
+    * `save/mask`: uint32_t. Mask of the configurations to save.
+    * `save/device`: uint32_t. Mask which selects the devices for the save command.
 * `uart1/baudrate`: Bit rate of the serial communication. Defaults to 9600.
 * `uart1/in`: UART1 in communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
 * `uart1/out`: UART1 out communication protocol. Defaults to UBX, NMEA & RTCM. See `CfgPRT` message for possible values.
@@ -84,27 +91,34 @@ The `ublox_gps` node supports the following parameters for all products and firm
         * `nmea/gnssToFilt/beidou`: Disable reporting of BeiDou satellites. Defaults to false.
     * `nmea/main_talker_id`: This field enables the main Talker ID to be overridden. Defaults to 0.
     * `nmea/gsv_talker_id`:  This field enables the GSV Talker ID to be overridden. Defaults to [0, 0].
+
 ### For devices with firmware >= 8:
-* `gnss/galileo`: Enable Galileo receiver. Defaults to false.
-* `gnss/imes`: Enable IMES receiver. Defaults to false.
-* `gnss/reset_mode`: The cold reset mode to use after changing the GNSS configuration. See `CfgRST` message for constants. Defaults to `RESET_MODE_GNSS`.
+* `save_on_shutdown`: If true, the node will send a `UBX-UPD-SOS` command to save the BBR to flash memory on shutdown. Defaults to false. 
+* `clear_bbr`: If true, the node will send a `UBX-UPD-SOS` command to clear the flash memory during configuration. Defaults to false.
+* Additional `gnss` params
+  * `gnss/galileo`: Enable Galileo receiver. Defaults to false.
+  * `gnss/imes`: Enable IMES receiver. Defaults to false.
 * `nmea/bds_talker_id`: (See other NMEA configuration parameters above) Sets the two characters that should be used for the BeiDou Talker ID.
+
 ### For UDR/ADR devices:
 * `use_adr`: Enable ADR/UDR. Defaults to true.
 * `nav_rate` should be set to 1 Hz.
+
 ### For HPG Reference devices:
-* `tmode3`: Time Mode, defaults to Survey-In. See CfgTMODE3 for constants.
-* `arp/lla_flag`: True if the Fixed position is in Lat, Lon, Alt coordinates. False if ECEF. Must be set if `tmode3` is set to fixed. 
-* `arp/position`: Antenna Reference Point position. Must be set if `tmode3` is set to fixed. 
-* `arp/position_hp`: Antenna Reference Point High Precision position. Must be set if tmode3 is set to fixed. 
-* `arp/acc`: Fixed position accuracy. Must be set if `tmode3` is set to fixed. 
+* `tmode3`: Time Mode. Required. See CfgTMODE3 for constants.
+* `arp/lla_flag`: True if the Fixed position is in Lat, Lon, Alt coordinates. False if ECEF. Required if `tmode3` is set to fixed. 
+* `arp/position`: Antenna Reference Point position in [m] or [deg]. Required if `tmode3` is set to fixed. 
+* `arp/position_hp`: Antenna Reference Point High Precision position in [0.1 mm] or [deg * 1e-9]. Required if tmode3 is set to fixed. 
+* `arp/acc`: Fixed position accuracy in [m]. Required if `tmode3` is set to fixed. 
 * `sv_in/reset`: Whether or not to reset the survey in upon initialization. If false, it will only reset if the TMODE is disabled. Defaults to true.
-* `sv_in/min_dur`: The minimum Survey-In Duration time in seconds. Must be set if tmode3 is set to survey in.
-* `sv_in/acc_lim`: The minimum accuracy level of the survey in position in meters. MMust be set if `tmode3` is set to survey in.
+* `sv_in/min_dur`: The minimum Survey-In Duration time in seconds. Required tmode3 is set to survey in.
+* `sv_in/acc_lim`: The minimum accuracy level of the survey in position in meters. Required `tmode3` is set to survey in.
+
 ### For HPG Rover devices:
 * `dgnss_mode`: The Differential GNSS mode. Defaults to RTK FIXED. See `CfgDGNSS` message for constants.
+
 ### For FTS & TIM devices:
-* currently unimplemented. See `UbloxFts` and `UbloxTim` classes in `ublox_gps` package `node.h` & `node.cpp` files.
+* currently unimplemented. See `FtsProduct` and `TimProduct` classes in `ublox_gps` package `node.h` & `node.cpp` files.
 
 ## Fix Topics
 
@@ -116,74 +130,87 @@ Navigation Satellite fix.
 
 Velocity in local ENU frame.
 
+## INF messages
+To enable printing INF messages to the ROS console, set the parameters below.
+* `inf/all`: This is the default value for the INF parameters below, which enable printing u-blox `INF` messages to the ROS console. It defaults to true. Individual message types can be turned off by setting their corresponding parameter to false.
+* `inf/debug`: Whether to configure the UBX and NMEA ports to send Debug messages and print received `INF-Debug` messages to `ROS_DEBUG` console.
+* `inf/error`: Whether to enable Error messages for the UBX and NMEA ports and print received `INF-Error` messages to `ROS_ERROR` console.
+* `inf/notice`: Whether to enable Notice messages for the UBX and NMEA ports and print received `INF-Notice messages to `ROS_INFO` console.
+* `inf/test`: Whether to enable Test messages for the UBX and NMEA ports and print received `INF-Test` messages to `ROS_INFO` console.
+* `inf/warning`: Whether to enable Warning messages for the UBX and NMEA ports and print received `INF-Warning` messages to the `ROS_WARN` console.
+
 ## Additional Topics
+To publish a given u-blox message to a ROS topic, set the parameter shown below to true. The node sets the rate of the u-blox messages to 1 measurement cycle. 
 
-To subscribe to the given topic set the parameter shown (e.g. `~inf`) to true.
-
-### INF messages
-* `inf/all`: This acts as the default value for the INF parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-* `inf/debug`: If true, configures UBX/NMEA ports to enable Debug messages and prints received INF Debug messages to `ROS_DEBUG` console.
-* `inf/error`: If true, configures UBX/NMEA ports to enable Error messages and prints received INF Error messages to `ROS_ERROR` console.
-* `inf/notice`: If true, configures UBX/NMEA ports to enable Notice messages and prints received INF Notice messages to `ROS_INFO` console.
-* `inf/test`: If true, configures UBX/NMEA ports to enable Test messages and prints received INF Test messages to `ROS_INFO` console.
-* `inf/warning`: If true, configures UBX/NMEA ports to enable Warning messages and prints received INF Warning messages to `ROS_WARN` console.
-
-### All message
-* `subscribe/all`:  This acts as the default value for the RXM, AID, MON, etc. `subscribe/<class>/all` parameters below. It defaults to false. Individual message classes and messages can be turned off by setting the parameter described below to false.
+### All messages
+* `publish/all`: This is the default value for `publish/<class>/all` parameters below. It defaults to false. Individual message classes and messages can be enabled or disabled by setting the parameters described below to false.
 
 ### AID messages
-* `subscribe/aid/all`: This acts as the default value for the AID subscriber parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-* `subscribe/aid/alm`: Topic `~aidalm`
-* `subscribe/aid/eph`: Topic `~aideph`
-* `subscribe/aid/hui`: Topic `~aidhui`
+* `publish/aid/all`: This is the default value for the `publish/aid/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
+* `publish/aid/alm`: Topic `~aidalm`
+* `publish/aid/eph`: Topic `~aideph`
+* `publish/aid/hui`: Topic `~aidhui`
 
 ### RXM messages
-* `subscribe/rxm/all`: This acts as the default value for the RXM subscriber parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-* `subscribe/rxm/alm`: Topic `~rxmalm`
-* `subscribe/rxm/raw`: Topic `~rxmraw`
-* `subscribe/rxm/rtcm`: Topic `~rxmrtcm`
-* `subscribe/rxm/sfrb`: Topic `~rxmsfrb`
-* `subscribe/rxm/eph`: Topic `~rxmeph`
+* `publish/rxm/all`: This is the default value for the `publish/rxm/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
+* `publish/rxm/alm`: Topic `~rxmalm`
+* `publish/rxm/eph`: Topic `~rxmeph`
+* `publish/rxm/raw`: Topic `~rxmraw`. Type is either `RxmRAW` or `RxmRAWX` depending on firmware version.
+* `publish/rxm/rtcm`: Topic `~rxmrtcm`. **Firmware >= 8 only**
+* `publish/rxm/sfrb`: Topic `~rxmsfrb`. Type is either `RxmSFRB` or `RxmSFRBX` depending on firmware version.
 
 ### MON messages
-* `subscribe/mon/all`: This acts as the default value for the MON subscriber parameters below. It defaults to true. Individual messages can be turned off by setting the parameter below to false.
-* `subscribe/mon/hw`: Topic `~monhw`
+* `publish/mon/all`: This is the default value for the `publish/mon/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
+* `publish/mon/hw`: Topic `~monhw`
 
 ### NAV messages
-* `subscribe/nav/att`: Topic `~navatt` on ADR/UDR devices only
-* `subscribe/nav/clock`: Topic `~navclock`
-* `subscribe/nav/posecef`: Topic `~navposecef`
-* `subscribe/nav/posllh`: Topic `~navposllh`. Firmware <= 6 only. For 7 and above, use NavPVT
-* `subscribe/nav/pvt`: Topic `~navpvt`. Firmware >=7 only.
-* `subscribe/nav/relposned`: Topic `~navrelposned`
-* `subscribe/nav/sat`: Topic `~navsat`
-* `subscribe/nav/sol`: Topic `~navsol`. Firmware <= 6 only. For 7 and above, use NavPVT
-* `subscribe/nav/status`: Topic `~navstatus`
-* `subscribe/nav/svin`: Topic `~navsvin`
-* `subscribe/nav/svinfo`: Topic `~navsvinfo`
-* `subscribe/nav/velned`: Topic `~navvelned`. Firmware <= 6 only. For 7 and above, use NavPVT
+* `publish/nav/all`: This is the default value for the `publish/mon/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
+* `publish/nav/att`: Topic `~navatt`. **ADR/UDR devices only**
+* `publish/nav/clock`: Topic `~navclock`
+* `publish/nav/posecef`: Topic `~navposecef`
+* `publish/nav/posllh`: Topic `~navposllh`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
+* `publish/nav/pvt`: Topic `~navpvt`. **Firmware >= 7 only.**
+* `publish/nav/relposned`: Topic `~navrelposned`. **HPG Rover devices only**
+* `publish/nav/sat`: Topic `~navsat`
+* `publish/nav/sol`: Topic `~navsol`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
+* `publish/nav/status`: Topic `~navstatus`
+* `publish/nav/svin`: Topic `~navsvin`. **HPG Reference Station Devices only**
+* `publish/nav/svinfo`: Topic `~navsvinfo`
+* `publish/nav/velned`: Topic `~navvelned`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
 
 ### ESF messages
-* `subscribe/esf/all`: This acts as the default value for the ESF subscriber parameters below. It defaults to true for ADR/UDR devices. Individual messages can be turned off by setting the parameter below to false.
-* `subscribe/esf/ins`: Topic `~esfins`
-* `subscribe/esf/meas`: Topic `~esfmeas`
-* `subscribe/esf/raw`: Topic `~esfraw`
-* `subscribe/esf/status`: Topic `~esfstatus`
+* `publish/esf/all`: This is the default value for the `publish/esf/<message>` parameters below. It defaults to `publish/all` for **ADR/UDR devices**. Individual messages can be enabled or disabled by setting the parameters below.
+* `publish/esf/ins`: Topic `~esfins`
+* `publish/esf/meas`: Topic `~esfmeas`
+* `publish/esf/raw`: Topic `~esfraw`
+* `publish/esf/status`: Topic `~esfstatus`
 
 ### HNR messages
-* `subscribe/hnr/pvt`: Topic `~hnrpvt`
+* `publish/hnr/pvt`: Topic `~hnrpvt`. **ADR/UDR devices only**
 
 ## Launch
 
 A sample launch file `ublox_device.launch` loads the parameters from a `.yaml` file in the `ublox_gps/config` folder, sample configuration files are included. The required arguments are `node_name` and `param_file_name`.
 The two topics to which you should subscribe are `~fix` and `~fix_velocity`. The angular component of `fix_velocity` is unused.
 
-## Debugging
-
-For debugging messages set the debug parameter to > 0. The range for debug is 0-4. At level 1 it prints configuration messages and checksum errors, at level 2 it also prints ACK/NACK messages and sent messages. At level 3 it prints the received bytes being decoded by a specific message reader. At level 4 it prints the incoming buffer before it is split by message header.
-
 # Version history
 
+* **1.1.2**:
+  - BUG FIX for NavSatFix messages for firmware >=7. The NavSatFix now only uses the NavPVT message time if it is valid, otherwise it uses ROS time.
+  - BUG FIX for TMODE3 Fixed mode configuration. The ARP High Precision position is now configured correctly. 
+  - BUG FIX for `NavDGPS` message which had the wrong Message ID.
+  - After GNSS configuration & reset, I/O resets automatically, without need for restart.
+  - Added `UBX-UPD` messages. For firmware version 8, the node can now save the flash memory on shutdown and clear the flash memory during configuration based on ROS params.
+  - Added `CfgGPS` message and `MonHW6` message for firmware version 6.
+  - Added respawn parameters to example launch file.
+  - Added parameters to load/save configuration.
+  - Added raw_data parameter for Raw Data Products.
+  - Changed name of "subscribe" parameter namespace to "publish" for clarity.
+  - Migrated all callback handling to `callback.h` from `gps.h` and `gps.cpp`. ACK messages are now processed through callback handlers.
+  - Modified how the I/O stream is initialized so that the node now handles parsing the port string.
+  - Changed class names of Ublox product components (e.g. UbloxTim -> TimProduct) for clarity.
+  - Cleaned up ublox custom serialization classes by adding typedefs and using count to determine repeating block statements instead of using try-catch statements to serialize stream.
+  - Added doxygen documentation
 * **1.1.1**:
   - BUG FIX for acknowledgments. The last received ack message was accessed by multiple threads but was not atomic. This variable is now thread safe.
   - BUG FIX for GNSS configuration for Firmware 8, the GNSS configuration is now verified & modified properly.
@@ -209,7 +236,7 @@ For debugging messages set the debug parameter to > 0. The range for debug is 0-
   - Added an implementation of `ComponentInterface` called `UbloxAdrUdr` for ADR/UDR devices. It which subscribes to `NavATT` and ESF messages and configures useAdr. The diagnostics monitor specific to these devices is not implemented. This class has not been tested on a hardware device.
   - Added a partial implementation of `UbloxTim` for TIM devices which subscribes to `RxmRAWX` and `RxmSFRBX` messages. The `getRosParams()`, `configureUblox()`, and `initializeDiagnostics()` methods are unimplemented.
   - Added a skeleton class for `UbloxFts` for FTS devices which is unimplemented. See the `ublox_gps` `node.cpp` and `node.h` files.
-  - Changed how GNSS is configured in firmware version 8. The documentation recommends a cold restart after reconfiguring the GNSS, and will reset the device if it receives a `CfgGNSS` message, even if the settings do not change. For firmware version 8, before reconfiguring, the node first checks if the current GNSS settings are the same as the desired settings. If so, it will not send a CfgGNSS message to the device. After reconfiguring, it will cold reset the device, based on the `reset_mode` configured by the user.
+  - Changed how GNSS is configured in firmware version 8. The documentation recommends a cold restart after reconfiguring the GNSS, and will reset the device if it receives a `CfgGNSS` message, even if the settings do not change. For firmware version 8, before reconfiguring, the node first checks if the current GNSS settings are the same as the desired settings. If so, it will not send a CfgGNSS message to the device. After reconfiguring, it will cold reset the GNSS.
   - Migrated I/O initialization to the `Gps` class from the `Node` class.
   - INF messages are now printed to the ROS console.
   - Changed how debug statements are displayed. If the debug parameter is set to 1 or greater, it prints debug messages. 
@@ -268,6 +295,7 @@ For debugging messages set the debug parameter to > 0. The range for debug is 0-
   - Forked from https://github.com/tu-darmstadt-ros-pkg/ublox
   - Updated to use catkin.
 
+# Adding new features
 ## Adding new messages
 1. Create the .msg file and add it to `ublox_msgs/msg`. Make sure the file includes the constants `CLASS_ID` and `MESSAGE_ID`. 
 
@@ -282,7 +310,7 @@ c. Declare the message's ID constant in the `ublox_messages::Message::<CLASS_NAM
 a. Include the block message in the `ublox_msgs/include/ublox_msgs/ublox_msgs.h` file. 
 b. Modify `ublox_msgs/include/ublox/serialization/ublox_msgs.h` and add a custom `Serializer`. If the message doesn't include the number of repeating/optional blocks as a parameter, you can infer it from the count/size of the message, which is the length of the payload.
 
-5. Modify `ublox_gps/src/node.cpp` (and the header file if necessary) to either subscribe to the message or send the configuration message. Be sure to modify the appropriate subscribe function. For messages which apply to all firmware/hardware, modify `UbloxNode::subscribe()`. Otherwise modify the appropriate firmware or hardware's subscribe function, e.g. `UbloxFirmware8::subscribe()`, `UbloxHpgRov::subscribe()`. If the message is a configuration message, consider modifying `ublox_gps/src/gps.cpp` (and the header file) to add a configuration function.
+5. Modify `ublox_gps/src/node.cpp` (and the header file if necessary) to either subscribe to the message or send the configuration message. Be sure to modify the appropriate subscribe function. For messages which apply to all firmware/hardware, modify `UbloxNode::subscribe()`. Otherwise modify the appropriate firmware or hardware's subscribe function, e.g. `UbloxFirmware8::subscribe()`, `HpgRovProduct::subscribe()`. If the message is a configuration message, consider modifying `ublox_gps/src/gps.cpp` (and the header file) to add a configuration function.
 
 ### One message protocol for multiple IDs (e.g. INF message)
 If a given message protocol applies to multiple message IDs (e.g. the `Inf` message), do not include the message ID in the message itself.
@@ -292,22 +320,34 @@ When declaring the message, for the first declaration, use `DECLARE_UBLOX_MESSAG
 
 The `node.cpp` file in `ublox_gps` contains a main Node class called UbloxNode which acts as the ROS Node and handles the node initialization, publishers, and diagnostics. `UbloxNode` contains a vector `components_` of instances of `ComponentInterface`. The `UbloxNode::initialize()` calls each component's public interface methods. The node contains components for both the firmware version and the product category, which are added after parsing the `MonVER` message. Any class which implements `ComponentInterface` can be added to the `UbloxNode` `components_` vector and its methods will be called by `UbloxNode`. Simply add an implementation of `ComponentInterface` to the ublox_gps `node.h` and `node.cpp` files. Behavior specific to a given firmware or product should not be implemented in the `UbloxNode` class and instead should be implemented in an implementation of `ComponentInterface`.
 
-Currently there are implementations of `ComponentInterface` for firmware versions 6-8 and product categories `UbloxHpgRef`, `UbloxHpgRov`, `UbloxAdrUdr`, `UbloxTim`, `UbloxFts`.  SPG products do not have their own implementation of `ComponentInterface`, since the Firmware classes implement all of the behavior of SPG devices.
+Currently there are implementations of `ComponentInterface` for firmware versions 6-8 and product categories `HpgRefProduct`, `HpgRovProduct`, `AdrUdrProduct`, `TimProduct`, `FtsProduct`.  SPG products do not have their own implementation of `ComponentInterface`, since the Firmware classes implement all of the behavior of SPG devices.
 
-`UbloxHpgRef` and `UbloxHpgRov` have been tested on the C94-M8P device. 
+`HpgRefProduct` and `HpgRovProduct` have been tested on the C94-M8P device. 
 
-## Known Issues
+## Adding new parameters
+1. Modify the `getRosParams()` method in the appropriate implementation of ComponentInterface (e.g. UbloxNode, UbloxFirmware8, HpgRefProduct, etc.) and get the parameter. Group multiple related parameters into a namespace. Use all lower case names for parameters and namespaces separated with underscores. 
+* If the type is an unsigned integer (of any size) or vector of unsigned integers, use the `ublox_node::getRosUint` method which will verify the bounds of the parameter.
+* If the type is an int8 or int16 or vector of int8's or int16's, use the `ublox_nod::getRosInt` method which will verify the bounds of the parameter. (This method can also be used for int32's but ROS has methods to get int32 parameters as well).
+2. If the parameter is used during configuration also modify the `ComponentInterface`'s `configureUblox()` method to send the appropriate configuration message. Do not send configuration messages in `getRosParams()`.
+3. Modify this README file and add the parameter name and description in the appropriate section. State whether there is a default value or if the parameter is required.
+4. Modify one of the sample `.yaml` configuration files in `ublox_gps/config` to include the parameter or add a new sample `.yaml` for your device.
+
+# Known Issues
 
 ## Unimplemented / Untested Devices
 
-`UbloxTim` and `UbloxFts` are currently unimplemented skeleton classes. `UbloxAdrUdr` is implemented, with the exception of `initializeRosDiagnostics()` and has not been tested on hardware. 
+`TimProduct` and `FtsProduct` are currently unimplemented skeleton classes. `AdrUdrProduct` is implemented, with the exception of `initializeRosDiagnostics()` and has not been tested on hardware. 
 
 `UbloxFirmware7` has not been properly tested on a device with firmware version 7. `UbloxFirmware6` has been tested on a device with firmware version 8, but not with firmware version 6.
+
+## Debugging
+
+For debugging messages set the debug parameter to > 0. The range for debug is 0-4. At level 1 it prints configuration messages and checksum errors, at level 2 it also prints ACK/NACK messages and sent messages. At level 3 it prints the received bytes being decoded by a specific message reader. At level 4 it prints the incoming buffer before it is split by message header.
 
 ## Troubleshooting
 
 1. Why can't the ublox_gps node open my device, even though I have correctly specified the path in `/dev`? 
 * Make sure you are the owner of the device, or a member of `dialout` group.
 
-## Links
+# Links
 Consult the [official protocol spec](https://www.u-blox.com/sites/default/files/products/documents/u-blox8-M8_ReceiverDescrProtSpec_(UBX-13003221)_Public.pdf) for details on packets supported by u-blox devices.

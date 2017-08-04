@@ -72,6 +72,13 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::VELECEF,
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::VELNED, 
                       ublox_msgs, NavVELNED);
 
+// ACK messages are declared differently because they both have the same 
+// protocol, so only 1 ROS message is used
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::ACK, ublox_msgs::Message::ACK::NACK, 
+                      ublox_msgs, Ack);
+DECLARE_UBLOX_MESSAGE_ID(ublox_msgs::Class::ACK, ublox_msgs::Message::ACK::ACK, 
+                      ublox_msgs, Ack, ACK);
+
 // INF messages are declared differently because they all have the same 
 // protocol, so only 1 ROS message is used. DECLARE_UBLOX_MESSAGE can only
 // be called once, and DECLARE_UBLOX_MESSAGE_ID is called for the following
@@ -142,11 +149,21 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::RST,
                       ublox_msgs, CfgRST);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::TMODE3, 
                       ublox_msgs, CfgTMODE3);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::USB, 
+                      ublox_msgs, CfgUSB);
+
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::UPD, ublox_msgs::Message::UPD::SOS, 
+                      ublox_msgs, UpdSOS);
+// SOS and SOS_Ack have the same message ID, but different lengths
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::UPD, ublox_msgs::Message::UPD::SOS, 
+                      ublox_msgs, UpdSOS_Ack);
 
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::GNSS, 
                       ublox_msgs, MonGNSS);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::HW, 
                       ublox_msgs, MonHW);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::HW, 
+                      ublox_msgs, MonHW6);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::VER, 
                       ublox_msgs, MonVER);
 
