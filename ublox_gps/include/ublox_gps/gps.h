@@ -99,10 +99,17 @@ class Gps {
    * @param uart_in the UART In protocol, see CfgPRT for options
    * @param uart_out the UART Out protocol, see CfgPRT for options
    */
-  void initializeSerial(std::string port,
-                        unsigned int baudrate,
-                        uint16_t uart_in,
-                        uint16_t uart_out);
+  void initializeSerial(std::string port, unsigned int baudrate,
+                        uint16_t uart_in, uint16_t uart_out);
+
+  /**
+   * @brief Reset the Serial I/O port after u-blox reset.
+   * @param port the device port address
+   * @param baudrate the desired baud rate of the port
+   * @param uart_in the UART In protocol, see CfgPRT for options
+   * @param uart_out the UART Out protocol, see CfgPRT for options
+   */
+  void resetSerial(std::string port);
 
   /**
    * @brief Closes the I/O port, and initiates save on shutdown procedure
@@ -111,12 +118,28 @@ class Gps {
   void close();
 
   /**
-   * @brief Send a reset message to the u-blox-device
+   * @brief Reset I/O communications.
+   * @param wait Time to wait before restarting communications
+   */
+  void reset(const boost::posix_time::time_duration& wait);
+
+  /**
+   * @brief Send a reset message to the u-blox device.
    * @param nav_bbr_mask The BBR sections to clear, see CfgRST message
    * @param reset_mode The reset type, see CfgRST message
    * @return true if the message was successfully sent, false otherwise
    */
-  bool reset(uint16_t nav_bbr_mask, uint16_t reset_mode);
+  bool configReset(uint16_t nav_bbr_mask, uint16_t reset_mode);
+
+  /**
+   * @brief Configure the GNSS, cold reset the device, and reset the I/O.
+   * @param gnss the desired GNSS configuration
+   * @param wait the time to wait after resetting I/O before restarting
+   * @return true if the GNSS was configured, the device was reset, and the 
+   * I/O reset successfully
+   */
+  bool configGnss(ublox_msgs::CfgGNSS gnss, 
+                  const boost::posix_time::time_duration& wait);
 
   /**
    * @brief Send a message to the receiver to delete the BBR data stored in 
@@ -124,7 +147,7 @@ class Gps {
    * @return true if sent message and received ACK, false otherwise
    */
   bool clearBbr();
-  
+
   /**
    * @brief Configure the UART1 Port.
    * @param baudrate the baudrate of the port
@@ -421,6 +444,8 @@ class Gps {
 
   //! Callback handlers for u-blox messages
   CallbackHandlers callbacks_; 
+
+  std::string host_, port_;
 };
 
 template <typename T>

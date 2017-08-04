@@ -100,7 +100,7 @@ void Gps::processUpdSosAck(const ublox_msgs::UpdSOS_Ack &m) {
 
 void Gps::initializeSerial(std::string port, unsigned int baudrate,
                            uint16_t uart_in, uint16_t uart_out) {
-  
+  port_ = port;
   boost::shared_ptr<boost::asio::io_service> io_service(
       new boost::asio::io_service);
   boost::shared_ptr<boost::asio::serial_port> serial(
@@ -142,11 +142,54 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
   }
   configured_ = configUart1(baudrate, uart_in, uart_out);
   if(!configured_ || current_baudrate.value() != baudrate) {
-    throw std::runtime_error("Could not configure serial baudrate");
+    throw std::runtime_error("Could not configure serial baud rate");
   }
 }
 
+void Gps::resetSerial(std::string port) {
+  boost::shared_ptr<boost::asio::io_service> io_service(
+      new boost::asio::io_service);
+  boost::shared_ptr<boost::asio::serial_port> serial(
+      new boost::asio::serial_port(*io_service));
+
+  // open serial port
+  try {
+    serial->open(port);
+  } catch (std::runtime_error& e) {
+    throw std::runtime_error("U-Blox: Could not open serial port :" 
+                             + port + " " + e.what());
+  }
+
+  ROS_INFO("U-Blox: Reset serial port %s", port.c_str());
+  
+  // Set the I/O worker
+  if (worker_) return;
+  setWorker(boost::shared_ptr<Worker>(
+      new AsyncWorker<boost::asio::serial_port>(serial, io_service)));
+  configured_ = false;
+
+  // Poll UART PRT Config
+  std::vector<uint8_t> payload;
+  payload.push_back(CfgPRT::PORT_ID_UART1);
+  if (!poll(CfgPRT::CLASS_ID, CfgPRT::MESSAGE_ID, payload)) {
+    ROS_ERROR("Resetting Serial Port: Could not poll UART1 CfgPRT");
+    return;
+  }
+  CfgPRT prt;
+  if(!read(prt, default_timeout_)) {
+    ROS_ERROR("Resetting Serial Port: Could not read polled UART1 CfgPRT %s", 
+                "message");
+    return;
+  }
+
+  // Set the baudrate
+  serial->set_option(boost::asio::serial_port_base::baud_rate(prt.baudRate));
+  configured_ = true;
+}
+
 void Gps::initializeTcp(std::string host, std::string port) {
+  host_ = host;
+  port_ = port;
   boost::shared_ptr<boost::asio::io_service> io_service(
       new boost::asio::io_service);
   boost::asio::ip::tcp::resolver::iterator endpoint;
@@ -191,9 +234,20 @@ void Gps::close() {
   configured_ = false;
 }
 
-bool Gps::reset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
-  ROS_WARN("Resetting Device. Node must be relaunched. %s", 
-           "Device address may change.");
+void Gps::reset(const boost::posix_time::time_duration& wait) {
+  worker_.reset();
+  configured_ = false;
+  // sleep because of undefined behavior after I/O reset
+  boost::this_thread::sleep(wait);
+  if (host_ == "")
+    resetSerial(port_);
+  else
+    initializeTcp(host_, port_);
+}
+
+bool Gps::configReset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
+  ROS_WARN("Resetting u-blox. If device address changes, %s", 
+           "node must be relaunched.");
 
   CfgRST rst;
   rst.navBbrMask = nav_bbr_mask;
@@ -203,6 +257,22 @@ bool Gps::reset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
   if (!configure(rst, false)) 
     return false;
   return true;
+}
+
+bool Gps::configGnss(CfgGNSS gnss, 
+                     const boost::posix_time::time_duration& wait) {
+  // Configure the GNSS settings
+  ROS_DEBUG("Re-configuring GNSS.");
+  if (!configure(gnss))
+    return false;
+  // Cold reset the GNSS
+  ROS_WARN("GNSS re-configured, cold resetting device.");
+  if (!configReset(CfgRST::NAV_BBR_COLD_START, CfgRST::RESET_MODE_GNSS))
+    return false;
+  ros::Duration(1.0).sleep();
+  // Reset the I/O
+  reset(wait);
+  return isConfigured();
 }
 
 bool Gps::saveOnShutdown() {

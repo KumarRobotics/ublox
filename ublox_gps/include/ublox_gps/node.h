@@ -99,45 +99,66 @@ boost::shared_ptr<ros::NodeHandle> nh;
 ublox_gps::Gps gps; 
 //! Which GNSS are supported by the device
 std::set<std::string> supported; 
-//! Whether or not to enable the given message subscriber
+//! Whether or not to publish the given ublox message
+/*! 
+ * key is the message name (all lowercase) without firmware version numbers
+ * (e.g. NavPVT instead of NavPVT7). Value indicates whether or not to enable  
+ * the message. */
 std::map<std::string, bool> enabled; 
-//! The ROS frame ID of this GPS
+//! The ROS frame ID of this device
 std::string frame_id; 
-//! The fix status service type, set based on the enabled GNSS
+//! The fix status service type, set in the Firmware Component 
+//! based on the enabled GNSS
 int fix_status_service; 
 //! The measurement [ms], see CfgRate.msg
 uint16_t meas_rate; 
 //! Navigation rate in measurement cycles, see CfgRate.msg
-uint16_t nav_rate; 
-//! IDs of RTCM out messages to configure
-std::vector<uint8_t> rtcm_ids; 
+uint16_t nav_rate;
+//! IDs of RTCM out messages to configure.
+std::vector<uint8_t> rtcm_ids;
 //! Rates of RTCM out messages. Size must be the same as rtcm_ids
-std::vector<uint8_t> rtcm_rates; 
+std::vector<uint8_t> rtcm_rates;
 
+//! Topic diagnostics for u-blox messages
+struct UbloxTopicDiagnostic {
+  UbloxTopicDiagnostic() {}
 
-
-struct UbloxDiagnostic {
-  UbloxDiagnostic() {}
-
-  //! Maximum Timestamp delay
-  UbloxDiagnostic (std::string name, double freq_tol, int freq_window) {
+  /**
+   * @brief Add a topic diagnostic to the diagnostic updater for 
+   * 
+   * @details The minimum and maximum frequency are equal to the nav rate in Hz.
+   * @param name the ROS topic
+   * @param freq_tol the tolerance [%] for the topic frequency
+   * @param freq_window the number of messages to use for diagnostic statistics
+   */
+  UbloxTopicDiagnostic (std::string topic, double freq_tol, int freq_window) {
     const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
     min_freq = target_freq;
     max_freq = target_freq;
     diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
                                                         freq_tol, freq_window);
-    diagnostic = new diagnostic_updater::HeaderlessTopicDiagnostic(name, 
+    diagnostic = new diagnostic_updater::HeaderlessTopicDiagnostic(topic, 
                                                                    *updater,
                                                                    freq_param);
   } 
-  //! Maximum Timestamp delay
-  UbloxDiagnostic (std::string name, double freq_min, double freq_max,
+  
+  /**
+   * @brief Add a topic diagnostic to the diagnostic updater for 
+   * 
+   * @details The minimum and maximum frequency are equal to the nav rate in Hz.
+   * @param name the ROS topic
+   * @param freq_min the minimum acceptable frequency for the topic
+   * @param freq_max the maximum acceptable frequency for the topic
+   * @param freq_tol the tolerance [%] for the topic frequency
+   * @param freq_window the number of messages to use for diagnostic statistics
+   */
+  UbloxTopicDiagnostic (std::string topic, double freq_min, double freq_max,
                    double freq_tol, int freq_window) {
     min_freq = freq_min;
     max_freq = freq_max;
     diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
                                                         freq_tol, freq_window);
-    diagnostic = new diagnostic_updater::HeaderlessTopicDiagnostic(name, 
+    diagnostic = new diagnostic_updater::HeaderlessTopicDiagnostic(topic, 
                                                                    *updater,
                                                                    freq_param);
   } 
@@ -150,10 +171,19 @@ struct UbloxDiagnostic {
   double max_freq; 
 };
 
+//! Topic diagnostics for fix / fix_velocity messages
 struct FixDiagnostic {
   FixDiagnostic() {}
 
-  //! Maximum Timestamp delay
+  /**
+   * @brief Add a topic diagnostic to the diagnostic updater for fix topics.
+   * 
+   * @details The minimum and maximum frequency are equal to the nav rate in Hz.
+   * @param name the ROS topic
+   * @param freq_tol the tolerance [%] for the topic frequency
+   * @param freq_window the number of messages to use for diagnostic statistics
+   * @param stamp_min the minimum allowed time delay
+   */
   FixDiagnostic (std::string name, double freq_tol, int freq_window,
                  double stamp_min) {
     const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
@@ -444,6 +474,8 @@ typedef boost::shared_ptr<ComponentInterface> ComponentPtr;
  */
 class UbloxNode : public virtual ComponentInterface {
  public:
+  //! How long to wait during I/O reset [s]
+  const static double kResetWait = 10.0; 
   //! how often (in seconds) to call poll messages
   const static double kPollDuration = 1.0; 
   // Constants used for diagnostic frequency updater
@@ -596,6 +628,10 @@ class UbloxNode : public virtual ComponentInterface {
   uint8_t max_sbas_;
   //! Dead reckoning limit parameter
   uint8_t dr_limit_;
+  //! Parameters to load from non-volatile memory during configuration
+  ublox_msgs::CfgCFG load_;
+  //! Parameters to save to non-volatile memory after configuration
+  ublox_msgs::CfgCFG save_;
 };
 
 /** 
@@ -938,12 +974,6 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
   bool enable_beidou_; 
   //! Whether or not to enable the IMES GNSS
   bool enable_imes_; 
-  //! Type of device reset after GNSS configuration. 
-  /*!
-   * Only used if GNSS configuration is changed.
-   * See CfgRST message for constants.
-   */
-  uint8_t reset_mode_;
   //! Whether or not to configure the NMEA settings
   bool set_nmea_; 
   //! Desired NMEA configuration.
@@ -987,14 +1017,14 @@ class RawDataProduct: public virtual ComponentInterface {
 
  private:
   //! Topic diagnostic updaters
-  std::vector<UbloxDiagnostic> freq_diagnostics_; 
+  std::vector<UbloxTopicDiagnostic> freq_diagnostics_; 
 };
 
 /**
  * @brief Implements functions for Automotive Dead Reckoning (ADR) and 
  * Untethered Dead Reckoning (UDR) Devices.
  */
-class UbloxAdrUdr: public virtual ComponentInterface {
+class AdrUdrProduct: public virtual ComponentInterface {
  public:
   /**
    * @brief Get the ADR/UDR parameters.
@@ -1023,8 +1053,8 @@ class UbloxAdrUdr: public virtual ComponentInterface {
    * @todo unimplemented
    */
   void initializeRosDiagnostics() {
-    ROS_WARN("ROS Diagnostics specific to U-Blox ADR/UDR devices is %s",
-             "unimplemented. See UbloxAdrUdr class in node.h & node.cpp.");
+    ROS_WARN("ROS Diagnostics specific to u-blox ADR/UDR devices is %s",
+             "unimplemented. See AdrUdrProduct class in node.h & node.cpp.");
   }
 
  protected:
@@ -1036,14 +1066,14 @@ class UbloxAdrUdr: public virtual ComponentInterface {
  * @brief Implements functions for FTS products. Currently unimplemented.
  * @todo Unimplemented.
  */
-class UbloxFts: public virtual ComponentInterface {
+class FtsProduct: public virtual ComponentInterface {
   /**
    * @brief Get the FTS parameters. 
    * @todo Currently unimplemented.
    */
   void getRosParams() {
-    ROS_WARN("Functionality specific to U-Blox FTS devices is %s",
-             "unimplemented. See UbloxFts class in node.h & node.cpp.");
+    ROS_WARN("Functionality specific to u-blox FTS devices is %s",
+             "unimplemented. See FtsProduct class in node.h & node.cpp.");
   }
 
   /**
@@ -1069,7 +1099,7 @@ class UbloxFts: public virtual ComponentInterface {
  * @brief Implements functions for High Precision GNSS Reference station 
  * devices.
  */
-class UbloxHpgRef: public virtual ComponentInterface {
+class HpgRefProduct: public virtual ComponentInterface {
  public:
   /**
    * @brief Get the ROS parameters specific to the Reference Station 
@@ -1178,7 +1208,7 @@ class UbloxHpgRef: public virtual ComponentInterface {
 /**
  * @brief Implements functions for High Precision GNSS Rover devices.
  */
-class UbloxHpgRov: public virtual ComponentInterface {
+class HpgRovProduct: public virtual ComponentInterface {
  public:
   // Constants for diagnostic updater
   //! Diagnostic updater: RTCM topic frequency min [Hz]
@@ -1238,22 +1268,22 @@ class UbloxHpgRov: public virtual ComponentInterface {
   /*! see CfgDGNSS message for possible values */
   uint8_t dgnss_mode_; 
 
-  // The RTCM topic frequency diagnostic updater
-  UbloxDiagnostic freq_rtcm_;
+  //! The RTCM topic frequency diagnostic updater
+  UbloxTopicDiagnostic freq_rtcm_;
 };
 
 /**
  * @brief Implements functions for Time Sync products.
  * @todo partially implemented
  */
-class UbloxTim: public virtual ComponentInterface {
+class TimProduct: public virtual ComponentInterface {
   /**
    * @brief Get the Time Sync parameters. 
    * @todo Currently unimplemented.
    */
   void getRosParams() {
-    ROS_WARN("Functionality specific to U-Blox TIM devices is only %s",
-             "partially implemented. See UbloxTim class in node.h & node.cpp.");
+    ROS_WARN("Functionality specific to u-blox TIM devices is only %s",
+        "partially implemented. See TimProduct class in node.h & node.cpp.");
   }
 
   /**
