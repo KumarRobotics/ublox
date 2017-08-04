@@ -20,11 +20,11 @@ uint16 flags                # various configuration flags (see graphic below)
 uint16 FLAGS_RE_ENUM = 0       # force re-enumeration
 uint16 FLAGS_POWER_MODE = 2    # self-powered (1), bus-powered (0)
 
-uint8[32] vendorString      # String containing the vendor name. 
-                            # 32 ASCII bytes including 0-termination.
-uint8[32] productString     # String containing the product name. 
-                            # 32 ASCII bytes including 0-termination.
-uint8[32] serialNumber      # String containing the serial number. 
-                            # 32 ASCII bytes including 0-termination. 
-                            # Changing the String fields requires special Host 
-                            # drivers.
+int8[32] vendorString      # String containing the vendor name. 
+                           # 32 ASCII bytes including 0-termination.
+int8[32] productString     # String containing the product name. 
+                           # 32 ASCII bytes including 0-termination.
+int8[32] serialNumber      # String containing the serial number. 
+                           # 32 ASCII bytes including 0-termination. 
+                           # Changing the String fields requires special Host 
+                           # drivers.
