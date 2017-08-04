@@ -89,6 +89,7 @@
 
 #include <ublox_msgs/MonGNSS.h>
 #include <ublox_msgs/MonHW.h>
+#include <ublox_msgs/MonHW6.h>
 #include <ublox_msgs/MonVER.h>
 
 #include <ublox_msgs/AidALM.h>

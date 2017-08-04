@@ -162,6 +162,8 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::GNSS,
                       ublox_msgs, MonGNSS);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::HW, 
                       ublox_msgs, MonHW);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::HW, 
+                      ublox_msgs, MonHW6);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::VER, 
                       ublox_msgs, MonVER);
 
