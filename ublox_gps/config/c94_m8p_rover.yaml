@@ -2,6 +2,11 @@
 
 debug: 1                    # Range 0-4 (0 means no debug statements will print)
 
+save:
+  mask: 3103                # Save I/O, Message, INF Message, Nav, Receiver 
+                            # Manager, Antenna, and Logging Configuration
+  device: 4                 # Save to EEPROM
+
 device: /dev/ttyACM1
 frame_id: gps
 rate: 4                     # in Hz
@@ -22,7 +27,6 @@ uart1:
   out: 0                    # No UART out for rover
 
 gnss:
-  reset_mode: 2             # Controlled Software reset
   glonass: true             # Supported by C94-M8P
   beidou: false             # Supported by C94-M8P
   qzss: false               # Supported by C94-M8P
