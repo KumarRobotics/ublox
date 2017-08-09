@@ -23,7 +23,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${catkin_INCLUDE_DIRS})
 
 # link pthread
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -lrt -pthread")
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++03 -lrt -pthread")
 
 # build library
 add_library(ublox_gps src/gps.cpp)

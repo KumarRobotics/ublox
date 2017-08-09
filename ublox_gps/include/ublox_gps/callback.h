@@ -31,6 +31,7 @@
 
 #include <ros/console.h>
 #include <ublox/serialization/ublox_msgs.h>
+#include <boost/format.hpp>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
 
