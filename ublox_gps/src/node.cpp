@@ -1150,7 +1150,7 @@ bool UbloxFirmware8::configureUblox() {
                && enable_glonass_ != (block.flags & block.FLAGS_ENABLE)) {
       correct = false;
       cfg_gnss.blocks[i].flags = 
-          (cfg_gnss.blocks[i].flags & ~enable_glonass_) | enable_glonass_;
+          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_glonass_;
       ROS_DEBUG("GLONASS Configuration is different");
     }
   }
