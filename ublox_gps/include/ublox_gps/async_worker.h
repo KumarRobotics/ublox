@@ -14,9 +14,9 @@
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
 // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -59,7 +59,7 @@ class AsyncWorker : public Worker {
    * @param io_service the I/O service
    * @param buffer_size the size of the input and output buffers
    */
-  AsyncWorker(boost::shared_ptr<StreamT> stream, 
+  AsyncWorker(boost::shared_ptr<StreamT> stream,
               boost::shared_ptr<boost::asio::io_service> io_service,
               std::size_t buffer_size = 8192);
   virtual ~AsyncWorker();
@@ -89,14 +89,14 @@ class AsyncWorker : public Worker {
    * @brief Read the input stream.
    */
   void doRead();
-  
+
   /**
    * @brief Process messages read from the input stream.
    * @param error_code an error code for read failures
    * @param the number of bytes received
    */
   void readEnd(const boost::system::error_code&, std::size_t);
-  
+
   /**
    * @brief Send all the data in the output buffer.
    */
@@ -113,7 +113,7 @@ class AsyncWorker : public Worker {
   Mutex read_mutex_; //!< Lock for the input buffer
   boost::condition read_condition_;
   std::vector<unsigned char> in_; //!< The input buffer
-  std::size_t in_buffer_size_; //!< number of bytes currently in the input 
+  std::size_t in_buffer_size_; //!< number of bytes currently in the input
                                //!< buffer
 
   Mutex write_mutex_; //!< Lock for the output buffer
@@ -148,7 +148,7 @@ template <typename StreamT>
 AsyncWorker<StreamT>::~AsyncWorker() {
   io_service_->post(boost::bind(&AsyncWorker<StreamT>::doClose, this));
   background_thread_->join();
-  io_service_->reset();
+  //io_service_->reset();
 }
 
 template <typename StreamT>
@@ -209,8 +209,8 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
                                    std::size_t bytes_transfered) {
   ScopedLock lock(read_mutex_);
   if (error) {
-    ROS_ERROR("U-Blox ASIO input buffer read error: %s, %li", 
-              error.message().c_str(), 
+    ROS_ERROR("U-Blox ASIO input buffer read error: %s, %li",
+              error.message().c_str(),
               bytes_transfered);
   } else if (bytes_transfered > 0) {
     in_buffer_size_ += bytes_transfered;
@@ -221,7 +221,7 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
                in_.begin() + in_buffer_size_ - bytes_transfered;
            it != in_.begin() + in_buffer_size_; ++it)
         oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
-      ROS_DEBUG("U-Blox received %li bytes \n%s", bytes_transfered, 
+      ROS_DEBUG("U-Blox received %li bytes \n%s", bytes_transfered,
                oss.str().c_str());
     }
 
@@ -240,7 +240,10 @@ void AsyncWorker<StreamT>::doClose() {
   ScopedLock lock(read_mutex_);
   stopping_ = true;
   boost::system::error_code error;
-  stream_->cancel(error);
+  stream_->close(error);
+  if(error)
+    ROS_ERROR_STREAM(
+        "Error while closing the AsyncWorker stream: " << error.message());
 }
 
 template <typename StreamT>
