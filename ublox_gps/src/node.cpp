@@ -225,13 +225,13 @@ void UbloxNode::pollMessages(const ros::TimerEvent& event) {
 
 void UbloxNode::printInf(const ublox_msgs::Inf &m, uint8_t id) {
   if (id == ublox_msgs::Message::INF::ERROR)
-    ROS_ERROR("INF: %s", m.str.data());
+    ROS_ERROR_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
   else if (id == ublox_msgs::Message::INF::WARNING)
-    ROS_WARN("INF: %s", m.str.data());
+    ROS_WARN_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
   else if (id == ublox_msgs::Message::INF::DEBUG)
-    ROS_DEBUG("INF: %s", m.str.data());
+    ROS_DEBUG_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
   else
-    ROS_INFO("INF: %s", m.str.data());
+    ROS_INFO_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
 }
 
 void UbloxNode::subscribe() {
