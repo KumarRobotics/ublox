@@ -585,7 +585,7 @@ class UbloxNode : public virtual ComponentInterface {
   std::vector<boost::shared_ptr<ComponentInterface> > components_;
 
   //! Determined From Mon VER
-  float protocol_version_;
+  float protocol_version_ = 0;
   // Variables set from parameter server
   //! Device port
   std::string device_;

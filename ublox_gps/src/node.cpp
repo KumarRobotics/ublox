@@ -366,7 +366,8 @@ void UbloxNode::processMonVer() {
   if(protocol_version_ < 18) {
     // Final line contains supported GNSS delimited by ;
     std::vector<std::string> strs;
-    boost::split(strs, extension[extension.size()-1], boost::is_any_of(";"));
+    if(extension.size() > 0)
+      boost::split(strs, extension[extension.size()-1], boost::is_any_of(";"));
     for(size_t i = 0; i < strs.size(); i++)
       supported.insert(strs[i]);
   } else {
