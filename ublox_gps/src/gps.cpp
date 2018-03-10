@@ -116,6 +116,17 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
   }
 
   ROS_INFO("U-Blox: Opened serial port %s", port.c_str());
+  {
+    // Wait for at least one char on serial port before returning from read.
+    // Sadly Boost doesn't provide any way to set this.
+    int fd = serial->native_handle();
+    struct termios tio;
+    tcgetattr(fd, &tio);
+    tio.c_cc[VTIME] = 0;
+    tio.c_cc[VMIN] = 1;
+    tcflush(fd, TCIFLUSH);
+    tcsetattr(fd, TCSANOW, &tio);
+  }
 
   if(BOOST_VERSION < 106600)
   {
@@ -549,5 +560,14 @@ bool Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout,
                 && ack.class_id == class_id
                 && ack.msg_id == msg_id;
   return result;
+}
+
+bool Gps::setTimtm2(uint8_t rate) {
+  ROS_DEBUG("TIM-TM2 send rate on current port set to %u", rate );
+  ublox_msgs::CfgMSG msg;
+  msg.msgClass = ublox_msgs::TimTM2::CLASS_ID;
+  msg.msgID = ublox_msgs::TimTM2::MESSAGE_ID;
+  msg.rate  = rate; 
+  return configure(msg);
 }
 }  // namespace ublox_gps

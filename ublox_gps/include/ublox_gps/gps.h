@@ -72,7 +72,7 @@ class Gps {
   //! Default timeout for ACK messages in seconds
   constexpr static double kDefaultAckTimeout = 1.0;
   //! Size of write buffer for output messages
-  constexpr static int kWriterSize = 1024;
+  constexpr static int kWriterSize = 2056;
 
   Gps();
   virtual ~Gps();
@@ -292,6 +292,16 @@ class Gps {
    */
   bool setUseAdr(bool enable);
 
+  /**
+   * @brief Enable or disable PPP (precise-point-positioning).
+   * @param enable If true, enable PPP.
+   * @return true on ACK, false on other conditions.
+   *
+   * @note This is part of the expert settings. It is recommended you check
+   * the ublox manual first.
+   */
+  bool setTimtm2(uint8_t rate);
+ 
   /**
    * @brief Configure the U-Blox send rate of the message & subscribe to the
    * given message

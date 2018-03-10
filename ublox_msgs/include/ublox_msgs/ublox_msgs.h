@@ -106,6 +106,8 @@
 
 #include <ublox_msgs/HnrPVT.h>
 
+#include <ublox_msgs/TimTM2.h>
+
 namespace ublox_msgs {
 
 namespace Class {
@@ -243,6 +245,10 @@ namespace Message {
 
   namespace HNR {
     static const uint8_t PVT = HnrPVT::MESSAGE_ID;
+  }
+
+  namespace TIM {
+    static const uint8_t TM2 = TimTM2::MESSAGE_ID;
   }
 }
 

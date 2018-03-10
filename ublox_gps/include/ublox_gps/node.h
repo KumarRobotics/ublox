@@ -632,6 +632,8 @@ class UbloxNode : public virtual ComponentInterface {
   ublox_msgs::CfgCFG load_;
   //! Parameters to save to non-volatile memory after configuration
   ublox_msgs::CfgCFG save_;
+  //! rate for TIM-TM2
+  uint8_t tim_rate_;
 };
 
 /**
@@ -1279,16 +1281,13 @@ class TimProduct: public virtual ComponentInterface {
    * @brief Get the Time Sync parameters.
    * @todo Currently unimplemented.
    */
-  void getRosParams() {
-    ROS_WARN("Functionality specific to u-blox TIM devices is only %s",
-        "partially implemented. See TimProduct class in node.h & node.cpp.");
-  }
-
+  void getRosParams(); 
+ 
   /**
    * @brief Configure Time Sync settings.
    * @todo Currently unimplemented.
    */
-  bool configureUblox() { return false; }
+  bool configureUblox(); 
 
   /**
    * @brief Subscribe to Time Sync messages.
@@ -1301,7 +1300,13 @@ class TimProduct: public virtual ComponentInterface {
    * @brief Adds diagnostic updaters for Time Sync status.
    * @todo Currently unimplemented.
    */
-  void initializeRosDiagnostics() {}
+  void initializeRosDiagnostics();
+  
+  /**
+   * @brief 
+   * @details Publish recieved TimTM2 messages if enabled
+   */
+   void callbackTimTM2(const ublox_msgs::TimTM2 &m);
 };
 
 }
