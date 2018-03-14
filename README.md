@@ -118,7 +118,7 @@ The `ublox_gps` node supports the following parameters for all products and firm
 * `dgnss_mode`: The Differential GNSS mode. Defaults to RTK FIXED. See `CfgDGNSS` message for constants.
 
 ### For TIM devices:
-* `tim_tm2`: Enable this message for GPS time-stamps everytime an external interupt signal is received.
+* `tim_tm2`: Enable this message for GPS time-stamps everytime an external interrupt signal is received.
 
 ### For FTS devices:
 * currently unimplemented. See `FtsProduct` class in `ublox_gps` package `node.h` & `node.cpp` files.

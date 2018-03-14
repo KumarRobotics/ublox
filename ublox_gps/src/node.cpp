@@ -1621,7 +1621,7 @@ void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
     static ros::Publisher publisher =
     	nh->advertise<ublox_msgs::TimTM2>("timtm2", kROSQueueSize);
     static ros::Publisher time_ref_pub =
-	nh->advertise<sensor_msgs::TimeReference>("interupt_time", kROSQueueSize);
+	nh->advertise<sensor_msgs::TimeReference>("interrupt_time", kROSQueueSize);
     
     // create time ref message and put in the data
     t_ref_.header.seq = m.risingEdgeCount;
