@@ -28,6 +28,8 @@
 //==============================================================================
 
 #include "ublox_gps/node.h"
+#include <string>
+#include <sstream>
 
 using namespace ublox_node;
 
@@ -1580,9 +1582,13 @@ void TimProduct::getRosParams() {
 
 bool TimProduct::configureUblox() {
   uint8_t r = 1;
-  // Configure the reciever 
+  // Configure the reciever
+  if(!gps.setUTCtime()) 
+    throw std::runtime_error(std::string("Failed to Configure TIM Product to UTC Time"));
+ 
   if(!gps.setTimtm2(r))
     throw std::runtime_error(std::string("Failed to Configure TIM Product"));
+
   return true;
 }
 
@@ -1614,8 +1620,23 @@ void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
   if (enabled["tim_tm2"]) {
     static ros::Publisher publisher =
     	nh->advertise<ublox_msgs::TimTM2>("timtm2", kROSQueueSize);
-   // ROS_INFO("TIM-TM2 set to publish on topic tmtm2"); 
+    static ros::Publisher time_ref_pub =
+	nh->advertise<sensor_msgs::TimeReference>("interupt_time", kROSQueueSize);
+    
+    // create time ref message and put in the data
+    t_ref_.header.seq = m.risingEdgeCount;
+    t_ref_.header.stamp = ros::Time::now();
+    t_ref_.header.frame_id = frame_id;
+
+    t_ref_.time_ref = ros::Time((m.wnR * 604800 + m.towMsR / 1000), (m.towMsR % 1000) * 1000000 + m.towSubMsR); 
+    
+    std::ostringstream src;
+    src << "TIM" << int(m.ch); 
+    t_ref_.source = src.str();
+
+    // ROS_INFO("TIM-TM2 set to publish on topic tmtm2"); 
     publisher.publish(m);
+    time_ref_pub.publish(t_ref_);
   }
   
   updater->force_update();

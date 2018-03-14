@@ -47,6 +47,7 @@
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <sensor_msgs/NavSatFix.h>
+#include <sensor_msgs/TimeReference.h>
 // Other U-Blox package includes
 #include <ublox_msgs/ublox_msgs.h>
 // Ublox GPS includes
@@ -1301,12 +1302,15 @@ class TimProduct: public virtual ComponentInterface {
    * @todo Currently unimplemented.
    */
   void initializeRosDiagnostics();
-  
+
+ protected:  
   /**
    * @brief 
    * @details Publish recieved TimTM2 messages if enabled
    */
-   void callbackTimTM2(const ublox_msgs::TimTM2 &m);
+  void callbackTimTM2(const ublox_msgs::TimTM2 &m);
+ 
+  sensor_msgs::TimeReference t_ref_;
 };
 
 }

@@ -562,6 +562,14 @@ bool Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout,
   return result;
 }
 
+bool Gps::setUTCtime() {
+  ROS_DEBUG("Setting time to UTC time");
+
+  ublox_msgs::CfgNAV5 msg;
+  msg.utcStandard = 3;
+  return configure(msg);
+}
+
 bool Gps::setTimtm2(uint8_t rate) {
   ROS_DEBUG("TIM-TM2 send rate on current port set to %u", rate );
   ublox_msgs::CfgMSG msg;

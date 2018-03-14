@@ -293,8 +293,17 @@ class Gps {
   bool setUseAdr(bool enable);
 
   /**
-   * @brief Enable or disable PPP (precise-point-positioning).
-   * @param enable If true, enable PPP.
+   * @brief Configure the U-Blox to UTC time 
+   * @return true on ACK, false on other conditions.
+   *
+   * @note This is part of the expert settings. It is recommended you check
+   * the ublox manual first.
+   */
+  bool setUTCtime();
+
+  /**
+   * @brief Enable or disable TIM-TM2 (time mark message).
+   * @param enable If true, enable TIM-TM2.
    * @return true on ACK, false on other conditions.
    *
    * @note This is part of the expert settings. It is recommended you check
