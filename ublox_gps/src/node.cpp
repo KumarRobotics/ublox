@@ -1620,6 +1620,7 @@ void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
   if (enabled["tim_tm2"]) {
     static ros::Publisher publisher =
     	nh->advertise<ublox_msgs::TimTM2>("timtm2", kROSQueueSize);
+<<<<<<< HEAD
     static ros::Publisher time_ref_pub =
 	nh->advertise<sensor_msgs::TimeReference>("interupt_time", kROSQueueSize);
     
@@ -1634,6 +1635,11 @@ void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
     src << "TIM" << int(m.ch); 
     t_ref_.source = src.str();
 
+=======
+    
+    m.header.stamp = ros::Time::now(); // create a new timestamp
+    m.header.frame_id = frame_id;
+>>>>>>> 43beeafbae8702acfd9ba974529d0ef4761f9a08
     // ROS_INFO("TIM-TM2 set to publish on topic tmtm2"); 
     publisher.publish(m);
     time_ref_pub.publish(t_ref_);
