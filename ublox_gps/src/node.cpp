@@ -28,6 +28,8 @@
 //==============================================================================
 
 #include "ublox_gps/node.h"
+#include <string>
+#include <sstream>
 
 using namespace ublox_node;
 
@@ -1575,18 +1577,76 @@ void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
 //
 // U-Blox Time Sync Products, partially implemented.
 //
+void TimProduct::getRosParams() {
+}
+
+bool TimProduct::configureUblox() {
+  uint8_t r = 1;
+  // Configure the reciever
+  if(!gps.setUTCtime()) 
+    throw std::runtime_error(std::string("Failed to Configure TIM Product to UTC Time"));
+ 
+  if(!gps.setTimtm2(r))
+    throw std::runtime_error(std::string("Failed to Configure TIM Product"));
+
+  return true;
+}
+
 void TimProduct::subscribe() {
+  ROS_INFO("TIM is Enabled: %u", enabled["tim"]);
+  ROS_INFO("TIM-TM2 is Enabled: %u", enabled["tim_tm2"]);
+  // Subscribe to TIM-TM2 messages (Time mark messages)
+  nh->param("publish/tim/tm2", enabled["tim_tm2"], enabled["tim"]);
+  //if (enabled["tim_tm2"])
+  gps.subscribe<ublox_msgs::TimTM2>(boost::bind(
+    &TimProduct::callbackTimTM2, this, _1), kSubscribeRate);
+  //throw std::runtime_error(std::string("Tried to Subscribe to TIMTM2")); 
+  ROS_INFO("Subscribed to TIM-TM2 messages on topic tim/tm2");
   // Subscribe to RawX messages
-  nh->param("publish/rxm/raw", enabled["rxm_raw"], enabled["rxm"]);
-  if (enabled["rxm_raw"])
-    gps.subscribe<ublox_msgs::RxmRAWX>(boost::bind(
-        publish<ublox_msgs::RxmRAWX>, _1, "rxmraw"), kSubscribeRate);
+  // nh->param("publish/rxm/raw", enabled["rxm_raw"], enabled["rxm"]);
+  //   if (enabled["rxm_raw"])
+  //     gps.subscribe<ublox_msgs::RxmRAWX>(boost::bind(
+  //  	publish<ublox_msgs::RxmRAWX>, _1, "rxmraw"), kSubscribeRate);
 
   // Subscribe to SFRBX messages
-  nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], enabled["rxm"]);
-  if (enabled["rxm_sfrb"])
-    gps.subscribe<ublox_msgs::RxmSFRBX>(boost::bind(
-        publish<ublox_msgs::RxmSFRBX>, _1, "rxmsfrb"), kSubscribeRate);
+  // nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], enabled["rxm"]);
+  // if (enabled["rxm_sfrb"])
+  //   gps.subscribe<ublox_msgs::RxmSFRBX>(boost::bind(
+  //       publish<ublox_msgs::RxmSFRBX>, _1, "rxmsfrb"), kSubscribeRate);
+}
+
+void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
+  //ROS_INFO("TIM-TM2 status is %u", m.ch);
+  if (enabled["tim_tm2"]) {
+    static ros::Publisher publisher =
+    	nh->advertise<ublox_msgs::TimTM2>("timtm2", kROSQueueSize);
+    static ros::Publisher time_ref_pub =
+	nh->advertise<sensor_msgs::TimeReference>("interrupt_time", kROSQueueSize);
+    
+    // create time ref message and put in the data
+    t_ref_.header.seq = m.risingEdgeCount;
+    t_ref_.header.stamp = ros::Time::now();
+    t_ref_.header.frame_id = frame_id;
+
+    t_ref_.time_ref = ros::Time((m.wnR * 604800 + m.towMsR / 1000), (m.towMsR % 1000) * 1000000 + m.towSubMsR); 
+    
+    std::ostringstream src;
+    src << "TIM" << int(m.ch); 
+    t_ref_.source = src.str();
+
+    t_ref_.header.stamp = ros::Time::now(); // create a new timestamp
+    t_ref_.header.frame_id = frame_id;
+   
+    // ROS_INFO("TIM-TM2 set to publish on topic tmtm2"); 
+    publisher.publish(m);
+    time_ref_pub.publish(t_ref_);
+  }
+  
+  updater->force_update();
+}
+
+void TimProduct::initializeRosDiagnostics() {
+  updater->force_update();
 }
 
 int main(int argc, char** argv) {

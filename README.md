@@ -117,8 +117,11 @@ The `ublox_gps` node supports the following parameters for all products and firm
 ### For HPG Rover devices:
 * `dgnss_mode`: The Differential GNSS mode. Defaults to RTK FIXED. See `CfgDGNSS` message for constants.
 
-### For FTS & TIM devices:
-* currently unimplemented. See `FtsProduct` and `TimProduct` classes in `ublox_gps` package `node.h` & `node.cpp` files.
+### For TIM devices:
+* `tim_tm2`: Enable this message for GPS time-stamps everytime an external interrupt signal is received.
+
+### For FTS devices:
+* currently unimplemented. See `FtsProduct` class in `ublox_gps` package `node.h` & `node.cpp` files.
 
 ## Fix Topics
 
@@ -187,6 +190,9 @@ To publish a given u-blox message to a ROS topic, set the parameter shown below 
 
 ### HNR messages
 * `publish/hnr/pvt`: Topic `~hnrpvt`. **ADR/UDR devices only**
+
+### TIM messages
+* `publish/tim/tm2`: Topic `timtm2`. **TIM devices only**
 
 ## Launch
 
