@@ -44,3 +44,9 @@ publish:
 
   nav:
     posecef: false
+
+# Enable AGPS and settings
+agps: 
+  enable: true
+  token: noToken                   # Token to request the agps file 
+  path: /data                      # path to store the agps file 
