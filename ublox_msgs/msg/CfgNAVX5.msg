@@ -6,7 +6,7 @@
 uint8 CLASS_ID = 6
 uint8 MESSAGE_ID = 35
 
-uint16 version        # Message version (set to 0)
+uint16 version        # Message version (set to 2)
 
 uint16 mask1          # First parameters bitmask (possible values below)
 uint16 MASK1_MIN_MAX        = 4        # apply min/max SVs settings
@@ -48,19 +48,22 @@ uint8 sigAttenCompMode  # Permanently attenuated signal compensation [dBHz]
                         # 1..63 = maximum expected C/N0 value
                         # Firmware 8 only
 
-uint8[5] reserved4      # Always set to zero
+uint8 reserved4      # Always set to zero
+uint8[2] reserved5      # Always set to zero
+uint8[2] reserved6      # Always set to zero
 
 uint8 usePPP            # Enable/disable PPP (on supported units)
 uint8 aopCfg            # AssistNow Autonomous configuration, 1: enabled
 
-uint8[2] reserved5      # Always set to zero
+uint8[2] reserved7      # Always set to zero
 
 uint16 aopOrbMaxErr     # Maximum acceptable (modeled) autonomous orbit 
                         # error [m]
                         # valid range = 5..1000
                         # 0 = reset to firmware default
 
-uint8[7] reserved6      # Always set to zero
+uint8[4] reserved8      # Always set to zero
+uint8[3] reserved9      # Always set to zero
 
 uint8 useAdr            # Enable/disable ADR sensor fusion 
                         # 1: enabled, 0: disabled
