@@ -30,14 +30,21 @@
 #ifndef UBLOX_GPS_H
 #define UBLOX_GPS_H
 // STL
-#include <map>
-#include <vector>
+#include <algorithm>
+#include <iterator>
 #include <locale>
+#include <map>
+#include <sstream>
 #include <stdexcept>
+#include <string>
+#include <vector>
+// ifstream constructor.
+#include <fstream>  // std::ifstream
+#include <iostream> // std::cout
 // Boost
+#include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/serial_port.hpp>
-#include <boost/asio/io_service.hpp>
 #include <boost/atomic.hpp>
 // ROS
 #include <ros/console.h>
@@ -47,6 +54,19 @@
 #include <ublox_gps/async_worker.h>
 #include <ublox_gps/callback.h>
 
+#define AGPS_URL                                                               \
+  "http://online-live1.services.u-blox.com/GetOnlineData.ashx?token="
+#define AGPS_URL2                                                              \
+  "http://online-live2.services.u-blox.com/GetOnlineData.ashx?token="
+#define AGPS_OPTIONS_INIT ";gnss="
+#define AGPS_OPTIONS_END  ";datatype=eph,alm,aux"
+#define AGPS_FILE "/agps.ubx"
+#define AGPS_FILE_TEMP "/agpsTemp.ubx"
+#define AGPS_PATH_DEFAULT "/data"
+#define AGPS_WGET_LOG "/wegetlog"
+#define AGPS_SERVER_202 "HTTP request sent, awaiting response... 200 OK"
+#define AGPS_TIME_SIZE 32
+
 /**
  * @namespace ublox_gps
  * This namespace is for I/O communication with the u-blox device, including
@@ -54,19 +74,13 @@
  */
 namespace ublox_gps {
 //! Possible baudrates for u-blox devices
-constexpr static unsigned int kBaudrates[] = { 4800,
-                                               9600,
-                                               19200,
-                                               38400,
-                                               57600,
-                                               115200,
-                                               230400,
-                                               460800 };
+constexpr static unsigned int kBaudrates[] = {4800,  9600,   19200,  38400,
+                                              57600, 115200, 230400, 460800};
 /**
  * @brief Handles communication with and configuration of the u-blox device
  */
 class Gps {
- public:
+public:
   //! Sleep time [ms] after setting the baudrate
   constexpr static int kSetBaudrateSleepMs = 500;
   //! Default timeout for ACK messages in seconds
@@ -76,6 +90,17 @@ class Gps {
 
   Gps();
   virtual ~Gps();
+
+  /**
+   * @brief
+   */
+  void configureAGPS(void);
+
+  void setAgpsParams(std::string apgs_path_, std::string apgs_options_, std::string token_);
+  /**
+     * @brief
+     */
+  bool coldReset(const boost::posix_time::time_duration &wait);
 
   /**
    * @brief If called, when the node shuts down, it will send a command to
@@ -121,7 +146,7 @@ class Gps {
    * @brief Reset I/O communications.
    * @param wait Time to wait before restarting communications
    */
-  void reset(const boost::posix_time::time_duration& wait);
+  void reset(const boost::posix_time::time_duration &wait);
 
   /**
    * @brief Send a reset message to the u-blox device.
@@ -139,7 +164,7 @@ class Gps {
    * I/O reset successfully
    */
   bool configGnss(ublox_msgs::CfgGNSS gnss,
-                  const boost::posix_time::time_duration& wait);
+                  const boost::posix_time::time_duration &wait);
 
   /**
    * @brief Send a message to the receiver to delete the BBR data stored in
@@ -165,7 +190,7 @@ class Gps {
    * configuration parameters
    * @return true on ACK, false on other conditions.
    */
-  bool disableUart1(ublox_msgs::CfgPRT& prev_cfg);
+  bool disableUart1(ublox_msgs::CfgPRT &prev_cfg);
 
   /**
    * @brief Configure the USB Port.
@@ -218,8 +243,7 @@ class Gps {
    * @param fixed_pos_acc Fixed position 3D accuracy [m]
    * @return true on ACK, false if settings are incorrect or on other conditions
    */
-  bool configTmode3Fixed(bool lla_flag,
-                         std::vector<float> arp_position,
+  bool configTmode3Fixed(bool lla_flag, std::vector<float> arp_position,
                          std::vector<int8_t> arp_position_hp,
                          float fixed_pos_acc);
 
@@ -325,8 +349,8 @@ class Gps {
    * @param timeout the amount of time to wait for the desired message
    */
   template <typename T>
-  bool read(T& message,
-            const boost::posix_time::time_duration& timeout = default_timeout_);
+  bool read(T &message,
+            const boost::posix_time::time_duration &timeout = default_timeout_);
 
   bool isInitialized() const { return worker_ != 0; }
   bool isConfigured() const { return isInitialized() && configured_; }
@@ -340,9 +364,9 @@ class Gps {
    * @param timeout the amount of time to wait for the desired message
    */
   template <typename ConfigT>
-  bool poll(ConfigT& message,
-            const std::vector<uint8_t>& payload = std::vector<uint8_t>(),
-            const boost::posix_time::time_duration& timeout = default_timeout_);
+  bool poll(ConfigT &message,
+            const std::vector<uint8_t> &payload = std::vector<uint8_t>(),
+            const boost::posix_time::time_duration &timeout = default_timeout_);
   /**
    * Poll a u-blox message.
    * @param class_id the u-blox message class id
@@ -352,7 +376,7 @@ class Gps {
    * @param timeout the amount of time to wait for the desired message
    */
   bool poll(uint8_t class_id, uint8_t message_id,
-            const std::vector<uint8_t>& payload = std::vector<uint8_t>());
+            const std::vector<uint8_t> &payload = std::vector<uint8_t>());
 
   /**
    * @brief Send the given configuration message.
@@ -362,7 +386,7 @@ class Gps {
    * wait was set to false
    */
   template <typename ConfigT>
-  bool configure(const ConfigT& message, bool wait = true);
+  bool configure(const ConfigT &message, bool wait = true);
 
   /**
    * @brief Wait for an acknowledge message until the timeout
@@ -371,29 +395,54 @@ class Gps {
    * @param msg_id the expected message ID of the ACK
    * @return true if expected ACK received, false otherwise
    */
-  bool waitForAcknowledge(const boost::posix_time::time_duration& timeout,
+  bool waitForAcknowledge(const boost::posix_time::time_duration &timeout,
                           uint8_t class_id, uint8_t msg_id);
 
- private:
+private:
   //! Types for ACK/NACK messages, WAIT is used when waiting for an ACK
   enum AckType {
     NACK, //! Not acknowledged
-    ACK, //! Acknowledge
-    WAIT //! Waiting for ACK
+    ACK,  //! Acknowledge
+    WAIT  //! Waiting for ACK
   };
 
   //! Stores ACK/NACK messages
   struct Ack {
-    AckType type; //!< The ACK type
+    AckType type;     //!< The ACK type
     uint8_t class_id; //!< The class ID of the ACK
-    uint8_t msg_id; //!< The message ID of the ACK
+    uint8_t msg_id;   //!< The message ID of the ACK
   };
+
+  // executeShellCommands
+  std::string executeShellCommand(std::string command);
+  // Download and check the APGS file
+  bool downloadAGPS(void);
+
+  bool checkAGPSFile(void);
+
+  bool fileSuccess(void);
+
+  void processMgaAck(const ublox_msgs::MgaACK &m);
+
+  void processGetNAVX5(const ublox_msgs::CfgNAVX5 &m);
+
+  bool getNAVX5();
+
+  std::string agps_path;
+  std::string agps_path_temp;
+  std::string log_;
+  std::string options;
+  std::string token;
+
+  ublox_msgs::MgaINITIMEUTC getMgaUtc();
+
+  std::vector<std::string> split(std::string *s, char delimiter);
 
   /**
    * @brief Set the I/O worker
    * @param an I/O handler
    */
-  void setWorker(const boost::shared_ptr<Worker>& worker);
+  void setWorker(const boost::shared_ptr<Worker> &worker);
 
   /**
    * @brief Subscribe to ACK/NACK messages and UPD-SOS-ACK messages.
@@ -415,7 +464,10 @@ class Gps {
   /**
    * @brief Callback handler for UBX-UPD-SOS-ACK message.
    * @param m the message to process
-   */
+   */ // ROS
+#include <ros/console.h>
+// Other u-blox packages
+#include <ublox/serialization/ublox_msgs.h>
   void processUpdSosAck(const ublox_msgs::UpdSOS_Ack &m);
 
   /**
@@ -449,9 +501,10 @@ class Gps {
 };
 
 template <typename T>
-void Gps::subscribe(
-    typename CallbackHandler_<T>::Callback callback, unsigned int rate) {
-  if (!setRate(T::CLASS_ID, T::MESSAGE_ID, rate)) return;
+void Gps::subscribe(typename CallbackHandler_<T>::Callback callback,
+                    unsigned int rate) {
+  if (!setRate(T::CLASS_ID, T::MESSAGE_ID, rate))
+    return;
   subscribe<T>(callback);
 }
 
@@ -467,22 +520,24 @@ void Gps::subscribeId(typename CallbackHandler_<T>::Callback callback,
 }
 
 template <typename ConfigT>
-bool Gps::poll(ConfigT& message,
-               const std::vector<uint8_t>& payload,
-               const boost::posix_time::time_duration& timeout) {
-  if (!poll(ConfigT::CLASS_ID, ConfigT::MESSAGE_ID, payload)) return false;
+bool Gps::poll(ConfigT &message, const std::vector<uint8_t> &payload,
+               const boost::posix_time::time_duration &timeout) {
+  if (!poll(ConfigT::CLASS_ID, ConfigT::MESSAGE_ID, payload))
+    return false;
   return read(message, timeout);
 }
 
 template <typename T>
-bool Gps::read(T& message, const boost::posix_time::time_duration& timeout) {
-  if (!worker_) return false;
+bool Gps::read(T &message, const boost::posix_time::time_duration &timeout) {
+  if (!worker_)
+    return false;
   return callbacks_.read(message, timeout);
 }
 
 template <typename ConfigT>
-bool Gps::configure(const ConfigT& message, bool wait) {
-  if (!worker_) return false;
+bool Gps::configure(const ConfigT &message, bool wait) {
+  if (!worker_)
+    return false;
 
   // Reset ack
   Ack ack;
@@ -500,14 +555,14 @@ bool Gps::configure(const ConfigT& message, bool wait) {
   // Send the message to the device
   worker_->send(out.data(), writer.end() - out.data());
 
-  if (!wait) return true;
+  if (!wait)
+    return true;
 
   // Wait for an acknowledgment and return whether or not it was received
-  return waitForAcknowledge(default_timeout_,
-                            message.CLASS_ID,
+  return waitForAcknowledge(default_timeout_, message.CLASS_ID,
                             message.MESSAGE_ID);
 }
 
-}  // namespace ublox_gps
+} // namespace ublox_gps
 
-#endif  // UBLOX_GPS_H
+#endif // UBLOX_GPS_H
