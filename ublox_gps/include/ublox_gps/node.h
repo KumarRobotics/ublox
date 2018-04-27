@@ -38,11 +38,13 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
 // ROS includes
-#include <ros/ros.h>
-#include <ros/console.h>
-#include <ros/serialization.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/publisher.h>
+#include <ros/console.h>
+#include <ros/ros.h>
+#include <ros/serialization.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Int8.h>
 // ROS messages
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
@@ -577,6 +579,10 @@ class UbloxNode : public virtual ComponentInterface {
    */
   void configureInf();
 
+  void coldResetCb(const std_msgs::Int8::ConstPtr &msg);
+  void configureAgpsCb(const std_msgs::Bool::ConstPtr &msg);
+  ros::Subscriber coldResetSub;
+  ros::Subscriber configureAgpsSub;
   //! The u-blox node components
   /*!
    * The node will call the functions in these interfaces for each object

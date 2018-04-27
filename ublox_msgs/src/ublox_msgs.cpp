@@ -185,7 +185,11 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::ESF, ublox_msgs::Message::ESF::STATUS,
 
 
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MGA, ublox_msgs::Message::MGA::GAL, 
-                      ublox_msgs, MgaGAL);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MGA, ublox_msgs::Message::MGA::ACK,
+                      ublox_msgs, MgaACK);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MGA,
+                      ublox_msgs::Message::MGA::INITIMEUTC, ublox_msgs,
+                      MgaINITIMEUTC);
 
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::HNR, ublox_msgs::Message::HNR::PVT, 
                       ublox_msgs, HnrPVT);

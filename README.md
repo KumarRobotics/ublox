@@ -91,6 +91,10 @@ The `ublox_gps` node supports the following parameters for all products and firm
         * `nmea/gnssToFilt/beidou`: Disable reporting of BeiDou satellites. Defaults to false.
     * `nmea/main_talker_id`: This field enables the main Talker ID to be overridden. Defaults to 0.
     * `nmea/gsv_talker_id`:  This field enables the GSV Talker ID to be overridden. Defaults to [0, 0].
+* `agps` parameters:
+    * `agps/enable`: If true, the AGPS will be send to the gps at init.
+    * `agps/token`: Token to access to ublox assisted gps services.
+    * `agps/path`: Path to store the agps file.
 
 ### For devices with firmware >= 8:
 * `save_on_shutdown`: If true, the node will send a `UBX-UPD-SOS` command to save the BBR to flash memory on shutdown. Defaults to false. 

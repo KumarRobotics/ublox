@@ -30,14 +30,21 @@
 #ifndef UBLOX_GPS_H
 #define UBLOX_GPS_H
 // STL
-#include <map>
-#include <vector>
+#include <algorithm>
+#include <iterator>
 #include <locale>
+#include <map>
+#include <sstream>
 #include <stdexcept>
+#include <string>
+#include <vector>
+// ifstream constructor.
+#include <fstream>  // std::ifstream
+#include <iostream> // std::cout
 // Boost
+#include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/serial_port.hpp>
-#include <boost/asio/io_service.hpp>
 #include <boost/atomic.hpp>
 // ROS
 #include <ros/console.h>
@@ -46,6 +53,19 @@
 // u-blox gps
 #include <ublox_gps/async_worker.h>
 #include <ublox_gps/callback.h>
+
+#define AGPS_URL                                                               \
+  "http://online-live1.services.u-blox.com/GetOnlineData.ashx?token="
+#define AGPS_URL2                                                              \
+  "http://online-live2.services.u-blox.com/GetOnlineData.ashx?token="
+#define AGPS_OPTIONS_INIT ";gnss="
+#define AGPS_OPTIONS_END  ";datatype=eph,alm,aux"
+#define AGPS_FILE "/agps.ubx"
+#define AGPS_FILE_TEMP "/agpsTemp.ubx"
+#define AGPS_PATH_DEFAULT "/data"
+#define AGPS_WGET_LOG "/wegetlog"
+#define AGPS_SERVER_202 "HTTP request sent, awaiting response... 200 OK"
+#define AGPS_TIME_SIZE 32
 
 /**
  * @namespace ublox_gps
@@ -76,6 +96,17 @@ class Gps {
 
   Gps();
   virtual ~Gps();
+
+  /**
+   * @brief
+   */
+  void configureAGPS(void);
+
+  void setAgpsParams(std::string apgs_path_, std::string apgs_options_, std::string token_);
+  /**
+     * @brief
+     */
+  bool coldReset(const boost::posix_time::time_duration &wait);
 
   /**
    * @brief If called, when the node shuts down, it will send a command to
@@ -388,6 +419,31 @@ class Gps {
     uint8_t class_id; //!< The class ID of the ACK
     uint8_t msg_id; //!< The message ID of the ACK
   };
+
+  // executeShellCommands
+  std::string executeShellCommand(std::string command);
+  // Download and check the APGS file
+  bool downloadAGPS(void);
+
+  bool checkAGPSFile(void);
+
+  bool fileSuccess(void);
+
+  void processMgaAck(const ublox_msgs::MgaACK &m);
+
+  void processGetNAVX5(const ublox_msgs::CfgNAVX5 &m);
+
+  bool getNAVX5();
+
+  std::string agps_path;
+  std::string agps_path_temp;
+  std::string log_;
+  std::string options;
+  std::string token;
+
+  ublox_msgs::MgaINITIMEUTC getMgaUtc();
+
+  std::vector<std::string> split(std::string *s, char delimiter);
 
   /**
    * @brief Set the I/O worker

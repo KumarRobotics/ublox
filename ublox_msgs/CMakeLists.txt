@@ -4,6 +4,8 @@ project(ublox_msgs)
 find_package(catkin REQUIRED COMPONENTS message_generation ublox_serialization std_msgs sensor_msgs)
 
 add_message_files(DIRECTORY msg)
+add_message_files(FILES MgaACK.msg)
+add_message_files(FILES CfgNAVX5_GET.msg)
 generate_messages(DEPENDENCIES std_msgs sensor_msgs)
 
 catkin_package(

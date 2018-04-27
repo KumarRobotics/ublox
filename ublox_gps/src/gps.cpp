@@ -59,6 +59,14 @@ void Gps::subscribeAcks() {
   // Set UPD-SOS-ACK handler
   subscribe<ublox_msgs::UpdSOS_Ack>(
       boost::bind(&Gps::processUpdSosAck, this, _1));
+  // Set UBX-MGA-ACK-DATA0 handler
+  subscribeId<ublox_msgs::MgaACK>(boost::bind(&Gps::processMgaAck, this, _1),
+                                  ublox_msgs::Message::MGA::ACK);
+
+  // Set UBX-MGA-ACK-DATA0 handler
+  subscribeId<ublox_msgs::CfgNAVX5>(
+      boost::bind(&Gps::processGetNAVX5, this, _1),
+      ublox_msgs::Message::CFG::NAVX5);
 }
 
 void Gps::processAck(const ublox_msgs::Ack &m) {
@@ -82,6 +90,35 @@ void Gps::processNack(const ublox_msgs::Ack &m) {
   // store the ack atomically
   ack_.store(ack, boost::memory_order_seq_cst);
   ROS_ERROR("U-blox: received NACK: 0x%02x / 0x%02x", m.clsID, m.msgID);
+}
+
+void Gps::processMgaAck(const ublox_msgs::MgaACK &m) {
+  if (m.type == MgaACK::ACK_OK) {
+    ROS_DEBUG_COND(debug>=2 || m.msgId==64 ,"MgaACK %d", m.msgId);
+  } else {
+    std::string infoCode;
+    switch (m.infoCode) {
+    case 1:
+      infoCode = MgaACK::INFO_CODE1;
+      break;
+    case 2:
+      infoCode = MgaACK::INFO_CODE2;
+      break;
+    case 3:
+      infoCode = MgaACK::INFO_CODE3;
+      break;
+    case 4:
+      infoCode = MgaACK::INFO_CODE4;
+      break;
+    case 5:
+      infoCode = MgaACK::INFO_CODE5;
+      break;
+    case 6:
+      infoCode = MgaACK::INFO_CODE6;
+      break;
+    }
+    ROS_WARN("MgaACK fail infoCode: %s", infoCode.c_str());
+  }
 }
 
 void Gps::processUpdSosAck(const ublox_msgs::UpdSOS_Ack &m) {
@@ -272,12 +309,7 @@ bool Gps::configReset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
   return true;
 }
 
-bool Gps::configGnss(CfgGNSS gnss,
-                     const boost::posix_time::time_duration& wait) {
-  // Configure the GNSS settings
-  ROS_DEBUG("Re-configuring GNSS.");
-  if (!configure(gnss))
-    return false;
+bool Gps::coldReset(const boost::posix_time::time_duration &wait) {
   // Cold reset the GNSS
   ROS_WARN("GNSS re-configured, cold resetting device.");
   if (!configReset(CfgRST::NAV_BBR_COLD_START, CfgRST::RESET_MODE_GNSS))
@@ -285,6 +317,18 @@ bool Gps::configGnss(CfgGNSS gnss,
   ros::Duration(1.0).sleep();
   // Reset the I/O
   reset(wait);
+  return true;
+}
+
+bool Gps::configGnss(CfgGNSS gnss,
+                     const boost::posix_time::time_duration &wait) {
+  // Configure the GNSS settings
+  ROS_DEBUG("Re-configuring GNSS.");
+  if (!configure(gnss))
+    return false;
+  // Cold reset the GNSS
+  if (!coldReset(wait))
+    return false;
   return isConfigured();
 }
 
@@ -494,11 +538,14 @@ bool Gps::setDeadReckonLimit(uint8_t limit) {
 
 bool Gps::setPpp(bool enable) {
   ROS_DEBUG("%s PPP", (enable ? "Enabling" : "Disabling"));
-
   ublox_msgs::CfgNAVX5 msg;
+  msg.version = 2;
   msg.usePPP = enable;
-  msg.mask1 = ublox_msgs::CfgNAVX5::MASK1_PPP;
-  return configure(msg);
+  msg.mask1 =
+      ublox_msgs::CfgNAVX5::MASK1_PPP | ublox_msgs::CfgNAVX5::MASK1_ACK_AID;
+  msg.ackAiding = 1;
+  // configure(msg);
+  return configure(msg, true);
 }
 
 bool Gps::setDgnss(uint8_t mode) {
