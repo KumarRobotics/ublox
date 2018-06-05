@@ -135,6 +135,7 @@ void UbloxNode::getRosParams() {
                                     | ublox_msgs::CfgPRT::PROTO_RTCM);
   getRosUint("uart1/out", uart_out_, ublox_msgs::CfgPRT::PROTO_UBX);
   // USB params
+  set_usb_ = false;
   if (nh->hasParam("usb/in") || nh->hasParam("usb/out")) {
     set_usb_ = true;
     if(!getRosUint("usb/in", usb_in_)) {
