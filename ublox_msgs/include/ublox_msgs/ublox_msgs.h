@@ -74,6 +74,7 @@
 #include <ublox_msgs/CfgMSG.h>
 #include <ublox_msgs/CfgNAV5.h>
 #include <ublox_msgs/CfgNAVX5.h>
+#include <ublox_msgs/CfgNAVX5_GET.h>
 #include <ublox_msgs/CfgNMEA.h>
 #include <ublox_msgs/CfgNMEA6.h>
 #include <ublox_msgs/CfgNMEA7.h>
@@ -103,6 +104,9 @@
 #include <ublox_msgs/EsfSTATUS_Sens.h>
 
 #include <ublox_msgs/MgaGAL.h>
+#include <ublox_msgs/MgaACK.h>
+#include <ublox_msgs/MgaINITIMEUTC.h>
+#include <ublox_msgs/MgaINITIMEGNSS.h>
 
 #include <ublox_msgs/HnrPVT.h>
 
@@ -210,13 +214,14 @@ namespace Message {
     static const uint8_t MSG = CfgMSG::MESSAGE_ID;
     static const uint8_t NAV5 = CfgNAV5::MESSAGE_ID;
     static const uint8_t NAVX5 = CfgNAVX5::MESSAGE_ID;
+    static const uint8_t NAVX5_GET = CfgNAVX5_GET::MESSAGE_ID;
     static const uint8_t NMEA = CfgNMEA::MESSAGE_ID;
     static const uint8_t PRT = CfgPRT::MESSAGE_ID;
     static const uint8_t RATE = CfgRATE::MESSAGE_ID;
     static const uint8_t RST = CfgRST::MESSAGE_ID;
     static const uint8_t SBAS = CfgSBAS::MESSAGE_ID;
     static const uint8_t TMODE3 = CfgTMODE3::MESSAGE_ID;
-    static const uint8_t USB = CfgUSB::MESSAGE_ID;
+    static const uint8_t USB = CfgUSB::MESSAGE_ID;  
   }
 
   namespace UPD {
@@ -239,6 +244,9 @@ namespace Message {
 
   namespace MGA {
     static const uint8_t GAL = MgaGAL::MESSAGE_ID;
+    static const uint8_t INITIMEUTC = MgaINITIMEUTC::MESSAGE_ID;
+    static const uint8_t INITIMEGNSS = MgaINITIMEGNSS::MESSAGE_ID;
+    static const uint8_t ACK = MgaACK::MESSAGE_ID;
   }
 
   namespace HNR {
