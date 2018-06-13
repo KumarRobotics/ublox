@@ -22,4 +22,6 @@ inf:
 # Enable u-blox message publishers
 publish:
   tim:
-    tm2: true 
+    tm2: true
+  nav:
+    clock: true 
