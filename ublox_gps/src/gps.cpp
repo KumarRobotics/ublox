@@ -116,18 +116,7 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
   }
 
   ROS_INFO("U-Blox: Opened serial port %s", port.c_str());
-  {
-    // Wait for at least one char on serial port before returning from read.
-    // Sadly Boost doesn't provide any way to set this.
-    int fd = serial->native_handle();
-    struct termios tio;
-    tcgetattr(fd, &tio);
-    tio.c_cc[VTIME] = 0;
-    tio.c_cc[VMIN] = 1;
-    tcflush(fd, TCIFLUSH);
-    tcsetattr(fd, TCSANOW, &tio);
-  }
-
+    
   if(BOOST_VERSION < 106600)
   {
     // NOTE(Kartik): Set serial port to "raw" mode. This is done in Boost but
@@ -285,7 +274,7 @@ bool Gps::configReset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
 
 bool Gps::configGnss(CfgGNSS gnss,
                      const boost::posix_time::time_duration& wait) {
-  // Configure the GNSS settings
+  // Configure the GNSS settingshttps://mail.google.com/mail/u/0/#inbox
   ROS_DEBUG("Re-configuring GNSS.");
   if (!configure(gnss))
     return false;
