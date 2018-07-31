@@ -1602,6 +1602,12 @@ void TimProduct::subscribe() {
     &TimProduct::callbackTimTM2, this, _1), kSubscribeRate);
 	
   ROS_INFO("Subscribed to TIM-TM2 messages on topic tim/tm2");
+	
+  // Subscribe to SFRBX messages
+  nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], enabled["rxm"]);
+  if (enabled["rxm_sfrb"])
+    gps.subscribe<ublox_msgs::RxmSFRBX>(boost::bind(
+        publish<ublox_msgs::RxmSFRBX>, _1, "rxmsfrb"), kSubscribeRate);
 }
 
 void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
