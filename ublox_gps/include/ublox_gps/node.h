@@ -48,6 +48,7 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/TimeReference.h>
+#include <sensor_msgs/Imu.h>
 // Other U-Blox package includes
 #include <ublox_msgs/ublox_msgs.h>
 // Ublox GPS includes
@@ -1061,6 +1062,13 @@ class AdrUdrProduct: public virtual ComponentInterface {
  protected:
   //! Whether or not to enable dead reckoning
   bool use_adr_;
+
+   
+  sensor_msgs::Imu imu_;
+  sensor_msgs::TimeReference t_ref_;
+  ublox_msgs::TimTM2 timtm2;
+
+  void callbackEsfMEAS(const ublox_msgs::EsfMEAS &m);
 };
 
 /**
