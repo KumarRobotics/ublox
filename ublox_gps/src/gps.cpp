@@ -116,18 +116,7 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
   }
 
   ROS_INFO("U-Blox: Opened serial port %s", port.c_str());
-  {
-    // Wait for at least one char on serial port before returning from read.
-    // Sadly Boost doesn't provide any way to set this.
-    int fd = serial->native_handle();
-    struct termios tio;
-    tcgetattr(fd, &tio);
-    tio.c_cc[VTIME] = 0;
-    tio.c_cc[VMIN] = 1;
-    tcflush(fd, TCIFLUSH);
-    tcsetattr(fd, TCSANOW, &tio);
-  }
-
+    
   if(BOOST_VERSION < 106600)
   {
     // NOTE(Kartik): Set serial port to "raw" mode. This is done in Boost but
@@ -285,7 +274,7 @@ bool Gps::configReset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
 
 bool Gps::configGnss(CfgGNSS gnss,
                      const boost::posix_time::time_duration& wait) {
-  // Configure the GNSS settings
+  // Configure the GNSS settingshttps://mail.google.com/mail/u/0/#inbox
   ROS_DEBUG("Re-configuring GNSS.");
   if (!configure(gnss))
     return false;
@@ -525,6 +514,40 @@ bool Gps::setUseAdr(bool enable) {
   ublox_msgs::CfgNAVX5 msg;
   msg.useAdr = enable;
   msg.mask2 = ublox_msgs::CfgNAVX5::MASK2_ADR;
+  return configure(msg);
+}
+
+bool Gps::setTimePulse(uint8_t tp_ch, bool enable) {
+  ROS_DEBUG("%s Time Pulse %u", (enable ? "Enabling" : "Disabling"), tp_ch);
+
+  ublox_msgs::CfgTP5 msg;
+ 
+  msg.tpIdx = tp_ch;
+  msg.version = 1; 
+  msg.antCableDelay = 0;
+  msg.rfGroupDelay = 0;
+  msg.freqPeriod = 10;
+  msg.freqPeriodLock = 10;
+  msg.pulseLenRatio = 5;
+  msg.pulseLenRatioLock = 5;
+  msg.userConfigDelay = 0;
+ 
+  ROS_DEBUG("msg flags are: %u", msg.flags);
+  std::bitset<32> new_flags;
+  
+  new_flags[0] = 1;
+  new_flags[1] = 1;
+  new_flags[2] = 1;
+  new_flags[3] = 1;
+  new_flags[4] = 1;
+  new_flags[5] = 1;
+  new_flags[7] = 1;
+  new_flags[11] = 1;
+  
+  msg.flags = new_flags.to_ulong();
+ 
+  ROS_DEBUG("msg flags set to: %u", new_flags.to_ulong());
+
   return configure(msg);
 }
 

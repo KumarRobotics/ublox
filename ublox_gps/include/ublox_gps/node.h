@@ -48,6 +48,7 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/TimeReference.h>
+#include <sensor_msgs/Imu.h>
 // Other U-Blox package includes
 #include <ublox_msgs/ublox_msgs.h>
 // Ublox GPS includes
@@ -108,6 +109,8 @@ std::set<std::string> supported;
 std::map<std::string, bool> enabled;
 //! The ROS frame ID of this device
 std::string frame_id;
+//! The interface where the GPS is plugged into
+std::string interface_;
 //! The fix status service type, set in the Firmware Component
 //! based on the enabled GNSS
 int fix_status_service;
@@ -1054,13 +1057,19 @@ class AdrUdrProduct: public virtual ComponentInterface {
    * @todo unimplemented
    */
   void initializeRosDiagnostics() {
-    ROS_WARN("ROS Diagnostics specific to u-blox ADR/UDR devices is %s",
-             "unimplemented. See AdrUdrProduct class in node.h & node.cpp.");
+    
   }
 
  protected:
   //! Whether or not to enable dead reckoning
   bool use_adr_;
+  bool tp_active_;
+
+  sensor_msgs::Imu imu_;
+  sensor_msgs::TimeReference t_ref_;
+  ublox_msgs::TimTM2 timtm2;
+
+  void callbackEsfMEAS(const ublox_msgs::EsfMEAS &m);
 };
 
 /**
