@@ -85,7 +85,7 @@ class CallbackHandler_ : public CallbackHandler {
    * @param reader a reader to decode the message buffer
    */
   void handle(ublox::Reader& reader) {
-    boost::mutex::scoped_lock(mutex_);
+    boost::mutex::scoped_lock lock(mutex_);
     try {
       if (!reader.read<T>(message_)) {
         ROS_DEBUG_COND(debug >= 2, 

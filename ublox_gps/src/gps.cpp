@@ -35,7 +35,8 @@ namespace ublox_gps {
 using namespace ublox_msgs;
 
 const boost::posix_time::time_duration Gps::default_timeout_ =
-    boost::posix_time::seconds(Gps::kDefaultAckTimeout);
+    boost::posix_time::milliseconds(
+        static_cast<int>(Gps::kDefaultAckTimeout * 1000));
 
 Gps::Gps() : configured_(false) { subscribeAcks(); }
 
