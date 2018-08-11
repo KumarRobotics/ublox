@@ -7,24 +7,24 @@ save:
                             # Manager, Antenna, and Logging Configuration
   device: 4                 # Save to EEPROM
 
-device: /dev/ttyACM1
-frame_id: gps
+device: /dev/ttyACM0
+frame_id: m8u 
 rate: 4                     # in Hz
 nav_rate: 4                 # [# of measurement cycles], recommended 1 Hz, may 
                             # be either 5 Hz (Dual constellation) or 
                             # 8 Hz (GPS only)
-dynamic_model: airborne2    # Airborne < 2G, 2D fix not supported (3D only), 
+dynamic_model: 0    # Airborne < 2G, 2D fix not supported (3D only), 
                             # Max Alt: 50km
                             # Max Horizontal Velocity: 250 m/s, 
                             # Max Vertical Velocity: 100 m/s
-fix_mode: auto
-enable_ppp: false           # Not supported by C94-M8P
-dr_limit: 0
+fix_mode: 3 
+enable_ppp: true           # Not supported by C94-M8P
+dr_limit: 1
 
 uart1:
-  baudrate: 19200           # C94-M8P specific
-  in: 32                    # RTCM 3
-  out: 0                    # No UART out for rover
+  baudrate: 115200           # C94-M8P specific
+  in: 16                    # RTCM 3
+  out: 16                    # No UART out for rover
 
 gnss:
   glonass: true             # Supported by C94-M8P
@@ -39,8 +39,8 @@ inf:
 # Enable u-blox message publishers
 publish:
   all: true
+  esf: true
   aid:
     hui: false
-
   nav:
     posecef: false

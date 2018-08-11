@@ -189,3 +189,8 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MGA, ublox_msgs::Message::MGA::GAL,
 
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::HNR, ublox_msgs::Message::HNR::PVT, 
                       ublox_msgs, HnrPVT);
+
+// TIM messages
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::TIM, ublox_msgs::Message::TIM::TM2,
+		      ublox_msgs, TimTM2);
+

@@ -116,7 +116,7 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
   }
 
   ROS_INFO("U-Blox: Opened serial port %s", port.c_str());
-
+    
   if(BOOST_VERSION < 106600)
   {
     // NOTE(Kartik): Set serial port to "raw" mode. This is done in Boost but
@@ -274,7 +274,7 @@ bool Gps::configReset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
 
 bool Gps::configGnss(CfgGNSS gnss,
                      const boost::posix_time::time_duration& wait) {
-  // Configure the GNSS settings
+  // Configure the GNSS settingshttps://mail.google.com/mail/u/0/#inbox
   ROS_DEBUG("Re-configuring GNSS.");
   if (!configure(gnss))
     return false;
@@ -549,5 +549,22 @@ bool Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout,
                 && ack.class_id == class_id
                 && ack.msg_id == msg_id;
   return result;
+}
+
+bool Gps::setUTCtime() {
+  ROS_DEBUG("Setting time to UTC time");
+
+  ublox_msgs::CfgNAV5 msg;
+  msg.utcStandard = 3;
+  return configure(msg);
+}
+
+bool Gps::setTimtm2(uint8_t rate) {
+  ROS_DEBUG("TIM-TM2 send rate on current port set to %u", rate );
+  ublox_msgs::CfgMSG msg;
+  msg.msgClass = ublox_msgs::TimTM2::CLASS_ID;
+  msg.msgID = ublox_msgs::TimTM2::MESSAGE_ID;
+  msg.rate  = rate; 
+  return configure(msg);
 }
 }  // namespace ublox_gps

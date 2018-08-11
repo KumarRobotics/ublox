@@ -47,6 +47,8 @@
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <sensor_msgs/NavSatFix.h>
+#include <sensor_msgs/TimeReference.h>
+#include <sensor_msgs/Imu.h>
 // Other U-Blox package includes
 #include <ublox_msgs/ublox_msgs.h>
 // Ublox GPS includes
@@ -632,6 +634,8 @@ class UbloxNode : public virtual ComponentInterface {
   ublox_msgs::CfgCFG load_;
   //! Parameters to save to non-volatile memory after configuration
   ublox_msgs::CfgCFG save_;
+  //! rate for TIM-TM2
+  uint8_t tim_rate_;
 };
 
 /**
@@ -1058,6 +1062,13 @@ class AdrUdrProduct: public virtual ComponentInterface {
  protected:
   //! Whether or not to enable dead reckoning
   bool use_adr_;
+
+   
+  sensor_msgs::Imu imu_;
+  sensor_msgs::TimeReference t_ref_;
+  ublox_msgs::TimTM2 timtm2;
+
+  void callbackEsfMEAS(const ublox_msgs::EsfMEAS &m);
 };
 
 /**
@@ -1279,16 +1290,13 @@ class TimProduct: public virtual ComponentInterface {
    * @brief Get the Time Sync parameters.
    * @todo Currently unimplemented.
    */
-  void getRosParams() {
-    ROS_WARN("Functionality specific to u-blox TIM devices is only %s",
-        "partially implemented. See TimProduct class in node.h & node.cpp.");
-  }
-
+  void getRosParams(); 
+ 
   /**
    * @brief Configure Time Sync settings.
    * @todo Currently unimplemented.
    */
-  bool configureUblox() { return false; }
+  bool configureUblox(); 
 
   /**
    * @brief Subscribe to Time Sync messages.
@@ -1301,7 +1309,16 @@ class TimProduct: public virtual ComponentInterface {
    * @brief Adds diagnostic updaters for Time Sync status.
    * @todo Currently unimplemented.
    */
-  void initializeRosDiagnostics() {}
+  void initializeRosDiagnostics();
+
+ protected:  
+  /**
+   * @brief 
+   * @details Publish recieved TimTM2 messages if enabled
+   */
+  void callbackTimTM2(const ublox_msgs::TimTM2 &m);
+ 
+  sensor_msgs::TimeReference t_ref_;
 };
 
 }

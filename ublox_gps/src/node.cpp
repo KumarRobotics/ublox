@@ -28,6 +28,9 @@
 //==============================================================================
 
 #include "ublox_gps/node.h"
+#include <cmath>
+#include <string>
+#include <sstream>
 
 using namespace ublox_node;
 
@@ -1285,7 +1288,10 @@ void AdrUdrProduct::subscribe() {
   if (enabled["esf_meas"])
     gps.subscribe<ublox_msgs::EsfMEAS>(boost::bind(
         publish<ublox_msgs::EsfMEAS>, _1, "esfmeas"), kSubscribeRate);
-
+    // also publish sensor_msgs::Imu
+    gps.subscribe<ublox_msgs::EsfMEAS>(boost::bind(
+      &AdrUdrProduct::callbackEsfMEAS, this, _1), kSubscribeRate);
+ 
   // Subscribe to ESF Raw messages
   nh->param("publish/esf/raw", enabled["esf_raw"], enabled["esf"]);
   if (enabled["esf_raw"])
@@ -1305,6 +1311,104 @@ void AdrUdrProduct::subscribe() {
         publish<ublox_msgs::HnrPVT>, _1, "hnrpvt"), kSubscribeRate);
 }
 
+void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
+  if (enabled["esf_meas"]) {
+    static ros::Publisher imu_pub = 
+	nh->advertise<sensor_msgs::Imu>("imu_meas", kROSQueueSize);
+    static ros::Publisher time_ref_pub =
+	nh->advertise<sensor_msgs::TimeReference>("interrupt_time", kROSQueueSize);
+    
+    imu_.header.stamp = ros::Time::now();
+    imu_.header.frame_id = frame_id;
+    
+    float deg_per_sec = pow(2, -12);
+    float m_per_sec_sq = pow(2, -10);
+    float deg_c = 1e-2;
+     
+    std::vector<unsigned int> imu_data = m.data;
+    for (int i=0; i < imu_data.size(); i++){
+      unsigned int data_type = imu_data[i] >> 24; //grab the last six bits of data
+      double data_sign = (imu_data[i] & (1 << 23)); //grab the sign (+/-) of the rest of the data
+      unsigned int data_value = imu_data[i] & 0x7FFFFF; //grab the rest of the data...should be 23 bits
+      
+      if (data_sign == 0) {
+        data_sign = -1;
+      } else {
+        data_sign = 1;
+      }
+           
+      //ROS_INFO("data sign (+/-): %f", data_sign); //either 1 or -1....set by bit 23 in the data bitarray
+  
+      imu_.orientation_covariance[0] = -1;
+      imu_.linear_acceleration_covariance[0] = -1;
+      imu_.angular_velocity_covariance[0] = -1;
+
+      if (data_type == 14) {
+        if (data_sign == 1) {
+	  imu_.angular_velocity.x = 2048 - data_value * deg_per_sec;
+        } else {
+          imu_.angular_velocity.x = data_sign * data_value * deg_per_sec;
+        }
+      } else if (data_type == 16) {
+        //ROS_INFO("data_sign: %f", data_sign);
+        //ROS_INFO("data_value: %u", data_value * m);
+        if (data_sign == 1) {
+	  imu_.linear_acceleration.x = 8191 - data_value * m_per_sec_sq;
+        } else {
+          imu_.linear_acceleration.x = data_sign * data_value * m_per_sec_sq;
+        }
+      } else if (data_type == 13) {
+        if (data_sign == 1) {
+	  imu_.angular_velocity.y = 2048 - data_value * deg_per_sec;
+        } else {
+          imu_.angular_velocity.y = data_sign * data_value * deg_per_sec;
+        }
+      } else if (data_type == 17) {
+        if (data_sign == 1) {
+	  imu_.linear_acceleration.y = 8191 - data_value * m_per_sec_sq;
+        } else {
+          imu_.linear_acceleration.y = data_sign * data_value * m_per_sec_sq;
+        }
+      } else if (data_type == 5) {
+        if (data_sign == 1) {
+	  imu_.angular_velocity.z = 2048 - data_value * deg_per_sec;
+        } else {
+          imu_.angular_velocity.z = data_sign * data_value * deg_per_sec;
+        }
+      } else if (data_type == 18) {
+        if (data_sign == 1) {
+	  imu_.linear_acceleration.z = 8191 - data_value * m_per_sec_sq;
+        } else {
+          imu_.linear_acceleration.z = data_sign * data_value * m_per_sec_sq;
+        }
+      } else if (data_type == 12) {
+        //ROS_INFO("Temperature in celsius: %f", data_value * deg_c); 
+      } else {
+        ROS_INFO("data_type: %u", data_type);
+        ROS_INFO("data_value: %u", data_value);
+      } 
+     
+      // create time ref message and put in the data
+      //t_ref_.header.seq = m.risingEdgeCount;
+      //t_ref_.header.stamp = ros::Time::now();
+      //t_ref_.header.frame_id = frame_id;
+
+      //t_ref_.time_ref = ros::Time((m.wnR * 604800 + m.towMsR / 1000), (m.towMsR % 1000) * 1000000 + m.towSubMsR); 
+    
+      //std::ostringstream src;
+      //src << "TIM" << int(m.ch); 
+      //t_ref_.source = src.str();
+
+      t_ref_.header.stamp = ros::Time::now(); // create a new timestamp
+      t_ref_.header.frame_id = frame_id;
+   
+      time_ref_pub.publish(t_ref_);
+      imu_pub.publish(imu_);
+    }
+  }
+  
+  updater->force_update();
+}
 //
 // u-blox High Precision GNSS Reference Station
 //
@@ -1576,18 +1680,76 @@ void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
 //
 // U-Blox Time Sync Products, partially implemented.
 //
-void TimProduct::subscribe() {
-  // Subscribe to RawX messages
-  nh->param("publish/rxm/raw", enabled["rxm_raw"], enabled["rxm"]);
-  if (enabled["rxm_raw"])
-    gps.subscribe<ublox_msgs::RxmRAWX>(boost::bind(
-        publish<ublox_msgs::RxmRAWX>, _1, "rxmraw"), kSubscribeRate);
+void TimProduct::getRosParams() {
+}
 
+bool TimProduct::configureUblox() {
+  uint8_t r = 1;
+  // Configure the reciever
+  if(!gps.setUTCtime()) 
+    throw std::runtime_error(std::string("Failed to Configure TIM Product to UTC Time"));
+ 
+  if(!gps.setTimtm2(r))
+    throw std::runtime_error(std::string("Failed to Configure TIM Product"));
+
+  return true;
+}
+
+void TimProduct::subscribe() {
+  ROS_INFO("TIM is Enabled: %u", enabled["tim"]);
+  ROS_INFO("TIM-TM2 is Enabled: %u", enabled["tim_tm2"]);
+  // Subscribe to TIM-TM2 messages (Time mark messages)
+  nh->param("publish/tim/tm2", enabled["tim_tm2"], enabled["tim"]);
+
+  gps.subscribe<ublox_msgs::TimTM2>(boost::bind(
+    &TimProduct::callbackTimTM2, this, _1), kSubscribeRate);
+	
+  ROS_INFO("Subscribed to TIM-TM2 messages on topic tim/tm2");
+	
   // Subscribe to SFRBX messages
   nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], enabled["rxm"]);
   if (enabled["rxm_sfrb"])
     gps.subscribe<ublox_msgs::RxmSFRBX>(boost::bind(
         publish<ublox_msgs::RxmSFRBX>, _1, "rxmsfrb"), kSubscribeRate);
+	
+   // Subscribe to RawX messages
+   nh->param("publish/rxm/raw", enabled["rxm_raw"], enabled["rxm"]);
+   if (enabled["rxm_raw"])
+     gps.subscribe<ublox_msgs::RxmRAWX>(boost::bind(
+        publish<ublox_msgs::RxmRAWX>, _1, "rxmraw"), kSubscribeRate);
+}
+
+void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
+  
+  if (enabled["tim_tm2"]) {
+    static ros::Publisher publisher =
+    	nh->advertise<ublox_msgs::TimTM2>("timtm2", kROSQueueSize);
+    static ros::Publisher time_ref_pub =
+	nh->advertise<sensor_msgs::TimeReference>("interrupt_time", kROSQueueSize);
+    
+    // create time ref message and put in the data
+    t_ref_.header.seq = m.risingEdgeCount;
+    t_ref_.header.stamp = ros::Time::now();
+    t_ref_.header.frame_id = frame_id;
+
+    t_ref_.time_ref = ros::Time((m.wnR * 604800 + m.towMsR / 1000), (m.towMsR % 1000) * 1000000 + m.towSubMsR); 
+    
+    std::ostringstream src;
+    src << "TIM" << int(m.ch); 
+    t_ref_.source = src.str();
+
+    t_ref_.header.stamp = ros::Time::now(); // create a new timestamp
+    t_ref_.header.frame_id = frame_id;
+  
+    publisher.publish(m);
+    time_ref_pub.publish(t_ref_);
+  }
+  
+  updater->force_update();
+}
+
+void TimProduct::initializeRosDiagnostics() {
+  updater->force_update();
 }
 
 int main(int argc, char** argv) {
