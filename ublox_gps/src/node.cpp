@@ -1391,17 +1391,17 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
       imu_.angular_velocity_covariance[0] = -1;
 
       if (data_type == 14) {
-        imu_.angular_velocity.x = data_sign * data_value * deg_per_sec;
+        imu_.angular_velocity.x = data_value * deg_per_sec;
       } else if (data_type == 16) {
-        imu_.linear_acceleration.x = data_sign * data_value * m_per_sec_sq;
+        imu_.linear_acceleration.x = data_value * m_per_sec_sq;
       } else if (data_type == 13) {
-        imu_.angular_velocity.y = data_sign * data_value * deg_per_sec;
+        imu_.angular_velocity.y = data_value * deg_per_sec;
       } else if (data_type == 17) {
-        imu_.linear_acceleration.y = data_sign * data_value * m_per_sec_sq;
+        imu_.linear_acceleration.y = data_value * m_per_sec_sq;
       } else if (data_type == 5) {
-        imu_.angular_velocity.z = data_sign * data_value * deg_per_sec;
+        imu_.angular_velocity.z = data_value * deg_per_sec;
       } else if (data_type == 18) {
-        imu_.linear_acceleration.z = data_sign * data_value * m_per_sec_sq;
+        imu_.linear_acceleration.z = data_value * m_per_sec_sq;
       } else if (data_type == 12) {
         //ROS_INFO("Temperature in celsius: %f", data_value * deg_c); 
       } else {
