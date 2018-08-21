@@ -293,6 +293,13 @@ class Gps {
   bool setUseAdr(bool enable);
 
   /**
+   * @brief Enable or disable ADR (automotive dead reckoning).
+   * @param enable If true, enable ADR.
+   * @return true on ACK, false on other conditions.
+   */
+  bool setHnrPVT(uint8_t rate);
+ 
+  /**
    * @brief Configure the U-Blox to UTC time 
    * @return true on ACK, false on other conditions.
    *

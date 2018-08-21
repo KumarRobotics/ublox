@@ -1256,6 +1256,7 @@ void RawDataProduct::initializeRosDiagnostics() {
 void AdrUdrProduct::getRosParams() {
   nh->param("tp_active", tp_active_, true);
   nh->param("use_adr", use_adr_, true);
+  getRosUint("hnr_rate", hnr_rate_, 0);
   // Check the nav rate
   float nav_rate_hz = 1000 / (meas_rate * nav_rate);
   if(nav_rate_hz != 1)
@@ -1271,6 +1272,9 @@ bool AdrUdrProduct::configureUblox() {
   if(!gps.setUseAdr(use_adr_))
     throw std::runtime_error(std::string("Failed to ")
                              + (use_adr_ ? "enable" : "disable") + " use_adr");
+
+  if(!gps.setHnrPVT(hnr_rate_))
+    throw std::runtime_error(std::string("Failed to set HNR-PVT rate"));
   return true;
 }
 
@@ -1315,6 +1319,49 @@ void AdrUdrProduct::subscribe() {
   if (enabled["hnr_pvt"])
     gps.subscribe<ublox_msgs::HnrPVT>(boost::bind(
         publish<ublox_msgs::HnrPVT>, _1, "hnrpvt"), kSubscribeRate);
+    // also publish nav_msgs::Odometry 
+    gps.subscribe<ublox_msgs::HnrPVT>(boost::bind(
+      &AdrUdrProduct::callbackHnrPVT, this, _1), kSubscribeRate);
+  
+}
+
+void AdrUdrProduct::callbackHnrPVT(const ublox_msgs::HnrPVT &m) {
+  if (enabled["hnr_pvt"]) {
+    static ros::Publisher odo_pub =
+      nh->advertise<nav_msgs::Odometry>("odom", kROSQueueSize);
+    
+    geometry_msgs::Quaternion odom_quat;
+
+    odom_.header.stamp = ros::Time::now();
+    odom_.header.frame_id = frame_id;
+   
+    uint32_t time = m.iTOW;
+    uint8_t gps_status = m.gpsFix;
+    // position
+    int32_t lat_ = m.lat * 1e-7;  // deg
+    int32_t lon_ = m.lon * 1e-7;  // deg
+    int32_t height_ = m.hMSL; //mm
+    // velocity 2D ******************************************
+    int32_t gSpeed_ = m.gSpeed; // mm/sec
+    int32_t motion_heading_ = m.headMot * 1e-5; // deg
+    
+    /* 
+    ROS_INFO("GPS TOW: %u", time);
+    ROS_INFO("gpsFix status: %u", gps_status);
+    ROS_INFO("Latitude:  %i", lat_);
+    ROS_INFO("Longitude: %i", lon_);
+    ROS_INFO("heightMSL: %i", height_);
+    */
+
+    // set the position
+    odom_.pose.pose.position.x = lat_;
+    odom_.pose.pose.position.y = lon_;
+    odom_.pose.pose.position.z = height_;
+
+    // set the velocity
+    //odom_.twist.twist.linear.x = 
+    odo_pub.publish(odom_);
+  }
 }
 
 void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
@@ -1334,59 +1381,27 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
     std::vector<unsigned int> imu_data = m.data;
     for (int i=0; i < imu_data.size(); i++){
       unsigned int data_type = imu_data[i] >> 24; //grab the last six bits of data
-      double data_sign = (imu_data[i] & (1 << 23)); //grab the sign (+/-) of the rest of the data
-      unsigned int data_value = imu_data[i] & 0x7FFFFF; //grab the rest of the data...should be 23 bits
+      int data_sign = ((imu_data[i] >> 23) & 1); //grab the sign (+/-) of the data value
+      int32_t data_value = (data_sign ? 0xFF800000 : 0x0) | (imu_data[i] & 0x7FFFFF); //extend 24-bit signed to 32-bit signed by cloning the sign bit to the highest 9 bits
       
-      if (data_sign == 0) {
-        data_sign = -1;
-      } else {
-        data_sign = 1;
-      }
-           
-      //ROS_INFO("data sign (+/-): %f", data_sign); //either 1 or -1....set by bit 23 in the data bitarray
+      //ROS_INFO("data sign (+/-): %i", data_sign); //either 1 or 0....set by bit 23 in the data bitarray
   
       imu_.orientation_covariance[0] = -1;
       imu_.linear_acceleration_covariance[0] = -1;
       imu_.angular_velocity_covariance[0] = -1;
 
       if (data_type == 14) {
-        if (data_sign == 1) {
-	  imu_.angular_velocity.x = 2048 - data_value * deg_per_sec;
-        } else {
-          imu_.angular_velocity.x = data_sign * data_value * deg_per_sec;
-        }
+        imu_.angular_velocity.x = data_sign * data_value * deg_per_sec;
       } else if (data_type == 16) {
-        //ROS_INFO("data_sign: %f", data_sign);
-        //ROS_INFO("data_value: %u", data_value * m);
-        if (data_sign == 1) {
-	  imu_.linear_acceleration.x = 8191 - data_value * m_per_sec_sq;
-        } else {
-          imu_.linear_acceleration.x = data_sign * data_value * m_per_sec_sq;
-        }
+        imu_.linear_acceleration.x = data_sign * data_value * m_per_sec_sq;
       } else if (data_type == 13) {
-        if (data_sign == 1) {
-	  imu_.angular_velocity.y = 2048 - data_value * deg_per_sec;
-        } else {
-          imu_.angular_velocity.y = data_sign * data_value * deg_per_sec;
-        }
+        imu_.angular_velocity.y = data_sign * data_value * deg_per_sec;
       } else if (data_type == 17) {
-        if (data_sign == 1) {
-	  imu_.linear_acceleration.y = 8191 - data_value * m_per_sec_sq;
-        } else {
-          imu_.linear_acceleration.y = data_sign * data_value * m_per_sec_sq;
-        }
+        imu_.linear_acceleration.y = data_sign * data_value * m_per_sec_sq;
       } else if (data_type == 5) {
-        if (data_sign == 1) {
-	  imu_.angular_velocity.z = 2048 - data_value * deg_per_sec;
-        } else {
-          imu_.angular_velocity.z = data_sign * data_value * deg_per_sec;
-        }
+        imu_.angular_velocity.z = data_sign * data_value * deg_per_sec;
       } else if (data_type == 18) {
-        if (data_sign == 1) {
-	  imu_.linear_acceleration.z = 8191 - data_value * m_per_sec_sq;
-        } else {
-          imu_.linear_acceleration.z = data_sign * data_value * m_per_sec_sq;
-        }
+        imu_.linear_acceleration.z = data_sign * data_value * m_per_sec_sq;
       } else if (data_type == 12) {
         //ROS_INFO("Temperature in celsius: %f", data_value * deg_c); 
       } else {

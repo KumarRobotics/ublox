@@ -517,6 +517,15 @@ bool Gps::setUseAdr(bool enable) {
   return configure(msg);
 }
 
+bool Gps::setHnrPVT(uint8_t rate) {
+  ROS_DEBUG("Setting HNR-PVT to %u", rate);
+  
+  ublox_msgs::CfgHNR msg;
+  msg.highNavRate = rate;
+  
+  return configure(msg);
+}
+
 bool Gps::setTimePulse(uint8_t tp_ch, bool enable) {
   ROS_DEBUG("%s Time Pulse %u", (enable ? "Enabling" : "Disabling"), tp_ch);
 
@@ -546,7 +555,7 @@ bool Gps::setTimePulse(uint8_t tp_ch, bool enable) {
   
   msg.flags = new_flags.to_ulong();
  
-  ROS_DEBUG("msg flags set to: %u", new_flags.to_ulong());
+  ROS_DEBUG("msg flags set to: %u", msg.flags);
 
   return configure(msg);
 }
