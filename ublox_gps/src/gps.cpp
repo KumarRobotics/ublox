@@ -274,7 +274,7 @@ bool Gps::configReset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
 
 bool Gps::configGnss(CfgGNSS gnss,
                      const boost::posix_time::time_duration& wait) {
-  // Configure the GNSS settingshttps://mail.google.com/mail/u/0/#inbox
+  // Configure the GNSS settings
   ROS_DEBUG("Re-configuring GNSS.");
   if (!configure(gnss))
     return false;
