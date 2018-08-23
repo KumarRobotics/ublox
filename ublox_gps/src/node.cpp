@@ -594,8 +594,14 @@ void UbloxNode7Plus::publishNavPVT(const ublox_msgs::NavPVT& m) {
       nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
   // timestamp
   sensor_msgs::NavSatFix fix;
-  fix.header.stamp.sec = toUtcSeconds(m);
-  fix.header.stamp.nsec = m.nano;
+  if(m.nano>0){
+      fix.header.stamp.sec = toUtcSeconds(m);
+      fix.header.stamp.nsec = m.nano;
+  }else {
+      fix.header.stamp.sec = toUtcSeconds(m)-1;
+      fix.header.stamp.nsec = 1000000000+m.nano;
+  }
+
 
   bool fixOk = m.flags & m.FLAGS_GNSS_FIX_OK;
   uint8_t cpSoln = m.flags & m.CARRIER_PHASE_FIXED;
