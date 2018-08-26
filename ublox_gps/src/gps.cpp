@@ -528,40 +528,6 @@ bool Gps::setHnrPVT(uint8_t rate) {
   return configure(msg);
 }
 
-bool Gps::setTimePulse(uint8_t tp_ch, bool enable) {
-  ROS_DEBUG("%s Time Pulse %u", (enable ? "Enabling" : "Disabling"), tp_ch);
-
-  ublox_msgs::CfgTP5 msg;
- 
-  msg.tpIdx = tp_ch;
-  msg.version = 1; 
-  msg.antCableDelay = 0;
-  msg.rfGroupDelay = 0;
-  msg.freqPeriod = 10;
-  msg.freqPeriodLock = 10;
-  msg.pulseLenRatio = 5;
-  msg.pulseLenRatioLock = 5;
-  msg.userConfigDelay = 0;
- 
-  ROS_DEBUG("msg flags are: %u", msg.flags);
-  std::bitset<32> new_flags;
-  
-  new_flags[0] = 1;
-  new_flags[1] = 1;
-  new_flags[2] = 1;
-  new_flags[3] = 1;
-  new_flags[4] = 1;
-  new_flags[5] = 1;
-  new_flags[7] = 1;
-  new_flags[11] = 1;
-  
-  msg.flags = new_flags.to_ulong();
- 
-  ROS_DEBUG("msg flags set to: %u", msg.flags);
-
-  return configure(msg);
-}
-
 bool Gps::poll(uint8_t class_id, uint8_t message_id,
                const std::vector<uint8_t>& payload) {
   if (!worker_) return false;

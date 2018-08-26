@@ -1254,7 +1254,6 @@ void RawDataProduct::initializeRosDiagnostics() {
 // u-blox ADR devices, partially implemented
 //
 void AdrUdrProduct::getRosParams() {
-  nh->param("tp_active", tp_active_, true);
   nh->param("use_adr", use_adr_, true);
   getRosUint("hnr_rate", hnr_rate_, 0);
   // Check the nav rate
@@ -1265,10 +1264,6 @@ void AdrUdrProduct::getRosParams() {
 
 bool AdrUdrProduct::configureUblox() {
   
-  if(!gps.setTimePulse(1, tp_active_))
-    throw std::runtime_error(std::string("Failed to ")
-			     + (tp_active_ ? "enable" : "disable") + " tp_active");
- 
   if(!gps.setUseAdr(use_adr_))
     throw std::runtime_error(std::string("Failed to ")
                              + (use_adr_ ? "enable" : "disable") + " use_adr");
@@ -1319,57 +1314,13 @@ void AdrUdrProduct::subscribe() {
   if (enabled["hnr_pvt"])
     gps.subscribe<ublox_msgs::HnrPVT>(boost::bind(
         publish<ublox_msgs::HnrPVT>, _1, "hnrpvt"), kSubscribeRate);
-    // also publish nav_msgs::Odometry 
-    gps.subscribe<ublox_msgs::HnrPVT>(boost::bind(
-      &AdrUdrProduct::callbackHnrPVT, this, _1), kSubscribeRate);
   
-}
-
-void AdrUdrProduct::callbackHnrPVT(const ublox_msgs::HnrPVT &m) {
-  if (enabled["hnr_pvt"]) {
-    static ros::Publisher odo_pub =
-      nh->advertise<nav_msgs::Odometry>("odom", kROSQueueSize);
-    
-    geometry_msgs::Quaternion odom_quat;
-
-    odom_.header.stamp = ros::Time::now();
-    odom_.header.frame_id = frame_id;
-   
-    uint32_t time = m.iTOW;
-    uint8_t gps_status = m.gpsFix;
-    // position
-    int32_t lat_ = m.lat * 1e-7;  // deg
-    int32_t lon_ = m.lon * 1e-7;  // deg
-    int32_t height_ = m.hMSL; //mm
-    // velocity 2D ******************************************
-    int32_t gSpeed_ = m.gSpeed; // mm/sec
-    int32_t motion_heading_ = m.headMot * 1e-5; // deg
-    
-    /* 
-    ROS_INFO("GPS TOW: %u", time);
-    ROS_INFO("gpsFix status: %u", gps_status);
-    ROS_INFO("Latitude:  %i", lat_);
-    ROS_INFO("Longitude: %i", lon_);
-    ROS_INFO("heightMSL: %i", height_);
-    */
-
-    // set the position
-    odom_.pose.pose.position.x = lat_;
-    odom_.pose.pose.position.y = lon_;
-    odom_.pose.pose.position.z = height_;
-
-    // set the velocity
-    //odom_.twist.twist.linear.x = 
-    odo_pub.publish(odom_);
-  }
 }
 
 void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
   if (enabled["esf_meas"]) {
     static ros::Publisher imu_pub = 
-	nh->advertise<sensor_msgs::Imu>("imu_meas", kROSQueueSize);
-    static ros::Publisher time_ref_pub =
-	nh->advertise<sensor_msgs::TimeReference>("interrupt_time", kROSQueueSize);
+	nh->advertise<sensor_msgs::Imu>("imu", kROSQueueSize);
     
     imu_.header.stamp = ros::Time::now();
     imu_.header.frame_id = frame_id;
@@ -1384,8 +1335,6 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
       int data_sign = ((imu_data[i] >> 23) & 1); //grab the sign (+/-) of the data value
       int32_t data_value = (data_sign ? 0xFF800000 : 0x0) | (imu_data[i] & 0x7FFFFF); //extend 24-bit signed to 32-bit signed by cloning the sign bit to the highest 9 bits
       
-      //ROS_INFO("data sign (+/-): %i", data_sign); //either 1 or 0....set by bit 23 in the data bitarray
-  
       imu_.orientation_covariance[0] = -1;
       imu_.linear_acceleration_covariance[0] = -1;
       imu_.angular_velocity_covariance[0] = -1;
@@ -1409,21 +1358,6 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
         ROS_INFO("data_value: %u", data_value);
       } 
      
-      // create time ref message and put in the data
-      //t_ref_.header.seq = m.risingEdgeCount;
-      //t_ref_.header.stamp = ros::Time::now();
-      //t_ref_.header.frame_id = frame_id;
-
-      //t_ref_.time_ref = ros::Time((m.wnR * 604800 + m.towMsR / 1000), (m.towMsR % 1000) * 1000000 + m.towSubMsR); 
-    
-      //std::ostringstream src;
-      //src << "TIM" << int(m.ch); 
-      //t_ref_.source = src.str();
-
-      t_ref_.header.stamp = ros::Time::now(); // create a new timestamp
-      t_ref_.header.frame_id = frame_id;
-   
-      time_ref_pub.publish(t_ref_);
       imu_pub.publish(imu_);
     }
   }

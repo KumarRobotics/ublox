@@ -319,13 +319,6 @@ class Gps {
   bool setTimtm2(uint8_t rate);
   
   /**
-   * @brief Enable or disable Time Pulse
-   * @param If true, enable Time Pulse 
-   * @return true on ACK, false on other conditions.
-   */
-  bool setTimePulse(uint8_t tp_ch, bool enable);
- 
-  /**
    * @brief Configure the U-Blox send rate of the message & subscribe to the
    * given message
    * @param the callback handler for the message
