@@ -26,47 +26,47 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#ifndef UBLOX_MSGS_CHECKSUM_H
-#define UBLOX_MSGS_CHECKSUM_H
+#ifndef UBLOX_GPS_WORKER_H
+#define UBLOX_GPS_WORKER_H
 
-#include <stdint.h>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/function.hpp>
 
-namespace ublox {
-
-/**
- * @brief calculate the checksum of a u-blox_message
- * @param data the start of the u-blox message 
- * @param data the size of the u-blox message
- * @param ck_a the checksum a output
- * @param ck_b the checksum b output
- */
-static inline void calculateChecksum(const uint8_t *data, 
-                                     uint32_t size, 
-                                     uint8_t &ck_a, 
-                                     uint8_t &ck_b) {
-  ck_a = 0; ck_b = 0;
-  for(uint32_t i = 0; i < size; ++i)
-  {
-    ck_a = ck_a + data[i];
-    ck_b = ck_b + ck_a;
-  }
-}
+namespace ublox_gps {
 
 /**
- * @brief calculate the checksum of a u-blox_message.
- * @param data the start of the u-blox message 
- * @param data the size of the u-blox message
- * @param checksum the checksum output
- * @return the checksum
+ * @brief Handles I/O reading and writing.
  */
-static inline uint16_t calculateChecksum(const uint8_t *data, 
-                                         uint32_t size, 
-                                         uint16_t &checksum) {
-  uint8_t *byte = reinterpret_cast<uint8_t *>(&checksum);
-  calculateChecksum(data, size, byte[0], byte[1]);
-  return checksum;
-}
+class Worker {
+ public:
+  typedef boost::function<void(unsigned char*, std::size_t&)> Callback;
+  virtual ~Worker() {}
 
-} // namespace ublox
+  /**
+   * @brief Set the callback function for received messages.
+   * @param callback the callback function which process messages in the buffer
+   */
+  virtual void setCallback(const Callback& callback) = 0;
 
-#endif // UBLOX_MSGS_CHECKSUM_H
+  /**
+   * @brief Send the data in the buffer.
+   * @param data the bytes to send
+   * @param size the size of the buffer
+   */
+  virtual bool send(const unsigned char* data, const unsigned int size) = 0;
+  
+  /**
+   * @brief Wait for an incoming message.
+   * @param timeout the maximum time to wait.
+   */
+  virtual void wait(const boost::posix_time::time_duration& timeout) = 0;
+
+  /**
+   * @brief Whether or not the I/O stream is open.
+   */
+  virtual bool isOpen() const = 0;
+};
+
+}  // namespace ublox_gps
+
+#endif  // UBLOX_GPS_WORKER_H

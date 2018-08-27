@@ -1,16 +1,16 @@
+<?xml version="1.0"?>
 <package>
   <name>ublox_serialization</name>
-  <version>1.0.0</version>
+  <version>1.1.2</version>
   <description>
 
      ublox_serialization provides header files for serialization of ROS messages to and from u-blox message format.
 
   </description>
   <author>Johannes Meyer</author>
-  <maintainer email="nothing@nobody.com">Johannes Meyer</maintainer>
-  <maintainer email="vmlane@alumn.mit.edu">Veronica Lane</maintainer>
+  <maintainer email="vmlane@alum.mit.edu">Veronica Lane</maintainer>
   <license>BSD</license>
-  <url>http://ros.org/wiki/ublox_serialization</url>
+  <url>http://ros.org/wiki/ublox</url>
 
   <buildtool_depend>catkin</buildtool_depend>
 
@@ -21,7 +21,7 @@
   <run_depend>roscpp_serialization</run_depend>
 
   <export>
-    <rosdoc external="http://www.u-blox.com/en/download/documents-a-resources.html"/>
+    <rosdoc external="http://www.u-blox.com/en/product-resources"/>
   </export>
 
 </package>
