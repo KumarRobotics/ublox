@@ -34,6 +34,10 @@ namespace ublox_gps {
 
 using namespace ublox_msgs;
 
+constexpr int Gps::kSetBaudrateSleepMs;
+constexpr double Gps::kDefaultAckTimeout;
+constexpr int Gps::kWriterSize;
+
 const boost::posix_time::time_duration Gps::default_timeout_ =
     boost::posix_time::milliseconds(
         static_cast<int>(Gps::kDefaultAckTimeout * 1000));

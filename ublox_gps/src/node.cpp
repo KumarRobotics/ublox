@@ -37,6 +37,21 @@ using namespace ublox_node;
 //
 // ublox_node namespace
 //
+constexpr int UbloxNode::kResetWait;
+constexpr double UbloxNode::kPollDuration;
+constexpr float UbloxNode::kDiagnosticPeriod;
+constexpr double UbloxNode::kFixFreqTol;
+constexpr double UbloxNode::kFixFreqWindow;
+constexpr double UbloxNode::kTimeStampStatusMin;
+
+constexpr double RawDataProduct::kRtcmFreqTol;
+constexpr int RawDataProduct::kRtcmFreqWindow;
+
+constexpr double HpgRovProduct::kRtcmFreqMin;
+constexpr double HpgRovProduct::kRtcmFreqMax;
+constexpr double HpgRovProduct::kRtcmFreqTol;
+constexpr int HpgRovProduct::kRtcmFreqWindow;
+
 uint8_t ublox_node::modelFromString(const std::string& model) {
   std::string lower = model;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
