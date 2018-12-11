@@ -1028,6 +1028,7 @@ class RawDataProduct: public virtual ComponentInterface {
  */
 class AdrUdrProduct: public virtual ComponentInterface {
  public:
+  AdrUdrProduct(float protocol_version);
   /**
    * @brief Get the ADR/UDR parameters.
    *
@@ -1062,6 +1063,8 @@ class AdrUdrProduct: public virtual ComponentInterface {
  protected:
   //! Whether or not to enable dead reckoning
   bool use_adr_;
+  
+  float protocol_version_;
 
    
   sensor_msgs::Imu imu_;
