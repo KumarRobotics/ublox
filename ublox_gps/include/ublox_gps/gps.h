@@ -393,6 +393,12 @@ class Gps {
   bool waitForAcknowledge(const boost::posix_time::time_duration& timeout,
                           uint8_t class_id, uint8_t msg_id);
 
+  /**
+   * @brief Set the callback function which handles raw data.
+   * @param callback the write callback which handles raw data
+   */
+  void setRawDataCallback(const Worker::Callback& callback);
+
  private:
   //! Types for ACK/NACK messages, WAIT is used when waiting for an ACK
   enum AckType {

@@ -201,6 +201,10 @@ The two topics to which you should subscribe are `~fix` and `~fix_velocity`. The
 
 # Version history
 
+* **1.1.3**:
+  - Update by TUC-ProAut
+  - Added raw data output (publishing ros messages and storing to file).
+
 * **1.1.2**:
   - BUG FIX for NavSatFix messages for firmware >=7. The NavSatFix now only uses the NavPVT message time if it is valid, otherwise it uses ROS time.
   - BUG FIX for TMODE3 Fixed mode configuration. The ARP High Precision position is now configured correctly. 

@@ -49,6 +49,12 @@ class Worker {
   virtual void setCallback(const Callback& callback) = 0;
 
   /**
+   * @brief Set the callback function which handles raw data.
+   * @param callback the write callback which handles raw data
+   */
+  virtual void setRawDataCallback(const Callback& callback) = 0;
+
+  /**
    * @brief Send the data in the buffer.
    * @param data the bytes to send
    * @param size the size of the buffer

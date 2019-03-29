@@ -32,6 +32,10 @@
 #include <string>
 #include <sstream>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
+
 using namespace ublox_node;
 
 //
@@ -210,6 +214,9 @@ void UbloxNode::getRosParams() {
 
   // measurement period [ms]
   meas_rate = 1000 / rate_;
+
+  nh->param<std::string>("raw_data/dir", raw_data_dir_, "");
+  nh->param("raw_data/publish", raw_data_flag_, false);
 }
 
 void UbloxNode::pollMessages(const ros::TimerEvent& event) {
@@ -518,6 +525,58 @@ void UbloxNode::initializeIo() {
   } else {
     gps.initializeSerial(device_, baudrate_, uart_in_, uart_out_);
   }
+
+  if (raw_data_flag_ || (!raw_data_dir_.empty())) {
+    gps.setRawDataCallback(
+      boost::bind(&UbloxNode::rawDataCallback,this, _1, _2));
+
+    if (raw_data_flag_) {
+      ROS_INFO("Publishing raw data stream.");
+    }
+
+    if (!raw_data_dir_.empty()) {
+      struct stat stat_info;
+      if (stat(raw_data_dir_.c_str(), &stat_info ) != 0) {
+        ROS_ERROR("Can't log raw data to file. "
+          "Directory \"%s\" does not exist.", raw_data_dir_.c_str());
+
+      } else if ((stat_info.st_mode & S_IFDIR) != S_IFDIR) {
+        ROS_ERROR("Can't log raw data to file. "
+          "\"%s\" exists, but is not a directory.", raw_data_dir_.c_str());
+
+      } else {
+        if (raw_data_dir_.back() != '/') {
+          raw_data_dir_ += '/';
+        }
+
+        time_t t = time(NULL);
+        struct tm time_struct = *localtime(&t);
+
+        std::stringstream filename;
+        filename.width(4); filename.fill('0');
+          filename << time_struct.tm_year + 1900;
+          filename.width(0); filename << '_';
+        filename.width(2); filename.fill('0');
+          filename << time_struct.tm_mon  + 1;
+          filename.width(0); filename << '_';
+        filename.width(2); filename.fill('0'); filename << time_struct.tm_mday;
+          filename.width(0); filename << '_';
+        filename.width(2); filename.fill('0'); filename << time_struct.tm_hour;
+        filename.width(2); filename.fill('0'); filename << time_struct.tm_min ;
+        filename.width(0); filename << ".log";
+        raw_data_filename_ = raw_data_dir_ + filename.str();
+
+        try {
+          raw_data_file_.open(raw_data_filename_);
+          ROS_INFO("Logging raw data to file \"%s\"", 
+            raw_data_filename_.c_str());
+        } catch(const std::exception& e) {
+          ROS_ERROR("Can't log raw data to file. "
+            "Can't create file \"%s\".", raw_data_filename_.c_str());
+        }
+      }
+    }
+  }
 }
 
 void UbloxNode::initialize() {
@@ -557,6 +616,26 @@ void UbloxNode::shutdown() {
   if (gps.isInitialized()) {
     gps.close();
     ROS_INFO("Closed connection to %s.", device_.c_str());
+  }
+}
+
+void UbloxNode::rawDataCallback(const unsigned char* data,
+  const std::size_t size) {
+
+  std::string str((const char*) data, size);
+  if (raw_data_flag_) {
+    std_msgs::String msg;
+    msg.data = str;
+    ublox_node::publish(msg, "raw_data");
+  }
+
+  if (raw_data_file_.is_open()) {
+    try {
+      raw_data_file_ << str;
+      // raw_data_file_.flush();
+    } catch(const std::exception& e) {
+      ROS_WARN("Error writing to file \"%s\"", raw_data_filename_.c_str());
+    }
   }
 }
 

@@ -33,6 +33,7 @@
 // STL
 #include <vector>
 #include <set>
+#include <fstream>
 // Boost
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -49,6 +50,7 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/TimeReference.h>
 #include <sensor_msgs/Imu.h>
+#include <std_msgs/String.h>
 // Other U-Blox package includes
 #include <ublox_msgs/ublox_msgs.h>
 // Ublox GPS includes
@@ -120,6 +122,15 @@ uint16_t nav_rate;
 std::vector<uint8_t> rtcm_ids;
 //! Rates of RTCM out messages. Size must be the same as rtcm_ids
 std::vector<uint8_t> rtcm_rates;
+//! Directoy name for storing raw data
+std::string raw_data_dir_;
+//! Filename for storing raw data
+std::string raw_data_filename_;
+//!< Handle for file access
+std::ofstream raw_data_file_;
+//! Flag for publishing raw data 
+bool raw_data_flag_;
+
 
 //! Topic diagnostics for u-blox messages
 struct UbloxTopicDiagnostic {
@@ -578,6 +589,13 @@ class UbloxNode : public virtual ComponentInterface {
    * @brief Configure INF messages, call after subscribe.
    */
   void configureInf();
+
+  /**
+   * @brief Callback function which handles raw data.
+   * @param data the buffer of u-blox messages to process
+   * @param size the size of the buffer
+   */
+  void rawDataCallback(const unsigned char* data, const std::size_t size);
 
   //! The u-blox node components
   /*!
