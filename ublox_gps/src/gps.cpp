@@ -552,6 +552,11 @@ bool Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout,
   return result;
 }
 
+void Gps::setRawDataCallback(const Worker::Callback& callback) {
+  if (! worker_) return;
+  worker_->setRawDataCallback(callback);
+}
+
 bool Gps::setUTCtime() {
   ROS_DEBUG("Setting time to UTC time");
 

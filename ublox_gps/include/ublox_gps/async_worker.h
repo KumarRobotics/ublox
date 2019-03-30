@@ -71,6 +71,12 @@ class AsyncWorker : public Worker {
   void setCallback(const Callback& callback) { read_callback_ = callback; }
 
   /**
+   * @brief Set the callback function which handles raw data.
+   * @param callback the write callback which handles raw data
+   */
+  void setRawDataCallback(const Callback& callback) { write_callback_ = callback; }
+
+  /**
    * @brief Send the data bytes via the I/O stream.
    * @param data the buffer of data bytes to send
    * @param size the size of the buffer
@@ -123,6 +129,7 @@ class AsyncWorker : public Worker {
   boost::shared_ptr<boost::thread> background_thread_; //!< thread for the I/O
                                                        //!< service
   Callback read_callback_; //!< Callback function to handle received messages
+  Callback write_callback_; //!< Callback function to handle raw data
 
   bool stopping_; //!< Whether or not the I/O service is closed
 };
@@ -215,6 +222,11 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
   } else if (bytes_transfered > 0) {
     in_buffer_size_ += bytes_transfered;
 
+    auto iStart = in_.begin() + (in_buffer_size_ - bytes_transfered);
+    auto iEnd   = iStart + bytes_transfered;
+    std::vector<unsigned char> raw_data(iStart, iEnd);
+    std::size_t raw_data_size = bytes_transfered;
+
     if (debug >= 4) {
       std::ostringstream oss;
       for (std::vector<unsigned char>::iterator it =
@@ -229,6 +241,9 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
       read_callback_(in_.data(), in_buffer_size_);
 
     read_condition_.notify_all();
+
+    if (write_callback_)
+      write_callback_(raw_data.data(), raw_data_size);
   }
 
   if (!stopping_)
