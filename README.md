@@ -203,7 +203,8 @@ The two topics to which you should subscribe are `~fix` and `~fix_velocity`. The
 
 * **1.1.3**:
   - Update by TUC-ProAut
-  - Added raw data output (publishing ros messages and storing to file).
+  - Added raw data stream output. To publish ros messages set rosparam `raw_data_stream/publish` to true. To store to a logfile set rosparam `set raw_data_stream/dir` to the appropriated directory. This feature has nothing todo with Raw Data Products.
+  - Added flag `config_on_startup` to deactivate configuration of ublox.
 
 * **1.1.2**:
   - BUG FIX for NavSatFix messages for firmware >=7. The NavSatFix now only uses the NavPVT message time if it is valid, otherwise it uses ROS time.
