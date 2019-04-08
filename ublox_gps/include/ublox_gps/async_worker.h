@@ -222,10 +222,11 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
   } else if (bytes_transfered > 0) {
     in_buffer_size_ += bytes_transfered;
 
-    auto iStart = in_.begin() + (in_buffer_size_ - bytes_transfered);
-    auto iEnd   = iStart + bytes_transfered;
-    std::vector<unsigned char> raw_data(iStart, iEnd);
-    std::size_t raw_data_size = bytes_transfered;
+    unsigned char *pRawDataStart = &(*(in_.begin() + (in_buffer_size_ - bytes_transfered)));
+    std::size_t raw_data_stream_size = bytes_transfered;
+
+    if (write_callback_)
+      write_callback_(pRawDataStart, raw_data_stream_size);
 
     if (debug >= 4) {
       std::ostringstream oss;
@@ -241,9 +242,6 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
       read_callback_(in_.data(), in_buffer_size_);
 
     read_condition_.notify_all();
-
-    if (write_callback_)
-      write_callback_(raw_data.data(), raw_data_size);
   }
 
   if (!stopping_)

@@ -532,6 +532,8 @@ void UbloxNode::initializeIo() {
 
     if (raw_data_stream_flag_) {
       ROS_INFO("Publishing raw data stream.");
+      std_msgs::String msg;
+      ublox_node::publish(msg, "raw_data_stream");
     }
 
     if (!raw_data_stream_dir_.empty()) {
