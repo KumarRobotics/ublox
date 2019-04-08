@@ -86,6 +86,12 @@ class Gps {
   }
 
   /**
+   * @brief Set the internal flag for enabling or disabling the initial configurations.
+   * @param config_on_startup boolean flag
+   */
+  void setConfigOnStartup(const bool config_on_startup) { config_on_startup_flag_ = config_on_startup; }
+
+  /**
    * @brief Initialize TCP I/O.
    * @param host the TCP host
    * @param port the TCP port
@@ -461,6 +467,9 @@ class Gps {
   bool configured_;
   //! Whether or not to save Flash BBR on shutdown
   bool save_on_shutdown_;
+  //!< Whether or not initial configuration to the hardware is done
+  bool config_on_startup_flag_;
+
 
   //! The default timeout for ACK messages
   static const boost::posix_time::time_duration default_timeout_;

@@ -38,7 +38,9 @@ const boost::posix_time::time_duration Gps::default_timeout_ =
     boost::posix_time::milliseconds(
         static_cast<int>(Gps::kDefaultAckTimeout * 1000));
 
-Gps::Gps() : configured_(false) { subscribeAcks(); }
+Gps::Gps() : configured_(false), config_on_startup_flag_(true) {
+ subscribeAcks();
+}
 
 Gps::~Gps() { close(); }
 
@@ -154,9 +156,13 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
     serial->get_option(current_baudrate);
     ROS_DEBUG("U-Blox: Set ASIO baudrate to %u", current_baudrate.value());
   }
-  configured_ = configUart1(baudrate, uart_in, uart_out);
-  if(!configured_ || current_baudrate.value() != baudrate) {
-    throw std::runtime_error("Could not configure serial baud rate");
+  if (config_on_startup_flag_) {
+    configured_ = configUart1(baudrate, uart_in, uart_out);
+    if(!configured_ || current_baudrate.value() != baudrate) {
+      throw std::runtime_error("Could not configure serial baud rate");
+    }
+  } else {
+    configured_ = true;
   }
 }
 

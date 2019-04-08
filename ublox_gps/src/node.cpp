@@ -217,6 +217,7 @@ void UbloxNode::getRosParams() {
 
   nh->param<std::string>("raw_data_stream/dir", raw_data_stream_dir_, "");
   nh->param("raw_data_stream/publish", raw_data_stream_flag_, false);
+  nh->param("config_on_startup", config_on_startup_flag_, true);
 }
 
 void UbloxNode::pollMessages(const ros::TimerEvent& event) {
@@ -427,42 +428,44 @@ bool UbloxNode::configureUblox() {
       }
     }
 
-    if (set_usb_) {
-      gps.configUsb(usb_tx_, usb_in_, usb_out_);
-    }
-    if (!gps.configRate(meas_rate, nav_rate)) {
-      std::stringstream ss;
-      ss << "Failed to set measurement rate to " << meas_rate
-         << "ms and navigation rate to " << nav_rate;
-      throw std::runtime_error(ss.str());
-    }
-    // If device doesn't have SBAS, will receive NACK (causes exception)
-    if(supportsGnss("SBAS")) {
-      if (!gps.configSbas(enable_sbas_, sbas_usage_, max_sbas_)) {
-        throw std::runtime_error(std::string("Failed to ") +
-                                 ((enable_sbas_) ? "enable" : "disable") +
-                                 " SBAS.");
+    if (config_on_startup_flag_) {
+      if (set_usb_) {
+        gps.configUsb(usb_tx_, usb_in_, usb_out_);
       }
-    }
-    if (!gps.setPpp(enable_ppp_))
-      throw std::runtime_error(std::string("Failed to ") +
-                               ((enable_ppp_) ? "enable" : "disable")
-                               + " PPP.");
-    if (!gps.setDynamicModel(dmodel_))
-      throw std::runtime_error("Failed to set model: " + dynamic_model_ + ".");
-    if (!gps.setFixMode(fmode_))
-      throw std::runtime_error("Failed to set fix mode: " + fix_mode_ + ".");
-    if (!gps.setDeadReckonLimit(dr_limit_)) {
-      std::stringstream ss;
-      ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
-      throw std::runtime_error(ss.str());
-    }
-    if (set_dat_ && !gps.configure(cfg_dat_))
-      throw std::runtime_error("Failed to set user-defined datum.");
-    // Configure each component
-    for (int i = 0; i < components_.size(); i++) {
-      if(!components_[i]->configureUblox())
-        return false;
+      if (!gps.configRate(meas_rate, nav_rate)) {
+        std::stringstream ss;
+        ss << "Failed to set measurement rate to " << meas_rate
+          << "ms and navigation rate to " << nav_rate;
+        throw std::runtime_error(ss.str());
+      }
+      // If device doesn't have SBAS, will receive NACK (causes exception)
+      if(supportsGnss("SBAS")) {
+        if (!gps.configSbas(enable_sbas_, sbas_usage_, max_sbas_)) {
+          throw std::runtime_error(std::string("Failed to ") +
+                                  ((enable_sbas_) ? "enable" : "disable") +
+                                  " SBAS.");
+        }
+      }
+      if (!gps.setPpp(enable_ppp_))
+        throw std::runtime_error(std::string("Failed to ") +
+                                ((enable_ppp_) ? "enable" : "disable")
+                                + " PPP.");
+      if (!gps.setDynamicModel(dmodel_))
+        throw std::runtime_error("Failed to set model: " + dynamic_model_ + ".");
+      if (!gps.setFixMode(fmode_))
+        throw std::runtime_error("Failed to set fix mode: " + fix_mode_ + ".");
+      if (!gps.setDeadReckonLimit(dr_limit_)) {
+        std::stringstream ss;
+        ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
+        throw std::runtime_error(ss.str());
+      }
+      if (set_dat_ && !gps.configure(cfg_dat_))
+        throw std::runtime_error("Failed to set user-defined datum.");
+      // Configure each component
+      for (int i = 0; i < components_.size(); i++) {
+        if(!components_[i]->configureUblox())
+          return false;
+      }
     }
     if (save_.saveMask != 0) {
       ROS_DEBUG("Saving the u-blox configuration, mask %u, device %u",
@@ -509,6 +512,8 @@ void UbloxNode::configureInf() {
 }
 
 void UbloxNode::initializeIo() {
+  gps.setConfigOnStartup(config_on_startup_flag_);
+
   boost::smatch match;
   if (boost::regex_match(device_, match,
                          boost::regex("(tcp|udp)://(.+):(\\d+)"))) {
