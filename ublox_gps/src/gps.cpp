@@ -370,8 +370,8 @@ bool Gps::configUsb(uint16_t tx_ready,
 }
 
 bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
-  ROS_DEBUG("Configuring measurement rate to %u and nav rate to %u", meas_rate,
-           nav_rate);
+  ROS_DEBUG("Configuring measurement rate to %u ms and nav rate to %u cycles",
+    meas_rate, nav_rate);
 
   CfgRATE rate;
   rate.measRate = meas_rate;
