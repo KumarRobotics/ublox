@@ -1499,38 +1499,40 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
 // u-blox High Precision GNSS Reference Station
 //
 void HpgRefProduct::getRosParams() {
-  if(nav_rate * meas_rate != 1000)
-    ROS_WARN("For HPG Ref devices, nav_rate should be exactly 1 Hz.");
+  if (config_on_startup_flag_) {
+    if(nav_rate * meas_rate != 1000)
+      ROS_WARN("For HPG Ref devices, nav_rate should be exactly 1 Hz.");
 
-  if(!getRosUint("tmode3", tmode3_))
-    throw std::runtime_error("Invalid settings: TMODE3 must be set");
+    if(!getRosUint("tmode3", tmode3_))
+      throw std::runtime_error("Invalid settings: TMODE3 must be set");
 
-  if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_FIXED) {
-    if(!nh->getParam("arp/position", arp_position_))
-      throw std::runtime_error(std::string("Invalid settings: arp/position ")
-                               + "must be set if TMODE3 is fixed");
-    if(!getRosInt("arp/position_hp", arp_position_hp_))
-      throw std::runtime_error(std::string("Invalid settings: arp/position_hp ")
-                               + "must be set if TMODE3 is fixed");
-    if(!nh->getParam("arp/acc", fixed_pos_acc_))
-      throw std::runtime_error(std::string("Invalid settings: arp/acc ")
-                               + "must be set if TMODE3 is fixed");
-    if(!nh->getParam("arp/lla_flag", lla_flag_)) {
-      ROS_WARN("arp/lla_flag param not set, assuming ARP coordinates are %s",
-               "in ECEF");
-      lla_flag_ = false;
+    if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_FIXED) {
+      if(!nh->getParam("arp/position", arp_position_))
+        throw std::runtime_error(std::string("Invalid settings: arp/position ")
+                                + "must be set if TMODE3 is fixed");
+      if(!getRosInt("arp/position_hp", arp_position_hp_))
+        throw std::runtime_error(std::string("Invalid settings: arp/position_hp ")
+                                + "must be set if TMODE3 is fixed");
+      if(!nh->getParam("arp/acc", fixed_pos_acc_))
+        throw std::runtime_error(std::string("Invalid settings: arp/acc ")
+                                + "must be set if TMODE3 is fixed");
+      if(!nh->getParam("arp/lla_flag", lla_flag_)) {
+        ROS_WARN("arp/lla_flag param not set, assuming ARP coordinates are %s",
+                "in ECEF");
+        lla_flag_ = false;
+      }
+    } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
+      nh->param("sv_in/reset", svin_reset_, true);
+      if(!getRosUint("sv_in/min_dur", sv_in_min_dur_))
+        throw std::runtime_error(std::string("Invalid settings: sv_in/min_dur ")
+                                + "must be set if TMODE3 is survey-in");
+      if(!nh->getParam("sv_in/acc_lim", sv_in_acc_lim_))
+        throw std::runtime_error(std::string("Invalid settings: sv_in/acc_lim ")
+                                + "must be set if TMODE3 is survey-in");
+    } else if(tmode3_ != ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
+      throw std::runtime_error(std::string("tmode3 param invalid. See CfgTMODE3")
+                              + " flag constants for possible values.");
     }
-  } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
-    nh->param("sv_in/reset", svin_reset_, true);
-    if(!getRosUint("sv_in/min_dur", sv_in_min_dur_))
-      throw std::runtime_error(std::string("Invalid settings: sv_in/min_dur ")
-                               + "must be set if TMODE3 is survey-in");
-    if(!nh->getParam("sv_in/acc_lim", sv_in_acc_lim_))
-      throw std::runtime_error(std::string("Invalid settings: sv_in/acc_lim ")
-                               + "must be set if TMODE3 is survey-in");
-  } else if(tmode3_ != ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
-    throw std::runtime_error(std::string("tmode3 param invalid. See CfgTMODE3")
-                             + " flag constants for possible values.");
   }
 }
 
