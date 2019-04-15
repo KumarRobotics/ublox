@@ -123,13 +123,15 @@ std::vector<uint8_t> rtcm_ids;
 //! Rates of RTCM out messages. Size must be the same as rtcm_ids
 std::vector<uint8_t> rtcm_rates;
 //! Directoy name for storing raw data
-std::string raw_data_dir_;
+std::string raw_data_stream_dir_;
 //! Filename for storing raw data
-std::string raw_data_filename_;
+std::string raw_data_stream_filename_;
 //!< Handle for file access
-std::ofstream raw_data_file_;
+std::ofstream raw_data_stream_file_;
 //! Flag for publishing raw data 
-bool raw_data_flag_;
+bool raw_data_stream_flag_;
+//! Flag for enabling configuration on startup
+bool config_on_startup_flag_;
 
 
 //! Topic diagnostics for u-blox messages

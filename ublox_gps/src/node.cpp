@@ -215,8 +215,9 @@ void UbloxNode::getRosParams() {
   // measurement period [ms]
   meas_rate = 1000 / rate_;
 
-  nh->param<std::string>("raw_data/dir", raw_data_dir_, "");
-  nh->param("raw_data/publish", raw_data_flag_, false);
+  nh->param<std::string>("raw_data_stream/dir", raw_data_stream_dir_, "");
+  nh->param("raw_data_stream/publish", raw_data_stream_flag_, false);
+  nh->param("config_on_startup", config_on_startup_flag_, true);
 }
 
 void UbloxNode::pollMessages(const ros::TimerEvent& event) {
@@ -427,42 +428,44 @@ bool UbloxNode::configureUblox() {
       }
     }
 
-    if (set_usb_) {
-      gps.configUsb(usb_tx_, usb_in_, usb_out_);
-    }
-    if (!gps.configRate(meas_rate, nav_rate)) {
-      std::stringstream ss;
-      ss << "Failed to set measurement rate to " << meas_rate
-         << "ms and navigation rate to " << nav_rate;
-      throw std::runtime_error(ss.str());
-    }
-    // If device doesn't have SBAS, will receive NACK (causes exception)
-    if(supportsGnss("SBAS")) {
-      if (!gps.configSbas(enable_sbas_, sbas_usage_, max_sbas_)) {
-        throw std::runtime_error(std::string("Failed to ") +
-                                 ((enable_sbas_) ? "enable" : "disable") +
-                                 " SBAS.");
+    if (config_on_startup_flag_) {
+      if (set_usb_) {
+        gps.configUsb(usb_tx_, usb_in_, usb_out_);
       }
-    }
-    if (!gps.setPpp(enable_ppp_))
-      throw std::runtime_error(std::string("Failed to ") +
-                               ((enable_ppp_) ? "enable" : "disable")
-                               + " PPP.");
-    if (!gps.setDynamicModel(dmodel_))
-      throw std::runtime_error("Failed to set model: " + dynamic_model_ + ".");
-    if (!gps.setFixMode(fmode_))
-      throw std::runtime_error("Failed to set fix mode: " + fix_mode_ + ".");
-    if (!gps.setDeadReckonLimit(dr_limit_)) {
-      std::stringstream ss;
-      ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
-      throw std::runtime_error(ss.str());
-    }
-    if (set_dat_ && !gps.configure(cfg_dat_))
-      throw std::runtime_error("Failed to set user-defined datum.");
-    // Configure each component
-    for (int i = 0; i < components_.size(); i++) {
-      if(!components_[i]->configureUblox())
-        return false;
+      if (!gps.configRate(meas_rate, nav_rate)) {
+        std::stringstream ss;
+        ss << "Failed to set measurement rate to " << meas_rate
+          << "ms and navigation rate to " << nav_rate;
+        throw std::runtime_error(ss.str());
+      }
+      // If device doesn't have SBAS, will receive NACK (causes exception)
+      if(supportsGnss("SBAS")) {
+        if (!gps.configSbas(enable_sbas_, sbas_usage_, max_sbas_)) {
+          throw std::runtime_error(std::string("Failed to ") +
+                                  ((enable_sbas_) ? "enable" : "disable") +
+                                  " SBAS.");
+        }
+      }
+      if (!gps.setPpp(enable_ppp_))
+        throw std::runtime_error(std::string("Failed to ") +
+                                ((enable_ppp_) ? "enable" : "disable")
+                                + " PPP.");
+      if (!gps.setDynamicModel(dmodel_))
+        throw std::runtime_error("Failed to set model: " + dynamic_model_ + ".");
+      if (!gps.setFixMode(fmode_))
+        throw std::runtime_error("Failed to set fix mode: " + fix_mode_ + ".");
+      if (!gps.setDeadReckonLimit(dr_limit_)) {
+        std::stringstream ss;
+        ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
+        throw std::runtime_error(ss.str());
+      }
+      if (set_dat_ && !gps.configure(cfg_dat_))
+        throw std::runtime_error("Failed to set user-defined datum.");
+      // Configure each component
+      for (int i = 0; i < components_.size(); i++) {
+        if(!components_[i]->configureUblox())
+          return false;
+      }
     }
     if (save_.saveMask != 0) {
       ROS_DEBUG("Saving the u-blox configuration, mask %u, device %u",
@@ -509,6 +512,8 @@ void UbloxNode::configureInf() {
 }
 
 void UbloxNode::initializeIo() {
+  gps.setConfigOnStartup(config_on_startup_flag_);
+
   boost::smatch match;
   if (boost::regex_match(device_, match,
                          boost::regex("(tcp|udp)://(.+):(\\d+)"))) {
@@ -526,27 +531,29 @@ void UbloxNode::initializeIo() {
     gps.initializeSerial(device_, baudrate_, uart_in_, uart_out_);
   }
 
-  if (raw_data_flag_ || (!raw_data_dir_.empty())) {
+  if (raw_data_stream_flag_ || (!raw_data_stream_dir_.empty())) {
     gps.setRawDataCallback(
       boost::bind(&UbloxNode::rawDataCallback,this, _1, _2));
 
-    if (raw_data_flag_) {
+    if (raw_data_stream_flag_) {
       ROS_INFO("Publishing raw data stream.");
+      std_msgs::String msg;
+      ublox_node::publish(msg, "raw_data_stream");
     }
 
-    if (!raw_data_dir_.empty()) {
+    if (!raw_data_stream_dir_.empty()) {
       struct stat stat_info;
-      if (stat(raw_data_dir_.c_str(), &stat_info ) != 0) {
+      if (stat(raw_data_stream_dir_.c_str(), &stat_info ) != 0) {
         ROS_ERROR("Can't log raw data to file. "
-          "Directory \"%s\" does not exist.", raw_data_dir_.c_str());
+          "Directory \"%s\" does not exist.", raw_data_stream_dir_.c_str());
 
       } else if ((stat_info.st_mode & S_IFDIR) != S_IFDIR) {
         ROS_ERROR("Can't log raw data to file. "
-          "\"%s\" exists, but is not a directory.", raw_data_dir_.c_str());
+          "\"%s\" exists, but is not a directory.", raw_data_stream_dir_.c_str());
 
       } else {
-        if (raw_data_dir_.back() != '/') {
-          raw_data_dir_ += '/';
+        if (raw_data_stream_dir_.back() != '/') {
+          raw_data_stream_dir_ += '/';
         }
 
         time_t t = time(NULL);
@@ -564,15 +571,15 @@ void UbloxNode::initializeIo() {
         filename.width(2); filename.fill('0'); filename << time_struct.tm_hour;
         filename.width(2); filename.fill('0'); filename << time_struct.tm_min ;
         filename.width(0); filename << ".log";
-        raw_data_filename_ = raw_data_dir_ + filename.str();
+        raw_data_stream_filename_ = raw_data_stream_dir_ + filename.str();
 
         try {
-          raw_data_file_.open(raw_data_filename_);
+          raw_data_stream_file_.open(raw_data_stream_filename_);
           ROS_INFO("Logging raw data to file \"%s\"", 
-            raw_data_filename_.c_str());
+            raw_data_stream_filename_.c_str());
         } catch(const std::exception& e) {
           ROS_ERROR("Can't log raw data to file. "
-            "Can't create file \"%s\".", raw_data_filename_.c_str());
+            "Can't create file \"%s\".", raw_data_stream_filename_.c_str());
         }
       }
     }
@@ -623,18 +630,18 @@ void UbloxNode::rawDataCallback(const unsigned char* data,
   const std::size_t size) {
 
   std::string str((const char*) data, size);
-  if (raw_data_flag_) {
+  if (raw_data_stream_flag_) {
     std_msgs::String msg;
     msg.data = str;
-    ublox_node::publish(msg, "raw_data");
+    ublox_node::publish(msg, "raw_data_stream");
   }
 
-  if (raw_data_file_.is_open()) {
+  if (raw_data_stream_file_.is_open()) {
     try {
-      raw_data_file_ << str;
-      // raw_data_file_.flush();
+      raw_data_stream_file_ << str;
+      // raw_data_stream_file_.flush();
     } catch(const std::exception& e) {
-      ROS_WARN("Error writing to file \"%s\"", raw_data_filename_.c_str());
+      ROS_WARN("Error writing to file \"%s\"", raw_data_stream_filename_.c_str());
     }
   }
 }
@@ -1492,38 +1499,40 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
 // u-blox High Precision GNSS Reference Station
 //
 void HpgRefProduct::getRosParams() {
-  if(nav_rate * meas_rate != 1000)
-    ROS_WARN("For HPG Ref devices, nav_rate should be exactly 1 Hz.");
+  if (config_on_startup_flag_) {
+    if(nav_rate * meas_rate != 1000)
+      ROS_WARN("For HPG Ref devices, nav_rate should be exactly 1 Hz.");
 
-  if(!getRosUint("tmode3", tmode3_))
-    throw std::runtime_error("Invalid settings: TMODE3 must be set");
+    if(!getRosUint("tmode3", tmode3_))
+      throw std::runtime_error("Invalid settings: TMODE3 must be set");
 
-  if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_FIXED) {
-    if(!nh->getParam("arp/position", arp_position_))
-      throw std::runtime_error(std::string("Invalid settings: arp/position ")
-                               + "must be set if TMODE3 is fixed");
-    if(!getRosInt("arp/position_hp", arp_position_hp_))
-      throw std::runtime_error(std::string("Invalid settings: arp/position_hp ")
-                               + "must be set if TMODE3 is fixed");
-    if(!nh->getParam("arp/acc", fixed_pos_acc_))
-      throw std::runtime_error(std::string("Invalid settings: arp/acc ")
-                               + "must be set if TMODE3 is fixed");
-    if(!nh->getParam("arp/lla_flag", lla_flag_)) {
-      ROS_WARN("arp/lla_flag param not set, assuming ARP coordinates are %s",
-               "in ECEF");
-      lla_flag_ = false;
+    if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_FIXED) {
+      if(!nh->getParam("arp/position", arp_position_))
+        throw std::runtime_error(std::string("Invalid settings: arp/position ")
+                                + "must be set if TMODE3 is fixed");
+      if(!getRosInt("arp/position_hp", arp_position_hp_))
+        throw std::runtime_error(std::string("Invalid settings: arp/position_hp ")
+                                + "must be set if TMODE3 is fixed");
+      if(!nh->getParam("arp/acc", fixed_pos_acc_))
+        throw std::runtime_error(std::string("Invalid settings: arp/acc ")
+                                + "must be set if TMODE3 is fixed");
+      if(!nh->getParam("arp/lla_flag", lla_flag_)) {
+        ROS_WARN("arp/lla_flag param not set, assuming ARP coordinates are %s",
+                "in ECEF");
+        lla_flag_ = false;
+      }
+    } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
+      nh->param("sv_in/reset", svin_reset_, true);
+      if(!getRosUint("sv_in/min_dur", sv_in_min_dur_))
+        throw std::runtime_error(std::string("Invalid settings: sv_in/min_dur ")
+                                + "must be set if TMODE3 is survey-in");
+      if(!nh->getParam("sv_in/acc_lim", sv_in_acc_lim_))
+        throw std::runtime_error(std::string("Invalid settings: sv_in/acc_lim ")
+                                + "must be set if TMODE3 is survey-in");
+    } else if(tmode3_ != ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
+      throw std::runtime_error(std::string("tmode3 param invalid. See CfgTMODE3")
+                              + " flag constants for possible values.");
     }
-  } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
-    nh->param("sv_in/reset", svin_reset_, true);
-    if(!getRosUint("sv_in/min_dur", sv_in_min_dur_))
-      throw std::runtime_error(std::string("Invalid settings: sv_in/min_dur ")
-                               + "must be set if TMODE3 is survey-in");
-    if(!nh->getParam("sv_in/acc_lim", sv_in_acc_lim_))
-      throw std::runtime_error(std::string("Invalid settings: sv_in/acc_lim ")
-                               + "must be set if TMODE3 is survey-in");
-  } else if(tmode3_ != ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
-    throw std::runtime_error(std::string("tmode3 param invalid. See CfgTMODE3")
-                             + " flag constants for possible values.");
   }
 }
 
