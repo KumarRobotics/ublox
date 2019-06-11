@@ -42,7 +42,7 @@ target_link_libraries(ublox_gps
 )
 
 # build node
-add_executable(ublox_gps_node src/node.cpp src/mkgmtime.c)
+add_executable(ublox_gps_node src/node.cpp src/mkgmtime.c src/raw_data_pa.cpp)
 set_target_properties(ublox_gps_node PROPERTIES OUTPUT_NAME ublox_gps)
 
 target_link_libraries(ublox_gps_node boost_system boost_regex boost_thread)
