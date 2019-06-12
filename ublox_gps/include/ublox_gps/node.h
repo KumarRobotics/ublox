@@ -33,7 +33,6 @@
 // STL
 #include <vector>
 #include <set>
-#include <fstream>
 // Boost
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -50,12 +49,12 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/TimeReference.h>
 #include <sensor_msgs/Imu.h>
-#include <std_msgs/String.h>
 // Other U-Blox package includes
 #include <ublox_msgs/ublox_msgs.h>
 // Ublox GPS includes
 #include <ublox_gps/gps.h>
 #include <ublox_gps/utils.h>
+#include <ublox_gps/raw_data_pa.h>
 
 // This file declares the ComponentInterface which acts as a high level
 // interface for u-blox firmware, product categories, etc. It contains methods
@@ -122,14 +121,6 @@ uint16_t nav_rate;
 std::vector<uint8_t> rtcm_ids;
 //! Rates of RTCM out messages. Size must be the same as rtcm_ids
 std::vector<uint8_t> rtcm_rates;
-//! Directoy name for storing raw data
-std::string raw_data_stream_dir_;
-//! Filename for storing raw data
-std::string raw_data_stream_filename_;
-//!< Handle for file access
-std::ofstream raw_data_stream_file_;
-//! Flag for publishing raw data 
-bool raw_data_stream_flag_;
 //! Flag for enabling configuration on startup
 bool config_on_startup_flag_;
 
@@ -592,13 +583,6 @@ class UbloxNode : public virtual ComponentInterface {
    */
   void configureInf();
 
-  /**
-   * @brief Callback function which handles raw data.
-   * @param data the buffer of u-blox messages to process
-   * @param size the size of the buffer
-   */
-  void rawDataCallback(const unsigned char* data, const std::size_t size);
-
   //! The u-blox node components
   /*!
    * The node will call the functions in these interfaces for each object
@@ -656,6 +640,9 @@ class UbloxNode : public virtual ComponentInterface {
   ublox_msgs::CfgCFG save_;
   //! rate for TIM-TM2
   uint8_t tim_rate_;
+
+  //! raw data stream logging
+  RawDataStreamPa rawDataStreamPa_;
 };
 
 /**
