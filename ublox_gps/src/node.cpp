@@ -1582,7 +1582,7 @@ void HpgRefProduct::tmode3Diagnostics(
     stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
     stat.message = "Not configured";
   } else if (mode_ == DISABLED){
-    stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+    stat.level = diagnostic_msgs::DiagnosticStatus::OK;
     stat.message = "Disabled";
   } else if (mode_ == SURVEY_IN) {
     if (!last_nav_svin_.active && !last_nav_svin_.valid) {
