@@ -334,8 +334,8 @@ void UbloxNode::initializeRosDiagnostics() {
   updater->setHardwareID("ublox");
 
   // configure diagnostic updater for frequency
-  freq_diag = FixDiagnostic(std::string("fix"), kFixFreqTol,
-                            kFixFreqWindow, kTimeStampStatusMin);
+  freq_diag.reset(new FixDiagnostic(std::string("fix"), kFixFreqTol,
+                            kFixFreqWindow, kTimeStampStatusMin));
   for(int i = 0; i < components_.size(); i++)
     components_[i]->initializeRosDiagnostics();
 }
@@ -753,7 +753,7 @@ void UbloxFirmware6::callbackNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
   fixPublisher.publish(fix_);
   last_nav_pos_ = m;
   //  update diagnostics
-  freq_diag.diagnostic->tick(fix_.header.stamp);
+  freq_diag->diagnostic->tick(fix_.header.stamp);
   updater->update();
 }
 
@@ -1254,17 +1254,17 @@ void RawDataProduct::subscribe() {
 
 void RawDataProduct::initializeRosDiagnostics() {
   if (enabled["rxm_raw"])
-    freq_diagnostics_.push_back(UbloxTopicDiagnostic("rxmraw", kRtcmFreqTol,
-                                               kRtcmFreqWindow));
+    freq_diagnostics_.push_back(boost::shared_ptr<UbloxTopicDiagnostic>(
+      new UbloxTopicDiagnostic("rxmraw", kRtcmFreqTol, kRtcmFreqWindow)));
   if (enabled["rxm_sfrb"])
-    freq_diagnostics_.push_back(UbloxTopicDiagnostic("rxmsfrb", kRtcmFreqTol,
-                                               kRtcmFreqWindow));
+    freq_diagnostics_.push_back(boost::shared_ptr<UbloxTopicDiagnostic>(
+      new UbloxTopicDiagnostic("rxmsfrb", kRtcmFreqTol, kRtcmFreqWindow)));
   if (enabled["rxm_eph"])
-    freq_diagnostics_.push_back(UbloxTopicDiagnostic("rxmeph", kRtcmFreqTol,
-                                               kRtcmFreqWindow));
+    freq_diagnostics_.push_back(boost::shared_ptr<UbloxTopicDiagnostic>(
+      new UbloxTopicDiagnostic("rxmeph", kRtcmFreqTol, kRtcmFreqWindow)));
   if (enabled["rxm_alm"])
-    freq_diagnostics_.push_back(UbloxTopicDiagnostic("rxmalm", kRtcmFreqTol,
-                                               kRtcmFreqWindow));
+    freq_diagnostics_.push_back(boost::shared_ptr<UbloxTopicDiagnostic>(
+      new UbloxTopicDiagnostic("rxmalm", kRtcmFreqTol, kRtcmFreqWindow)));
 }
 
 //

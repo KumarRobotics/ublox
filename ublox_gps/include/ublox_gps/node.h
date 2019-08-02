@@ -129,6 +129,9 @@ bool config_on_startup_flag_;
 struct UbloxTopicDiagnostic {
   UbloxTopicDiagnostic() {}
 
+  // Must not copy this struct (would confuse FrequencyStatusParam pointers)
+  UbloxTopicDiagnostic(const UbloxTopicDiagnostic&) = delete;
+
   /**
    * @brief Add a topic diagnostic to the diagnostic updater for
    *
@@ -181,6 +184,9 @@ struct UbloxTopicDiagnostic {
 struct FixDiagnostic {
   FixDiagnostic() {}
 
+  // Must not copy this struct (would confuse FrequencyStatusParam pointers)
+  FixDiagnostic(const FixDiagnostic&) = delete;
+
   /**
    * @brief Add a topic diagnostic to the diagnostic updater for fix topics.
    *
@@ -214,7 +220,7 @@ struct FixDiagnostic {
 };
 
 //! fix frequency diagnostic updater
-FixDiagnostic freq_diag;
+boost::shared_ptr<FixDiagnostic> freq_diag;
 
 /**
  * @brief Determine dynamic model from human-readable string.
@@ -850,7 +856,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     // Update diagnostics
     //
     last_nav_pvt_ = m;
-    freq_diag.diagnostic->tick(fix.header.stamp);
+    freq_diag->diagnostic->tick(fix.header.stamp);
     updater->update();
   }
 
@@ -1035,7 +1041,7 @@ class RawDataProduct: public virtual ComponentInterface {
 
  private:
   //! Topic diagnostic updaters
-  std::vector<UbloxTopicDiagnostic> freq_diagnostics_;
+  std::vector<boost::shared_ptr<UbloxTopicDiagnostic> > freq_diagnostics_;
 };
 
 /**
