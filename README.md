@@ -174,6 +174,7 @@ To publish a given u-blox message to a ROS topic, set the parameter shown below 
 * `publish/nav/posllh`: Topic `~navposllh`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
 * `publish/nav/pvt`: Topic `~navpvt`. **Firmware >= 7 only.**
 * `publish/nav/relposned`: Topic `~navrelposned`. **HPG Rover devices only**
+* `publish/nav/heading`: Topic `~navheading`. **HP Position receiver devices only.** For firmware 9 and above
 * `publish/nav/sat`: Topic `~navsat`
 * `publish/nav/sol`: Topic `~navsol`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
 * `publish/nav/status`: Topic `~navstatus`
@@ -201,6 +202,9 @@ The two topics to which you should subscribe are `~fix` and `~fix_velocity`. The
 
 # Version history
 
+* **1.1.4**:
+  - Added messages for firmware 9: `NavRELPOSNED9`.
+  - Added option to publish `sensor_msgs/Imu` message for High Precision Position Receiver devices with firmware version >= 9 for moving base applications (For example ZED-F9P; [UBX-19009093 AppNote](https://www.u-blox.com/sites/default/files/ZED-F9P-MovingBase_AppNote_%28UBX-19009093%29.pdf)).
 * **1.1.3**:
   - Update by TUC-ProAut
   - Added raw data stream output. To publish ros messages set rosparam `raw_data_stream/publish` to true. To store to a logfile set rosparam `set raw_data_stream/dir` to the appropriated directory. This feature has nothing todo with Raw Data Products.

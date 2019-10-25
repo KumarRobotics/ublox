@@ -41,6 +41,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <ros/serialization.h>
+#include <tf/transform_datatypes.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/publisher.h>
 // ROS messages
@@ -1009,6 +1010,14 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
 };
 
 /**
+ *  @brief Implements functions for firmware version 9.
+ *  For now it simply re-uses the firmware version 8 class
+ *  but allows for future expansion of functionality
+ */
+class UbloxFirmware9 : public UbloxFirmware8 {
+};
+
+/**
  * @brief Implements functions for Raw Data products.
  */
 class RawDataProduct: public virtual ComponentInterface {
@@ -1301,6 +1310,28 @@ class HpgRovProduct: public virtual ComponentInterface {
 
   //! The RTCM topic frequency diagnostic updater
   UbloxTopicDiagnostic freq_rtcm_;
+};
+
+class HpPosRecProduct: public virtual HpgRefProduct {
+ public:
+  /**
+   * @brief Subscribe to Rover messages, such as NavRELPOSNED.
+   */
+  void subscribe();
+
+ protected:
+
+  /**
+   * @brief Set the last received message and call rover diagnostic updater
+   *
+   * @details Publish received NavRELPOSNED messages if enabled
+   */
+  void callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m);
+
+  sensor_msgs::Imu imu_;
+
+  //! Last relative position (used for diagnostic updater)
+  ublox_msgs::NavRELPOSNED9 last_rel_pos_;
 };
 
 /**

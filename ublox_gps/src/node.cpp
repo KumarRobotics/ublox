@@ -94,10 +94,14 @@ void UbloxNode::addFirmwareInterface() {
   } else if (protocol_version_ >= 14 && protocol_version_ <= 15) {
     components_.push_back(ComponentPtr(new UbloxFirmware7));
     ublox_version = 7;
-  } else {
+  } else if (protocol_version_ > 15 && protocol_version_ <= 23) {
     components_.push_back(ComponentPtr(new UbloxFirmware8));
     ublox_version = 8;
+  } else {
+    components_.push_back(ComponentPtr(new UbloxFirmware9));
+    ublox_version = 9;
   }
+
   ROS_INFO("U-Blox Firmware Version: %d", ublox_version);
 }
 
@@ -108,6 +112,8 @@ void UbloxNode::addProductInterface(std::string product_category,
     components_.push_back(ComponentPtr(new HpgRefProduct));
   else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0)
     components_.push_back(ComponentPtr(new HpgRovProduct));
+  else if (product_category.compare("HPG") == 0)
+    components_.push_back(ComponentPtr(new HpPosRecProduct));
   else if (product_category.compare("TIM") == 0)
     components_.push_back(ComponentPtr(new TimProduct));
   else if (product_category.compare("ADR") == 0 ||
@@ -118,7 +124,7 @@ void UbloxNode::addProductInterface(std::string product_category,
   else if(product_category.compare("SPG") != 0)
     ROS_WARN("Product category %s %s from MonVER message not recognized %s",
              product_category.c_str(), ref_rov.c_str(),
-             "options are HPG REF, HPG ROV, TIM, ADR, UDR, FTS, SPG");
+             "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, SPG");
 }
 
 void UbloxNode::getRosParams() {
@@ -1690,6 +1696,57 @@ void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
     static ros::Publisher publisher =
         nh->advertise<ublox_msgs::NavRELPOSNED>("navrelposned", kROSQueueSize);
     publisher.publish(m);
+  }
+
+  last_rel_pos_ = m;
+  updater->update();
+}
+
+//
+// U-Blox High Precision Positioning Receiver
+//
+
+void HpPosRecProduct::subscribe() {
+  // Whether to publish Nav Relative Position NED
+  nh->param("publish/nav/relposned", enabled["nav_relposned"], enabled["nav"]);
+  // Subscribe to Nav Relative Position NED messages (also updates diagnostics)
+  gps.subscribe<ublox_msgs::NavRELPOSNED9>(boost::bind(
+     &HpPosRecProduct::callbackNavRelPosNed, this, _1), kSubscribeRate);
+
+  // Whether to publish the Heading info from Nav Relative Position NED
+  nh->param("publish/nav/heading", enabled["nav_heading"], enabled["nav"]);
+}
+
+void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
+  if (enabled["nav_relposned"]) {
+    static ros::Publisher publisher =
+        nh->advertise<ublox_msgs::NavRELPOSNED9>("navrelposned", kROSQueueSize);
+    publisher.publish(m);
+  }
+
+  if (enabled["nav_heading"]) {
+    static ros::Publisher imu_pub =
+	      nh->advertise<sensor_msgs::Imu>("navheading", kROSQueueSize);
+
+    imu_.header.stamp = ros::Time::now();
+    imu_.header.frame_id = frame_id;
+
+    imu_.linear_acceleration_covariance[0] = -1;
+    imu_.angular_velocity_covariance[0] = -1;
+
+    double heading = static_cast<double>(m.relPosHeading) * 1e-5 / 180.0 * M_PI;
+    tf::Quaternion orientation;
+    orientation.setRPY(0, 0, heading);
+    imu_.orientation.x = orientation[0];
+    imu_.orientation.y = orientation[1];
+    imu_.orientation.z = orientation[2];
+    imu_.orientation.w = orientation[3];
+    // Only heading is reported with an accuracy in 0.1mm units
+    imu_.orientation_covariance[0] = 1000.0;
+    imu_.orientation_covariance[4] = 1000.0;
+    imu_.orientation_covariance[8] = pow(m.accHeading / 10000.0, 2);
+
+    imu_pub.publish(imu_);
   }
 
   last_rel_pos_ = m;

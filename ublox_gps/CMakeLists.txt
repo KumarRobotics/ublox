@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ublox_gps)
 find_package(catkin REQUIRED COMPONENTS
+  tf
   roscpp
   roscpp_serialization
   ublox_msgs
@@ -11,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
-    CATKIN_DEPENDS roscpp ublox_msgs ublox_serialization)
+    CATKIN_DEPENDS tf roscpp ublox_msgs ublox_serialization)
 
 # include boost
 find_package(Boost REQUIRED COMPONENTS system regex thread)

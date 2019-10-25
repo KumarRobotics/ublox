@@ -47,6 +47,10 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV,
                       ublox_msgs::Message::NAV::RELPOSNED, 
                       ublox_msgs, 
                       NavRELPOSNED);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV,
+                      ublox_msgs::Message::NAV::RELPOSNED9,
+                      ublox_msgs,
+                      NavRELPOSNED9);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::SBAS, 
                       ublox_msgs, NavSBAS);
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::SOL, 
