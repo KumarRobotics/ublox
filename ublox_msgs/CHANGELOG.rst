@@ -2,8 +2,8 @@
 Changelog for package ublox_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.2.0 (2019-11-19)
+------------------
 * Add support for ZED-F9P new RELPOSNED message and provide heading output
   Fix whitespacing...
   Add RELPOSNED9 message to compile
