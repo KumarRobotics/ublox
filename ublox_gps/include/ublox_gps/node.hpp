@@ -450,7 +450,7 @@ bool supportsGnss(const std::string & gnss) {
  * The UbloxNode calls the public methods of ComponentInterface for each
  * element in the components vector.
  */
-class UbloxNode : public virtual ComponentInterface {
+class UbloxNode final {
  public:
   //! How long to wait during I/O reset [s]
   constexpr static int kResetWait = 10;
