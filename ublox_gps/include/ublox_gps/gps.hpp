@@ -93,7 +93,7 @@ class Gps {
    * @param host the TCP host
    * @param port the TCP port
    */
-  void initializeTcp(std::string host, std::string port);
+  void initializeTcp(const std::string & host, const std::string & port);
 
   /**
    * @brief Initialize the Serial I/O port.
@@ -102,7 +102,7 @@ class Gps {
    * @param uart_in the UART In protocol, see CfgPRT for options
    * @param uart_out the UART Out protocol, see CfgPRT for options
    */
-  void initializeSerial(std::string port, unsigned int baudrate,
+  void initializeSerial(const std::string & port, unsigned int baudrate,
                         uint16_t uart_in, uint16_t uart_out);
 
   /**
@@ -112,7 +112,7 @@ class Gps {
    * @param uart_in the UART In protocol, see CfgPRT for options
    * @param uart_out the UART Out protocol, see CfgPRT for options
    */
-  void resetSerial(std::string port);
+  void resetSerial(const std::string & port);
 
   /**
    * @brief Closes the I/O port, and initiates save on shutdown procedure

@@ -137,7 +137,7 @@ struct UbloxTopicDiagnostic {
    * @param freq_tol the tolerance [%] for the topic frequency
    * @param freq_window the number of messages to use for diagnostic statistics
    */
-  UbloxTopicDiagnostic (std::string topic, double freq_tol, int freq_window) {
+  UbloxTopicDiagnostic(const std::string & topic, double freq_tol, int freq_window) {
     const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
     min_freq = target_freq;
     max_freq = target_freq;
@@ -158,7 +158,7 @@ struct UbloxTopicDiagnostic {
    * @param freq_tol the tolerance [%] for the topic frequency
    * @param freq_window the number of messages to use for diagnostic statistics
    */
-  UbloxTopicDiagnostic (std::string topic, double freq_min, double freq_max,
+  UbloxTopicDiagnostic(const std::string & topic, double freq_min, double freq_max,
                    double freq_tol, int freq_window) {
     min_freq = freq_min;
     max_freq = freq_max;
@@ -255,8 +255,8 @@ uint8_t fixModeFromString(const std::string& mode);
  * @throws std::runtime_error if it is below the minimum
  */
 template <typename V, typename T>
-void checkMin(V val, T min, std::string name) {
-  if(val < min) {
+void checkMin(V val, T min, const std::string & name) {
+  if (val < min) {
     std::stringstream oss;
     oss << "Invalid settings: " << name << " must be > " << min;
     throw std::runtime_error(oss.str());
@@ -272,8 +272,8 @@ void checkMin(V val, T min, std::string name) {
  * @throws std::runtime_error if it is out of bounds
  */
 template <typename V, typename T>
-void checkRange(V val, T min, T max, std::string name) {
-  if(val < min || val > max) {
+void checkRange(V val, T min, T max, const std::string & name) {
+  if (val < min || val > max) {
     std::stringstream oss;
     oss << "Invalid settings: " << name << " must be in range [" << min <<
         ", " << max << "].";
@@ -290,8 +290,8 @@ void checkRange(V val, T min, T max, std::string name) {
  * @throws std::runtime_error value it is out of bounds
  */
 template <typename V, typename T>
-void checkRange(std::vector<V> val, T min, T max, std::string name) {
-  for(size_t i = 0; i < val.size(); i++)  {
+void checkRange(std::vector<V> val, T min, T max, const std::string & name) {
+  for (size_t i = 0; i < val.size(); i++)  {
     std::stringstream oss;
     oss << name << "[" << i << "]";
     checkRange(val[i], min, max, oss.str());
@@ -308,7 +308,9 @@ void checkRange(std::vector<V> val, T min, T max, std::string name) {
 template <typename U>
 bool getRosUint(const std::string& key, U &u) {
   int param;
-  if (!nh->getParam(key, param)) return false;
+  if (!nh->getParam(key, param)) {
+    return false;
+  }
   // Check the bounds
   U min = std::numeric_limits<U>::lowest();
   U max = std::numeric_limits<U>::max();
@@ -328,8 +330,9 @@ bool getRosUint(const std::string& key, U &u) {
  */
 template <typename U, typename V>
 void getRosUint(const std::string& key, U &u, V default_val) {
-  if(!getRosUint(key, u))
+  if (!getRosUint(key, u)) {
     u = default_val;
+  }
 }
 
 /**
@@ -340,7 +343,9 @@ void getRosUint(const std::string& key, U &u, V default_val) {
 template <typename U>
 bool getRosUint(const std::string& key, std::vector<U> &u) {
   std::vector<int> param;
-  if (!nh->getParam(key, param)) return false;
+  if (!nh->getParam(key, param)) {
+    return false;
+  }
 
   // Check the bounds
   U min = std::numeric_limits<U>::lowest();
@@ -362,7 +367,9 @@ bool getRosUint(const std::string& key, std::vector<U> &u) {
 template <typename I>
 bool getRosInt(const std::string& key, I &u) {
   int param;
-  if (!nh->getParam(key, param)) return false;
+  if (!nh->getParam(key, param)) {
+    return false;
+  }
   // Check the bounds
   I min = std::numeric_limits<I>::lowest();
   I max = std::numeric_limits<I>::max();
@@ -382,8 +389,9 @@ bool getRosInt(const std::string& key, I &u) {
  */
 template <typename U, typename V>
 void getRosInt(const std::string& key, U &u, V default_val) {
-  if(!getRosInt(key, u))
+  if (!getRosInt(key, u)) {
     u = default_val;
+  }
 }
 
 /**
@@ -394,7 +402,9 @@ void getRosInt(const std::string& key, U &u, V default_val) {
 template <typename I>
 bool getRosInt(const std::string& key, std::vector<I> &i) {
   std::vector<int> param;
-  if (!nh->getParam(key, param)) return false;
+  if (!nh->getParam(key, param)) {
+    return false;
+  }
 
   // Check the bounds
   I min = std::numeric_limits<I>::lowest();
@@ -426,7 +436,7 @@ void publish(const MessageT& m, const std::string& topic) {
  * i.e. GPS, GLO, GAL, BDS, QZSS, SBAS, IMES
  * @return true if the device supports the given GNSS
  */
-bool supportsGnss(std::string gnss) {
+bool supportsGnss(const std::string & gnss) {
   return supported.count(gnss) > 0;
 }
 
@@ -572,8 +582,8 @@ class UbloxNode : public virtual ComponentInterface {
    * @param for HPG/TIM products, this value is either REF or ROV, for other
    * products this string is empty
    */
-  void addProductInterface(std::string product_category,
-                           std::string ref_rov = "");
+  void addProductInterface(const std::string & product_category,
+                           const std::string & ref_rov = "");
 
   /**
    * @brief Poll messages from the U-Blox device.

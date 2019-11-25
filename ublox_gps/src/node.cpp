@@ -134,8 +134,8 @@ void UbloxNode::addFirmwareInterface() {
 }
 
 
-void UbloxNode::addProductInterface(std::string product_category,
-                                    std::string ref_rov) {
+void UbloxNode::addProductInterface(const std::string & product_category,
+                                    const std::string & ref_rov) {
   if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0)
     components_.push_back(std::make_shared<HpgRefProduct>());
   else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0)

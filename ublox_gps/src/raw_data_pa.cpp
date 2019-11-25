@@ -155,7 +155,7 @@ void RawDataStreamPa::msgCallback(
 }
 
 std_msgs::UInt8MultiArray RawDataStreamPa::str2uint8(
- const std::string str) {
+ const std::string & str) {
 
   std_msgs::UInt8MultiArray msg;
 
@@ -171,12 +171,12 @@ std_msgs::UInt8MultiArray RawDataStreamPa::str2uint8(
   return msg;
 }
 
-void RawDataStreamPa::publishMsg(const std::string str) {
+void RawDataStreamPa::publishMsg(const std::string & str) {
 
   raw_pub_.publish(RawDataStreamPa::str2uint8(str));
 }
 
-void RawDataStreamPa::saveToFile(const std::string str) {
+void RawDataStreamPa::saveToFile(const std::string & str) {
 
   if (file_handle_.is_open()) {
     try {

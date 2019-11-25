@@ -104,19 +104,19 @@ class RawDataStreamPa {
   /**
    * @brief Converts a string into an uint8 multibyte array
    */
-  std_msgs::UInt8MultiArray str2uint8(const std::string str);
+  std_msgs::UInt8MultiArray str2uint8(const std::string & str);
 
   /**
    * @brief Publishes data stream as ros message
    * @param str raw data stream as string
    */
-  void publishMsg(const std::string str);
+  void publishMsg(const std::string & str);
 
   /**
    * @brief Stores data to given file
    * @param str raw data stream as string
    */
-  void saveToFile(const std::string str);
+  void saveToFile(const std::string & str);
 
   //! Directoy name for storing raw data
   std::string file_dir_;

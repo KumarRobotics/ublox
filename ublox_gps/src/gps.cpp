@@ -113,7 +113,7 @@ void Gps::processUpdSosAck(const ublox_msgs::UpdSOSAck &m) {
   }
 }
 
-void Gps::initializeSerial(std::string port, unsigned int baudrate,
+void Gps::initializeSerial(const std::string & port, unsigned int baudrate,
                            uint16_t uart_in, uint16_t uart_out) {
   port_ = port;
   auto io_service = std::make_shared<asio::io_service>();
@@ -172,7 +172,7 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
   }
 }
 
-void Gps::resetSerial(std::string port) {
+void Gps::resetSerial(const std::string & port) {
   auto io_service = std::make_shared<asio::io_service>();
   auto serial = std::make_shared<asio::serial_port>(*io_service);
 
@@ -212,7 +212,7 @@ void Gps::resetSerial(std::string port) {
   configured_ = true;
 }
 
-void Gps::initializeTcp(std::string host, std::string port) {
+void Gps::initializeTcp(const std::string & host, const std::string & port) {
   host_ = host;
   port_ = port;
   auto io_service = std::make_shared<asio::io_service>();
