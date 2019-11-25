@@ -425,9 +425,7 @@ bool getRosInt(const std::string& key, std::vector<I> &i) {
  * @param topic the topic to publish the message on
  */
 template <typename MessageT>
-void publish(const MessageT& m, const std::string& topic) {
-  static ros::Publisher publisher = nh->advertise<MessageT>(topic,
-                                                            kROSQueueSize);
+void publish(const MessageT& m, ros::Publisher & publisher) {
   publisher.publish(m);
 }
 
@@ -656,6 +654,13 @@ class UbloxNode : public virtual ComponentInterface {
 
   //! raw data stream logging
   RawDataStreamPa rawDataStreamPa_;
+
+  ros::Publisher nav_status_pub_;
+  ros::Publisher nav_posecef_pub_;
+  ros::Publisher nav_clock_pub_;
+  ros::Publisher aid_alm_pub_;
+  ros::Publisher aid_eph_pub_;
+  ros::Publisher aid_hui_pub_;
 };
 
 /**
@@ -755,6 +760,8 @@ class UbloxFirmware6 : public UbloxFirmware {
   ros::Publisher nav_vel_ned_pub_;
   ros::Publisher vel_pub_;
   ros::Publisher nav_sol_pub_;
+  ros::Publisher nav_svinfo_pub_;
+  ros::Publisher mon_hw_pub_;
 };
 
 /**
@@ -970,14 +977,17 @@ class UbloxFirmware7 : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
    */
   void subscribe();
 
-  private:
-    //! Used to configure NMEA (if set_nmea_)
-    /*!
-     * Filled from ROS parameters
-     */
-    ublox_msgs::CfgNMEA7 cfg_nmea_;
-    //! Whether or not to Configure the NMEA settings
-    bool set_nmea_;
+ private:
+  //! Used to configure NMEA (if set_nmea_)
+  /*!
+   * Filled from ROS parameters
+   */
+  ublox_msgs::CfgNMEA7 cfg_nmea_;
+  //! Whether or not to Configure the NMEA settings
+  bool set_nmea_;
+
+  ros::Publisher nav_svinfo_pub_;
+  ros::Publisher mon_hw_pub_;
 };
 
 /**
@@ -1026,6 +1036,10 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
   ublox_msgs::CfgNMEA cfg_nmea_;
   //! Whether to clear the flash memory during configuration
   bool clear_bbr_;
+
+  ros::Publisher nav_sat_pub_;
+  ros::Publisher mon_hw_pub_;
+  ros::Publisher rxm_rtcm_pub_;
 };
 
 /**
@@ -1043,6 +1057,8 @@ class RawDataProduct: public virtual ComponentInterface {
  public:
   double kRtcmFreqTol = 0.15;
   int kRtcmFreqWindow = 25;
+
+  RawDataProduct();
 
   /**
    * @brief Does nothing since there are no Raw Data product specific settings.
@@ -1070,6 +1086,11 @@ class RawDataProduct: public virtual ComponentInterface {
  private:
   //! Topic diagnostic updaters
   std::vector<std::shared_ptr<UbloxTopicDiagnostic> > freq_diagnostics_;
+
+  ros::Publisher rxm_raw_pub_;
+  ros::Publisher rxm_sfrb_pub_;
+  ros::Publisher rxm_eph_pub_;
+  ros::Publisher rxm_alm_pub_;
 };
 
 /**
@@ -1123,6 +1144,12 @@ class AdrUdrProduct: public virtual ComponentInterface {
 
   ros::Publisher imu_pub_;
   ros::Publisher time_ref_pub_;
+  ros::Publisher nav_att_pub_;
+  ros::Publisher esf_ins_pub_;
+  ros::Publisher esf_meas_pub_;
+  ros::Publisher esf_raw_pub_;
+  ros::Publisher esf_status_pub_;
+  ros::Publisher hnr_pvt_pub_;
 };
 
 /**
@@ -1414,6 +1441,8 @@ class TimProduct: public virtual ComponentInterface {
 
   ros::Publisher timtm2_pub_;
   ros::Publisher interrupt_time_pub_;
+  ros::Publisher rxm_sfrb_pub_;
+  ros::Publisher rxm_raw_pub_;
 };
 
 }

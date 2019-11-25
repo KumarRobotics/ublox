@@ -110,7 +110,9 @@ class CallbackHandler_ : public CallbackHandler {
       return;
     }
 
-    if (func_) func_(message_);
+    if (func_) {
+      func_(message_);
+    }
     condition_.notify_all();
   }
 
@@ -217,7 +219,7 @@ class CallbackHandlers {
           oss << std::hex << static_cast<unsigned int>(*it) << " ";
         }
         ROS_DEBUG("U-blox: reading %d bytes\n%s", reader.length() + 8,
-                 oss.str().c_str());
+                  oss.str().c_str());
       }
 
       handle(reader);

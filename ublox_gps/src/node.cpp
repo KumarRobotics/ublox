@@ -47,23 +47,23 @@ namespace ublox_node {
 uint8_t modelFromString(const std::string& model) {
   std::string lower = model;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-  if(lower == "portable") {
+  if (lower == "portable") {
     return ublox_msgs::CfgNAV5::DYN_MODEL_PORTABLE;
-  } else if(lower == "stationary") {
+  } else if (lower == "stationary") {
     return ublox_msgs::CfgNAV5::DYN_MODEL_STATIONARY;
-  } else if(lower == "pedestrian") {
+  } else if (lower == "pedestrian") {
     return ublox_msgs::CfgNAV5::DYN_MODEL_PEDESTRIAN;
-  } else if(lower == "automotive") {
+  } else if (lower == "automotive") {
     return ublox_msgs::CfgNAV5::DYN_MODEL_AUTOMOTIVE;
-  } else if(lower == "sea") {
+  } else if (lower == "sea") {
     return ublox_msgs::CfgNAV5::DYN_MODEL_SEA;
-  } else if(lower == "airborne1") {
+  } else if (lower == "airborne1") {
     return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_1G;
-  } else if(lower == "airborne2") {
+  } else if (lower == "airborne2") {
     return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_2G;
-  } else if(lower == "airborne4") {
+  } else if (lower == "airborne4") {
     return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_4G;
-  } else if(lower == "wristwatch") {
+  } else if (lower == "wristwatch") {
     return ublox_msgs::CfgNAV5::DYN_MODEL_WRIST_WATCH;
   }
 
@@ -111,6 +111,12 @@ std::vector<std::string> stringSplit(const std::string &str,
 // u-blox ROS Node
 //
 UbloxNode::UbloxNode() {
+  nav_status_pub_ = nh->advertise<ublox_msgs::NavSTATUS>("navstatus", kROSQueueSize);
+  nav_posecef_pub_ = nh->advertise<ublox_msgs::NavPOSECEF>("navposecef", kROSQueueSize);
+  nav_clock_pub_ = nh->advertise<ublox_msgs::NavCLOCK>("navclock", kROSQueueSize);
+  aid_alm_pub_ = nh->advertise<ublox_msgs::AidALM>("aidalm", kROSQueueSize);
+  aid_eph_pub_ = nh->advertise<ublox_msgs::AidEPH>("aideph", kROSQueueSize);
+  aid_hui_pub_ = nh->advertise<ublox_msgs::AidHUI>("aidhui", kROSQueueSize);
   initialize();
 }
 
@@ -136,23 +142,24 @@ void UbloxNode::addFirmwareInterface() {
 
 void UbloxNode::addProductInterface(const std::string & product_category,
                                     const std::string & ref_rov) {
-  if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0)
+  if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0) {
     components_.push_back(std::make_shared<HpgRefProduct>());
-  else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0)
+  } else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0) {
     components_.push_back(std::make_shared<HpgRovProduct>());
-  else if (product_category.compare("HPG") == 0)
+  } else if (product_category.compare("HPG") == 0) {
     components_.push_back(std::make_shared<HpPosRecProduct>());
-  else if (product_category.compare("TIM") == 0)
+  } else if (product_category.compare("TIM") == 0) {
     components_.push_back(std::make_shared<TimProduct>());
-  else if (product_category.compare("ADR") == 0 ||
-           product_category.compare("UDR") == 0)
+  } else if (product_category.compare("ADR") == 0 ||
+             product_category.compare("UDR") == 0) {
     components_.push_back(std::make_shared<AdrUdrProduct>());
-  else if (product_category.compare("FTS") == 0)
+  } else if (product_category.compare("FTS") == 0) {
     components_.push_back(std::make_shared<FtsProduct>());
-  else if(product_category.compare("SPG") != 0)
+  } else if (product_category.compare("SPG") != 0) {
     ROS_WARN("Product category %s %s from MonVER message not recognized %s",
              product_category.c_str(), ref_rov.c_str(),
              "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, SPG");
+  }
 }
 
 void UbloxNode::getRosParams() {
@@ -175,11 +182,11 @@ void UbloxNode::getRosParams() {
   set_usb_ = false;
   if (nh->hasParam("usb/in") || nh->hasParam("usb/out")) {
     set_usb_ = true;
-    if(!getRosUint("usb/in", usb_in_)) {
+    if (!getRosUint("usb/in", usb_in_)) {
       throw std::runtime_error(std::string("usb/out is set, therefore ") +
         "usb/in must be set");
     }
-    if(!getRosUint("usb/out", usb_out_)) {
+    if (!getRosUint("usb/out", usb_out_)) {
       throw std::runtime_error(std::string("usb/in is set, therefore ") +
         "usb/out must be set");
     }
@@ -201,31 +208,35 @@ void UbloxNode::getRosParams() {
   nh->param("fix_mode", fix_mode_, std::string("auto"));
   getRosUint("dr_limit", dr_limit_, 0); // Dead reckoning limit
 
-  if (enable_ppp_)
+  if (enable_ppp_) {
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
+  }
 
   checkMin(rate_, 0, "rate");
 
-  if(rtcm_ids.size() != rtcm_rates.size())
+  if (rtcm_ids.size() != rtcm_rates.size()) {
     throw std::runtime_error(std::string("Invalid settings: size of rtcm_ids") +
                              " must match size of rtcm_rates");
+  }
 
   dmodel_ = modelFromString(dynamic_model_);
   fmode_ = fixModeFromString(fix_mode_);
 
   nh->param("dat/set", set_dat_, false);
-  if(set_dat_) {
+  if (set_dat_) {
     std::vector<float> shift, rot;
     if (!nh->getParam("dat/majA", cfg_dat_.maj_a)
         || nh->getParam("dat/flat", cfg_dat_.flat)
         || nh->getParam("dat/shift", shift)
         || nh->getParam("dat/rot", rot)
-        || nh->getParam("dat/scale", cfg_dat_.scale))
+        || nh->getParam("dat/scale", cfg_dat_.scale)) {
       throw std::runtime_error(std::string("dat/set is true, therefore ") +
          "dat/majA, dat/flat, dat/shift, dat/rot, & dat/scale must be set");
-    if(shift.size() != 3 || rot.size() != 3)
+    }
+    if (shift.size() != 3 || rot.size() != 3) {
       throw std::runtime_error(std::string("size of dat/shift & dat/rot ") +
                                "must be 3");
+    }
     checkRange(cfg_dat_.maj_a, 6300000.0, 6500000.0, "dat/majA");
     checkRange(cfg_dat_.flat, 0.0, 500.0, "dat/flat");
 
@@ -254,12 +265,15 @@ void UbloxNode::getRosParams() {
 
 void UbloxNode::pollMessages(const ros::TimerEvent& event) {
   static std::vector<uint8_t> payload(1, 1);
-  if (enabled["aid_alm"])
+  if (enabled["aid_alm"]) {
     gps.poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::ALM, payload);
-  if (enabled["aid_eph"])
+  }
+  if (enabled["aid_eph"]) {
     gps.poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::EPH, payload);
-  if (enabled["aid_hui"])
+  }
+  if (enabled["aid_hui"]) {
     gps.poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::HUI);
+  }
 
   payload[0]++;
   if (payload[0] > 32) {
@@ -268,14 +282,15 @@ void UbloxNode::pollMessages(const ros::TimerEvent& event) {
 }
 
 void UbloxNode::printInf(const ublox_msgs::Inf &m, uint8_t id) {
-  if (id == ublox_msgs::Message::INF::ERROR)
+  if (id == ublox_msgs::Message::INF::ERROR) {
     ROS_ERROR_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
-  else if (id == ublox_msgs::Message::INF::WARNING)
+  } else if (id == ublox_msgs::Message::INF::WARNING) {
     ROS_WARN_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
-  else if (id == ublox_msgs::Message::INF::DEBUG)
+  } else if (id == ublox_msgs::Message::INF::DEBUG) {
     ROS_DEBUG_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
-  else
+  } else {
     ROS_INFO_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
+  }
 }
 
 void UbloxNode::subscribe() {
@@ -290,71 +305,82 @@ void UbloxNode::subscribe() {
 
   // Nav Messages
   nh->param("publish/nav/status", enabled["nav_status"], enabled["nav"]);
-  if (enabled["nav_status"])
+  if (enabled["nav_status"]) {
     gps.subscribe<ublox_msgs::NavSTATUS>(std::bind(
-        publish<ublox_msgs::NavSTATUS>, std::placeholders::_1, "navstatus"), kSubscribeRate);
+        publish<ublox_msgs::NavSTATUS>, std::placeholders::_1, nav_status_pub_), kSubscribeRate);
+  }
 
   nh->param("publish/nav/posecef", enabled["nav_posecef"], enabled["nav"]);
-  if (enabled["nav_posecef"])
+  if (enabled["nav_posecef"]) {
     gps.subscribe<ublox_msgs::NavPOSECEF>(std::bind(
-        publish<ublox_msgs::NavPOSECEF>, std::placeholders::_1, "navposecef"), kSubscribeRate);
+        publish<ublox_msgs::NavPOSECEF>, std::placeholders::_1, nav_posecef_pub_), kSubscribeRate);
+  }
 
   nh->param("publish/nav/clock", enabled["nav_clock"], enabled["nav"]);
-  if (enabled["nav_clock"])
+  if (enabled["nav_clock"]) {
     gps.subscribe<ublox_msgs::NavCLOCK>(std::bind(
-        publish<ublox_msgs::NavCLOCK>, std::placeholders::_1, "navclock"), kSubscribeRate);
+        publish<ublox_msgs::NavCLOCK>, std::placeholders::_1, nav_clock_pub_), kSubscribeRate);
+  }
 
   // INF messages
   nh->param("inf/debug", enabled["inf_debug"], false);
-  if (enabled["inf_debug"])
+  if (enabled["inf_debug"]) {
     gps.subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::DEBUG),
         ublox_msgs::Message::INF::DEBUG);
+  }
 
   nh->param("inf/error", enabled["inf_error"], enabled["inf"]);
-  if (enabled["inf_error"])
+  if (enabled["inf_error"]) {
     gps.subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::ERROR),
         ublox_msgs::Message::INF::ERROR);
+  }
 
   nh->param("inf/notice", enabled["inf_notice"], enabled["inf"]);
-  if (enabled["inf_notice"])
+  if (enabled["inf_notice"]) {
     gps.subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::NOTICE),
         ublox_msgs::Message::INF::NOTICE);
+  }
 
   nh->param("inf/test", enabled["inf_test"], enabled["inf"]);
-  if (enabled["inf_test"])
+  if (enabled["inf_test"]) {
     gps.subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::TEST),
         ublox_msgs::Message::INF::TEST);
+  }
 
   nh->param("inf/warning", enabled["inf_warning"], enabled["inf"]);
-  if (enabled["inf_warning"])
+  if (enabled["inf_warning"]) {
     gps.subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::WARNING),
         ublox_msgs::Message::INF::WARNING);
+  }
 
   // AID messages
   nh->param("publish/aid/alm", enabled["aid_alm"], enabled["aid"]);
-  if (enabled["aid_alm"])
+  if (enabled["aid_alm"]) {
     gps.subscribe<ublox_msgs::AidALM>(std::bind(
-        publish<ublox_msgs::AidALM>, std::placeholders::_1, "aidalm"), kSubscribeRate);
+        publish<ublox_msgs::AidALM>, std::placeholders::_1, aid_alm_pub_), kSubscribeRate);
+  }
 
   nh->param("publish/aid/eph", enabled["aid_eph"], enabled["aid"]);
-  if (enabled["aid_eph"])
+  if (enabled["aid_eph"]) {
     gps.subscribe<ublox_msgs::AidEPH>(std::bind(
-        publish<ublox_msgs::AidEPH>, std::placeholders::_1, "aideph"), kSubscribeRate);
+        publish<ublox_msgs::AidEPH>, std::placeholders::_1, aid_eph_pub_), kSubscribeRate);
+  }
 
   nh->param("publish/aid/hui", enabled["aid_hui"], enabled["aid"]);
-  if (enabled["aid_hui"])
+  if (enabled["aid_hui"]) {
     gps.subscribe<ublox_msgs::AidHUI>(std::bind(
-        publish<ublox_msgs::AidHUI>, std::placeholders::_1, "aidhui"), kSubscribeRate);
+        publish<ublox_msgs::AidHUI>, std::placeholders::_1, aid_hui_pub_), kSubscribeRate);
+  }
 
   for (size_t i = 0; i < components_.size(); i++) {
     components_[i]->subscribe();
@@ -376,7 +402,6 @@ void UbloxNode::initializeRosDiagnostics() {
     components_[i]->initializeRosDiagnostics();
   }
 }
-
 
 void UbloxNode::processMonVer() {
   ublox_msgs::MonVER monVer;
@@ -422,7 +447,7 @@ void UbloxNode::processMonVer() {
       supported.insert(strs[i]);
     }
   } else {
-    for(std::size_t i = 0; i < extension.size(); ++i) {
+    for (std::size_t i = 0; i < extension.size(); ++i) {
       std::vector<std::string> strs;
       // Up to 2nd to last line
       if (i <= extension.size() - 2) {
@@ -595,7 +620,7 @@ void UbloxNode::initialize() {
   initializeIo();
   // Must process Mon VER before setting firmware/hardware params
   processMonVer();
-  if(protocol_version_ <= 14) {
+  if (protocol_version_ <= 14) {
     if (nh->param("raw_data", false)) {
       components_.push_back(std::make_shared<RawDataProduct>());
     }
@@ -647,17 +672,23 @@ UbloxFirmware6::UbloxFirmware6()
   nav_pos_llh_pub_ =
     nh->advertise<ublox_msgs::NavPOSLLH>("navposllh", kROSQueueSize);
   fix_pub_ =
-      nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
+    nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
 
   nav_vel_ned_pub_ =
     nh->advertise<ublox_msgs::NavVELNED>("navvelned", kROSQueueSize);
 
   vel_pub_ =
-      nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
-                                                                kROSQueueSize);
+    nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
+                                                             kROSQueueSize);
 
-    nav_sol_pub_ =
-      nh->advertise<ublox_msgs::NavSOL>("navsol", kROSQueueSize);
+  nav_sol_pub_ =
+    nh->advertise<ublox_msgs::NavSOL>("navsol", kROSQueueSize);
+
+  nav_svinfo_pub_ =
+    nh->advertise<ublox_msgs::NavSVINFO>("navinfo", kROSQueueSize);
+
+  mon_hw_pub_ =
+    nh->advertise<ublox_msgs::MonHW6>("monhw", kROSQueueSize);
 }
 
 void UbloxFirmware6::getRosParams() {
@@ -737,7 +768,7 @@ void UbloxFirmware6::subscribe() {
   nh->param("publish/nav/svinfo", enabled["nav_svinfo"], enabled["nav"]);
   if (enabled["nav_svinfo"]) {
     gps.subscribe<ublox_msgs::NavSVINFO>(std::bind(
-        publish<ublox_msgs::NavSVINFO>, std::placeholders::_1, "navsvinfo"),
+        publish<ublox_msgs::NavSVINFO>, std::placeholders::_1, nav_svinfo_pub_),
         kNavSvInfoSubscribeRate);
   }
 
@@ -745,7 +776,7 @@ void UbloxFirmware6::subscribe() {
   nh->param("publish/mon_hw", enabled["mon_hw"], enabled["mon"]);
   if (enabled["mon_hw"]) {
     gps.subscribe<ublox_msgs::MonHW6>(std::bind(
-        publish<ublox_msgs::MonHW6>, std::placeholders::_1, "monhw"), kSubscribeRate);
+        publish<ublox_msgs::MonHW6>, std::placeholders::_1, mon_hw_pub_), kSubscribeRate);
   }
 }
 
@@ -873,6 +904,8 @@ void UbloxFirmware6::callbackNavSol(const ublox_msgs::NavSOL& m) {
 // Ublox Firmware Version 7
 //
 UbloxFirmware7::UbloxFirmware7() {
+  nav_svinfo_pub_ = nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", kROSQueueSize);
+  mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
 }
 
 void UbloxFirmware7::getRosParams() {
@@ -1022,7 +1055,7 @@ bool UbloxFirmware7::configureUblox() {
     }
   }
 
-  if(supportsGnss("SBAS")) {
+  if (supportsGnss("SBAS")) {
     // configure SBAS
     ublox_msgs::CfgGNSSBlock block;
     block.gnss_id = block.GNSS_ID_SBAS;
@@ -1055,22 +1088,28 @@ void UbloxFirmware7::subscribe() {
 
   // Subscribe to Nav SVINFO
   nh->param("publish/nav/svinfo", enabled["nav_svinfo"], enabled["nav"]);
-  if (enabled["nav_svinfo"])
+  if (enabled["nav_svinfo"]) {
     gps.subscribe<ublox_msgs::NavSVINFO>(std::bind(
-        publish<ublox_msgs::NavSVINFO>, std::placeholders::_1, "navsvinfo"),
+        publish<ublox_msgs::NavSVINFO>, std::placeholders::_1, nav_svinfo_pub_),
         kNavSvInfoSubscribeRate);
+  }
 
   // Subscribe to Mon HW
   nh->param("publish/mon_hw", enabled["mon_hw"], enabled["mon"]);
-  if (enabled["mon_hw"])
+  if (enabled["mon_hw"]) {
     gps.subscribe<ublox_msgs::MonHW>(std::bind(
-        publish<ublox_msgs::MonHW>, std::placeholders::_1, "monhw"), kSubscribeRate);
+        publish<ublox_msgs::MonHW>, std::placeholders::_1, mon_hw_pub_), kSubscribeRate);
+  }
 }
 
 //
 // Ublox Version 8
 //
-UbloxFirmware8::UbloxFirmware8() {}
+UbloxFirmware8::UbloxFirmware8() {
+  nav_sat_pub_ = nh->advertise<ublox_msgs::NavSAT>("navsate", kROSQueueSize);
+  mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
+  rxm_rtcm_pub_ = nh->advertise<ublox_msgs::RxmRTCM>("rxmrtcm", kROSQueueSize);
+}
 
 void UbloxFirmware8::getRosParams() {
   // UPD SOS configuration
@@ -1089,25 +1128,32 @@ void UbloxFirmware8::getRosParams() {
   getRosUint("gnss/qzss_sig_cfg", qzss_sig_cfg_,
               ublox_msgs::CfgGNSSBlock::SIG_CFG_QZSS_L1CA);
 
-  if (enable_gps_ && !supportsGnss("GPS"))
+  if (enable_gps_ && !supportsGnss("GPS")) {
     ROS_WARN("gnss/gps is true, but GPS GNSS is not supported by %s",
              "this device");
-  if (enable_glonass_ && !supportsGnss("GLO"))
+  }
+  if (enable_glonass_ && !supportsGnss("GLO")) {
     ROS_WARN("gnss/glonass is true, but GLONASS is not supported by %s",
              "this device");
-  if (enable_galileo_ && !supportsGnss("GAL"))
+  }
+  if (enable_galileo_ && !supportsGnss("GAL")) {
     ROS_WARN("gnss/galileo is true, but Galileo GNSS is not supported %s",
              "by this device");
-  if (enable_beidou_ && !supportsGnss("BDS"))
+  }
+  if (enable_beidou_ && !supportsGnss("BDS")) {
     ROS_WARN("gnss/beidou is true, but Beidou GNSS is not supported %s",
              "by this device");
-  if (enable_imes_ && !supportsGnss("IMES"))
+  }
+  if (enable_imes_ && !supportsGnss("IMES")) {
     ROS_WARN("gnss/imes is true, but IMES GNSS is not supported by %s",
              "this device");
-  if (enable_qzss_ && !supportsGnss("QZSS"))
+  }
+  if (enable_qzss_ && !supportsGnss("QZSS")) {
     ROS_WARN("gnss/qzss is true, but QZSS is not supported by this device");
-  if (enable_sbas_ && !supportsGnss("SBAS"))
+  }
+  if (enable_sbas_ && !supportsGnss("SBAS")) {
     ROS_WARN("gnss/sbas is true, but SBAS is not supported by this device");
+  }
 
   // Fix Service type, used when publishing fix status messages
   fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS
@@ -1124,21 +1170,26 @@ void UbloxFirmware8::getRosParams() {
     cfg_nmea_.version = cfg_nmea_.VERSION; // message version
 
     // Verify that parameters are set
-    if (!getRosUint("nmea/version", cfg_nmea_.nmea_version))
+    if (!getRosUint("nmea/version", cfg_nmea_.nmea_version)) {
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/version must be set");
-    if (!getRosUint("nmea/num_sv", cfg_nmea_.num_sv))
+    }
+    if (!getRosUint("nmea/num_sv", cfg_nmea_.num_sv)) {
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
                 "true, therefore nmea/num_sv must be set");
-    if (!getRosUint("nmea/sv_numbering", cfg_nmea_.sv_numbering))
+    }
+    if (!getRosUint("nmea/sv_numbering", cfg_nmea_.sv_numbering)) {
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/sv_numbering must be set");
-    if (!nh->getParam("nmea/compat", compat))
+    }
+    if (!nh->getParam("nmea/compat", compat)) {
         throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/compat must be set");
-    if (!nh->getParam("nmea/consider", consider))
+    }
+    if (!nh->getParam("nmea/consider", consider)) {
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/consider must be set");
+    }
 
     // set flags
     cfg_nmea_.flags = compat ? cfg_nmea_.FLAGS_COMPAT : 0;
@@ -1249,9 +1300,10 @@ bool UbloxFirmware8::configureUblox() {
       cfg_gnss.blocks[i].flags =
           (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_qzss_;
       ROS_DEBUG("QZSS Configuration: %u", cfg_gnss.blocks[i].flags);
-      if (enable_qzss_)
+      if (enable_qzss_) {
         // Only change sig cfg if enabling
         cfg_gnss.blocks[i].flags |= qzss_sig_cfg_;
+      }
     } else if (block.gnss_id == block.GNSS_ID_GLONASS
                && enable_glonass_ != (block.flags & block.FLAGS_ENABLE)) {
       correct = false;
@@ -1263,17 +1315,19 @@ bool UbloxFirmware8::configureUblox() {
 
   // If the GNSS is already configured correctly, do not re-configure GNSS
   // since this requires a cold reset
-  if (correct)
+  if (correct) {
     ROS_DEBUG("U-Blox GNSS configuration is correct. GNSS not re-configured.");
-  else if (!gps.configGnss(cfg_gnss, std::chrono::seconds(15)))
+  } else if (!gps.configGnss(cfg_gnss, std::chrono::seconds(15))) {
     throw std::runtime_error(std::string("Failed to cold reset device ") +
                              "after configuring GNSS");
+  }
 
   //
   // NMEA config
   //
-  if (set_nmea_ && !gps.configure(cfg_nmea_))
+  if (set_nmea_ && !gps.configure(cfg_nmea_)) {
     throw std::runtime_error("Failed to configure NMEA");
+  }
 
   return true;
 }
@@ -1287,53 +1341,67 @@ void UbloxFirmware8::subscribe() {
 
   // Subscribe to Nav SAT messages
   nh->param("publish/nav/sat", enabled["nav_sat"], enabled["nav"]);
-  if (enabled["nav_sat"])
+  if (enabled["nav_sat"]) {
     gps.subscribe<ublox_msgs::NavSAT>(std::bind(
-        publish<ublox_msgs::NavSAT>, std::placeholders::_1, "navsat"), kNavSvInfoSubscribeRate);
+        publish<ublox_msgs::NavSAT>, std::placeholders::_1, nav_sat_pub_), kNavSvInfoSubscribeRate);
+  }
 
   // Subscribe to Mon HW
   nh->param("publish/mon/hw", enabled["mon_hw"], enabled["mon"]);
-  if (enabled["mon_hw"])
+  if (enabled["mon_hw"]) {
     gps.subscribe<ublox_msgs::MonHW>(std::bind(
-        publish<ublox_msgs::MonHW>, std::placeholders::_1, "monhw"), kSubscribeRate);
+        publish<ublox_msgs::MonHW>, std::placeholders::_1, mon_hw_pub_), kSubscribeRate);
+  }
 
   // Subscribe to RTCM messages
   nh->param("publish/rxm/rtcm", enabled["rxm_rtcm"], enabled["rxm"]);
-  if (enabled["rxm_rtcm"])
+  if (enabled["rxm_rtcm"]) {
     gps.subscribe<ublox_msgs::RxmRTCM>(std::bind(
-        publish<ublox_msgs::RxmRTCM>, std::placeholders::_1, "rxmrtcm"), kSubscribeRate);
+        publish<ublox_msgs::RxmRTCM>, std::placeholders::_1, rxm_rtcm_pub_), kSubscribeRate);
+  }
 }
 
 //
 // Raw Data Products
 //
+RawDataProduct::RawDataProduct() {
+  rxm_raw_pub_ = nh->advertise<ublox_msgs::RxmRAW>("rxmraw", kROSQueueSize);
+  rxm_sfrb_pub_ = nh->advertise<ublox_msgs::RxmSFRB>("rxmsfrb", kROSQueueSize);
+  rxm_eph_pub_ = nh->advertise<ublox_msgs::RxmEPH>("rxmeph", kROSQueueSize);
+  rxm_alm_pub_ = nh->advertise<ublox_msgs::RxmALM>("rxmalm", kROSQueueSize);
+}
+
 void RawDataProduct::subscribe() {
   // Defaults to true instead of to all
   nh->param("publish/rxm/all", enabled["rxm"], true);
 
   // Subscribe to RXM Raw
   nh->param("publish/rxm/raw", enabled["rxm_raw"], enabled["rxm"]);
-  if (enabled["rxm_raw"])
+  if (enabled["rxm_raw"]) {
     gps.subscribe<ublox_msgs::RxmRAW>(std::bind(
-        publish<ublox_msgs::RxmRAW>, std::placeholders::_1, "rxmraw"), kSubscribeRate);
+        publish<ublox_msgs::RxmRAW>, std::placeholders::_1, rxm_raw_pub_), kSubscribeRate);
+  }
 
   // Subscribe to RXM SFRB
   nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], enabled["rxm"]);
-  if (enabled["rxm_sfrb"])
+  if (enabled["rxm_sfrb"]) {
     gps.subscribe<ublox_msgs::RxmSFRB>(std::bind(
-        publish<ublox_msgs::RxmSFRB>, std::placeholders::_1, "rxmsfrb"), kSubscribeRate);
+        publish<ublox_msgs::RxmSFRB>, std::placeholders::_1, rxm_sfrb_pub_), kSubscribeRate);
+  }
 
   // Subscribe to RXM EPH
   nh->param("publish/rxm/eph", enabled["rxm_eph"], enabled["rxm"]);
-  if (enabled["rxm_eph"])
+  if (enabled["rxm_eph"]) {
     gps.subscribe<ublox_msgs::RxmEPH>(std::bind(
-        publish<ublox_msgs::RxmEPH>, std::placeholders::_1, "rxmeph"), kSubscribeRate);
+        publish<ublox_msgs::RxmEPH>, std::placeholders::_1, rxm_eph_pub_), kSubscribeRate);
+  }
 
   // Subscribe to RXM ALM
   nh->param("publish/rxm/almRaw", enabled["rxm_alm"], enabled["rxm"]);
-  if (enabled["rxm_alm"])
+  if (enabled["rxm_alm"]) {
     gps.subscribe<ublox_msgs::RxmALM>(std::bind(
-        publish<ublox_msgs::RxmALM>, std::placeholders::_1, "rxmalm"), kSubscribeRate);
+        publish<ublox_msgs::RxmALM>, std::placeholders::_1, rxm_alm_pub_), kSubscribeRate);
+  }
 }
 
 void RawDataProduct::initializeRosDiagnostics() {
@@ -1364,6 +1432,12 @@ AdrUdrProduct::AdrUdrProduct()
     nh->advertise<sensor_msgs::Imu>("imu_meas", kROSQueueSize);
   time_ref_pub_ =
     nh->advertise<sensor_msgs::TimeReference>("interrupt_time", kROSQueueSize);
+  nav_att_pub_ = nh->advertise<ublox_msgs::NavATT>("navatt", kROSQueueSize);
+  esf_ins_pub_ = nh->advertise<ublox_msgs::EsfINS>("esfins", kROSQueueSize);
+  esf_meas_pub_ = nh->advertise<ublox_msgs::EsfMEAS>("esfmeas", kROSQueueSize);
+  esf_raw_pub_ = nh->advertise<ublox_msgs::EsfRAW>("esfraw", kROSQueueSize);
+  esf_status_pub_ = nh->advertise<ublox_msgs::EsfSTATUS>("esfstatus", kROSQueueSize);
+  hnr_pvt_pub_ = nh->advertise<ublox_msgs::HnrPVT>("hnrpvt", kROSQueueSize);
 }
 
 void AdrUdrProduct::getRosParams() {
@@ -1388,42 +1462,48 @@ void AdrUdrProduct::subscribe() {
 
   // Subscribe to NAV ATT messages
   nh->param("publish/nav/att", enabled["nav_att"], enabled["nav"]);
-  if (enabled["nav_att"])
+  if (enabled["nav_att"]) {
     gps.subscribe<ublox_msgs::NavATT>(std::bind(
-        publish<ublox_msgs::NavATT>, std::placeholders::_1, "navatt"), kSubscribeRate);
+        publish<ublox_msgs::NavATT>, std::placeholders::_1, nav_att_pub_), kSubscribeRate);
+  }
 
   // Subscribe to ESF INS messages
   nh->param("publish/esf/ins", enabled["esf_ins"], enabled["esf"]);
-  if (enabled["esf_ins"])
+  if (enabled["esf_ins"]) {
     gps.subscribe<ublox_msgs::EsfINS>(std::bind(
-        publish<ublox_msgs::EsfINS>, std::placeholders::_1, "esfins"), kSubscribeRate);
+        publish<ublox_msgs::EsfINS>, std::placeholders::_1, esf_ins_pub_), kSubscribeRate);
+  }
 
   // Subscribe to ESF Meas messages
   nh->param("publish/esf/meas", enabled["esf_meas"], enabled["esf"]);
-  if (enabled["esf_meas"])
+  if (enabled["esf_meas"]) {
     gps.subscribe<ublox_msgs::EsfMEAS>(std::bind(
-        publish<ublox_msgs::EsfMEAS>, std::placeholders::_1, "esfmeas"), kSubscribeRate);
+        publish<ublox_msgs::EsfMEAS>, std::placeholders::_1, esf_meas_pub_), kSubscribeRate);
     // also publish sensor_msgs::Imu
     gps.subscribe<ublox_msgs::EsfMEAS>(std::bind(
       &AdrUdrProduct::callbackEsfMEAS, this, std::placeholders::_1), kSubscribeRate);
+  }
 
   // Subscribe to ESF Raw messages
   nh->param("publish/esf/raw", enabled["esf_raw"], enabled["esf"]);
-  if (enabled["esf_raw"])
+  if (enabled["esf_raw"]) {
     gps.subscribe<ublox_msgs::EsfRAW>(std::bind(
-        publish<ublox_msgs::EsfRAW>, std::placeholders::_1, "esfraw"), kSubscribeRate);
+        publish<ublox_msgs::EsfRAW>, std::placeholders::_1, esf_raw_pub_), kSubscribeRate);
+  }
 
   // Subscribe to ESF Status messages
   nh->param("publish/esf/status", enabled["esf_status"], enabled["esf"]);
-  if (enabled["esf_status"])
+  if (enabled["esf_status"]) {
     gps.subscribe<ublox_msgs::EsfSTATUS>(std::bind(
-        publish<ublox_msgs::EsfSTATUS>, std::placeholders::_1, "esfstatus"), kSubscribeRate);
+        publish<ublox_msgs::EsfSTATUS>, std::placeholders::_1, esf_status_pub_), kSubscribeRate);
+  }
 
   // Subscribe to HNR PVT messages
   nh->param("publish/hnr/pvt", enabled["hnr_pvt"], true);
-  if (enabled["hnr_pvt"])
+  if (enabled["hnr_pvt"]) {
     gps.subscribe<ublox_msgs::HnrPVT>(std::bind(
-        publish<ublox_msgs::HnrPVT>, std::placeholders::_1, "hnrpvt"), kSubscribeRate);
+        publish<ublox_msgs::HnrPVT>, std::placeholders::_1, hnr_pvt_pub_), kSubscribeRate);
+  }
 }
 
 void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
@@ -1567,7 +1647,7 @@ void HpgRefProduct::getRosParams() {
         throw std::runtime_error(std::string("Invalid settings: sv_in/acc_lim ")
                                 + "must be set if TMODE3 is survey-in");
       }
-    } else if(tmode3_ != ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
+    } else if (tmode3_ != ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
       throw std::runtime_error(std::string("tmode3 param invalid. See CfgTMODE3")
                               + " flag constants for possible values.");
     }
@@ -1576,7 +1656,7 @@ void HpgRefProduct::getRosParams() {
 
 bool HpgRefProduct::configureUblox() {
   // Configure TMODE3
-  if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
+  if (tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
     if (!gps.disableTmode3()) {
       throw std::runtime_error("Failed to disable TMODE3.");
     }
@@ -1590,7 +1670,7 @@ bool HpgRefProduct::configureUblox() {
       throw std::runtime_error("Failed to set RTCM rates");
     }
     mode_ = FIXED;
-  } else if(tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
+  } else if (tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
     if (!svin_reset_) {
       ublox_msgs::NavSVIN nav_svin;
       if (!gps.poll(nav_svin)) {
@@ -1879,6 +1959,8 @@ TimProduct::TimProduct()
     nh->advertise<ublox_msgs::TimTM2>("timtm2", kROSQueueSize);
   interrupt_time_pub_ =
     nh->advertise<sensor_msgs::TimeReference>("interrupt_time", kROSQueueSize);
+  rxm_sfrb_pub_ = nh->advertise<ublox_msgs::RxmSFRBX>("rxmsfrb", kROSQueueSize);
+  rxm_raw_pub_ = nh->advertise<ublox_msgs::RxmRAWX>("rxmraw", kROSQueueSize);
 }
 
 void TimProduct::getRosParams() {
@@ -1913,14 +1995,14 @@ void TimProduct::subscribe() {
   nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], enabled["rxm"]);
   if (enabled["rxm_sfrb"]) {
     gps.subscribe<ublox_msgs::RxmSFRBX>(std::bind(
-        publish<ublox_msgs::RxmSFRBX>, std::placeholders::_1, "rxmsfrb"), kSubscribeRate);
+        publish<ublox_msgs::RxmSFRBX>, std::placeholders::_1, rxm_sfrb_pub_), kSubscribeRate);
   }
 
    // Subscribe to RawX messages
    nh->param("publish/rxm/raw", enabled["rxm_raw"], enabled["rxm"]);
    if (enabled["rxm_raw"]) {
      gps.subscribe<ublox_msgs::RxmRAWX>(std::bind(
-        publish<ublox_msgs::RxmRAWX>, std::placeholders::_1, "rxmraw"), kSubscribeRate);
+        publish<ublox_msgs::RxmRAWX>, std::placeholders::_1, rxm_raw_pub_), kSubscribeRate);
    }
 }
 

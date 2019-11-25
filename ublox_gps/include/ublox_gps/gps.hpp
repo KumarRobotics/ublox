@@ -482,7 +482,9 @@ class Gps {
 template <typename T>
 void Gps::subscribe(
     typename CallbackHandler_<T>::Callback callback, unsigned int rate) {
-  if (!setRate(T::CLASS_ID, T::MESSAGE_ID, rate)) return;
+  if (!setRate(T::CLASS_ID, T::MESSAGE_ID, rate)) {
+    return;
+  }
   subscribe<T>(callback);
 }
 
@@ -501,19 +503,25 @@ template <typename ConfigT>
 bool Gps::poll(ConfigT& message,
                const std::vector<uint8_t>& payload,
                const std::chrono::milliseconds& timeout) {
-  if (!poll(ConfigT::CLASS_ID, ConfigT::MESSAGE_ID, payload)) return false;
+  if (!poll(ConfigT::CLASS_ID, ConfigT::MESSAGE_ID, payload)) {
+    return false;
+  }
   return read(message, timeout);
 }
 
 template <typename T>
 bool Gps::read(T& message, const std::chrono::milliseconds& timeout) {
-  if (!worker_) return false;
+  if (!worker_) {
+    return false;
+  }
   return callbacks_.read(message, timeout);
 }
 
 template <typename ConfigT>
 bool Gps::configure(const ConfigT& message, bool wait) {
-  if (!worker_) return false;
+  if (!worker_) {
+    return false;
+  }
 
   // Reset ack
   Ack ack;
