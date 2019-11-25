@@ -27,7 +27,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#include <ublox_gps/gps.h>
+#include <ublox_gps/gps.hpp>
 #include <boost/version.hpp>
 
 namespace ublox_gps {

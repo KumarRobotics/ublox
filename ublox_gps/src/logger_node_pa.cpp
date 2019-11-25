@@ -35,7 +35,7 @@
 // ROS includes
 #include <ros/ros.h>
 // Ublox GPS includes
-#include <ublox_gps/raw_data_pa.h>
+#include <ublox_gps/raw_data_pa.hpp>
 
 using namespace ublox_node;
 

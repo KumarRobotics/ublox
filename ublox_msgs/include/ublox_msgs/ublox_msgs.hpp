@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#ifndef UBLOX_MSGS_H
-#define UBLOX_MSGS_H
+#ifndef UBLOX_MSGS_HPP
+#define UBLOX_MSGS_HPP
 
 #include <ublox_msgs/NavATT.h>
 #include <ublox_msgs/NavCLOCK.h>
@@ -256,4 +256,4 @@ namespace Message {
 
 } //!< namespace ublox_msgs
 
-#endif //!< UBLOX_MSGS_H
+#endif //!< UBLOX_MSGS_HPP

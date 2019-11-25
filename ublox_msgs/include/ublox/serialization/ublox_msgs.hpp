@@ -27,12 +27,12 @@
 //==============================================================================
 
 
-#ifndef UBLOX_SERIALIZATION_UBLOX_MSGS_H
-#define UBLOX_SERIALIZATION_UBLOX_MSGS_H
+#ifndef UBLOX_SERIALIZATION_UBLOX_MSGS_HPP
+#define UBLOX_SERIALIZATION_UBLOX_MSGS_HPP
 
 #include <ros/console.h>
-#include <ublox/serialization.h>
-#include <ublox_msgs/ublox_msgs.h>
+#include <ublox/serialization.hpp>
+#include <ublox_msgs/ublox_msgs.hpp>
 
 ///
 /// This file declares custom serializers for u-blox messages with dynamic 
@@ -880,4 +880,4 @@ struct Serializer<ublox_msgs::EsfSTATUS_<ContainerAllocator> > {
 
 } // namespace ublox
 
-#endif // UBLOX_SERIALIZATION_UBLOX_MSGS_H
+#endif // UBLOX_SERIALIZATION_UBLOX_MSGS_HPP

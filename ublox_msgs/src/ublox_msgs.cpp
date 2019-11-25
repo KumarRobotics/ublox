@@ -26,7 +26,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#include <ublox/serialization/ublox_msgs.h>
+#include <ublox/serialization/ublox_msgs.hpp>
 
 template <typename T>
 std::vector<std::pair<uint8_t,uint8_t> > ublox::Message<T>::keys_;

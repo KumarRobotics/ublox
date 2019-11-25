@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#ifndef UBLOX_SERIALIZATION_H
-#define UBLOX_SERIALIZATION_H
+#ifndef UBLOX_SERIALIZATION_HPP
+#define UBLOX_SERIALIZATION_HPP
 
 #include <ros/console.h>
 #include <stdint.h>
@@ -35,7 +35,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "checksum.h"
+#include "checksum.hpp"
 
 ///
 /// This file defines the Serializer template class which encodes and decodes
@@ -437,7 +437,7 @@ class Writer {
   } } \
 
 
-// use implementation of class Serializer in "serialization_ros.h"
-#include "serialization_ros.h"
+// use implementation of class Serializer in "serialization_ros.hpp"
+#include "serialization_ros.hpp"
 
-#endif // UBLOX_SERIALIZATION_H
+#endif // UBLOX_SERIALIZATION_HPP

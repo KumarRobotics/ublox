@@ -27,8 +27,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#ifndef UBLOX_GPS_NODE_H
-#define UBLOX_GPS_NODE_H
+#ifndef UBLOX_GPS_NODE_HPP
+#define UBLOX_GPS_NODE_HPP
 
 // STL
 #include <vector>
@@ -51,11 +51,11 @@
 #include <sensor_msgs/TimeReference.h>
 #include <sensor_msgs/Imu.h>
 // Other U-Blox package includes
-#include <ublox_msgs/ublox_msgs.h>
+#include <ublox_msgs/ublox_msgs.hpp>
 // Ublox GPS includes
-#include <ublox_gps/gps.h>
-#include <ublox_gps/utils.h>
-#include <ublox_gps/raw_data_pa.h>
+#include <ublox_gps/gps.hpp>
+#include <ublox_gps/utils.hpp>
+#include <ublox_gps/raw_data_pa.hpp>
 
 // This file declares the ComponentInterface which acts as a high level
 // interface for u-blox firmware, product categories, etc. It contains methods
@@ -1087,7 +1087,7 @@ class AdrUdrProduct: public virtual ComponentInterface {
    */
   void initializeRosDiagnostics() {
     ROS_WARN("ROS Diagnostics specific to u-blox ADR/UDR devices is %s",
-             "unimplemented. See AdrUdrProduct class in node.h & node.cpp.");
+             "unimplemented. See AdrUdrProduct class in node.hpp & node.cpp.");
   }
 
  protected:
@@ -1113,7 +1113,7 @@ class FtsProduct: public virtual ComponentInterface {
    */
   void getRosParams() {
     ROS_WARN("Functionality specific to u-blox FTS devices is %s",
-             "unimplemented. See FtsProduct class in node.h & node.cpp.");
+             "unimplemented. See FtsProduct class in node.hpp & node.cpp.");
   }
 
   /**
@@ -1376,4 +1376,4 @@ class TimProduct: public virtual ComponentInterface {
 
 }
 
-#endif
+#endif  // UBLOX_GPS_NODE_HPP

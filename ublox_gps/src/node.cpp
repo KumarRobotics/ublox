@@ -27,7 +27,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#include "ublox_gps/node.h"
+#include "ublox_gps/node.hpp"
 #include <cmath>
 #include <string>
 #include <sstream>

@@ -32,7 +32,7 @@
 // the data as ros messages. This is used by our group to also evaluate the
 // measured data with the rtklib.
 
-#include "ublox_gps/raw_data_pa.h"
+#include "ublox_gps/raw_data_pa.hpp"
 #include <cmath>
 #include <string>
 #include <sstream>

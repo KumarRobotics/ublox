@@ -29,7 +29,7 @@
 #ifndef UBLOX_GPS_ASYNC_WORKER_H
 #define UBLOX_GPS_ASYNC_WORKER_H
 
-#include <ublox_gps/gps.h>
+#include <ublox_gps/gps.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -38,7 +38,7 @@
 #include <boost/thread/condition.hpp>
 
 
-#include "worker.h"
+#include "worker.hpp"
 
 namespace ublox_gps {
 

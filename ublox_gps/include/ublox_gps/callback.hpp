@@ -30,7 +30,7 @@
 #define UBLOX_GPS_CALLBACK_H
 
 #include <ros/console.h>
-#include <ublox/serialization/ublox_msgs.h>
+#include <ublox/serialization/ublox_msgs.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
