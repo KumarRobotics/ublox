@@ -609,7 +609,7 @@ void UbloxNode::initializeIo() {
   // raw data stream logging
   if (rawDataStreamPa_.isEnabled()) {
     gps.setRawDataCallback(
-      std::bind(&RawDataStreamPa::ubloxCallback,&rawDataStreamPa_, std::placeholders::_1, std::placeholders::_2));
+      std::bind(&RawDataStreamPa::ubloxCallback, &rawDataStreamPa_, std::placeholders::_1, std::placeholders::_2));
     rawDataStreamPa_.initialize();
   }
 }

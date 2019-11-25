@@ -74,13 +74,12 @@ bool RawDataStreamPa::isEnabled() {
   }
 }
 
-
 void RawDataStreamPa::initialize() {
 
   if (is_ros_subscriber_) {
     ROS_INFO("Subscribing to raw data stream.");
-    static ros::Subscriber subscriber =
-        nh_.subscribe ("raw_data_stream", 100,
+    raw_data_stream_sub_ =
+        nh_.subscribe("raw_data_stream", 100,
           &RawDataStreamPa::msgCallback, this);
   } else if (flag_publish_) {
     ROS_INFO("Publishing raw data stream.");

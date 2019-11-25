@@ -70,12 +70,12 @@ class RawDataStreamPa {
   /**
    * @brief Get the raw data stream parameters.
    */
-  void getRosParams(void);
+  void getRosParams();
 
   /**
    * @brief Returns the if raw data streaming is enabled.
    */
-  bool isEnabled(void);
+  bool isEnabled();
 
   /**
    * @brief Initializes raw data streams
@@ -84,7 +84,7 @@ class RawDataStreamPa {
    * If publishing ros messages is enabled, an empty msg will be published.
    * (This will implicitly create the publisher)
    */
-  void initialize(void);
+  void initialize();
 
   /**
    * @brief Callback function which handles raw data.
@@ -139,6 +139,7 @@ class RawDataStreamPa {
   ros::NodeHandle nh_;
 
   ros::Publisher raw_pub_;
+  ros::Subscriber raw_data_stream_sub_;
 };
 
 }
