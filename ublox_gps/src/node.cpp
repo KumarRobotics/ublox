@@ -32,8 +32,7 @@
 #include <regex>
 #include <string>
 #include <sstream>
-
-#include <boost/algorithm/string.hpp>
+#include <vector>
 
 #include "ublox_gps/node.hpp"
 
@@ -82,6 +81,27 @@ uint8_t ublox_node::fixModeFromString(const std::string& mode) {
 
   throw std::runtime_error("Invalid settings: " + mode +
                            " is not a valid fix mode.");
+}
+
+std::vector<std::string> stringSplit(const std::string &str,
+                                     const std::string &splitter) {
+  std::vector<std::string> ret;
+  size_t next = 0;
+  size_t current = next;
+
+  if (splitter.empty()) {
+    // If the splitter is blank, just return the original
+    ret.push_back(str);
+    return ret;
+  }
+
+  while (next != std::string::npos) {
+    next = str.find(splitter, current);
+    ret.push_back(str.substr(current, next - current));
+    current = next + splitter.length();
+  }
+
+  return ret;
 }
 
 //
@@ -333,13 +353,15 @@ void UbloxNode::subscribe() {
     gps.subscribe<ublox_msgs::AidHUI>(std::bind(
         publish<ublox_msgs::AidHUI>, std::placeholders::_1, "aidhui"), kSubscribeRate);
 
-  for(int i = 0; i < components_.size(); i++)
+  for (size_t i = 0; i < components_.size(); i++) {
     components_[i]->subscribe();
+  }
 }
 
 void UbloxNode::initializeRosDiagnostics() {
-  if (!nh->hasParam("diagnostic_period"))
+  if (!nh->hasParam("diagnostic_period")) {
     nh->setParam("diagnostic_period", kDiagnosticPeriod);
+  }
 
   updater.reset(new diagnostic_updater::Updater());
   updater->setHardwareID("ublox");
@@ -347,22 +369,24 @@ void UbloxNode::initializeRosDiagnostics() {
   // configure diagnostic updater for frequency
   freq_diag.reset(new FixDiagnostic(std::string("fix"), kFixFreqTol,
                             kFixFreqWindow, kTimeStampStatusMin));
-  for(int i = 0; i < components_.size(); i++)
+  for (int i = 0; i < components_.size(); i++) {
     components_[i]->initializeRosDiagnostics();
+  }
 }
 
 
 void UbloxNode::processMonVer() {
   ublox_msgs::MonVER monVer;
-  if (!gps.poll(monVer))
+  if (!gps.poll(monVer)) {
     throw std::runtime_error("Failed to poll MonVER & set relevant settings");
+  }
 
   ROS_DEBUG("%s, HW VER: %s", monVer.sw_version.c_array(),
                monVer.hw_version.c_array());
   // Convert extension to vector of strings
   std::vector<std::string> extension;
   extension.reserve(monVer.extension.size());
-  for(std::size_t i = 0; i < monVer.extension.size(); ++i) {
+  for (std::size_t i = 0; i < monVer.extension.size(); ++i) {
     ROS_DEBUG("%s", monVer.extension[i].field.c_array());
     // Find the end of the string (null character)
     unsigned char* end = std::find(monVer.extension[i].field.begin(),
@@ -371,7 +395,7 @@ void UbloxNode::processMonVer() {
   }
 
   // Get the protocol version
-  for(std::size_t i = 0; i < extension.size(); ++i) {
+  for (std::size_t i = 0; i < extension.size(); ++i) {
     std::size_t found = extension[i].find("PROTVER");
     if (found != std::string::npos) {
       protocol_version_ = ::atof(
@@ -379,16 +403,17 @@ void UbloxNode::processMonVer() {
       break;
     }
   }
-  if (protocol_version_ == 0)
+  if (protocol_version_ == 0) {
     ROS_WARN("Failed to parse MonVER and determine protocol version. %s",
              "Defaulting to firmware version 6.");
+  }
   addFirmwareInterface();
 
-  if(protocol_version_ < 18) {
+  if (protocol_version_ < 18) {
     // Final line contains supported GNSS delimited by ;
     std::vector<std::string> strs;
     if (extension.size() > 0) {
-      boost::split(strs, extension[extension.size()-1], boost::is_any_of(";"));
+      strs = stringSplit(extension[extension.size() - 1], ";");
     }
     for (size_t i = 0; i < strs.size(); i++) {
       supported.insert(strs[i]);
@@ -398,8 +423,8 @@ void UbloxNode::processMonVer() {
       std::vector<std::string> strs;
       // Up to 2nd to last line
       if (i <= extension.size() - 2) {
-        boost::split(strs, extension[i], boost::is_any_of("="));
-        if(strs.size() > 1) {
+        strs = stringSplit(extension[i], "=");
+        if (strs.size() > 1) {
           if (strs[0].compare(std::string("FWVER")) == 0) {
             if (strs[1].length() > 8) {
               addProductInterface(strs[1].substr(0, 3), strs[1].substr(8, 10));
@@ -412,7 +437,7 @@ void UbloxNode::processMonVer() {
       }
       // Last 1-2 lines contain supported GNSS
       if (i >= extension.size() - 2) {
-        boost::split(strs, extension[i], boost::is_any_of(";"));
+        strs = stringSplit(extension[i], ";");
         for (size_t i = 0; i < strs.size(); i++) {
           supported.insert(strs[i]);
         }
@@ -452,39 +477,45 @@ bool UbloxNode::configureUblox() {
         throw std::runtime_error(ss.str());
       }
       // If device doesn't have SBAS, will receive NACK (causes exception)
-      if(supportsGnss("SBAS")) {
+      if (supportsGnss("SBAS")) {
         if (!gps.configSbas(enable_sbas_, sbas_usage_, max_sbas_)) {
           throw std::runtime_error(std::string("Failed to ") +
                                   ((enable_sbas_) ? "enable" : "disable") +
                                   " SBAS.");
         }
       }
-      if (!gps.setPpp(enable_ppp_))
+      if (!gps.setPpp(enable_ppp_)) {
         throw std::runtime_error(std::string("Failed to ") +
                                 ((enable_ppp_) ? "enable" : "disable")
                                 + " PPP.");
-      if (!gps.setDynamicModel(dmodel_))
+      }
+      if (!gps.setDynamicModel(dmodel_)) {
         throw std::runtime_error("Failed to set model: " + dynamic_model_ + ".");
-      if (!gps.setFixMode(fmode_))
+      }
+      if (!gps.setFixMode(fmode_)) {
         throw std::runtime_error("Failed to set fix mode: " + fix_mode_ + ".");
+      }
       if (!gps.setDeadReckonLimit(dr_limit_)) {
         std::stringstream ss;
         ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
         throw std::runtime_error(ss.str());
       }
-      if (set_dat_ && !gps.configure(cfg_dat_))
+      if (set_dat_ && !gps.configure(cfg_dat_)) {
         throw std::runtime_error("Failed to set user-defined datum.");
+      }
       // Configure each component
       for (int i = 0; i < components_.size(); i++) {
-        if(!components_[i]->configureUblox())
+        if (!components_[i]->configureUblox()) {
           return false;
+        }
       }
     }
     if (save_.save_mask != 0) {
       ROS_DEBUG("Saving the u-blox configuration, mask %u, device %u",
                 save_.save_mask, save_.device_mask);
-      if(!gps.configure(save_))
+      if (!gps.configure(save_)) {
         ROS_ERROR("u-blox unable to save configuration to non-volatile memory");
+      }
     }
   } catch (std::exception& e) {
     ROS_FATAL("Error configuring u-blox: %s", e.what());
@@ -504,7 +535,7 @@ void UbloxNode::configureInf() {
                  (enabled["inf_notice"] ? block.INF_MSG_NOTICE : 0) |
                  (enabled["inf_test"] ? block.INF_MSG_TEST : 0) |
                  (enabled["inf_debug"] ? block.INF_MSG_DEBUG : 0);
-  for (int i = 0; i < block.inf_msg_mask.size(); i++) {
+  for (size_t i = 0; i < block.inf_msg_mask.size(); i++) {
     block.inf_msg_mask[i] = mask;
   }
 
@@ -515,7 +546,7 @@ void UbloxNode::configureInf() {
     ublox_msgs::CfgINFBlock block;
     block.protocol_id = block.PROTOCOL_ID_NMEA;
     // Enable desired INF messages on each NMEA port
-    for (int i = 0; i < block.inf_msg_mask.size(); i++) {
+    for (size_t i = 0; i < block.inf_msg_mask.size(); i++) {
       block.inf_msg_mask[i] = mask;
     }
     msg.blocks.push_back(block);
@@ -562,12 +593,14 @@ void UbloxNode::initialize() {
   // Must process Mon VER before setting firmware/hardware params
   processMonVer();
   if(protocol_version_ <= 14) {
-    if(nh->param("raw_data", false))
+    if (nh->param("raw_data", false)) {
       components_.push_back(ComponentPtr(new RawDataProduct));
+    }
   }
   // Must set firmware & hardware params before initializing diagnostics
-  for (int i = 0; i < components_.size(); i++)
+  for (size_t i = 0; i < components_.size(); i++) {
     components_[i]->getRosParams();
+  }
   // Do this last
   initializeRosDiagnostics();
 
@@ -616,18 +649,22 @@ void UbloxFirmware6::getRosParams() {
   if (set_nmea_) {
     bool compat, consider;
 
-    if (!getRosUint("nmea/version", cfg_nmea_.version))
+    if (!getRosUint("nmea/version", cfg_nmea_.version)) {
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/version must be set");
-    if (!getRosUint("nmea/num_sv", cfg_nmea_.num_sv))
+    }
+    if (!getRosUint("nmea/num_sv", cfg_nmea_.num_sv)) {
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
                 "true, therefore nmea/num_sv must be set");
-    if (!nh->getParam("nmea/compat", compat))
+    }
+    if (!nh->getParam("nmea/compat", compat)) {
         throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/compat must be set");
-    if (!nh->getParam("nmea/consider", consider))
+    }
+    if (!nh->getParam("nmea/consider", consider)) {
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
           "true, therefore nmea/consider must be set");
+    }
 
     // set flags
     cfg_nmea_.flags = compat ? cfg_nmea_.FLAGS_COMPAT : 0;
@@ -653,8 +690,9 @@ void UbloxFirmware6::getRosParams() {
 bool UbloxFirmware6::configureUblox() {
   ROS_WARN("ublox_version < 7, ignoring GNSS settings");
 
-  if (set_nmea_ && !gps.configure(cfg_nmea_))
+  if (set_nmea_ && !gps.configure(cfg_nmea_)) {
     throw std::runtime_error("Failed to configure NMEA");
+  }
 
   return true;
 }
@@ -678,16 +716,18 @@ void UbloxFirmware6::subscribe() {
 
   // Subscribe to Nav SVINFO
   nh->param("publish/nav/svinfo", enabled["nav_svinfo"], enabled["nav"]);
-  if (enabled["nav_svinfo"])
+  if (enabled["nav_svinfo"]) {
     gps.subscribe<ublox_msgs::NavSVINFO>(std::bind(
         publish<ublox_msgs::NavSVINFO>, std::placeholders::_1, "navsvinfo"),
         kNavSvInfoSubscribeRate);
+  }
 
   // Subscribe to Mon HW
   nh->param("publish/mon_hw", enabled["mon_hw"], enabled["mon"]);
-  if (enabled["mon_hw"])
+  if (enabled["mon_hw"]) {
     gps.subscribe<ublox_msgs::MonHW6>(std::bind(
         publish<ublox_msgs::MonHW6>, std::placeholders::_1, "monhw"), kSubscribeRate);
+  }
 }
 
 void UbloxFirmware6::fixDiagnostic(
