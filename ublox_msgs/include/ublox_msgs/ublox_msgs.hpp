@@ -53,9 +53,9 @@
 #include <ublox_msgs/RxmALM.h>
 #include <ublox_msgs/RxmEPH.h>
 #include <ublox_msgs/RxmRAW.h>
-#include <ublox_msgs/RxmRAW_SV.h>
+#include <ublox_msgs/RxmRAWSV.h>
 #include <ublox_msgs/RxmRAWX.h>
-#include <ublox_msgs/RxmRAWX_Meas.h>
+#include <ublox_msgs/RxmRAWXMeas.h>
 #include <ublox_msgs/RxmRTCM.h>
 #include <ublox_msgs/RxmSFRB.h>
 #include <ublox_msgs/RxmSFRBX.h>
@@ -71,7 +71,7 @@
 #include <ublox_msgs/CfgGNSS.h>
 #include <ublox_msgs/CfgHNR.h>
 #include <ublox_msgs/CfgINF.h>
-#include <ublox_msgs/CfgINF_Block.h>
+#include <ublox_msgs/CfgINFBlock.h>
 #include <ublox_msgs/CfgMSG.h>
 #include <ublox_msgs/CfgNAV5.h>
 #include <ublox_msgs/CfgNAVX5.h>
@@ -86,7 +86,7 @@
 #include <ublox_msgs/CfgUSB.h>
 
 #include <ublox_msgs/UpdSOS.h>
-#include <ublox_msgs/UpdSOS_Ack.h>
+#include <ublox_msgs/UpdSOSAck.h>
 
 #include <ublox_msgs/MonGNSS.h>
 #include <ublox_msgs/MonHW.h>
@@ -101,7 +101,7 @@
 #include <ublox_msgs/EsfMEAS.h>
 #include <ublox_msgs/EsfRAW.h>
 #include <ublox_msgs/EsfSTATUS.h>
-#include <ublox_msgs/EsfSTATUS_Sens.h>
+#include <ublox_msgs/EsfSTATUSSens.h>
 
 #include <ublox_msgs/MgaGAL.h>
 

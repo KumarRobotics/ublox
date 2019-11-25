@@ -448,7 +448,7 @@ class Gps {
    * @brief Callback handler for UBX-UPD-SOS-ACK message.
    * @param m the message to process
    */
-  void processUpdSosAck(const ublox_msgs::UpdSOS_Ack &m);
+  void processUpdSosAck(const ublox_msgs::UpdSOSAck &m);
 
   /**
    * @brief Execute save on shutdown procedure.

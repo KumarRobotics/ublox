@@ -51,16 +51,16 @@ struct Serializer<ublox_msgs::CfgDAT_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::CfgDAT_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.datumNum);
-    stream.next(m.datumName);
-    stream.next(m.majA);
+    stream.next(m.datum_num);
+    stream.next(m.datum_name);
+    stream.next(m.maj_a);
     stream.next(m.flat);
-    stream.next(m.dX);
-    stream.next(m.dY);
-    stream.next(m.dZ);
-    stream.next(m.rotX);
-    stream.next(m.rotY);
-    stream.next(m.rotZ);
+    stream.next(m.d_x);
+    stream.next(m.d_y);
+    stream.next(m.d_z);
+    stream.next(m.rot_x);
+    stream.next(m.rot_y);
+    stream.next(m.rot_z);
     stream.next(m.scale);
   }
 
@@ -74,14 +74,14 @@ struct Serializer<ublox_msgs::CfgDAT_<ContainerAllocator> > {
                     const ublox_msgs::CfgDAT_<ContainerAllocator> &m) {
     ros::serialization::OStream stream(data, size);
     // ignores datumNum & datumName
-    stream.next(m.majA);
+    stream.next(m.maj_a);
     stream.next(m.flat);
-    stream.next(m.dX);
-    stream.next(m.dY);
-    stream.next(m.dZ);
-    stream.next(m.rotX);
-    stream.next(m.rotY);
-    stream.next(m.rotZ);
+    stream.next(m.d_x);
+    stream.next(m.d_y);
+    stream.next(m.d_z);
+    stream.next(m.rot_x);
+    stream.next(m.rot_y);
+    stream.next(m.rot_z);
     stream.next(m.scale);
   }
 };
@@ -94,31 +94,31 @@ struct Serializer<ublox_msgs::CfgGNSS_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::CfgGNSS_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.msgVer);
-    stream.next(m.numTrkChHw);
-    stream.next(m.numTrkChUse);
-    stream.next(m.numConfigBlocks);
-    m.blocks.resize(m.numConfigBlocks);
+    stream.next(m.msg_ver);
+    stream.next(m.num_trk_ch_hw);
+    stream.next(m.num_trk_ch_use);
+    stream.next(m.num_config_blocks);
+    m.blocks.resize(m.num_config_blocks);
     for (std::size_t i = 0; i < m.blocks.size(); ++i) {
       ros::serialization::deserialize(stream, m.blocks[i]);
     }
   }
 
   static uint32_t serializedLength(const ublox_msgs::CfgGNSS_<ContainerAllocator> &m) {
-    return 4 + 8 * m.numConfigBlocks;
+    return 4 + 8 * m.num_config_blocks;
   }
 
   static void write(uint8_t *data, uint32_t size,
                     const ublox_msgs::CfgGNSS_<ContainerAllocator> &m) {
-    if (m.blocks.size() != m.numConfigBlocks) {
-      ROS_ERROR("CfgGNSS numConfigBlocks must equal blocks size");
+    if (m.blocks.size() != m.num_config_blocks) {
+      ROS_ERROR("CfgGNSS num_config_blocks must equal blocks size");
     }
     ros::serialization::OStream stream(data, size);
-    stream.next(m.msgVer);
-    stream.next(m.numTrkChHw);
-    stream.next(m.numTrkChUse);
+    stream.next(m.msg_ver);
+    stream.next(m.num_trk_ch_hw);
+    stream.next(m.num_trk_ch_use);
     stream.next(
-        static_cast<typename ublox_msgs::CfgGNSS_<ContainerAllocator>::_numConfigBlocks_type>(m.blocks.size()));
+        static_cast<typename ublox_msgs::CfgGNSS_<ContainerAllocator>::_num_config_blocks_type>(m.blocks.size()));
     for (std::size_t i = 0; i < m.blocks.size(); ++i) {
       ros::serialization::serialize(stream, m.blocks[i]);
     }
@@ -188,8 +188,8 @@ struct Serializer<ublox_msgs::MonVER_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::MonVER_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.swVersion);
-    stream.next(m.hwVersion);
+    stream.next(m.sw_version);
+    stream.next(m.hw_version);
 
     m.extension.clear();
     int N = (count - 40) / 30;
@@ -209,8 +209,8 @@ struct Serializer<ublox_msgs::MonVER_<ContainerAllocator> > {
   static void write(uint8_t *data, uint32_t size,
                     const ublox_msgs::MonVER_<ContainerAllocator> &m) {
     ros::serialization::OStream stream(data, size);
-    stream.next(m.swVersion);
-    stream.next(m.hwVersion);
+    stream.next(m.sw_version);
+    stream.next(m.hw_version);
     for (std::size_t i = 0; i < m.extension.size(); ++i) {
       ros::serialization::serialize(stream, m.extension[i]);
     }
@@ -225,34 +225,34 @@ struct Serializer<ublox_msgs::NavDGPS_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::NavDGPS_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.iTOW);
+    stream.next(m.i_tow);
     stream.next(m.age);
-    stream.next(m.baseId);
-    stream.next(m.baseHealth);
-    stream.next(m.numCh);
+    stream.next(m.base_id);
+    stream.next(m.base_health);
+    stream.next(m.num_ch);
     stream.next(m.status);
     stream.next(m.reserved1);
-    m.sv.resize(m.numCh);
+    m.sv.resize(m.num_ch);
     for (std::size_t i = 0; i < m.sv.size(); ++i) {
       ros::serialization::deserialize(stream, m.sv[i]);
     }
   }
 
   static uint32_t serializedLength(const ublox_msgs::NavDGPS_<ContainerAllocator> &m) {
-    return 16 + 12 * m.numCh;
+    return 16 + 12 * m.num_ch;
   }
 
   static void write(uint8_t *data, uint32_t size,
                     const ublox_msgs::NavDGPS_<ContainerAllocator> &m) {
-    if (m.sv.size() != m.numCh) {
+    if (m.sv.size() != m.num_ch) {
       ROS_ERROR("NavDGPS numCh must equal sv size");
     }
     ros::serialization::OStream stream(data, size);
-    stream.next(m.iTOW);
+    stream.next(m.i_tow);
     stream.next(m.age);
-    stream.next(m.baseId);
-    stream.next(m.baseHealth);
-    stream.next(static_cast<typename ublox_msgs::NavDGPS_<ContainerAllocator>::_numCh_type>(m.sv.size()));
+    stream.next(m.base_id);
+    stream.next(m.base_health);
+    stream.next(static_cast<typename ublox_msgs::NavDGPS_<ContainerAllocator>::_num_ch_type>(m.sv.size()));
     stream.next(m.status);
     stream.next(m.reserved1);
     for (std::size_t i = 0; i < m.sv.size(); ++i) {
@@ -270,7 +270,7 @@ struct Serializer<ublox_msgs::NavSBAS_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::NavSBAS_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.iTOW);
+    stream.next(m.i_tow);
     stream.next(m.geo);
     stream.next(m.mode);
     stream.next(m.sys);
@@ -293,7 +293,7 @@ struct Serializer<ublox_msgs::NavSBAS_<ContainerAllocator> > {
       ROS_ERROR("NavSBAS cnt must equal sv size");
     }
     ros::serialization::OStream stream(data, size);
-    stream.next(m.iTOW);
+    stream.next(m.i_tow);
     stream.next(m.geo);
     stream.next(m.mode);
     stream.next(m.sys);
@@ -314,29 +314,29 @@ struct Serializer<ublox_msgs::NavSAT_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::NavSAT_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.iTOW);
+    stream.next(m.i_tow);
     stream.next(m.version);
-    stream.next(m.numSvs);
+    stream.next(m.num_svs);
     stream.next(m.reserved0);
-    m.sv.resize(m.numSvs);
+    m.sv.resize(m.num_svs);
     for (std::size_t i = 0; i < m.sv.size(); ++i) {
       ros::serialization::deserialize(stream, m.sv[i]);
     }
   }
 
   static uint32_t serializedLength(const ublox_msgs::NavSAT_<ContainerAllocator> &m) {
-    return 8 + 12 * m.numSvs;
+    return 8 + 12 * m.num_svs;
   }
 
   static void write(uint8_t *data, uint32_t size,
                     const ublox_msgs::NavSAT_<ContainerAllocator> &m) {
-    if (m.sv.size() != m.numSvs) {
-      ROS_ERROR("NavSAT numSvs must equal sv size");
+    if (m.sv.size() != m.num_svs) {
+      ROS_ERROR("NavSAT num_svs must equal sv size");
     }
     ros::serialization::OStream stream(data, size);
-    stream.next(m.iTOW);
+    stream.next(m.i_tow);
     stream.next(m.version);
-    stream.next(static_cast<typename ublox_msgs::NavSAT_<ContainerAllocator>::_numSvs_type>(m.sv.size()));
+    stream.next(static_cast<typename ublox_msgs::NavSAT_<ContainerAllocator>::_num_svs_type>(m.sv.size()));
     stream.next(m.reserved0);
     for (std::size_t i = 0; i < m.sv.size(); ++i) {
       ros::serialization::serialize(stream, m.sv[i]);
@@ -352,29 +352,29 @@ struct Serializer<ublox_msgs::NavSVINFO_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::NavSVINFO_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.iTOW);
-    stream.next(m.numCh);
-    stream.next(m.globalFlags);
+    stream.next(m.i_tow);
+    stream.next(m.num_ch);
+    stream.next(m.global_flags);
     stream.next(m.reserved2);
-    m.sv.resize(m.numCh);
+    m.sv.resize(m.num_ch);
     for (std::size_t i = 0; i < m.sv.size(); ++i) {
       ros::serialization::deserialize(stream, m.sv[i]);
     }
   }
 
   static uint32_t serializedLength(const ublox_msgs::NavSVINFO_<ContainerAllocator> &m) {
-    return 8 + 12 * m.numCh;
+    return 8 + 12 * m.num_ch;
   }
 
   static void write(uint8_t *data, uint32_t size,
                     const ublox_msgs::NavSVINFO_<ContainerAllocator> &m) {
-    if (m.sv.size() != m.numCh) {
-      ROS_ERROR("NavSVINFO numCh must equal sv size");
+    if (m.sv.size() != m.num_ch) {
+      ROS_ERROR("NavSVINFO num_ch must equal sv size");
     }
     ros::serialization::OStream stream(data, size);
-    stream.next(m.iTOW);
-    stream.next(static_cast<typename ublox_msgs::NavSVINFO_<ContainerAllocator>::_numCh_type>(m.sv.size()));
-    stream.next(m.globalFlags);
+    stream.next(m.i_tow);
+    stream.next(static_cast<typename ublox_msgs::NavSVINFO_<ContainerAllocator>::_num_ch_type>(m.sv.size()));
+    stream.next(m.global_flags);
     stream.next(m.reserved2);
     for (std::size_t i = 0; i < m.sv.size(); ++i) {
       ros::serialization::serialize(stream, m.sv[i]);
@@ -390,29 +390,29 @@ struct Serializer<ublox_msgs::RxmRAW_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::RxmRAW_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.rcvTOW);
+    stream.next(m.rcv_tow);
     stream.next(m.week);
-    stream.next(m.numSV);
+    stream.next(m.num_sv);
     stream.next(m.reserved1);
-    m.sv.resize(m.numSV);
+    m.sv.resize(m.num_sv);
     for (std::size_t i = 0; i < m.sv.size(); ++i) {
       ros::serialization::deserialize(stream, m.sv[i]);
     }
   }
 
   static uint32_t serializedLength(const ublox_msgs::RxmRAW_<ContainerAllocator> &m) {
-    return 8 + 24 * m.numSV;
+    return 8 + 24 * m.num_sv;
   }
 
   static void write(uint8_t *data, uint32_t size,
                     const ublox_msgs::RxmRAW_<ContainerAllocator> &m) {
-    if (m.sv.size() != m.numSV) {
-      ROS_ERROR("RxmRAW numSV must equal sv size");
+    if (m.sv.size() != m.num_sv) {
+      ROS_ERROR("RxmRAW num_sv must equal sv size");
     }
     ros::serialization::OStream stream(data, size);
-    stream.next(m.rcvTOW);
+    stream.next(m.rcv_tow);
     stream.next(m.week);
-    stream.next(static_cast<typename ublox_msgs::RxmRAW_<ContainerAllocator>::_numSV_type>(m.sv.size()));
+    stream.next(static_cast<typename ublox_msgs::RxmRAW_<ContainerAllocator>::_num_sv_type>(m.sv.size()));
     stream.next(m.reserved1);
     for (std::size_t i = 0; i < m.sv.size(); ++i) {
       ros::serialization::serialize(stream, m.sv[i]);
@@ -428,34 +428,34 @@ struct Serializer<ublox_msgs::RxmRAWX_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::RxmRAWX_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.rcvTOW);
+    stream.next(m.rcv_tow);
     stream.next(m.week);
-    stream.next(m.leapS);
-    stream.next(m.numMeas);
-    stream.next(m.recStat);
+    stream.next(m.leap_s);
+    stream.next(m.num_meas);
+    stream.next(m.rec_stat);
     stream.next(m.version);
     stream.next(m.reserved1);
-    m.meas.resize(m.numMeas);
+    m.meas.resize(m.num_meas);
     for (std::size_t i = 0; i < m.meas.size(); ++i) {
       ros::serialization::deserialize(stream, m.meas[i]);
     }
   }
 
   static uint32_t serializedLength(const ublox_msgs::RxmRAWX_<ContainerAllocator> &m) {
-    return 16 + 32 * m.numMeas;
+    return 16 + 32 * m.num_meas;
   }
 
   static void write(uint8_t *data, uint32_t size,
                     const ublox_msgs::RxmRAWX_<ContainerAllocator> &m) {
-    if (m.meas.size() != m.numMeas) {
-      ROS_ERROR("RxmRAWX numMeas must equal meas size");
+    if (m.meas.size() != m.num_meas) {
+      ROS_ERROR("RxmRAWX num_meas must equal meas size");
     }
     ros::serialization::OStream stream(data, size);
-    stream.next(m.rcvTOW);
+    stream.next(m.rcv_tow);
     stream.next(m.week);
-    stream.next(m.leapS);
-    stream.next(static_cast<typename ublox_msgs::RxmRAWX_<ContainerAllocator>::_numMeas_type>(m.meas.size()));
-    stream.next(m.recStat);
+    stream.next(m.leap_s);
+    stream.next(static_cast<typename ublox_msgs::RxmRAWX_<ContainerAllocator>::_num_meas_type>(m.meas.size()));
+    stream.next(m.rec_stat);
     stream.next(m.version);
     stream.next(m.reserved1);
     for (std::size_t i = 0; i < m.meas.size(); ++i) {
@@ -472,35 +472,35 @@ struct Serializer<ublox_msgs::RxmSFRBX_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::RxmSFRBX_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.gnssId);
-    stream.next(m.svId);
+    stream.next(m.gnss_id);
+    stream.next(m.sv_id);
     stream.next(m.reserved0);
-    stream.next(m.freqId);
-    stream.next(m.numWords);
+    stream.next(m.freq_id);
+    stream.next(m.num_words);
     stream.next(m.chn);
     stream.next(m.version);
     stream.next(m.reserved1);
-    m.dwrd.resize(m.numWords);
+    m.dwrd.resize(m.num_words);
     for (std::size_t i = 0; i < m.dwrd.size(); ++i) {
       ros::serialization::deserialize(stream, m.dwrd[i]);
     }
   }
 
   static uint32_t serializedLength(const ublox_msgs::RxmSFRBX_<ContainerAllocator> &m) {
-    return 8 + 4 * m.numWords;
+    return 8 + 4 * m.num_words;
   }
 
   static void write(uint8_t *data, uint32_t size,
                     const ublox_msgs::RxmSFRBX_<ContainerAllocator> &m) {
-    if (m.dwrd.size() != m.numWords) {
-      ROS_ERROR("RxmSFRBX numWords must equal dwrd size");
+    if (m.dwrd.size() != m.num_words) {
+      ROS_ERROR("RxmSFRBX num_words must equal dwrd size");
     }
     ros::serialization::OStream stream(data, size);
-    stream.next(m.gnssId);
-    stream.next(m.svId);
+    stream.next(m.gnss_id);
+    stream.next(m.sv_id);
     stream.next(m.reserved0);
-    stream.next(m.freqId);
-    stream.next(static_cast<typename ublox_msgs::RxmSFRBX_<ContainerAllocator>::_numWords_type>(m.dwrd.size()));
+    stream.next(m.freq_id);
+    stream.next(static_cast<typename ublox_msgs::RxmSFRBX_<ContainerAllocator>::_num_words_type>(m.dwrd.size()));
     stream.next(m.chn);
     stream.next(m.version);
     stream.next(m.reserved1);
@@ -518,30 +518,30 @@ struct Serializer<ublox_msgs::RxmSVSI_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::RxmSVSI_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.iTOW);
+    stream.next(m.i_tow);
     stream.next(m.week);
-    stream.next(m.numVis);
-    stream.next(m.numSV);
-    m.sv.resize(m.numSV);
+    stream.next(m.num_vis);
+    stream.next(m.num_sv);
+    m.sv.resize(m.num_sv);
     for (std::size_t i = 0; i < m.sv.size(); ++i) {
       ros::serialization::deserialize(stream, m.sv[i]);
     }
   }
 
   static uint32_t serializedLength(const ublox_msgs::RxmSVSI_<ContainerAllocator> &m) {
-    return 8 + 6 * m.numSV;
+    return 8 + 6 * m.num_sv;
   }
 
   static void write(uint8_t *data, uint32_t size,
                     const ublox_msgs::RxmSVSI_<ContainerAllocator> &m) {
-    if (m.sv.size() != m.numSV) {
-      ROS_ERROR("RxmSVSI numSV must equal sv size");
+    if (m.sv.size() != m.num_sv) {
+      ROS_ERROR("RxmSVSI num_sv must equal sv size");
     }
     ros::serialization::OStream stream(data, size);
-    stream.next(m.iTOW);
+    stream.next(m.i_tow);
     stream.next(m.week);
-    stream.next(m.numVis);
-    stream.next(static_cast<typename ublox_msgs::RxmSVSI_<ContainerAllocator>::_numSV_type>(m.sv.size()));
+    stream.next(m.num_vis);
+    stream.next(static_cast<typename ublox_msgs::RxmSVSI_<ContainerAllocator>::_num_sv_type>(m.sv.size()));
     for (std::size_t i = 0; i < m.sv.size(); ++i) {
       ros::serialization::serialize(stream, m.sv[i]);
     }
@@ -748,7 +748,7 @@ struct Serializer<ublox_msgs::EsfMEAS_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::EsfMEAS_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.timeTag);
+    stream.next(m.time_tag);
     stream.next(m.flags);
     stream.next(m.id);
 
@@ -761,26 +761,26 @@ struct Serializer<ublox_msgs::EsfMEAS_<ContainerAllocator> > {
     }
     // Optional block
     if (calib_valid) {
-      m.calibTtag.resize(1);
-      ros::serialization::deserialize(stream, m.calibTtag[0]);
+      m.calib_t_tag.resize(1);
+      ros::serialization::deserialize(stream, m.calib_t_tag[0]);
     }
   }
 
   static uint32_t serializedLength(const ublox_msgs::EsfMEAS_<ContainerAllocator> &m) {
-    return 4 + 8 * m.data.size() + 4 * m.calibTtag.size();
+    return 4 + 8 * m.data.size() + 4 * m.calib_t_tag.size();
   }
 
   static void write(uint8_t *data, uint32_t size,
                     const ublox_msgs::EsfMEAS_<ContainerAllocator> &m) {
     ros::serialization::OStream stream(data, size);
-    stream.next(m.timeTag);
+    stream.next(m.time_tag);
     stream.next(m.flags);
     stream.next(m.id);
     for (std::size_t i = 0; i < m.data.size(); ++i) {
       ros::serialization::serialize(stream, m.data[i]);
     }
-    for (std::size_t i = 0; i < m.calibTtag.size(); ++i) {
-      ros::serialization::serialize(stream, m.calibTtag[i]);
+    for (std::size_t i = 0; i < m.calib_t_tag.size(); ++i) {
+      ros::serialization::serialize(stream, m.calib_t_tag[i]);
     }
   }
 };
@@ -824,32 +824,32 @@ struct Serializer<ublox_msgs::EsfSTATUS_<ContainerAllocator> > {
   static void read(const uint8_t *data, uint32_t count,
                    ublox_msgs::EsfSTATUS_<ContainerAllocator> &m) {
     ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
-    stream.next(m.iTOW);
+    stream.next(m.i_tow);
     stream.next(m.version);
-    stream.next(m.fusionMode);
+    stream.next(m.fusion_mode);
     stream.next(m.reserved2);
-    stream.next(m.numSens);
-    m.sens.resize(m.numSens);
+    stream.next(m.num_sens);
+    m.sens.resize(m.num_sens);
     for (std::size_t i = 0; i < m.sens.size(); ++i) {
       ros::serialization::deserialize(stream, m.sens[i]);
     }
   }
 
   static uint32_t serializedLength(const ublox_msgs::EsfSTATUS_<ContainerAllocator> &m) {
-    return 16 + 4 * m.numSens;
+    return 16 + 4 * m.num_sens;
   }
 
   static void write(uint8_t *data, uint32_t size,
                     const ublox_msgs::EsfSTATUS_<ContainerAllocator> &m) {
-    if (m.sens.size() != m.numSens) {
-      ROS_ERROR("Writing EsfSTATUS message: numSens must equal size of sens");
+    if (m.sens.size() != m.num_sens) {
+      ROS_ERROR("Writing EsfSTATUS message: num_sens must equal size of sens");
     }
     ros::serialization::OStream stream(data, size);
-    stream.next(m.iTOW);
+    stream.next(m.i_tow);
     stream.next(m.version);
-    stream.next(m.fusionMode);
+    stream.next(m.fusion_mode);
     stream.next(m.reserved2);
-    stream.next(static_cast<typename ublox_msgs::EsfSTATUS_<ContainerAllocator>::_numSens_type>(m.sens.size()));
+    stream.next(static_cast<typename ublox_msgs::EsfSTATUS_<ContainerAllocator>::_num_sens_type>(m.sens.size()));
     for (std::size_t i = 0; i < m.sens.size(); ++i) {
       ros::serialization::serialize(stream, m.sens[i]);
     }

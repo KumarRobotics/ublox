@@ -26,6 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
+#include <vector>
+
 #include <ublox/serialization/ublox_msgs.hpp>
 
 template <typename T>
@@ -160,7 +162,7 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::UPD, ublox_msgs::Message::UPD::SOS,
                       ublox_msgs, UpdSOS);
 // SOS and SOS_Ack have the same message ID, but different lengths
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::UPD, ublox_msgs::Message::UPD::SOS,
-                      ublox_msgs, UpdSOS_Ack);
+                      ublox_msgs, UpdSOSAck);
 
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::MON, ublox_msgs::Message::MON::GNSS,
                       ublox_msgs, MonGNSS);

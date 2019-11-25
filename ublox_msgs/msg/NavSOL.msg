@@ -1,21 +1,21 @@
 # NAV-SOL (0x01 0x06)
 # Navigation Solution Information
 #
-# This message combines Position, velocity and time solution in ECEF, including 
+# This message combines Position, velocity and time solution in ECEF, including
 # accuracy figures
-# This message has only been retained for backwards compatibility; users are 
+# This message has only been retained for backwards compatibility; users are
 # recommended to use the UBX-NAV-PVT message in preference.
 #
 
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 6
 
-uint32 iTOW             # GPS Millisecond time of week [ms]
-int32 fTOW              # Fractional Nanoseconds remainder of rounded
+uint32 i_tow             # GPS Millisecond time of week [ms]
+int32 f_tow              # Fractional Nanoseconds remainder of rounded
                         # ms above, range -500000 .. 500000 [ns]
 int16 week              # GPS week (GPS time)
 
-uint8 gpsFix            # GPSfix Type, range 0..5
+uint8 gps_fix            # GPSfix Type, range 0..5
 uint8 GPS_NO_FIX = 0
 uint8 GPS_DEAD_RECKONING_ONLY = 1
 uint8 GPS_2D_FIX = 2
@@ -29,15 +29,15 @@ uint8 FLAGS_DIFF_SOLN = 2       # DGPS used
 uint8 FLAGS_WKNSET = 4          # Week Number valid
 uint8 FLAGS_TOWSET = 8          # Time of Week valid
 
-int32 ecefX             # ECEF X coordinate [cm]
-int32 ecefY             # ECEF Y coordinate [cm]
-int32 ecefZ             # ECEF Z coordinate [cm]
-uint32 pAcc             # 3D Position Accuracy Estimate [cm]
-int32 ecefVX            # ECEF X velocity [cm/s]
-int32 ecefVY            # ECEF Y velocity [cm/s]
-int32 ecefVZ            # ECEF Z velocity [cm/s]
-uint32 sAcc             # Speed Accuracy Estimate [cm/s]
-uint16 pDOP             # Position DOP [1 / 0.01]
+int32 ecef_x             # ECEF X coordinate [cm]
+int32 ecef_y             # ECEF Y coordinate [cm]
+int32 ecef_z             # ECEF Z coordinate [cm]
+uint32 p_acc             # 3D Position Accuracy Estimate [cm]
+int32 ecef_vx            # ECEF X velocity [cm/s]
+int32 ecef_vy            # ECEF Y velocity [cm/s]
+int32 ecef_vz            # ECEF Z velocity [cm/s]
+uint32 s_acc             # Speed Accuracy Estimate [cm/s]
+uint16 p_dop             # Position DOP [1 / 0.01]
 uint8 reserved1         # Reserved
-uint8 numSV             # Number of SVs used in Nav Solution
+uint8 num_sv             # Number of SVs used in Nav Solution
 uint32 reserved2        # Reserved

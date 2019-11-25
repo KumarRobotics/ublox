@@ -20,14 +20,14 @@
 uint8 CLASS_ID = 11
 uint8 MESSAGE_ID = 49
 
-uint32 svid             # SV ID for which this ephemeris data is 
+uint32 svid             # SV ID for which this ephemeris data is
                         # (Valid Range: 1 .. 32).
 uint32 how              # Hand-Over Word of first Subframe. This is
                         # required if data is sent to the receiver.
                         # 0 indicates that no Ephemeris Data is following.
 
 # Start of optional block
-uint32[] sf1d          # Subframe 1 Words 3..10 (SF1D0..SF1D7)
-uint32[] sf2d          # Subframe 2 Words 3..10 (SF2D0..SF2D7)
-uint32[] sf3d          # Subframe 3 Words 3..10 (SF3D0..SF3D7)
+uint32[] sf1d           # Subframe 1 Words 3..10 (SF1D0..SF1D7)
+uint32[] sf2d           # Subframe 2 Words 3..10 (SF2D0..SF2D7)
+uint32[] sf3d           # Subframe 3 Words 3..10 (SF3D0..SF3D7)
 # End of optional block

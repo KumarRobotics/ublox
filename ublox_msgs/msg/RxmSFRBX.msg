@@ -1,7 +1,7 @@
 # RXM-SFRB (0x02 0x13)
 # Subframe Buffer
 #
-# This message reports a complete subframe of broadcast navigation data decoded 
+# This message reports a complete subframe of broadcast navigation data decoded
 # from a single signal. The number of data words reported in each message
 # depends on the nature of the signal. See the section on Broadcast Navigation
 # Data for further details.
@@ -10,13 +10,13 @@
 uint8 CLASS_ID = 2
 uint8 MESSAGE_ID = 19
 
-uint8 gnssId            # GNSS identifier (see Cfg GNSS for constants)
+uint8 gnss_id            # GNSS identifier (see Cfg GNSS for constants)
 
-uint8 svId              # Satellite identifier within corresponding GNSS system
+uint8 sv_id              # Satellite identifier within corresponding GNSS system
 uint8 reserved0         # Reserved
-uint8 freqId            # Only used for GLONASS: This is the frequency
+uint8 freq_id            # Only used for GLONASS: This is the frequency
                         # slot + 7 (range from 0 to 13)
-uint8 numWords          # The number of data words contained in this message (up
+uint8 num_words          # The number of data words contained in this message (up
                         # to 10, for currently supported signals)
 uint8 chn               # The tracking channel number the message was received
                         # on
