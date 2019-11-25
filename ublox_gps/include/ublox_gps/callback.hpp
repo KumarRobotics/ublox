@@ -31,13 +31,12 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <functional>
 #include <mutex>
+#include <utility>
 
 #include <ros/console.h>
 #include <ublox/serialization/ublox_msgs.hpp>
-#include <boost/format.hpp>
-#include <boost/function.hpp>
-#include <boost/thread.hpp>
 
 namespace ublox_gps {
 
@@ -71,7 +70,7 @@ class CallbackHandler {
 template <typename T>
 class CallbackHandler_ : public CallbackHandler {
  public:
-  typedef boost::function<void(const T&)> Callback; //!< A callback function
+  typedef std::function<void(const T&)> Callback; //!< A callback function
 
   /**
    * @brief Initialize the Callback Handler with a callback function
@@ -135,7 +134,7 @@ class CallbackHandlers {
     CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
     callbacks_.insert(
       std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
-                     boost::shared_ptr<CallbackHandler>(handler)));
+                     std::shared_ptr<CallbackHandler>(handler)));
   }
 
   /**
@@ -154,7 +153,7 @@ class CallbackHandlers {
     CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
     callbacks_.insert(
       std::make_pair(std::make_pair(T::CLASS_ID, message_id),
-                     boost::shared_ptr<CallbackHandler>(handler)));
+                     std::shared_ptr<CallbackHandler>(handler)));
   }
 
   /**
@@ -167,8 +166,9 @@ class CallbackHandlers {
     Callbacks::key_type key =
         std::make_pair(reader.classId(), reader.messageId());
     for (Callbacks::iterator callback = callbacks_.lower_bound(key);
-         callback != callbacks_.upper_bound(key); ++callback)
+         callback != callbacks_.upper_bound(key); ++callback) {
       callback->second->handle(reader);
+    }
   }
 
   /**
@@ -184,7 +184,7 @@ class CallbackHandlers {
     CallbackHandler_<T>* handler = new CallbackHandler_<T>();
     Callbacks::iterator callback = callbacks_.insert(
       (std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
-                      boost::shared_ptr<CallbackHandler>(handler))));
+                      std::shared_ptr<CallbackHandler>(handler))));
     callback_mutex_.unlock();
 
     // Wait for the message
@@ -214,8 +214,9 @@ class CallbackHandlers {
         // Print the received bytes
         std::ostringstream oss;
         for (ublox::Reader::iterator it = reader.pos();
-             it != reader.pos() + reader.length() + 8; ++it)
-          oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
+             it != reader.pos() + reader.length() + 8; ++it) {
+          oss << std::hex << static_cast<unsigned int>(*it) << " ";
+        }
         ROS_DEBUG("U-blox: reading %d bytes\n%s", reader.length() + 8,
                  oss.str().c_str());
       }
@@ -230,7 +231,7 @@ class CallbackHandlers {
 
  private:
   typedef std::multimap<std::pair<uint8_t, uint8_t>,
-                        boost::shared_ptr<CallbackHandler> > Callbacks;
+                        std::shared_ptr<CallbackHandler> > Callbacks;
 
   // Call back handlers for u-blox messages
   Callbacks callbacks_;
