@@ -30,9 +30,7 @@
 #define UBLOX_GPS_WORKER_HPP
 
 #include <chrono>
-
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/function.hpp>
+#include <functional>
 
 namespace ublox_gps {
 
@@ -41,7 +39,7 @@ namespace ublox_gps {
  */
 class Worker {
  public:
-  typedef boost::function<void(unsigned char*, std::size_t&)> Callback;
+  typedef std::function<void(unsigned char*, std::size_t&)> Callback;
   virtual ~Worker() {}
 
   /**
