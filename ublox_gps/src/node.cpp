@@ -37,6 +37,7 @@
 
 #include <tf2/LinearMath/Quaternion.h>
 
+#include <ublox_gps/fts_product.hpp>
 #include "ublox_gps/node.hpp"
 
 namespace ublox_node {

@@ -190,8 +190,8 @@ struct FixDiagnostic {
    * @param freq_window the number of messages to use for diagnostic statistics
    * @param stamp_min the minimum allowed time delay
    */
-  FixDiagnostic (std::string name, double freq_tol, int freq_window,
-                 double stamp_min) {
+  FixDiagnostic(const std::string & name, double freq_tol, int freq_window,
+                double stamp_min) {
     const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
     min_freq = target_freq;
     max_freq = target_freq;
@@ -1111,39 +1111,6 @@ class AdrUdrProduct: public virtual ComponentInterface {
   ros::Publisher esf_raw_pub_;
   ros::Publisher esf_status_pub_;
   ros::Publisher hnr_pvt_pub_;
-};
-
-/**
- * @brief Implements functions for FTS products. Currently unimplemented.
- * @todo Unimplemented.
- */
-class FtsProduct: public virtual ComponentInterface {
-  /**
-   * @brief Get the FTS parameters.
-   * @todo Currently unimplemented.
-   */
-  void getRosParams() {
-    ROS_WARN("Functionality specific to u-blox FTS devices is %s",
-             "unimplemented. See FtsProduct class in node.hpp & node.cpp.");
-  }
-
-  /**
-   * @brief Configure FTS settings.
-   * @todo Currently unimplemented.
-   */
-  bool configureUblox() { return false; }
-
-  /**
-   * @brief Subscribe to FTS messages.
-   * @todo Currently unimplemented.
-   */
-  void subscribe() {}
-
-  /**
-   * @brief Adds diagnostic updaters for FTS status.
-   * @todo Currently unimplemented.
-   */
-  void initializeRosDiagnostics() {}
 };
 
 /**
