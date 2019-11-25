@@ -36,12 +36,12 @@
 
 #include "ublox_gps/node.hpp"
 
-using namespace ublox_node;
+namespace ublox_node {
 
 //
 // ublox_node namespace
 //
-uint8_t ublox_node::modelFromString(const std::string& model) {
+uint8_t modelFromString(const std::string& model) {
   std::string lower = model;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
   if(lower == "portable") {
@@ -68,7 +68,7 @@ uint8_t ublox_node::modelFromString(const std::string& model) {
                            " is not a valid dynamic model.");
 }
 
-uint8_t ublox_node::fixModeFromString(const std::string& mode) {
+uint8_t fixModeFromString(const std::string& mode) {
   std::string lower = mode;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
   if (lower == "2d") {
@@ -1896,16 +1896,18 @@ void TimProduct::initializeRosDiagnostics() {
   updater->force_update();
 }
 
+}  // namespace ublox_node
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ublox_gps");
-  nh = std::make_shared<ros::NodeHandle>("~");
-  nh->param("debug", ublox_gps::debug, 1);
-  if(ublox_gps::debug) {
+  ublox_node::nh = std::make_shared<ros::NodeHandle>("~");
+  ublox_node::nh->param("debug", ublox_gps::debug, 1);
+  if (ublox_gps::debug) {
     if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
-                                       ros::console::levels::Debug))
-     ros::console::notifyLoggerLevelsChanged();
-
+                                       ros::console::levels::Debug)) {
+      ros::console::notifyLoggerLevelsChanged();
+    }
   }
-  UbloxNode node;
+  ublox_node::UbloxNode node;
   return 0;
 }

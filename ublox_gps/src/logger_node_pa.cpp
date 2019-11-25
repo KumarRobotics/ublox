@@ -37,8 +37,6 @@
 // Ublox GPS includes
 #include <ublox_gps/raw_data_pa.hpp>
 
-using namespace ublox_node;
-
 //
 // Raw Data Stream (feature from TUC-ProAut)
 //
@@ -47,7 +45,7 @@ int main(int argc, char** argv) {
 
     ros::init(argc, argv, "ublox_logger");
 
-    RawDataStreamPa node(true);
+    ublox_node::RawDataStreamPa node(true);
     node.getRosParams();
     node.initialize();
 

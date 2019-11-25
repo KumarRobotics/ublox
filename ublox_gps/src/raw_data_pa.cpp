@@ -41,11 +41,11 @@
 #include <sys/stat.h>
 #include <time.h>
 
-using namespace ublox_node;
-
 //
 // ublox_node namespace
 //
+
+namespace ublox_node {
 
 RawDataStreamPa::RawDataStreamPa(bool is_ros_subscriber) :
   pnh_(ros::NodeHandle("~")),
@@ -190,3 +190,4 @@ void RawDataStreamPa::saveToFile(const std::string str) {
     }
 }
 
+}  // namespace ublox_node

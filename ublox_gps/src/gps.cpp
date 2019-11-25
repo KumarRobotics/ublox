@@ -42,8 +42,6 @@
 
 namespace ublox_gps {
 
-using namespace ublox_msgs;
-
 const std::chrono::milliseconds Gps::default_timeout_ =
     std::chrono::milliseconds(
         static_cast<int>(Gps::kDefaultAckTimeout * 1000));
@@ -100,7 +98,7 @@ void Gps::processNack(const ublox_msgs::Ack &m) {
 }
 
 void Gps::processUpdSosAck(const ublox_msgs::UpdSOSAck &m) {
-  if (m.cmd == UpdSOSAck::CMD_BACKUP_CREATE_ACK) {
+  if (m.cmd == ublox_msgs::UpdSOSAck::CMD_BACKUP_CREATE_ACK) {
     Ack ack;
     ack.type = (m.response == m.BACKUP_CREATE_ACK) ? ACK : NACK;
     ack.class_id = m.CLASS_ID;
@@ -197,8 +195,8 @@ void Gps::resetSerial(std::string port) {
 
   // Poll UART PRT Config
   std::vector<uint8_t> payload;
-  payload.push_back(CfgPRT::PORT_ID_UART1);
-  if (!poll(CfgPRT::CLASS_ID, CfgPRT::MESSAGE_ID, payload)) {
+  payload.push_back(ublox_msgs::CfgPRT::PORT_ID_UART1);
+  if (!poll(ublox_msgs::CfgPRT::CLASS_ID, ublox_msgs::CfgPRT::MESSAGE_ID, payload)) {
     ROS_ERROR("Resetting Serial Port: Could not poll UART1 CfgPRT");
     return;
   }
@@ -288,7 +286,7 @@ bool Gps::configReset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
   return true;
 }
 
-bool Gps::configGnss(CfgGNSS gnss,
+bool Gps::configGnss(ublox_msgs::CfgGNSS gnss,
                      const std::chrono::milliseconds& wait) {
   // Configure the GNSS settingshttps://mail.google.com/mail/u/0/#inbox
   ROS_DEBUG("Re-configuring GNSS.");
@@ -297,7 +295,7 @@ bool Gps::configGnss(CfgGNSS gnss,
   }
   // Cold reset the GNSS
   ROS_WARN("GNSS re-configured, cold resetting device.");
-  if (!configReset(CfgRST::NAV_BBR_COLD_START, CfgRST::RESET_MODE_GNSS)) {
+  if (!configReset(ublox_msgs::CfgRST::NAV_BBR_COLD_START, ublox_msgs::CfgRST::RESET_MODE_GNSS)) {
     return false;
   }
   ros::Duration(1.0).sleep();
@@ -338,22 +336,22 @@ bool Gps::configUart1(unsigned int baudrate, uint16_t in_proto_mask,
             baudrate, in_proto_mask, out_proto_mask);
 
   ublox_msgs::CfgPRT port;
-  port.port_id = CfgPRT::PORT_ID_UART1;
+  port.port_id = ublox_msgs::CfgPRT::PORT_ID_UART1;
   port.baud_rate = baudrate;
-  port.mode = CfgPRT::MODE_RESERVED1 | CfgPRT::MODE_CHAR_LEN_8BIT |
-              CfgPRT::MODE_PARITY_NO | CfgPRT::MODE_STOP_BITS_1;
+  port.mode = ublox_msgs::CfgPRT::MODE_RESERVED1 | ublox_msgs::CfgPRT::MODE_CHAR_LEN_8BIT |
+              ublox_msgs::CfgPRT::MODE_PARITY_NO | ublox_msgs::CfgPRT::MODE_STOP_BITS_1;
   port.in_proto_mask = in_proto_mask;
   port.out_proto_mask = out_proto_mask;
   return configure(port);
 }
 
-bool Gps::disableUart1(CfgPRT& prev_config) {
+bool Gps::disableUart1(ublox_msgs::CfgPRT& prev_config) {
   ROS_DEBUG("Disabling UART1");
 
   // Poll UART PRT Config
   std::vector<uint8_t> payload;
-  payload.push_back(CfgPRT::PORT_ID_UART1);
-  if (!poll(CfgPRT::CLASS_ID, CfgPRT::MESSAGE_ID, payload)) {
+  payload.push_back(ublox_msgs::CfgPRT::PORT_ID_UART1);
+  if (!poll(ublox_msgs::CfgPRT::CLASS_ID, ublox_msgs::CfgPRT::MESSAGE_ID, payload)) {
     ROS_ERROR("disableUart: Could not poll UART1 CfgPRT");
     return false;
   }
@@ -363,7 +361,7 @@ bool Gps::disableUart1(CfgPRT& prev_config) {
   }
   // Keep original settings, but disable in/out
   ublox_msgs::CfgPRT port;
-  port.port_id = CfgPRT::PORT_ID_UART1;
+  port.port_id = ublox_msgs::CfgPRT::PORT_ID_UART1;
   port.mode = prev_config.mode;
   port.baud_rate = prev_config.baud_rate;
   port.in_proto_mask = 0;
@@ -384,7 +382,7 @@ bool Gps::configUsb(uint16_t tx_ready,
             tx_ready, in_proto_mask, out_proto_mask);
 
   ublox_msgs::CfgPRT port;
-  port.port_id = CfgPRT::PORT_ID_USB;
+  port.port_id = ublox_msgs::CfgPRT::PORT_ID_USB;
   port.tx_ready = tx_ready;
   port.in_proto_mask = in_proto_mask;
   port.out_proto_mask = out_proto_mask;
@@ -398,7 +396,7 @@ bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
   ublox_msgs::CfgRATE rate;
   rate.meas_rate = meas_rate;
   rate.nav_rate = nav_rate;  //  must be fixed at 1 for ublox 5 and 6
-  rate.time_ref = CfgRATE::TIME_REF_GPS;
+  rate.time_ref = ublox_msgs::CfgRATE::TIME_REF_GPS;
   return configure(rate);
 }
 
@@ -417,7 +415,7 @@ bool Gps::configSbas(bool enable, uint8_t usage, uint8_t max_sbas) {
   ROS_DEBUG("Configuring SBAS: usage %u, max_sbas %u", usage, max_sbas);
 
   ublox_msgs::CfgSBAS msg;
-  msg.mode = (enable ? CfgSBAS::MODE_ENABLED : 0);
+  msg.mode = (enable ? ublox_msgs::CfgSBAS::MODE_ENABLED : 0);
   msg.usage = usage;
   msg.max_sbas = max_sbas;
   return configure(msg);
