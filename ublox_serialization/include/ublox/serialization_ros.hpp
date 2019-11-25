@@ -38,20 +38,18 @@ namespace ublox {
 
 template <typename T>
 void Serializer<T>::read(const uint8_t *data, uint32_t count,
-                         typename boost::call_traits<T>::reference message) {
+                         T &message) {
   ros::serialization::IStream stream(const_cast<uint8_t *>(data), count);
   ros::serialization::Serializer<T>::read(stream, message);
 }
 
 template <typename T>
-uint32_t Serializer<T>::serializedLength(
-    typename boost::call_traits<T>::param_type message) {
+uint32_t Serializer<T>::serializedLength(const T &message) {
   return ros::serialization::Serializer<T>::serializedLength(message);
 }
 
 template <typename T>
-void Serializer<T>::write(uint8_t *data, uint32_t size,
-                          typename boost::call_traits<T>::param_type message) {
+void Serializer<T>::write(uint8_t *data, uint32_t size, const T &message) {
   ros::serialization::OStream stream(data, size);
   ros::serialization::Serializer<T>::write(stream, message);
 }

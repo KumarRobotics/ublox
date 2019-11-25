@@ -31,7 +31,6 @@
 
 #include <ros/console.h>
 #include <stdint.h>
-#include <boost/call_traits.hpp>
 #include <vector>
 #include <algorithm>
 
@@ -74,7 +73,7 @@ struct Serializer {
    * @param message the output message
    */
   static void read(const uint8_t *data, uint32_t count,
-                   typename boost::call_traits<T>::reference message);
+                   T &message);
   /**
    * @brief Get the length of the message payload in bytes.
    *
@@ -82,8 +81,7 @@ struct Serializer {
    * @param message the message to get the length of
    * @return the length of the message in bytes.
    */
-  static uint32_t serializedLength(
-      typename boost::call_traits<T>::param_type message);
+  static uint32_t serializedLength(const T &message);
 
   /**
    * @brief Encode the message payload as a byte array.
@@ -91,8 +89,7 @@ struct Serializer {
    * @param size the length of the buffer
    * @param message the output message
    */
-  static void write(uint8_t *data, uint32_t size,
-                    typename boost::call_traits<T>::param_type message);
+  static void write(uint8_t *data, uint32_t size, const T &message);
 };
 
 /**
@@ -184,13 +181,16 @@ class Reader {
    */
   iterator search()
   {
-    if (found_) next();
+    if (found_) {
+      next();
+    }
 
     // Search for a message header
     for( ; count_ > 0; --count_, ++data_) {
       if (data_[0] == options_.sync_a &&
-          (count_ == 1 || data_[1] == options_.sync_b))
+          (count_ == 1 || data_[1] == options_.sync_b)) {
         break;
+      }
     }
 
     return data_;
@@ -202,15 +202,22 @@ class Reader {
    */
   bool found()
   {
-    if (found_) return true;
+    if (found_) {
+      return true;
+    }
     // Verify message is long enough to have sync chars, id, length & checksum
-    if (count_ < options_.wrapper_length()) return false;
-    // Verify the header bits
-    if (data_[0] != options_.sync_a || data_[1] != options_.sync_b)
+    if (count_ < options_.wrapper_length()) {
       return false;
+    }
+    // Verify the header bits
+    if (data_[0] != options_.sync_a || data_[1] != options_.sync_b) {
+      return false;
+    }
     // Verify that the buffer length is long enough based on the received
     // message length
-    if (count_ < length() + options_.wrapper_length()) return false;
+    if (count_ < length() + options_.wrapper_length()) {
+      return false;
+    }
 
     found_ = true;
     return true;
@@ -273,11 +280,17 @@ class Reader {
    * @param search whether or not to skip to the next message in the buffer
    */
   template <typename T>
-  bool read(typename boost::call_traits<T>::reference message,
+  bool read(T &message,
             bool search = false) {
-    if (search) this->search();
-    if (!found()) return false;
-    if (!Message<T>::canDecode(classId(), messageId())) return false;
+    if (search) {
+      this->search();
+    }
+    if (!found()) {
+      return false;
+    }
+    if (!Message<T>::canDecode(classId(), messageId())) {
+      return false;
+    }
 
     uint16_t chk;
     if (calculateChecksum(data_ + 2, length() + 4, chk) != this->checksum()) {
@@ -298,7 +311,9 @@ class Reader {
    */
   template <typename T>
   bool hasType() {
-    if (!found()) return false;
+    if (!found()) {
+      return false;
+    }
     return Message<T>::canDecode(classId(), messageId());
   }
 
@@ -308,7 +323,9 @@ class Reader {
    * ID
    */
   bool isMessage(uint8_t class_id, uint8_t message_id) {
-    if (!found()) return false;
+    if (!found()) {
+      return false;
+    }
     return (classId() == class_id && messageId() == message_id);
   }
 
