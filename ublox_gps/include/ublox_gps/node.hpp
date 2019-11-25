@@ -1094,7 +1094,7 @@ class AdrUdrProduct: public virtual ComponentInterface {
   //! Whether or not to enable dead reckoning
   bool use_adr_;
 
-   
+
   sensor_msgs::Imu imu_;
   sensor_msgs::TimeReference t_ref_;
   ublox_msgs::TimTM2 timtm2;
@@ -1343,13 +1343,13 @@ class TimProduct: public virtual ComponentInterface {
    * @brief Get the Time Sync parameters.
    * @todo Currently unimplemented.
    */
-  void getRosParams(); 
- 
+  void getRosParams();
+
   /**
    * @brief Configure Time Sync settings.
    * @todo Currently unimplemented.
    */
-  bool configureUblox(); 
+  bool configureUblox();
 
   /**
    * @brief Subscribe to Time Sync messages.
@@ -1364,13 +1364,13 @@ class TimProduct: public virtual ComponentInterface {
    */
   void initializeRosDiagnostics();
 
- protected:  
+ protected:
   /**
-   * @brief 
+   * @brief
    * @details Publish recieved TimTM2 messages if enabled
    */
   void callbackTimTM2(const ublox_msgs::TimTM2 &m);
- 
+
   sensor_msgs::TimeReference t_ref_;
 };
 

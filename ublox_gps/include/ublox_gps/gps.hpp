@@ -299,7 +299,7 @@ class Gps {
   bool setUseAdr(bool enable);
 
   /**
-   * @brief Configure the U-Blox to UTC time 
+   * @brief Configure the U-Blox to UTC time
    * @return true on ACK, false on other conditions.
    *
    * @note This is part of the expert settings. It is recommended you check
@@ -316,7 +316,7 @@ class Gps {
    * the ublox manual first.
    */
   bool setTimtm2(uint8_t rate);
- 
+
   /**
    * @brief Configure the U-Blox send rate of the message & subscribe to the
    * given message

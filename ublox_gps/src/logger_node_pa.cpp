@@ -46,7 +46,7 @@ using namespace ublox_node;
 int main(int argc, char** argv) {
 
     ros::init(argc, argv, "ublox_logger");
-    
+
     RawDataStreamPa node(true);
     node.getRosParams();
     node.initialize();

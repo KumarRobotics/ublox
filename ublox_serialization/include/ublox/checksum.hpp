@@ -14,9 +14,9 @@
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
 // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -35,14 +35,14 @@ namespace ublox {
 
 /**
  * @brief calculate the checksum of a u-blox_message
- * @param data the start of the u-blox message 
+ * @param data the start of the u-blox message
  * @param data the size of the u-blox message
  * @param ck_a the checksum a output
  * @param ck_b the checksum b output
  */
-static inline void calculateChecksum(const uint8_t *data, 
-                                     uint32_t size, 
-                                     uint8_t &ck_a, 
+static inline void calculateChecksum(const uint8_t *data,
+                                     uint32_t size,
+                                     uint8_t &ck_a,
                                      uint8_t &ck_b) {
   ck_a = 0; ck_b = 0;
   for(uint32_t i = 0; i < size; ++i)
@@ -54,13 +54,13 @@ static inline void calculateChecksum(const uint8_t *data,
 
 /**
  * @brief calculate the checksum of a u-blox_message.
- * @param data the start of the u-blox message 
+ * @param data the start of the u-blox message
  * @param data the size of the u-blox message
  * @param checksum the checksum output
  * @return the checksum
  */
-static inline uint16_t calculateChecksum(const uint8_t *data, 
-                                         uint32_t size, 
+static inline uint16_t calculateChecksum(const uint8_t *data,
+                                         uint32_t size,
                                          uint16_t &checksum) {
   uint8_t *byte = reinterpret_cast<uint8_t *>(&checksum);
   calculateChecksum(data, size, byte[0], byte[1]);

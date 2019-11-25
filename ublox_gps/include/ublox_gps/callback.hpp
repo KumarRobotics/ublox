@@ -14,9 +14,9 @@
 //       endorse or promote products derived from this software without
 //       specific prior written permission.
 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 // ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
 // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -69,12 +69,12 @@ class CallbackHandler_ : public CallbackHandler {
  public:
   typedef boost::function<void(const T&)> Callback; //!< A callback function
 
-  /** 
+  /**
    * @brief Initialize the Callback Handler with a callback function
    * @param func a callback function for the message, defaults to none
    */
   CallbackHandler_(const Callback& func = Callback()) : func_(func) {}
-  
+
   /**
    * @brief Get the last received message.
    */
@@ -88,8 +88,8 @@ class CallbackHandler_ : public CallbackHandler {
     boost::mutex::scoped_lock lock(mutex_);
     try {
       if (!reader.read<T>(message_)) {
-        ROS_DEBUG_COND(debug >= 2, 
-                       "U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)", 
+        ROS_DEBUG_COND(debug >= 2,
+                       "U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)",
                        static_cast<unsigned int>(reader.classId()),
                        static_cast<unsigned int>(reader.messageId()),
                        reader.length());
@@ -97,8 +97,8 @@ class CallbackHandler_ : public CallbackHandler {
         return;
       }
     } catch (std::runtime_error& e) {
-      ROS_DEBUG_COND(debug >= 2, 
-                     "U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)", 
+      ROS_DEBUG_COND(debug >= 2,
+                     "U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)",
                      static_cast<unsigned int>(reader.classId()),
                      static_cast<unsigned int>(reader.messageId()),
                      reader.length());
@@ -109,7 +109,7 @@ class CallbackHandler_ : public CallbackHandler {
     if (func_) func_(message_);
     condition_.notify_all();
   }
-  
+
  private:
   Callback func_; //!< the callback function to handle the message
   T message_; //!< The last received message
@@ -135,7 +135,7 @@ class CallbackHandlers {
   }
 
   /**
-   * @brief Add a callback handler for the given message type and ID. This is 
+   * @brief Add a callback handler for the given message type and ID. This is
    * used for messages in which have the same structure (and therefore msg file)
    * and same class ID but different message IDs. (e.g. INF, ACK)
    * @param callback the callback handler for the message
@@ -144,7 +144,7 @@ class CallbackHandlers {
    */
   template <typename T>
   void insert(
-      typename CallbackHandler_<T>::Callback callback, 
+      typename CallbackHandler_<T>::Callback callback,
       unsigned int message_id) {
     boost::mutex::scoped_lock lock(callback_mutex_);
     CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
@@ -188,7 +188,7 @@ class CallbackHandlers {
       message = handler->get();
       result = true;
     }
-    
+
     // Remove the callback handler
     callback_mutex_.lock();
     callbacks_.erase(callback);
@@ -212,7 +212,7 @@ class CallbackHandlers {
         for (ublox::Reader::iterator it = reader.pos();
              it != reader.pos() + reader.length() + 8; ++it)
           oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
-        ROS_DEBUG("U-blox: reading %d bytes\n%s", reader.length() + 8, 
+        ROS_DEBUG("U-blox: reading %d bytes\n%s", reader.length() + 8,
                  oss.str().c_str());
       }
 
