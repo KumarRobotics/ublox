@@ -424,7 +424,7 @@ bool UbloxNode::configureUblox() {
       if (load_.loadMask & load_.MASK_IO_PORT) {
         ROS_DEBUG("Loaded I/O configuration from memory, resetting serial %s",
           "communications.");
-        boost::posix_time::seconds wait(kResetWait);
+        std::chrono::seconds wait(kResetWait);
         gps.reset(wait);
         if (!gps.isConfigured())
           throw std::runtime_error(std::string("Failed to reset serial I/O") +
@@ -1187,7 +1187,7 @@ bool UbloxFirmware8::configureUblox() {
   // since this requires a cold reset
   if (correct)
     ROS_DEBUG("U-Blox GNSS configuration is correct. GNSS not re-configured.");
-  else if (!gps.configGnss(cfg_gnss, boost::posix_time::seconds(15)))
+  else if (!gps.configGnss(cfg_gnss, std::chrono::seconds(15)))
     throw std::runtime_error(std::string("Failed to cold reset device ") +
                              "after configuring GNSS");
 

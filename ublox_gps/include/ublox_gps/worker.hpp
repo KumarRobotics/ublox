@@ -26,8 +26,10 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#ifndef UBLOX_GPS_WORKER_H
-#define UBLOX_GPS_WORKER_H
+#ifndef UBLOX_GPS_WORKER_HPP
+#define UBLOX_GPS_WORKER_HPP
+
+#include <chrono>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/function.hpp>
@@ -65,7 +67,7 @@ class Worker {
    * @brief Wait for an incoming message.
    * @param timeout the maximum time to wait.
    */
-  virtual void wait(const boost::posix_time::time_duration& timeout) = 0;
+  virtual void wait(const std::chrono::milliseconds& timeout) = 0;
 
   /**
    * @brief Whether or not the I/O stream is open.
@@ -75,4 +77,4 @@ class Worker {
 
 }  // namespace ublox_gps
 
-#endif  // UBLOX_GPS_WORKER_H
+#endif  // UBLOX_GPS_WORKER_HPP

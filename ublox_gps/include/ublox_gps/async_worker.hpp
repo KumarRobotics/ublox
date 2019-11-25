@@ -26,8 +26,12 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#ifndef UBLOX_GPS_ASYNC_WORKER_H
-#define UBLOX_GPS_ASYNC_WORKER_H
+#ifndef UBLOX_GPS_ASYNC_WORKER_HPP
+#define UBLOX_GPS_ASYNC_WORKER_HPP
+
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
 
 #include <ublox_gps/gps.hpp>
 
@@ -50,9 +54,6 @@ int debug; //!< Used to determine which debug messages to display
 template <typename StreamT>
 class AsyncWorker : public Worker {
  public:
-  typedef boost::mutex Mutex;
-  typedef boost::mutex::scoped_lock ScopedLock;
-
   /**
    * @brief Construct an Asynchronous I/O worker.
    * @param stream the stream for th I/O service
@@ -86,7 +87,7 @@ class AsyncWorker : public Worker {
    * @brief Wait for incoming messages.
    * @param timeout the maximum time to wait
    */
-  void wait(const boost::posix_time::time_duration& timeout);
+  void wait(const std::chrono::milliseconds& timeout);
 
   bool isOpen() const { return stream_->is_open(); }
 
@@ -116,14 +117,14 @@ class AsyncWorker : public Worker {
   boost::shared_ptr<StreamT> stream_; //!< The I/O stream
   boost::shared_ptr<boost::asio::io_service> io_service_; //!< The I/O service
 
-  Mutex read_mutex_; //!< Lock for the input buffer
-  boost::condition read_condition_;
+  std::mutex read_mutex_; //!< Lock for the input buffer
+  std::condition_variable read_condition_;
   std::vector<unsigned char> in_; //!< The input buffer
   std::size_t in_buffer_size_; //!< number of bytes currently in the input
                                //!< buffer
 
-  Mutex write_mutex_; //!< Lock for the output buffer
-  boost::condition write_condition_;
+  std::mutex write_mutex_; //!< Lock for the output buffer
+  std::condition_variable write_condition_;
   std::vector<unsigned char> out_; //!< The output buffer
 
   boost::shared_ptr<boost::thread> background_thread_; //!< thread for the I/O
@@ -161,7 +162,7 @@ AsyncWorker<StreamT>::~AsyncWorker() {
 template <typename StreamT>
 bool AsyncWorker<StreamT>::send(const unsigned char* data,
                                 const unsigned int size) {
-  ScopedLock lock(write_mutex_);
+  std::lock_guard<std::mutex> lock(write_mutex_);
   if(size == 0) {
     ROS_ERROR("Ublox AsyncWorker::send: Size of message to send is 0");
     return true;
@@ -179,7 +180,7 @@ bool AsyncWorker<StreamT>::send(const unsigned char* data,
 
 template <typename StreamT>
 void AsyncWorker<StreamT>::doWrite() {
-  ScopedLock lock(write_mutex_);
+  std::lock_guard<std::mutex> lock(write_mutex_);
   // Do nothing if out buffer is empty
   if (out_.size() == 0) {
     return;
@@ -202,7 +203,7 @@ void AsyncWorker<StreamT>::doWrite() {
 
 template <typename StreamT>
 void AsyncWorker<StreamT>::doRead() {
-  ScopedLock lock(read_mutex_);
+  std::lock_guard<std::mutex> lock(read_mutex_);
   stream_->async_read_some(
       boost::asio::buffer(in_.data() + in_buffer_size_,
                           in_.size() - in_buffer_size_),
@@ -214,7 +215,7 @@ void AsyncWorker<StreamT>::doRead() {
 template <typename StreamT>
 void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
                                    std::size_t bytes_transfered) {
-  ScopedLock lock(read_mutex_);
+  std::lock_guard<std::mutex> lock(read_mutex_);
   if (error) {
     ROS_ERROR("U-Blox ASIO input buffer read error: %s, %li",
               error.message().c_str(),
@@ -250,7 +251,7 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
 
 template <typename StreamT>
 void AsyncWorker<StreamT>::doClose() {
-  ScopedLock lock(read_mutex_);
+  std::lock_guard<std::mutex> lock(read_mutex_);
   stopping_ = true;
   boost::system::error_code error;
   stream_->close(error);
@@ -261,11 +262,11 @@ void AsyncWorker<StreamT>::doClose() {
 
 template <typename StreamT>
 void AsyncWorker<StreamT>::wait(
-    const boost::posix_time::time_duration& timeout) {
-  ScopedLock lock(read_mutex_);
-  read_condition_.timed_wait(lock, timeout);
+    const std::chrono::milliseconds& timeout) {
+  std::unique_lock<std::mutex> lock(read_mutex_);
+  read_condition_.wait_for(lock, timeout);
 }
 
 }  // namespace ublox_gps
 
-#endif  // UBLOX_GPS_ASYNC_WORKER_H
+#endif  // UBLOX_GPS_ASYNC_WORKER_HPP

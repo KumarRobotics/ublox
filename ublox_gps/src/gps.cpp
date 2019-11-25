@@ -27,6 +27,9 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
+#include <chrono>
+#include <thread>
+
 #include <ublox_gps/gps.hpp>
 #include <boost/version.hpp>
 
@@ -34,8 +37,8 @@ namespace ublox_gps {
 
 using namespace ublox_msgs;
 
-const boost::posix_time::time_duration Gps::default_timeout_ =
-    boost::posix_time::milliseconds(
+const std::chrono::milliseconds Gps::default_timeout_ =
+    std::chrono::milliseconds(
         static_cast<int>(Gps::kDefaultAckTimeout * 1000));
 
 Gps::Gps() : configured_(false), config_on_startup_flag_(true) {
@@ -151,8 +154,8 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
       continue;
     serial->set_option(
         boost::asio::serial_port_base::baud_rate(kBaudrates[i]));
-    boost::this_thread::sleep(
-        boost::posix_time::milliseconds(kSetBaudrateSleepMs));
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(kSetBaudrateSleepMs));
     serial->get_option(current_baudrate);
     ROS_DEBUG("U-Blox: Set ASIO baudrate to %u", current_baudrate.value());
   }
@@ -254,11 +257,11 @@ void Gps::close() {
   configured_ = false;
 }
 
-void Gps::reset(const boost::posix_time::time_duration& wait) {
+void Gps::reset(const std::chrono::milliseconds& wait) {
   worker_.reset();
   configured_ = false;
   // sleep because of undefined behavior after I/O reset
-  boost::this_thread::sleep(wait);
+  std::this_thread::sleep_for(wait);
   if (host_ == "")
     resetSerial(port_);
   else
@@ -280,7 +283,7 @@ bool Gps::configReset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
 }
 
 bool Gps::configGnss(CfgGNSS gnss,
-                     const boost::posix_time::time_duration& wait) {
+                     const std::chrono::milliseconds& wait) {
   // Configure the GNSS settingshttps://mail.google.com/mail/u/0/#inbox
   ROS_DEBUG("Re-configuring GNSS.");
   if (!configure(gnss))
@@ -537,15 +540,15 @@ bool Gps::poll(uint8_t class_id, uint8_t message_id,
   return true;
 }
 
-bool Gps::waitForAcknowledge(const boost::posix_time::time_duration& timeout,
+bool Gps::waitForAcknowledge(const std::chrono::milliseconds& timeout,
                              uint8_t class_id, uint8_t msg_id) {
   ROS_DEBUG_COND(debug >= 2, "Waiting for ACK 0x%02x / 0x%02x",
                  class_id, msg_id);
-  boost::posix_time::ptime wait_until(
-      boost::posix_time::second_clock::local_time() + timeout);
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+  std::chrono::system_clock::time_point wait_until = now + timeout;
 
   Ack ack = ack_.load(boost::memory_order_seq_cst);
-  while (boost::posix_time::second_clock::local_time() < wait_until
+  while (std::chrono::system_clock::now() < wait_until
          && (ack.class_id != class_id
              || ack.msg_id != msg_id
              || ack.type == WAIT)) {
