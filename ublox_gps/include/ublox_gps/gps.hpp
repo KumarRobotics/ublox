@@ -36,10 +36,6 @@
 #include <vector>
 #include <locale>
 #include <stdexcept>
-// Boost
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/serial_port.hpp>
-#include <boost/asio/io_service.hpp>
 // ROS
 #include <ros/console.h>
 // Other u-blox packages

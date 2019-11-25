@@ -33,6 +33,11 @@
 #include <stdexcept>
 #include <thread>
 
+#include <asio/io_service.hpp>
+#include <asio/serial_port.hpp>
+#include <asio/serial_port_base.hpp>
+#include <asio/ip/tcp.hpp>
+
 #include <ublox_gps/gps.hpp>
 
 namespace ublox_gps {
@@ -113,8 +118,8 @@ void Gps::processUpdSosAck(const ublox_msgs::UpdSOSAck &m) {
 void Gps::initializeSerial(std::string port, unsigned int baudrate,
                            uint16_t uart_in, uint16_t uart_out) {
   port_ = port;
-  auto io_service = std::make_shared<boost::asio::io_service>();
-  auto serial = std::make_shared<boost::asio::serial_port>(*io_service);
+  auto io_service = std::make_shared<asio::io_service>();
+  auto serial = std::make_shared<asio::serial_port>(*io_service);
 
   // open serial port
   try {
@@ -126,27 +131,22 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
 
   ROS_INFO("U-Blox: Opened serial port %s", port.c_str());
 
-  if (BOOST_VERSION < 106600) {
-    // NOTE(Kartik): Set serial port to "raw" mode. This is done in Boost but
-    // until v1.66.0 there was a bug which didn't enable the relevant code,
-    // fixed by commit: https://github.com/boostorg/asio/commit/619cea4356
-    int fd = serial->native_handle();
-    termios tio;
-    tcgetattr(fd, &tio);
-    cfmakeraw(&tio);
-    tcsetattr(fd, TCSANOW, &tio);
-  }
+  int fd = serial->native_handle();
+  termios tio;
+  tcgetattr(fd, &tio);
+  cfmakeraw(&tio);
+  tcsetattr(fd, TCSANOW, &tio);
 
   // Set the I/O worker
   if (worker_) {
     return;
   }
-  setWorker(std::make_shared<AsyncWorker<boost::asio::serial_port>>(serial, io_service));
+  setWorker(std::make_shared<AsyncWorker<asio::serial_port>>(serial, io_service));
 
   configured_ = false;
 
   // Set the baudrate
-  boost::asio::serial_port_base::baud_rate current_baudrate;
+  asio::serial_port_base::baud_rate current_baudrate;
   serial->get_option(current_baudrate);
   // Incrementally increase the baudrate to the desired value
   for (int i = 0; i < sizeof(kBaudrates)/sizeof(kBaudrates[0]); i++) {
@@ -158,7 +158,7 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
       continue;
     }
     serial->set_option(
-        boost::asio::serial_port_base::baud_rate(kBaudrates[i]));
+        asio::serial_port_base::baud_rate(kBaudrates[i]));
     std::this_thread::sleep_for(
         std::chrono::milliseconds(kSetBaudrateSleepMs));
     serial->get_option(current_baudrate);
@@ -175,8 +175,8 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
 }
 
 void Gps::resetSerial(std::string port) {
-  auto io_service = std::make_shared<boost::asio::io_service>();
-  auto serial = std::make_shared<boost::asio::serial_port>(*io_service);
+  auto io_service = std::make_shared<asio::io_service>();
+  auto serial = std::make_shared<asio::serial_port>(*io_service);
 
   // open serial port
   try {
@@ -192,7 +192,7 @@ void Gps::resetSerial(std::string port) {
   if (worker_) {
     return;
   }
-  setWorker(std::make_shared<AsyncWorker<boost::asio::serial_port>>(serial, io_service));
+  setWorker(std::make_shared<AsyncWorker<asio::serial_port>>(serial, io_service));
   configured_ = false;
 
   // Poll UART PRT Config
@@ -210,26 +210,26 @@ void Gps::resetSerial(std::string port) {
   }
 
   // Set the baudrate
-  serial->set_option(boost::asio::serial_port_base::baud_rate(prt.baud_rate));
+  serial->set_option(asio::serial_port_base::baud_rate(prt.baud_rate));
   configured_ = true;
 }
 
 void Gps::initializeTcp(std::string host, std::string port) {
   host_ = host;
   port_ = port;
-  auto io_service = std::make_shared<boost::asio::io_service>();
-  boost::asio::ip::tcp::resolver::iterator endpoint;
+  auto io_service = std::make_shared<asio::io_service>();
+  asio::ip::tcp::resolver::iterator endpoint;
 
   try {
-    boost::asio::ip::tcp::resolver resolver(*io_service);
+    asio::ip::tcp::resolver resolver(*io_service);
     endpoint =
-        resolver.resolve(boost::asio::ip::tcp::resolver::query(host, port));
+        resolver.resolve(asio::ip::tcp::resolver::query(host, port));
   } catch (std::runtime_error& e) {
     throw std::runtime_error("U-Blox: Could not resolve" + host + " " +
                              port + " " + e.what());
   }
 
-  auto socket = std::make_shared<boost::asio::ip::tcp::socket>(*io_service);
+  auto socket = std::make_shared<asio::ip::tcp::socket>(*io_service);
 
   try {
     socket->connect(*endpoint);
@@ -245,7 +245,7 @@ void Gps::initializeTcp(std::string host, std::string port) {
   if (worker_) {
     return;
   }
-  setWorker(std::make_shared<AsyncWorker<boost::asio::ip::tcp::socket>>(socket,
+  setWorker(std::make_shared<AsyncWorker<asio::ip::tcp::socket>>(socket,
                                                                         io_service));
 }
 

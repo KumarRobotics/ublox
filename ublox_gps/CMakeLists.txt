@@ -14,14 +14,12 @@ catkin_package(
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS tf roscpp ublox_msgs ublox_serialization)
 
-# include boost
-find_package(Boost REQUIRED COMPONENTS system regex thread)
-link_directories(${Boost_LIBRARY_DIR})
-include_directories(${Boost_INCLUDE_DIR})
-
 # include other ublox packages
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${catkin_INCLUDE_DIRS})
+
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+find_package(asio REQUIRED)
 
 # link pthread
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
@@ -33,12 +31,6 @@ add_library(ublox_gps src/gps.cpp)
 add_dependencies(ublox_gps ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(ublox_gps
-  boost_system
-  boost_regex
-  boost_thread
-)
-
-target_link_libraries(ublox_gps
   ${catkin_LIBRARIES}
 )
 
@@ -46,7 +38,6 @@ target_link_libraries(ublox_gps
 add_executable(ublox_gps_node src/node.cpp src/mkgmtime.c src/raw_data_pa.cpp)
 set_target_properties(ublox_gps_node PROPERTIES OUTPUT_NAME ublox_gps)
 
-target_link_libraries(ublox_gps_node boost_system boost_regex boost_thread)
 target_link_libraries(ublox_gps_node ${catkin_LIBRARIES})
 target_link_libraries(ublox_gps_node ublox_gps)
 
