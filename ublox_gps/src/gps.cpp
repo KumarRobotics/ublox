@@ -28,6 +28,8 @@
 //==============================================================================
 
 #include <chrono>
+#include <memory>
+#include <stdexcept>
 #include <thread>
 
 #include <ublox_gps/gps.hpp>
@@ -47,7 +49,7 @@ Gps::Gps() : configured_(false), config_on_startup_flag_(true) {
 
 Gps::~Gps() { close(); }
 
-void Gps::setWorker(const boost::shared_ptr<Worker>& worker) {
+void Gps::setWorker(const std::shared_ptr<Worker>& worker) {
   if (worker_) {
     return;
   }
@@ -111,9 +113,9 @@ void Gps::processUpdSosAck(const ublox_msgs::UpdSOSAck &m) {
 void Gps::initializeSerial(std::string port, unsigned int baudrate,
                            uint16_t uart_in, uint16_t uart_out) {
   port_ = port;
-  boost::shared_ptr<boost::asio::io_service> io_service(
+  std::shared_ptr<boost::asio::io_service> io_service(
       new boost::asio::io_service);
-  boost::shared_ptr<boost::asio::serial_port> serial(
+  std::shared_ptr<boost::asio::serial_port> serial(
       new boost::asio::serial_port(*io_service));
 
   // open serial port
@@ -141,7 +143,7 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
   if (worker_) {
     return;
   }
-  setWorker(boost::shared_ptr<Worker>(
+  setWorker(std::shared_ptr<Worker>(
       new AsyncWorker<boost::asio::serial_port>(serial, io_service)));
 
   configured_ = false;
@@ -176,9 +178,9 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
 }
 
 void Gps::resetSerial(std::string port) {
-  boost::shared_ptr<boost::asio::io_service> io_service(
+  std::shared_ptr<boost::asio::io_service> io_service(
       new boost::asio::io_service);
-  boost::shared_ptr<boost::asio::serial_port> serial(
+  std::shared_ptr<boost::asio::serial_port> serial(
       new boost::asio::serial_port(*io_service));
 
   // open serial port
@@ -195,7 +197,7 @@ void Gps::resetSerial(std::string port) {
   if (worker_) {
     return;
   }
-  setWorker(boost::shared_ptr<Worker>(
+  setWorker(std::shared_ptr<Worker>(
       new AsyncWorker<boost::asio::serial_port>(serial, io_service)));
   configured_ = false;
 
@@ -221,7 +223,7 @@ void Gps::resetSerial(std::string port) {
 void Gps::initializeTcp(std::string host, std::string port) {
   host_ = host;
   port_ = port;
-  boost::shared_ptr<boost::asio::io_service> io_service(
+  std::shared_ptr<boost::asio::io_service> io_service(
       new boost::asio::io_service);
   boost::asio::ip::tcp::resolver::iterator endpoint;
 
@@ -234,7 +236,7 @@ void Gps::initializeTcp(std::string host, std::string port) {
                              port + " " + e.what());
   }
 
-  boost::shared_ptr<boost::asio::ip::tcp::socket> socket(
+  std::shared_ptr<boost::asio::ip::tcp::socket> socket(
     new boost::asio::ip::tcp::socket(*io_service));
 
   try {
@@ -251,7 +253,7 @@ void Gps::initializeTcp(std::string host, std::string port) {
   if (worker_) {
     return;
   }
-  setWorker(boost::shared_ptr<Worker>(
+  setWorker(std::shared_ptr<Worker>(
       new AsyncWorker<boost::asio::ip::tcp::socket>(socket,
                                                     io_service)));
 }

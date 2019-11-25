@@ -31,16 +31,15 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <memory>
 #include <mutex>
+#include <thread>
+#include <vector>
 
 #include <ublox_gps/gps.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
-#include <boost/format.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread/condition.hpp>
-
 
 #include "worker.hpp"
 
@@ -60,8 +59,8 @@ class AsyncWorker : public Worker {
    * @param io_service the I/O service
    * @param buffer_size the size of the input and output buffers
    */
-  AsyncWorker(boost::shared_ptr<StreamT> stream,
-              boost::shared_ptr<boost::asio::io_service> io_service,
+  AsyncWorker(std::shared_ptr<StreamT> stream,
+              std::shared_ptr<boost::asio::io_service> io_service,
               std::size_t buffer_size = 8192);
   virtual ~AsyncWorker();
 
@@ -114,8 +113,8 @@ class AsyncWorker : public Worker {
    */
   void doClose();
 
-  boost::shared_ptr<StreamT> stream_; //!< The I/O stream
-  boost::shared_ptr<boost::asio::io_service> io_service_; //!< The I/O service
+  std::shared_ptr<StreamT> stream_; //!< The I/O stream
+  std::shared_ptr<boost::asio::io_service> io_service_; //!< The I/O service
 
   std::mutex read_mutex_; //!< Lock for the input buffer
   std::condition_variable read_condition_;
@@ -127,7 +126,7 @@ class AsyncWorker : public Worker {
   std::condition_variable write_condition_;
   std::vector<unsigned char> out_; //!< The output buffer
 
-  boost::shared_ptr<boost::thread> background_thread_; //!< thread for the I/O
+  std::shared_ptr<std::thread> background_thread_; //!< thread for the I/O
                                                        //!< service
   Callback read_callback_; //!< Callback function to handle received messages
   Callback write_callback_; //!< Callback function to handle raw data
@@ -136,8 +135,8 @@ class AsyncWorker : public Worker {
 };
 
 template <typename StreamT>
-AsyncWorker<StreamT>::AsyncWorker(boost::shared_ptr<StreamT> stream,
-        boost::shared_ptr<boost::asio::io_service> io_service,
+AsyncWorker<StreamT>::AsyncWorker(std::shared_ptr<StreamT> stream,
+        std::shared_ptr<boost::asio::io_service> io_service,
         std::size_t buffer_size)
     : stopping_(false) {
   stream_ = stream;
@@ -148,7 +147,7 @@ AsyncWorker<StreamT>::AsyncWorker(boost::shared_ptr<StreamT> stream,
   out_.reserve(buffer_size);
 
   io_service_->post(boost::bind(&AsyncWorker<StreamT>::doRead, this));
-  background_thread_.reset(new boost::thread(
+  background_thread_.reset(new std::thread(
       boost::bind(&boost::asio::io_service::run, io_service_)));
 }
 
@@ -163,7 +162,7 @@ template <typename StreamT>
 bool AsyncWorker<StreamT>::send(const unsigned char* data,
                                 const unsigned int size) {
   std::lock_guard<std::mutex> lock(write_mutex_);
-  if(size == 0) {
+  if (size == 0) {
     ROS_ERROR("Ublox AsyncWorker::send: Size of message to send is 0");
     return true;
   }
@@ -192,8 +191,9 @@ void AsyncWorker<StreamT>::doWrite() {
     // Print the data that was sent
     std::ostringstream oss;
     for (std::vector<unsigned char>::iterator it = out_.begin();
-         it != out_.end(); ++it)
-      oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
+         it != out_.end(); ++it) {
+      oss << std::hex << static_cast<unsigned int>(*it) << " ";
+    }
     ROS_DEBUG("U-Blox sent %li bytes: \n%s", out_.size(), oss.str().c_str());
   }
   // Clear the buffer & unlock
@@ -226,27 +226,31 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
     unsigned char *pRawDataStart = &(*(in_.begin() + (in_buffer_size_ - bytes_transfered)));
     std::size_t raw_data_stream_size = bytes_transfered;
 
-    if (write_callback_)
+    if (write_callback_) {
       write_callback_(pRawDataStart, raw_data_stream_size);
+    }
 
     if (debug >= 4) {
       std::ostringstream oss;
       for (std::vector<unsigned char>::iterator it =
                in_.begin() + in_buffer_size_ - bytes_transfered;
-           it != in_.begin() + in_buffer_size_; ++it)
-        oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
+           it != in_.begin() + in_buffer_size_; ++it) {
+        oss << std::hex << static_cast<unsigned int>(*it) << " ";
+      }
       ROS_DEBUG("U-Blox received %li bytes \n%s", bytes_transfered,
-               oss.str().c_str());
+                oss.str().c_str());
     }
 
-    if (read_callback_)
+    if (read_callback_) {
       read_callback_(in_.data(), in_buffer_size_);
+    }
 
     read_condition_.notify_all();
   }
 
-  if (!stopping_)
+  if (!stopping_) {
     io_service_->post(boost::bind(&AsyncWorker<StreamT>::doRead, this));
+  }
 }
 
 template <typename StreamT>
@@ -255,9 +259,10 @@ void AsyncWorker<StreamT>::doClose() {
   stopping_ = true;
   boost::system::error_code error;
   stream_->close(error);
-  if(error)
+  if (error) {
     ROS_ERROR_STREAM(
         "Error while closing the AsyncWorker stream: " << error.message());
+  }
 }
 
 template <typename StreamT>

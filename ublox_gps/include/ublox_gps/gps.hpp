@@ -425,7 +425,7 @@ class Gps {
    * @brief Set the I/O worker
    * @param an I/O handler
    */
-  void setWorker(const boost::shared_ptr<Worker>& worker);
+  void setWorker(const std::shared_ptr<Worker>& worker);
 
   /**
    * @brief Subscribe to ACK/NACK messages and UPD-SOS-ACK messages.
@@ -463,7 +463,7 @@ class Gps {
   bool saveOnShutdown();
 
   //! Processes I/O stream data
-  boost::shared_ptr<Worker> worker_;
+  std::shared_ptr<Worker> worker_;
   //! Whether or not the I/O port has been configured
   bool configured_;
   //! Whether or not to save Flash BBR on shutdown
