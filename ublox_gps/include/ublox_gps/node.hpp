@@ -49,14 +49,11 @@
 // Other U-Blox package includes
 #include <ublox_msgs/ublox_msgs.hpp>
 // Ublox GPS includes
+#include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gps.hpp>
 #include <ublox_gps/utils.hpp>
 #include <ublox_gps/raw_data_pa.hpp>
 
-// This file declares the ComponentInterface which acts as a high level
-// interface for u-blox firmware, product categories, etc. It contains methods
-// to configure the u-blox and subscribe to u-blox messages.
-//
 // This file also declares UbloxNode which implements ComponentInterface and is
 // the main class and ros node. it implements functionality which applies to
 // any u-blox device, regardless of the firmware version or product type.
@@ -437,42 +434,6 @@ void publish(const MessageT& m, ros::Publisher & publisher) {
 bool supportsGnss(const std::string & gnss) {
   return supported.count(gnss) > 0;
 }
-
-/**
- * @brief This interface is used to add functionality to the main node.
- *
- * @details This interface is generic and can be implemented for other features
- * besides the main node, hardware versions, and firmware versions.
- */
-class ComponentInterface {
- public:
-  /**
-   * @brief Get the ROS parameters.
-   * @throws std::runtime_error if a parameter is invalid or required
-   * parameters are not set.
-   */
-  virtual void getRosParams() = 0;
-
-  /**
-   * @brief Configure the U-Blox settings.
-   * @return true if configured correctly, false otherwise
-   */
-  virtual bool configureUblox() = 0;
-
-  /**
-   * @brief Initialize the diagnostics.
-   *
-   * @details Function may be empty.
-   */
-  virtual void initializeRosDiagnostics() = 0;
-
-  /**
-   * @brief Subscribe to u-blox messages and publish to ROS topics.
-   */
-  virtual void subscribe() = 0;
-};
-
-typedef std::shared_ptr<ComponentInterface> ComponentPtr;
 
 /**
  * @brief This class represents u-blox ROS node for *all* firmware and product
