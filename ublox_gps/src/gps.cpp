@@ -28,12 +28,12 @@
 //==============================================================================
 
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <stdexcept>
 #include <thread>
 
 #include <ublox_gps/gps.hpp>
-#include <boost/version.hpp>
 
 namespace ublox_gps {
 
@@ -54,21 +54,21 @@ void Gps::setWorker(const std::shared_ptr<Worker>& worker) {
     return;
   }
   worker_ = worker;
-  worker_->setCallback(boost::bind(&CallbackHandlers::readCallback,
-                                   &callbacks_, _1, _2));
+  worker_->setCallback(std::bind(&CallbackHandlers::readCallback,
+                                   &callbacks_, std::placeholders::_1, std::placeholders::_2));
   configured_ = static_cast<bool>(worker);
 }
 
 void Gps::subscribeAcks() {
   // Set NACK handler
-  subscribeId<ublox_msgs::Ack>(boost::bind(&Gps::processNack, this, _1),
+  subscribeId<ublox_msgs::Ack>(std::bind(&Gps::processNack, this, std::placeholders::_1),
                                ublox_msgs::Message::ACK::NACK);
   // Set ACK handler
-  subscribeId<ublox_msgs::Ack>(boost::bind(&Gps::processAck, this, _1),
+  subscribeId<ublox_msgs::Ack>(std::bind(&Gps::processAck, this, std::placeholders::_1),
                                ublox_msgs::Message::ACK::ACK);
   // Set UPD-SOS-ACK handler
   subscribe<ublox_msgs::UpdSOSAck>(
-      boost::bind(&Gps::processUpdSosAck, this, _1));
+      std::bind(&Gps::processUpdSosAck, this, std::placeholders::_1));
 }
 
 void Gps::processAck(const ublox_msgs::Ack &m) {
@@ -78,7 +78,7 @@ void Gps::processAck(const ublox_msgs::Ack &m) {
   ack.class_id = m.cls_id;
   ack.msg_id = m.msg_id;
   // store the ack atomically
-  ack_.store(ack, boost::memory_order_seq_cst);
+  ack_.store(ack, std::memory_order_seq_cst);
   ROS_DEBUG_COND(debug >= 2, "U-blox: received ACK: 0x%02x / 0x%02x",
                  m.cls_id, m.msg_id);
 }
@@ -90,7 +90,7 @@ void Gps::processNack(const ublox_msgs::Ack &m) {
   ack.class_id = m.cls_id;
   ack.msg_id = m.msg_id;
   // store the ack atomically
-  ack_.store(ack, boost::memory_order_seq_cst);
+  ack_.store(ack, std::memory_order_seq_cst);
   ROS_ERROR("U-blox: received NACK: 0x%02x / 0x%02x", m.cls_id, m.msg_id);
 }
 
@@ -101,7 +101,7 @@ void Gps::processUpdSosAck(const ublox_msgs::UpdSOSAck &m) {
     ack.class_id = m.CLASS_ID;
     ack.msg_id = m.MESSAGE_ID;
     // store the ack atomically
-    ack_.store(ack, boost::memory_order_seq_cst);
+    ack_.store(ack, std::memory_order_seq_cst);
     ROS_DEBUG_COND(ack.type == ACK && debug >= 2,
                    "U-blox: received UPD SOS Backup ACK");
     if (ack.type == NACK) {
@@ -572,13 +572,13 @@ bool Gps::waitForAcknowledge(const std::chrono::milliseconds& timeout,
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
   std::chrono::system_clock::time_point wait_until = now + timeout;
 
-  Ack ack = ack_.load(boost::memory_order_seq_cst);
+  Ack ack = ack_.load(std::memory_order_seq_cst);
   while (std::chrono::system_clock::now() < wait_until
          && (ack.class_id != class_id
              || ack.msg_id != msg_id
              || ack.type == WAIT)) {
     worker_->wait(timeout);
-    ack = ack_.load(boost::memory_order_seq_cst);
+    ack = ack_.load(std::memory_order_seq_cst);
   }
   bool result = ack.type == ACK
                 && ack.class_id == class_id

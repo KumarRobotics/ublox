@@ -30,6 +30,7 @@
 #ifndef UBLOX_GPS_GPS_HPP
 #define UBLOX_GPS_GPS_HPP
 // STL
+#include <atomic>
 #include <chrono>
 #include <map>
 #include <vector>
@@ -39,7 +40,6 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/serial_port.hpp>
 #include <boost/asio/io_service.hpp>
-#include <boost/atomic.hpp>
 // ROS
 #include <ros/console.h>
 // Other u-blox packages
@@ -475,7 +475,7 @@ class Gps {
   //! The default timeout for ACK messages
   static const std::chrono::milliseconds default_timeout_;
   //! Stores last received ACK accessed by multiple threads
-  mutable boost::atomic<Ack> ack_;
+  mutable std::atomic<Ack> ack_;
 
   //! Callback handlers for u-blox messages
   CallbackHandlers callbacks_;
@@ -522,7 +522,7 @@ bool Gps::configure(const ConfigT& message, bool wait) {
   // Reset ack
   Ack ack;
   ack.type = WAIT;
-  ack_.store(ack, boost::memory_order_seq_cst);
+  ack_.store(ack, std::memory_order_seq_cst);
 
   // Encode the message
   std::vector<unsigned char> out(kWriterSize);
@@ -535,7 +535,9 @@ bool Gps::configure(const ConfigT& message, bool wait) {
   // Send the message to the device
   worker_->send(out.data(), writer.end() - out.data());
 
-  if (!wait) return true;
+  if (!wait) {
+    return true;
+  }
 
   // Wait for an acknowledgment and return whether or not it was received
   return waitForAcknowledge(default_timeout_,
