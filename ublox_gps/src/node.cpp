@@ -114,16 +114,16 @@ UbloxNode::UbloxNode() {
 void UbloxNode::addFirmwareInterface() {
   int ublox_version;
   if (protocol_version_ < 14) {
-    components_.push_back(ComponentPtr(new UbloxFirmware6));
+    components_.push_back(std::make_shared<UbloxFirmware6>());
     ublox_version = 6;
   } else if (protocol_version_ >= 14 && protocol_version_ <= 15) {
-    components_.push_back(ComponentPtr(new UbloxFirmware7));
+    components_.push_back(std::make_shared<UbloxFirmware7>());
     ublox_version = 7;
   } else if (protocol_version_ > 15 && protocol_version_ <= 23) {
-    components_.push_back(ComponentPtr(new UbloxFirmware8));
+    components_.push_back(std::make_shared<UbloxFirmware8>());
     ublox_version = 8;
   } else {
-    components_.push_back(ComponentPtr(new UbloxFirmware9));
+    components_.push_back(std::make_shared<UbloxFirmware9>());
     ublox_version = 9;
   }
 
@@ -134,18 +134,18 @@ void UbloxNode::addFirmwareInterface() {
 void UbloxNode::addProductInterface(std::string product_category,
                                     std::string ref_rov) {
   if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0)
-    components_.push_back(ComponentPtr(new HpgRefProduct));
+    components_.push_back(std::make_shared<HpgRefProduct>());
   else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0)
-    components_.push_back(ComponentPtr(new HpgRovProduct));
+    components_.push_back(std::make_shared<HpgRovProduct>());
   else if (product_category.compare("HPG") == 0)
-    components_.push_back(ComponentPtr(new HpPosRecProduct));
+    components_.push_back(std::make_shared<HpPosRecProduct>());
   else if (product_category.compare("TIM") == 0)
-    components_.push_back(ComponentPtr(new TimProduct));
+    components_.push_back(std::make_shared<TimProduct>());
   else if (product_category.compare("ADR") == 0 ||
            product_category.compare("UDR") == 0)
-    components_.push_back(ComponentPtr(new AdrUdrProduct));
+    components_.push_back(std::make_shared<AdrUdrProduct>());
   else if (product_category.compare("FTS") == 0)
-    components_.push_back(ComponentPtr(new FtsProduct));
+    components_.push_back(std::make_shared<FtsProduct>());
   else if(product_category.compare("SPG") != 0)
     ROS_WARN("Product category %s %s from MonVER message not recognized %s",
              product_category.c_str(), ref_rov.c_str(),
@@ -363,12 +363,12 @@ void UbloxNode::initializeRosDiagnostics() {
     nh->setParam("diagnostic_period", kDiagnosticPeriod);
   }
 
-  updater.reset(new diagnostic_updater::Updater());
+  updater = std::make_shared<diagnostic_updater::Updater>();
   updater->setHardwareID("ublox");
 
   // configure diagnostic updater for frequency
-  freq_diag.reset(new FixDiagnostic(std::string("fix"), kFixFreqTol,
-                            kFixFreqWindow, kTimeStampStatusMin));
+  freq_diag = std::make_shared<FixDiagnostic>(std::string("fix"), kFixFreqTol,
+                                              kFixFreqWindow, kTimeStampStatusMin);
   for (int i = 0; i < components_.size(); i++) {
     components_[i]->initializeRosDiagnostics();
   }
@@ -594,7 +594,7 @@ void UbloxNode::initialize() {
   processMonVer();
   if(protocol_version_ <= 14) {
     if (nh->param("raw_data", false)) {
-      components_.push_back(ComponentPtr(new RawDataProduct));
+      components_.push_back(std::make_shared<RawDataProduct>());
     }
   }
   // Must set firmware & hardware params before initializing diagnostics
@@ -1316,18 +1316,22 @@ void RawDataProduct::subscribe() {
 }
 
 void RawDataProduct::initializeRosDiagnostics() {
-  if (enabled["rxm_raw"])
-    freq_diagnostics_.push_back(std::shared_ptr<UbloxTopicDiagnostic>(
-      new UbloxTopicDiagnostic("rxmraw", kRtcmFreqTol, kRtcmFreqWindow)));
-  if (enabled["rxm_sfrb"])
-    freq_diagnostics_.push_back(std::shared_ptr<UbloxTopicDiagnostic>(
-      new UbloxTopicDiagnostic("rxmsfrb", kRtcmFreqTol, kRtcmFreqWindow)));
-  if (enabled["rxm_eph"])
-    freq_diagnostics_.push_back(std::shared_ptr<UbloxTopicDiagnostic>(
-      new UbloxTopicDiagnostic("rxmeph", kRtcmFreqTol, kRtcmFreqWindow)));
-  if (enabled["rxm_alm"])
-    freq_diagnostics_.push_back(std::shared_ptr<UbloxTopicDiagnostic>(
-      new UbloxTopicDiagnostic("rxmalm", kRtcmFreqTol, kRtcmFreqWindow)));
+  if (enabled["rxm_raw"]) {
+    freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
+      "rxmraw", kRtcmFreqTol, kRtcmFreqWindow));
+  }
+  if (enabled["rxm_sfrb"]) {
+    freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
+      "rxmsfrb", kRtcmFreqTol, kRtcmFreqWindow));
+  }
+  if (enabled["rxm_eph"]) {
+    freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
+      "rxmeph", kRtcmFreqTol, kRtcmFreqWindow));
+  }
+  if (enabled["rxm_alm"]) {
+    freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
+      "rxmalm", kRtcmFreqTol, kRtcmFreqWindow));
+  }
 }
 
 //
@@ -1337,14 +1341,16 @@ void AdrUdrProduct::getRosParams() {
   nh->param("use_adr", use_adr_, true);
   // Check the nav rate
   float nav_rate_hz = 1000 / (meas_rate * nav_rate);
-  if(nav_rate_hz != 1)
+  if (nav_rate_hz != 1) {
     ROS_WARN("Nav Rate recommended to be 1 Hz");
+  }
 }
 
 bool AdrUdrProduct::configureUblox() {
-  if(!gps.setUseAdr(use_adr_))
+  if (!gps.setUseAdr(use_adr_)) {
     throw std::runtime_error(std::string("Failed to ")
                              + (use_adr_ ? "enable" : "disable") + "use_adr");
+  }
   return true;
 }
 
@@ -1892,7 +1898,7 @@ void TimProduct::initializeRosDiagnostics() {
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ublox_gps");
-  nh.reset(new ros::NodeHandle("~"));
+  nh = std::make_shared<ros::NodeHandle>("~");
   nh->param("debug", ublox_gps::debug, 1);
   if(ublox_gps::debug) {
     if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,

@@ -132,10 +132,9 @@ class CallbackHandlers {
   template <typename T>
   void insert(typename CallbackHandler_<T>::Callback callback) {
     std::lock_guard<std::mutex> lock(callback_mutex_);
-    CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
     callbacks_.insert(
       std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
-                     std::shared_ptr<CallbackHandler>(handler)));
+                     std::make_shared<CallbackHandler_<T>>(callback)));
   }
 
   /**
@@ -151,10 +150,9 @@ class CallbackHandlers {
       typename CallbackHandler_<T>::Callback callback,
       unsigned int message_id) {
     std::lock_guard<std::mutex> lock(callback_mutex_);
-    CallbackHandler_<T>* handler = new CallbackHandler_<T>(callback);
     callbacks_.insert(
       std::make_pair(std::make_pair(T::CLASS_ID, message_id),
-                     std::shared_ptr<CallbackHandler>(handler)));
+                     std::make_shared<CallbackHandler_<T>>(callback)));
   }
 
   /**
@@ -182,10 +180,10 @@ class CallbackHandlers {
     bool result = false;
     // Create a callback handler for this message
     callback_mutex_.lock();
-    CallbackHandler_<T>* handler = new CallbackHandler_<T>();
+    auto handler = std::make_shared<CallbackHandler_<T>>();
     Callbacks::iterator callback = callbacks_.insert(
       (std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
-                      std::shared_ptr<CallbackHandler>(handler))));
+                      handler)));
     callback_mutex_.unlock();
 
     // Wait for the message

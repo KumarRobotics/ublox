@@ -31,8 +31,9 @@
 #define UBLOX_GPS_NODE_HPP
 
 // STL
-#include <vector>
+#include <memory>
 #include <set>
+#include <vector>
 // ROS includes
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -143,9 +144,9 @@ struct UbloxTopicDiagnostic {
     max_freq = target_freq;
     diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
                                                         freq_tol, freq_window);
-    diagnostic = new diagnostic_updater::HeaderlessTopicDiagnostic(topic,
-                                                                   *updater,
-                                                                   freq_param);
+    diagnostic = std::make_shared<diagnostic_updater::HeaderlessTopicDiagnostic>(topic,
+                                                                                 *updater,
+                                                                                 freq_param);
   }
 
   /**
@@ -164,13 +165,13 @@ struct UbloxTopicDiagnostic {
     max_freq = freq_max;
     diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
                                                         freq_tol, freq_window);
-    diagnostic = new diagnostic_updater::HeaderlessTopicDiagnostic(topic,
-                                                                   *updater,
-                                                                   freq_param);
+    diagnostic = std::make_shared<diagnostic_updater::HeaderlessTopicDiagnostic>(topic,
+                                                                                 *updater,
+                                                                                 freq_param);
   }
 
   //! Topic frequency diagnostic updater
-  diagnostic_updater::HeaderlessTopicDiagnostic *diagnostic;
+  std::shared_ptr<diagnostic_updater::HeaderlessTopicDiagnostic> diagnostic;
   //! Minimum allow frequency of topic
   double min_freq;
   //! Maximum allow frequency of topic
@@ -202,14 +203,14 @@ struct FixDiagnostic {
                                                         freq_tol, freq_window);
     double stamp_max = meas_rate * 1e-3 * (1 + freq_tol);
     diagnostic_updater::TimeStampStatusParam time_param(stamp_min, stamp_max);
-    diagnostic = new diagnostic_updater::TopicDiagnostic(name,
-                                                         *updater,
-                                                         freq_param,
-                                                         time_param);
+    diagnostic = std::make_shared<diagnostic_updater::TopicDiagnostic>(name,
+                                                                       *updater,
+                                                                       freq_param,
+                                                                       time_param);
   }
 
   //! Topic frequency diagnostic updater
-  diagnostic_updater::TopicDiagnostic *diagnostic;
+  std::shared_ptr<diagnostic_updater::TopicDiagnostic> diagnostic;
   //! Minimum allow frequency of topic
   double min_freq;
   //! Maximum allow frequency of topic
@@ -491,11 +492,11 @@ class UbloxNode : public virtual ComponentInterface {
   //! [s] 5Hz diagnostic period
   constexpr static float kDiagnosticPeriod = 0.2;
   //! Tolerance for Fix topic frequency as percentage of target frequency
-  constexpr static double kFixFreqTol = 0.15;
+  double kFixFreqTol = 0.15;
   //! Window [num messages] for Fix Frequency Diagnostic
-  constexpr static double kFixFreqWindow = 10;
+  double kFixFreqWindow = 10;
   //! Minimum Time Stamp Status for fix frequency diagnostic
-  constexpr static double kTimeStampStatusMin = 0;
+  double kTimeStampStatusMin = 0;
 
   /**
    * @brief Initialize and run the u-blox node.
@@ -1018,8 +1019,8 @@ class UbloxFirmware9 : public UbloxFirmware8 {
  */
 class RawDataProduct: public virtual ComponentInterface {
  public:
-  static constexpr double kRtcmFreqTol = 0.15;
-  static constexpr int kRtcmFreqWindow = 25;
+  double kRtcmFreqTol = 0.15;
+  int kRtcmFreqWindow = 25;
 
   /**
    * @brief Does nothing since there are no Raw Data product specific settings.

@@ -147,8 +147,8 @@ AsyncWorker<StreamT>::AsyncWorker(std::shared_ptr<StreamT> stream,
   out_.reserve(buffer_size);
 
   io_service_->post(boost::bind(&AsyncWorker<StreamT>::doRead, this));
-  background_thread_.reset(new std::thread(
-      boost::bind(&boost::asio::io_service::run, io_service_)));
+  background_thread_ = std::make_shared<std::thread>(
+      boost::bind(&boost::asio::io_service::run, io_service_));
 }
 
 template <typename StreamT>
