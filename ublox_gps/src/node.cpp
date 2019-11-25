@@ -29,8 +29,11 @@
 
 #include <cmath>
 #include <functional>
+#include <regex>
 #include <string>
 #include <sstream>
+
+#include <boost/algorithm/string.hpp>
 
 #include "ublox_gps/node.hpp"
 
@@ -384,31 +387,35 @@ void UbloxNode::processMonVer() {
   if(protocol_version_ < 18) {
     // Final line contains supported GNSS delimited by ;
     std::vector<std::string> strs;
-    if(extension.size() > 0)
+    if (extension.size() > 0) {
       boost::split(strs, extension[extension.size()-1], boost::is_any_of(";"));
-    for(size_t i = 0; i < strs.size(); i++)
+    }
+    for (size_t i = 0; i < strs.size(); i++) {
       supported.insert(strs[i]);
+    }
   } else {
     for(std::size_t i = 0; i < extension.size(); ++i) {
       std::vector<std::string> strs;
       // Up to 2nd to last line
-      if(i <= extension.size() - 2) {
+      if (i <= extension.size() - 2) {
         boost::split(strs, extension[i], boost::is_any_of("="));
         if(strs.size() > 1) {
           if (strs[0].compare(std::string("FWVER")) == 0) {
-            if(strs[1].length() > 8)
+            if (strs[1].length() > 8) {
               addProductInterface(strs[1].substr(0, 3), strs[1].substr(8, 10));
-            else
+            } else {
               addProductInterface(strs[1].substr(0, 3));
+            }
             continue;
           }
         }
       }
       // Last 1-2 lines contain supported GNSS
-      if(i >= extension.size() - 2) {
+      if (i >= extension.size() - 2) {
         boost::split(strs, extension[i], boost::is_any_of(";"));
-        for(size_t i = 0; i < strs.size(); i++)
+        for (size_t i = 0; i < strs.size(); i++) {
           supported.insert(strs[i]);
+        }
       }
     }
   }
@@ -523,9 +530,9 @@ void UbloxNode::configureInf() {
 void UbloxNode::initializeIo() {
   gps.setConfigOnStartup(config_on_startup_flag_);
 
-  boost::smatch match;
-  if (boost::regex_match(device_, match,
-                         boost::regex("(tcp|udp)://(.+):(\\d+)"))) {
+  std::smatch match;
+  if (std::regex_match(device_, match,
+                       std::regex("(tcp|udp)://(.+):(\\d+)"))) {
     std::string proto(match[1]);
     if (proto == "tcp") {
       std::string host(match[2]);
@@ -1270,16 +1277,16 @@ void RawDataProduct::subscribe() {
 
 void RawDataProduct::initializeRosDiagnostics() {
   if (enabled["rxm_raw"])
-    freq_diagnostics_.push_back(boost::shared_ptr<UbloxTopicDiagnostic>(
+    freq_diagnostics_.push_back(std::shared_ptr<UbloxTopicDiagnostic>(
       new UbloxTopicDiagnostic("rxmraw", kRtcmFreqTol, kRtcmFreqWindow)));
   if (enabled["rxm_sfrb"])
-    freq_diagnostics_.push_back(boost::shared_ptr<UbloxTopicDiagnostic>(
+    freq_diagnostics_.push_back(std::shared_ptr<UbloxTopicDiagnostic>(
       new UbloxTopicDiagnostic("rxmsfrb", kRtcmFreqTol, kRtcmFreqWindow)));
   if (enabled["rxm_eph"])
-    freq_diagnostics_.push_back(boost::shared_ptr<UbloxTopicDiagnostic>(
+    freq_diagnostics_.push_back(std::shared_ptr<UbloxTopicDiagnostic>(
       new UbloxTopicDiagnostic("rxmeph", kRtcmFreqTol, kRtcmFreqWindow)));
   if (enabled["rxm_alm"])
-    freq_diagnostics_.push_back(boost::shared_ptr<UbloxTopicDiagnostic>(
+    freq_diagnostics_.push_back(std::shared_ptr<UbloxTopicDiagnostic>(
       new UbloxTopicDiagnostic("rxmalm", kRtcmFreqTol, kRtcmFreqWindow)));
 }
 

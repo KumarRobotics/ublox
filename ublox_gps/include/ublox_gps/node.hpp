@@ -33,10 +33,6 @@
 // STL
 #include <vector>
 #include <set>
-// Boost
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/regex.hpp>
 // ROS includes
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -95,9 +91,9 @@ constexpr static uint32_t kNavSvInfoSubscribeRate = 20;
 
 // ROS objects
 //! ROS diagnostic updater
-boost::shared_ptr<diagnostic_updater::Updater> updater;
+std::shared_ptr<diagnostic_updater::Updater> updater;
 //! Node Handle for GPS node
-boost::shared_ptr<ros::NodeHandle> nh;
+std::shared_ptr<ros::NodeHandle> nh;
 
 //! Handles communication with the U-Blox Device
 ublox_gps::Gps gps;
@@ -221,7 +217,7 @@ struct FixDiagnostic {
 };
 
 //! fix frequency diagnostic updater
-boost::shared_ptr<FixDiagnostic> freq_diag;
+std::shared_ptr<FixDiagnostic> freq_diag;
 
 /**
  * @brief Determine dynamic model from human-readable string.
@@ -468,7 +464,7 @@ class ComponentInterface {
   virtual void subscribe() = 0;
 };
 
-typedef boost::shared_ptr<ComponentInterface> ComponentPtr;
+typedef std::shared_ptr<ComponentInterface> ComponentPtr;
 
 /**
  * @brief This class represents u-blox ROS node for *all* firmware and product
@@ -595,7 +591,7 @@ class UbloxNode : public virtual ComponentInterface {
    * The node will call the functions in these interfaces for each object
    * in the vector.
    */
-  std::vector<boost::shared_ptr<ComponentInterface> > components_;
+  std::vector<std::shared_ptr<ComponentInterface> > components_;
 
   //! Determined From Mon VER
   float protocol_version_ = 0;
@@ -1050,7 +1046,7 @@ class RawDataProduct: public virtual ComponentInterface {
 
  private:
   //! Topic diagnostic updaters
-  std::vector<boost::shared_ptr<UbloxTopicDiagnostic> > freq_diagnostics_;
+  std::vector<std::shared_ptr<UbloxTopicDiagnostic> > freq_diagnostics_;
 };
 
 /**
