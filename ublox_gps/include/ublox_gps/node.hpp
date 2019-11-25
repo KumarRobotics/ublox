@@ -739,6 +739,12 @@ class UbloxFirmware6 : public UbloxFirmware {
   ublox_msgs::CfgNMEA6 cfg_nmea_;
   //! Whether or not to configure the NMEA settings
   bool set_nmea_;
+
+  ros::Publisher nav_pos_llh_pub_;
+  ros::Publisher fix_pub_;
+  ros::Publisher nav_vel_ned_pub_;
+  ros::Publisher vel_pub_;
+  ros::Publisher nav_sol_pub_;
 };
 
 /**
@@ -753,6 +759,17 @@ class UbloxFirmware6 : public UbloxFirmware {
 template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
+  UbloxFirmware7Plus() {
+    // NavPVT publisher
+    nav_pvt_pub_ = nh->advertise<NavPVT>("navpvt", kROSQueueSize);
+
+    fix_pub_ =
+        nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
+    vel_pub_ =
+        nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
+                                                                 kROSQueueSize);
+  }
+
   /**
    * @brief Publish a NavSatFix and TwistWithCovarianceStamped messages.
    *
@@ -764,17 +781,12 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   void callbackNavPvt(const NavPVT& m) {
     if (enabled["nav_pvt"]) {
       // NavPVT publisher
-      static ros::Publisher publisher = nh->advertise<NavPVT>("navpvt",
-                                                              kROSQueueSize);
-      publisher.publish(m);
+      nav_pvt_pub_.publish(m);
     }
 
     //
     // NavSatFix message
     //
-    static ros::Publisher fixPublisher =
-        nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
-
     sensor_msgs::NavSatFix fix;
     fix.header.frame_id = frame_id;
     // set the timestamp
@@ -823,14 +835,11 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     fix.position_covariance_type =
         sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
 
-    fixPublisher.publish(fix);
+    fix_pub_.publish(fix);
 
     //
     // Twist message
     //
-    static ros::Publisher velocityPublisher =
-        nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
-                                                                 kROSQueueSize);
     geometry_msgs::TwistWithCovarianceStamped velocity;
     velocity.header.stamp = fix.header.stamp;
     velocity.header.frame_id = frame_id;
@@ -847,7 +856,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     velocity.twist.covariance[cols * 2 + 2] = cov_speed;
     velocity.twist.covariance[cols * 3 + 3] = -1;  //  angular rate unsupported
 
-    velocityPublisher.publish(velocity);
+    vel_pub_.publish(velocity);
 
     //
     // Update diagnostics
@@ -919,6 +928,10 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   bool enable_sbas_;
   //! The QZSS Signal configuration, see CfgGNSS message
   uint32_t qzss_sig_cfg_;
+
+  ros::Publisher nav_pvt_pub_;
+  ros::Publisher fix_pub_;
+  ros::Publisher vel_pub_;
 };
 
 /**
@@ -1055,6 +1068,8 @@ class RawDataProduct: public virtual ComponentInterface {
  */
 class AdrUdrProduct: public virtual ComponentInterface {
  public:
+  AdrUdrProduct();
+
   /**
    * @brief Get the ADR/UDR parameters.
    *
@@ -1090,12 +1105,14 @@ class AdrUdrProduct: public virtual ComponentInterface {
   //! Whether or not to enable dead reckoning
   bool use_adr_;
 
-
   sensor_msgs::Imu imu_;
   sensor_msgs::TimeReference t_ref_;
   ublox_msgs::TimTM2 timtm2;
 
   void callbackEsfMEAS(const ublox_msgs::EsfMEAS &m);
+
+  ros::Publisher imu_pub_;
+  ros::Publisher time_ref_pub_;
 };
 
 /**
@@ -1137,6 +1154,7 @@ class FtsProduct: public virtual ComponentInterface {
  */
 class HpgRefProduct: public virtual ComponentInterface {
  public:
+  HpgRefProduct();
   /**
    * @brief Get the ROS parameters specific to the Reference Station
    * configuration.
@@ -1239,6 +1257,8 @@ class HpgRefProduct: public virtual ComponentInterface {
     SURVEY_IN, //!< Survey-In mode
     TIME //!< Time mode, after survey-in or after configuring fixed mode
   } mode_;
+
+  ros::Publisher navsvin_pub_;
 };
 
 /**
@@ -1255,6 +1275,9 @@ class HpgRovProduct: public virtual ComponentInterface {
   constexpr static double kRtcmFreqTol = 0.1;
   //! Diagnostic updater: RTCM topic frequency window [num messages]
   constexpr static int kRtcmFreqWindow = 25;
+
+  HpgRovProduct();
+
   /**
    * @brief Get the ROS parameters specific to the Rover configuration.
    *
@@ -1306,10 +1329,14 @@ class HpgRovProduct: public virtual ComponentInterface {
 
   //! The RTCM topic frequency diagnostic updater
   UbloxTopicDiagnostic freq_rtcm_;
+
+  ros::Publisher nav_rel_pos_ned_pub_;
 };
 
 class HpPosRecProduct: public virtual HpgRefProduct {
  public:
+  HpPosRecProduct();
+
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.
    */
@@ -1328,6 +1355,9 @@ class HpPosRecProduct: public virtual HpgRefProduct {
 
   //! Last relative position (used for diagnostic updater)
   ublox_msgs::NavRELPOSNED9 last_rel_pos_;
+
+  ros::Publisher nav_relposned_pub_;
+  ros::Publisher imu_pub_;
 };
 
 /**
@@ -1335,6 +1365,9 @@ class HpPosRecProduct: public virtual HpgRefProduct {
  * @todo partially implemented
  */
 class TimProduct: public virtual ComponentInterface {
+ public:
+  TimProduct();
+
   /**
    * @brief Get the Time Sync parameters.
    * @todo Currently unimplemented.
@@ -1368,6 +1401,9 @@ class TimProduct: public virtual ComponentInterface {
   void callbackTimTM2(const ublox_msgs::TimTM2 &m);
 
   sensor_msgs::TimeReference t_ref_;
+
+  ros::Publisher timtm2_pub_;
+  ros::Publisher interrupt_time_pub_;
 };
 
 }

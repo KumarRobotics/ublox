@@ -37,9 +37,9 @@
 #define UBLOX_RAW_DATA_PA_H
 
 // STL
-#include <vector>
-#include <set>
 #include <fstream>
+#include <set>
+#include <vector>
 
 // ROS includes
 #include <ros/ros.h>
@@ -58,85 +58,87 @@ namespace ublox_node {
  * @brief Implements functions for raw data stream.
  */
 class RawDataStreamPa {
-  public:
+ public:
 
 
-    /**
-     * @brief Constructor.
-     * Initialises variables and the nodehandle.
-     */
-    RawDataStreamPa(bool is_ros_subscriber = false);
+  /**
+   * @brief Constructor.
+   * Initialises variables and the nodehandle.
+   */
+  RawDataStreamPa(bool is_ros_subscriber = false);
 
-    /**
-     * @brief Get the raw data stream parameters.
-     */
-    void getRosParams(void);
+  /**
+   * @brief Get the raw data stream parameters.
+   */
+  void getRosParams(void);
 
-    /**
-     * @brief Returns the if raw data streaming is enabled.
-     */
-    bool isEnabled(void);
+  /**
+   * @brief Returns the if raw data streaming is enabled.
+   */
+  bool isEnabled(void);
 
-    /**
-     * @brief Initializes raw data streams
-     * If storing to file is enabled, the filename is created and the
-     * corresponding filedescriptor will be opened.
-     * If publishing ros messages is enabled, an empty msg will be published.
-     * (This will implicitly create the publisher)
-     */
-    void initialize(void);
+  /**
+   * @brief Initializes raw data streams
+   * If storing to file is enabled, the filename is created and the
+   * corresponding filedescriptor will be opened.
+   * If publishing ros messages is enabled, an empty msg will be published.
+   * (This will implicitly create the publisher)
+   */
+  void initialize(void);
 
-    /**
-     * @brief Callback function which handles raw data.
-     * @param data the buffer of u-blox messages to process
-     * @param size the size of the buffer
-     */
-    void ubloxCallback(const unsigned char* data,
+  /**
+   * @brief Callback function which handles raw data.
+   * @param data the buffer of u-blox messages to process
+   * @param size the size of the buffer
+   */
+  void ubloxCallback(const unsigned char* data,
      const std::size_t size);
 
-    /**
-     * @brief Callback function which handles raw data.
-     * @param msg ros message
-     */
-    void msgCallback(const std_msgs::UInt8MultiArray::ConstPtr& msg);
+  /**
+   * @brief Callback function which handles raw data.
+   * @param msg ros message
+   */
+  void msgCallback(const std_msgs::UInt8MultiArray::ConstPtr& msg);
 
-  private:
-    /**
-     * @brief Converts a string into an uint8 multibyte array
-     */
-    std_msgs::UInt8MultiArray str2uint8(const std::string str);
+ private:
+  /**
+   * @brief Converts a string into an uint8 multibyte array
+   */
+  std_msgs::UInt8MultiArray str2uint8(const std::string str);
 
-    /**
-     * @brief Publishes data stream as ros message
-     * @param str raw data stream as string
-     */
-    void publishMsg(const std::string str);
+  /**
+   * @brief Publishes data stream as ros message
+   * @param str raw data stream as string
+   */
+  void publishMsg(const std::string str);
 
-    /**
-     * @brief Stores data to given file
-     * @param str raw data stream as string
-     */
-    void saveToFile(const std::string str);
+  /**
+   * @brief Stores data to given file
+   * @param str raw data stream as string
+   */
+  void saveToFile(const std::string str);
 
-    //! Directoy name for storing raw data
-    std::string file_dir_;
-    //! Filename for storing raw data
-    std::string file_name_;
-    //! Handle for file access
-    std::ofstream file_handle_;
+  //! Directoy name for storing raw data
+  std::string file_dir_;
+  //! Filename for storing raw data
+  std::string file_name_;
+  //! Handle for file access
+  std::ofstream file_handle_;
 
-    //! Flag for publishing raw data
-    bool flag_publish_;
+  //! Flag for publishing raw data
+  bool flag_publish_;
 
-    //! Internal flag
-    //! true : subscribing to ros messages and storing those to file
-    //! false: publishing ros messages and/or storing to file
-    bool is_ros_subscriber_;
+  //! Internal flag
+  //! true : subscribing to ros messages and storing those to file
+  //! false: publishing ros messages and/or storing to file
+  bool is_ros_subscriber_;
 
-    //! ROS private node handle (for params and publisher)
-    ros::NodeHandle pnh_;
-    //! ROS node handle (only for subscriber)
-    ros::NodeHandle nh_;
+  //! ROS private node handle (for params and publisher)
+  ros::NodeHandle pnh_;
+  //! ROS node handle (only for subscriber)
+  ros::NodeHandle nh_;
+
+  ros::Publisher raw_pub_;
 };
 
 }
