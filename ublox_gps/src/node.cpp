@@ -34,6 +34,8 @@
 #include <sstream>
 #include <vector>
 
+#include <tf2/LinearMath/Quaternion.h>
+
 #include "ublox_gps/node.hpp"
 
 namespace ublox_node {
@@ -1799,7 +1801,7 @@ void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
     imu_.angular_velocity_covariance[0] = -1;
 
     double heading = static_cast<double>(m.rel_pos_heading) * 1e-5 / 180.0 * M_PI;
-    tf::Quaternion orientation;
+    tf2::Quaternion orientation;
     orientation.setRPY(0, 0, heading);
     imu_.orientation.x = orientation[0];
     imu_.orientation.y = orientation[1];

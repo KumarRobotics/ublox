@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ublox_gps)
 find_package(catkin REQUIRED COMPONENTS
-  tf
   roscpp
   roscpp_serialization
+  tf2
   ublox_msgs
   ublox_serialization
   diagnostic_updater
@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
-    CATKIN_DEPENDS tf roscpp ublox_msgs ublox_serialization)
+    CATKIN_DEPENDS tf2 roscpp ublox_msgs ublox_serialization)
 
 # include other ublox packages
 include_directories(${PROJECT_SOURCE_DIR}/include)

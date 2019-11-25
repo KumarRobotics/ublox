@@ -18,7 +18,7 @@
   <depend>ublox_msgs</depend>
   <depend>roscpp</depend>
   <depend>roscpp_serialization</depend>
-  <depend>tf</depend>
+  <depend>tf2</depend>
   <depend>diagnostic_updater</depend>
 
 </package>

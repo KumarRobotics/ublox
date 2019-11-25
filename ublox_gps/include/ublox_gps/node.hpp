@@ -38,7 +38,6 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <ros/serialization.h>
-#include <tf/transform_datatypes.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/publisher.h>
 // ROS messages
