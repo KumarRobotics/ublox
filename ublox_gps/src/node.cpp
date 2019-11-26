@@ -411,7 +411,7 @@ void UbloxNode::processMonVer() {
   }
 
   ROS_DEBUG("%s, HW VER: %s", monVer.sw_version.c_array(),
-               monVer.hw_version.c_array());
+            monVer.hw_version.c_array());
   // Convert extension to vector of strings
   std::vector<std::string> extension;
   extension.reserve(monVer.extension.size());

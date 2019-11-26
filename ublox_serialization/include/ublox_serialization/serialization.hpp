@@ -36,10 +36,12 @@
 
 #include <ros/console.h>
 
+#include <boost/array.hpp>
+
 #include "checksum.hpp"
 
 ///
-/// This file defines the Serializer template class which encodes and decodes
+/// This file defines the UbloxSerializer template class which encodes and decodes
 /// specific message types.
 /// The Reader class decodes messages and from a buffer and the Writer class
 /// encodes messages and writes them to a buffer.
@@ -64,34 +66,376 @@ static const uint8_t kHeaderLength = 6;
 static const uint8_t kChecksumLength = 2;
 
 /**
- * @brief Encodes and decodes messages.
+ * \brief Templated serialization class.  Default implementation provides backwards compatibility with
+ * old message types.
+ *
+ * Specializing the UbloxSerializer class is the only thing you need to do to get the ROS serialization system
+ * to work with a type.
  */
-template <typename T>
-struct Serializer {
+template<typename T, typename Enabled = void>
+struct UbloxSerializer
+{
   /**
-   * @brief Decode the message payload from the data buffer.
-   * @param data a pointer to the start of the message payload
-   * @param count the number of bytes in the message payload
-   * @param message the output message
+   * \brief Write an object to the stream.  Normally the stream passed in here will be a UbloxOStream
    */
-  static void read(const uint8_t *data, uint32_t count,
-                   T &message);
-  /**
-   * @brief Get the length of the message payload in bytes.
-   *
-   * @details The payload does not include the header or checksum.
-   * @param message the message to get the length of
-   * @return the length of the message in bytes.
-   */
-  static uint32_t serializedLength(const T &message);
+  template<typename Stream>
+  inline static void write(Stream& stream, const T & t);
 
   /**
-   * @brief Encode the message payload as a byte array.
-   * @param data a buffer to fill with the message payload bytes
-   * @param size the length of the buffer
-   * @param message the output message
+   * \brief Read an object from the stream.  Normally the stream passed in here will be a UbloxIStream
    */
-  static void write(uint8_t *data, uint32_t size, const T &message);
+  template<typename Stream>
+  inline static void read(Stream& stream, T & t);
+
+  /**
+   * \brief Determine the serialized length of an object.
+   */
+  inline static uint32_t serializedLength(const T & t);
+};
+
+template <typename T>
+struct UbloxSerializer<T, typename std::enable_if<std::is_same<T, uint8_t>::value ||
+                                                  std::is_same<T, uint16_t>::value ||
+                                                  std::is_same<T, uint32_t>::value ||
+                                                  std::is_same<T, uint64_t>::value ||
+                                                  std::is_same<T, int8_t>::value ||
+                                                  std::is_same<T, int16_t>::value ||
+                                                  std::is_same<T, int32_t>::value ||
+                                                  std::is_same<T, int64_t>::value ||
+                                                  std::is_same<T, float>::value ||
+                                                  std::is_same<T, double>::value>::type>
+{
+  template<typename Stream>
+  inline static void write(Stream& stream, const T v) {
+    *reinterpret_cast<T*>(stream.advance(sizeof(v))) = v;
+  }
+
+  template<typename Stream>
+  inline static void read(Stream& stream, T& v) {
+    v = *reinterpret_cast<T*>(stream.advance(sizeof(v)));
+  }
+
+  inline static uint32_t serializedLength(const T&) {
+    return sizeof(T);
+  }
+};
+
+/**
+ * \brief Serialize an object.  Stream here should normally be a UbloxOStream
+ */
+template<typename T, typename Stream>
+inline void serialize(Stream& stream, const T& t) {
+  UbloxSerializer<T>::write(stream, t);
+}
+
+/**
+ * \brief Deserialize an object.  Stream here should normally be a UbloxIStream
+ */
+template<typename T, typename Stream>
+inline void deserialize(Stream& stream, T& t) {
+  UbloxSerializer<T>::read(stream, t);
+}
+
+/**
+ * \brief Determine the serialized length of an object
+ */
+template<typename T>
+inline uint32_t serializationLength(const T& t) {
+  return UbloxSerializer<T>::serializedLength(t);
+}
+
+/**
+ * \brief Vector serializer.  Default implementation does nothing
+ */
+template<typename T, class ContainerAllocator, class Enabled = void>
+struct VectorUbloxSerializer
+{};
+
+/**
+ * \brief Vector serializer, specialized for fixed-size simple types
+ */
+template<typename T, class ContainerAllocator>
+struct VectorUbloxSerializer<T, ContainerAllocator, typename std::enable_if<std::is_same<T, uint8_t>::value ||
+                                                                            std::is_same<T, uint16_t>::value ||
+                                                                            std::is_same<T, uint32_t>::value ||
+                                                                            std::is_same<T, uint64_t>::value ||
+                                                                            std::is_same<T, int8_t>::value ||
+                                                                            std::is_same<T, int16_t>::value ||
+                                                                            std::is_same<T, int32_t>::value ||
+                                                                            std::is_same<T, int64_t>::value ||
+                                                                            std::is_same<T, float>::value ||
+                                                                            std::is_same<T, double>::value>::type>
+{
+  typedef std::vector<T, typename ContainerAllocator::template rebind<T>::other> VecType;
+  typedef typename VecType::iterator IteratorType;
+  typedef typename VecType::const_iterator ConstIteratorType;
+
+  template<typename Stream>
+  inline static void write(Stream& stream, const VecType& v) {
+    uint32_t len = static_cast<uint32_t>(v.size());
+    stream.next(len);
+    if (!v.empty()) {
+      const uint32_t data_len = len * static_cast<uint32_t>(sizeof(T));
+      memcpy(stream.advance(data_len), &v.front(), data_len);
+    }
+  }
+
+  template<typename Stream>
+  inline static void read(Stream& stream, VecType& v) {
+    uint32_t len;
+    stream.next(len);
+    v.resize(len);
+
+    if (len > 0) {
+      const uint32_t data_len = static_cast<uint32_t>(sizeof(T)) * len;
+      memcpy(&v.front(), stream.advance(data_len), data_len);
+    }
+  }
+
+  inline static uint32_t serializedLength(const VecType& v) {
+    return 4 + v.size() * static_cast<uint32_t>(sizeof(T));
+  }
+};
+
+/**
+ * \brief serialize version for std::vector
+ */
+template<typename T, class ContainerAllocator, typename Stream>
+inline void serialize(Stream& stream, const std::vector<T, ContainerAllocator>& t) {
+  VectorUbloxSerializer<T, ContainerAllocator>::write(stream, t);
+}
+
+/**
+ * \brief deserialize version for std::vector
+ */
+template<typename T, class ContainerAllocator, typename Stream>
+inline void deserialize(Stream& stream, std::vector<T, ContainerAllocator>& t) {
+  VectorUbloxSerializer<T, ContainerAllocator>::read(stream, t);
+}
+
+/**
+ * \brief serializationLength version for std::vector
+ */
+template<typename T, class ContainerAllocator>
+inline uint32_t serializationLength(const std::vector<T, ContainerAllocator>& t) {
+  return VectorUbloxSerializer<T, ContainerAllocator>::serializedLength(t);
+}
+
+/**
+ * \brief Array serializer, default implementation does nothing
+ */
+template<typename T, size_t N, class Enabled = void>
+struct StdArrayUbloxSerializer
+{};
+
+/**
+ * \brief Array serializer, specialized for fixed-size, simple types
+ */
+template<typename T, size_t N>
+struct StdArrayUbloxSerializer<T, N, typename std::enable_if<std::is_same<T, uint8_t>::value ||
+                                                             std::is_same<T, uint16_t>::value ||
+                                                             std::is_same<T, uint32_t>::value ||
+                                                             std::is_same<T, uint64_t>::value ||
+                                                             std::is_same<T, int8_t>::value ||
+                                                             std::is_same<T, int16_t>::value ||
+                                                             std::is_same<T, int32_t>::value ||
+                                                             std::is_same<T, int64_t>::value ||
+                                                             std::is_same<T, float>::value ||
+                                                             std::is_same<T, double>::value>::type>
+{
+  typedef std::array<T, N> ArrayType;
+  typedef typename ArrayType::iterator IteratorType;
+  typedef typename ArrayType::const_iterator ConstIteratorType;
+
+  template<typename Stream>
+  inline static void write(Stream& stream, const ArrayType& v) {
+    const uint32_t data_len = N * sizeof(T);
+    std::memcpy(stream.advance(data_len), &v.front(), data_len);
+  }
+
+  template<typename Stream>
+  inline static void read(Stream& stream, ArrayType& v) {
+    const uint32_t data_len = N * sizeof(T);
+    std::memcpy(&v.front(), stream.advance(data_len), data_len);
+  }
+
+  inline static uint32_t serializedLength(const ArrayType& v) {
+    return N * sizeof(T);
+  }
+};
+
+/**
+ * \brief serialize version for std::array
+ */
+template<typename T, size_t N, typename Stream>
+inline void serialize(Stream& stream, const std::array<T, N>& t)
+{
+  StdArrayUbloxSerializer<T, N>::write(stream, t);
+}
+
+/**
+ * \brief deserialize version for std::array
+ */
+template<typename T, size_t N, typename Stream>
+inline void deserialize(Stream& stream, std::array<T, N>& t) {
+  StdArrayUbloxSerializer<T, N>::read(stream, t);
+}
+
+/**
+ * \brief serializationLength version for std::array
+ */
+template<typename T, size_t N>
+inline uint32_t serializationLength(const std::array<T, N>& t)
+{
+  return StdArrayUbloxSerializer<T, N>::serializedLength(t);
+}
+
+/**
+ * \brief Array serializer, default implementation does nothing
+ */
+template<typename T, size_t N, class Enabled = void>
+struct BoostArraySerializer
+{};
+
+/**
+ * \brief Array serializer, specialized for fixed-size, simple types
+ */
+template<typename T, size_t N>
+struct BoostArraySerializer<T, N, typename std::enable_if<std::is_same<T, uint8_t>::value ||
+                                                          std::is_same<T, uint16_t>::value ||
+                                                          std::is_same<T, uint32_t>::value ||
+                                                          std::is_same<T, uint64_t>::value ||
+                                                          std::is_same<T, int8_t>::value ||
+                                                          std::is_same<T, int16_t>::value ||
+                                                          std::is_same<T, int32_t>::value ||
+                                                          std::is_same<T, int64_t>::value ||
+                                                          std::is_same<T, float>::value ||
+                                                          std::is_same<T, double>::value>::type>
+{
+  typedef boost::array<T, N> ArrayType;
+  typedef typename ArrayType::iterator IteratorType;
+  typedef typename ArrayType::const_iterator ConstIteratorType;
+
+  template<typename Stream>
+  inline static void write(Stream& stream, const ArrayType& v) {
+    const uint32_t data_len = N * sizeof(T);
+    std::memcpy(stream.advance(data_len), &v.front(), data_len);
+  }
+
+  template<typename Stream>
+  inline static void read(Stream& stream, ArrayType& v) {
+    const uint32_t data_len = N * sizeof(T);
+    std::memcpy(&v.front(), stream.advance(data_len), data_len);
+  }
+
+  inline static uint32_t serializedLength(const ArrayType& v) {
+    return N * sizeof(T);
+  }
+};
+
+/**
+ * \brief serialize version for std::array
+ */
+template<typename T, size_t N, typename Stream>
+inline void serialize(Stream& stream, const boost::array<T, N>& t)
+{
+  BoostArraySerializer<T, N>::write(stream, t);
+}
+
+/**
+ * \brief deserialize version for std::array
+ */
+template<typename T, size_t N, typename Stream>
+inline void deserialize(Stream& stream, boost::array<T, N>& t) {
+  BoostArraySerializer<T, N>::read(stream, t);
+}
+
+/**
+ * \brief serializationLength version for std::array
+ */
+template<typename T, size_t N>
+inline uint32_t serializationLength(const boost::array<T, N>& t)
+{
+  return BoostArraySerializer<T, N>::serializedLength(t);
+}
+
+/**
+ * \brief UbloxStream base-class, provides common functionality for UbloxIStream and UbloxOStream
+ */
+struct UbloxStream
+{
+  /*
+   * \brief Returns a pointer to the current position of the stream
+   */
+  inline uint8_t* getData() {
+    return data_;
+  }
+  /**
+   * \brief Advances the stream, checking bounds, and returns a pointer to the position before it
+   * was advanced.
+   * \throws StreamOverrunException if len would take this stream past the end of its buffer
+   */
+  uint8_t* advance(uint32_t len) {
+    uint8_t* old_data = data_;
+    data_ += len;
+    if (data_ > end_) {
+      // Throwing directly here causes a significant speed hit due to the extra code generated
+      // for the throw statement
+      //throwStreamOverrun();
+    }
+    return old_data;
+  }
+
+  /**
+   * \brief Returns the amount of space left in the stream
+   */
+  inline uint32_t getLength() { return static_cast<uint32_t>(end_ - data_); }
+
+protected:
+  UbloxStream(uint8_t* _data, uint32_t _count)
+  : data_(_data)
+  , end_(_data + _count)
+  {}
+
+private:
+  uint8_t* data_;
+  uint8_t* end_;
+};
+
+/**
+ * \brief Input stream
+ */
+struct UbloxIStream : public UbloxStream
+{
+  UbloxIStream(uint8_t* data, uint32_t count)
+  : UbloxStream(data, count)
+  {}
+
+  /**
+   * \brief Deserialize an item from this input stream
+   */
+  template<typename T>
+  void next(T& t) {
+    deserialize(*this, t);
+  }
+};
+
+/**
+ * \brief Output stream
+ */
+struct UbloxOStream : public UbloxStream
+{
+  UbloxOStream(uint8_t* data, uint32_t count)
+  : UbloxStream(data, count)
+  {}
+
+  /**
+   * \brief Serialize an item to this output stream
+   */
+  template<typename T>
+  void next(const T& t) {
+    serialize(*this, t);
+  }
 };
 
 /**
@@ -302,7 +646,7 @@ class Reader {
       return false;
     }
 
-    Serializer<T>::read(data_ + options_.header_length, length(), message);
+    UbloxSerializer<T>::read(data_ + options_.header_length, length(), message);
     return true;
   }
 
@@ -369,14 +713,14 @@ class Writer {
                                    uint8_t class_id = T::CLASS_ID,
                                    uint8_t message_id = T::MESSAGE_ID) {
     // Check for buffer overflow
-    uint32_t length = Serializer<T>::serializedLength(message);
+    uint32_t length = UbloxSerializer<T>::serializedLength(message);
     if (size_ < length + options_.wrapper_length()) {
       ROS_ERROR("u-blox write buffer overflow. Message %u / %u not written",
                 class_id, message_id);
       return false;
     }
     // Encode the message and add it to the buffer
-    Serializer<T>::write(data_ + options_.header_length,
+    UbloxSerializer<T>::write(data_ + options_.header_length,
                          size_ - options_.header_length, message);
     return write(0, length, class_id, message_id);
   }
@@ -443,7 +787,7 @@ class Writer {
 
 // Use to declare u-blox messages and message serializers
 #define DECLARE_UBLOX_MESSAGE(class_id, message_id, package, message) \
-  template class ublox::Serializer<package::message>; \
+  template class ublox::UbloxSerializer<package::message>; \
   template class ublox::Message<package::message>; \
   namespace package { namespace { \
     static const ublox::Message<message>::StaticKeyInitializer static_key_initializer_##message(class_id, message_id); \
@@ -456,9 +800,5 @@ class Writer {
   namespace package { namespace { \
     static const ublox::Message<message>::StaticKeyInitializer static_key_initializer_##name(class_id, message_id); \
   } } \
-
-
-// use implementation of class Serializer in "serialization_ros.hpp"
-#include "serialization_ros.hpp"
 
 #endif  // UBLOX_SERIALIZATION_SERIALIZATION_HPP
