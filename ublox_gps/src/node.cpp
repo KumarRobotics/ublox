@@ -29,6 +29,7 @@
 
 #include <cmath>
 #include <functional>
+#include <memory>
 #include <regex>
 #include <stdexcept>
 #include <string>
@@ -115,28 +116,33 @@ UbloxNode::UbloxNode() {
   int debug;
   nh->param("debug", debug, 1);
   gps = std::make_shared<ublox_gps::Gps>(debug);
+
   nav_status_pub_ = nh->advertise<ublox_msgs::NavSTATUS>("navstatus", kROSQueueSize);
   nav_posecef_pub_ = nh->advertise<ublox_msgs::NavPOSECEF>("navposecef", kROSQueueSize);
   nav_clock_pub_ = nh->advertise<ublox_msgs::NavCLOCK>("navclock", kROSQueueSize);
   aid_alm_pub_ = nh->advertise<ublox_msgs::AidALM>("aidalm", kROSQueueSize);
   aid_eph_pub_ = nh->advertise<ublox_msgs::AidEPH>("aideph", kROSQueueSize);
   aid_hui_pub_ = nh->advertise<ublox_msgs::AidHUI>("aidhui", kROSQueueSize);
+
+  updater_ = std::make_shared<diagnostic_updater::Updater>();
+  updater_->setHardwareID("ublox");
+
   initialize();
 }
 
 void UbloxNode::addFirmwareInterface() {
   int ublox_version;
   if (protocol_version_ < 14) {
-    components_.push_back(std::make_shared<UbloxFirmware6>(frame_id_));
+    components_.push_back(std::make_shared<UbloxFirmware6>(frame_id_, updater_));
     ublox_version = 6;
   } else if (protocol_version_ >= 14 && protocol_version_ <= 15) {
-    components_.push_back(std::make_shared<UbloxFirmware7>(frame_id_));
+    components_.push_back(std::make_shared<UbloxFirmware7>(frame_id_, updater_));
     ublox_version = 7;
   } else if (protocol_version_ > 15 && protocol_version_ <= 23) {
-    components_.push_back(std::make_shared<UbloxFirmware8>(frame_id_));
+    components_.push_back(std::make_shared<UbloxFirmware8>(frame_id_, updater_));
     ublox_version = 8;
   } else {
-    components_.push_back(std::make_shared<UbloxFirmware9>(frame_id_));
+    components_.push_back(std::make_shared<UbloxFirmware9>(frame_id_, updater_));
     ublox_version = 9;
   }
 
@@ -147,16 +153,16 @@ void UbloxNode::addFirmwareInterface() {
 void UbloxNode::addProductInterface(const std::string & product_category,
                                     const std::string & ref_rov) {
   if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0) {
-    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, config_on_startup_flag_));
+    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, config_on_startup_flag_, updater_));
   } else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0) {
-    components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_));
+    components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_));
   } else if (product_category.compare("HPG") == 0) {
-    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, config_on_startup_flag_, frame_id_));
+    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, config_on_startup_flag_, frame_id_, updater_));
   } else if (product_category.compare("TIM") == 0) {
-    components_.push_back(std::make_shared<TimProduct>(frame_id_));
+    components_.push_back(std::make_shared<TimProduct>(frame_id_, updater_));
   } else if (product_category.compare("ADR") == 0 ||
              product_category.compare("UDR") == 0) {
-    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_));
+    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_));
   } else if (product_category.compare("FTS") == 0) {
     components_.push_back(std::make_shared<FtsProduct>());
   } else if (product_category.compare("SPG") != 0) {
@@ -396,12 +402,9 @@ void UbloxNode::initializeRosDiagnostics() {
     nh->setParam("diagnostic_period", kDiagnosticPeriod);
   }
 
-  updater = std::make_shared<diagnostic_updater::Updater>();
-  updater->setHardwareID("ublox");
-
   // configure diagnostic updater for frequency
   freq_diag = std::make_shared<FixDiagnostic>(std::string("fix"), kFixFreqTol,
-                                              kFixFreqWindow, kTimeStampStatusMin, nav_rate_, meas_rate_);
+                                              kFixFreqWindow, kTimeStampStatusMin, nav_rate_, meas_rate_, updater_);
   for (int i = 0; i < components_.size(); i++) {
     components_[i]->initializeRosDiagnostics();
   }
@@ -626,7 +629,7 @@ void UbloxNode::initialize() {
   processMonVer();
   if (protocol_version_ <= 14) {
     if (nh->param("raw_data", false)) {
-      components_.push_back(std::make_shared<RawDataProduct>(nav_rate_, meas_rate_));
+      components_.push_back(std::make_shared<RawDataProduct>(nav_rate_, meas_rate_, updater_));
     }
   }
   // Must set firmware & hardware params before initializing diagnostics
@@ -663,15 +666,20 @@ void UbloxNode::shutdown() {
 //
 // U-Blox Firmware (all versions)
 //
+UbloxFirmware::UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater) : updater_(updater)
+{
+}
+
 void UbloxFirmware::initializeRosDiagnostics() {
-  updater->add("fix", this, &UbloxFirmware::fixDiagnostic);
-  updater->force_update();
+  updater_->add("fix", this, &UbloxFirmware::fixDiagnostic);
+  updater_->force_update();
 }
 
 //
 // U-Blox Firmware Version 6
 //
-UbloxFirmware6::UbloxFirmware6(const std::string & frame_id) : frame_id_(frame_id)
+UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater)
+  : UbloxFirmware(updater), frame_id_(frame_id)
 {
   nav_pos_llh_pub_ =
     nh->advertise<ublox_msgs::NavPOSLLH>("navposllh", kROSQueueSize);
@@ -864,7 +872,7 @@ void UbloxFirmware6::callbackNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
   last_nav_pos_ = m;
   //  update diagnostics
   freq_diag->diagnostic->tick(fix_.header.stamp);
-  updater->update();
+  updater_->update();
 }
 
 void UbloxFirmware6::callbackNavVelNed(const ublox_msgs::NavVELNED& m) {
@@ -1354,14 +1362,15 @@ void UbloxFirmware8::subscribe() {
   }
 }
 
-UbloxFirmware9::UbloxFirmware9(const std::string & frame_id) : UbloxFirmware8(frame_id)
+UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater) : UbloxFirmware8(frame_id, updater)
 {
 }
 
 //
 // Raw Data Products
 //
-RawDataProduct::RawDataProduct(uint16_t nav_rate, uint16_t meas_rate) : nav_rate_(nav_rate), meas_rate_(meas_rate) {
+RawDataProduct::RawDataProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater)
+  : nav_rate_(nav_rate), meas_rate_(meas_rate), updater_(updater) {
   rxm_raw_pub_ = nh->advertise<ublox_msgs::RxmRAW>("rxmraw", kROSQueueSize);
   rxm_sfrb_pub_ = nh->advertise<ublox_msgs::RxmSFRB>("rxmsfrb", kROSQueueSize);
   rxm_eph_pub_ = nh->advertise<ublox_msgs::RxmEPH>("rxmeph", kROSQueueSize);
@@ -1404,27 +1413,27 @@ void RawDataProduct::subscribe() {
 void RawDataProduct::initializeRosDiagnostics() {
   if (enabled["rxm_raw"]) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
-      "rxmraw", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_));
+      "rxmraw", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_, updater_));
   }
   if (enabled["rxm_sfrb"]) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
-      "rxmsfrb", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_));
+      "rxmsfrb", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_, updater_));
   }
   if (enabled["rxm_eph"]) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
-      "rxmeph", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_));
+      "rxmeph", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_, updater_));
   }
   if (enabled["rxm_alm"]) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
-      "rxmalm", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_));
+      "rxmalm", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_, updater_));
   }
 }
 
 //
 // u-blox ADR devices, partially implemented
 //
-AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id)
-  : nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id)
+AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater)
+  : nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id), updater_(updater)
 {
   imu_pub_ =
     nh->advertise<sensor_msgs::Imu>("imu_meas", kROSQueueSize);
@@ -1595,14 +1604,14 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
     }
   }
 
-  updater->force_update();
+  updater_->force_update();
 }
 //
 // u-blox High Precision GNSS Reference Station
 //
 
-HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag)
-  : nav_rate_(nav_rate), meas_rate_(meas_rate), config_on_startup_flag_(config_on_startup_flag)
+HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, std::shared_ptr<diagnostic_updater::Updater> updater)
+  : nav_rate_(nav_rate), meas_rate_(meas_rate), config_on_startup_flag_(config_on_startup_flag), updater_(updater)
 {
   navsvin_pub_ =
     nh->advertise<ublox_msgs::NavSVIN>("navsvin", kROSQueueSize);
@@ -1744,7 +1753,7 @@ void HpgRefProduct::callbackNavSvIn(ublox_msgs::NavSVIN m) {
     setTimeMode();
   }
 
-  updater->update();
+  updater_->update();
 }
 
 bool HpgRefProduct::setTimeMode() {
@@ -1766,8 +1775,8 @@ bool HpgRefProduct::setTimeMode() {
 }
 
 void HpgRefProduct::initializeRosDiagnostics() {
-  updater->add("TMODE3", this, &HpgRefProduct::tmode3Diagnostics);
-  updater->force_update();
+  updater_->add("TMODE3", this, &HpgRefProduct::tmode3Diagnostics);
+  updater_->force_update();
 }
 
 void HpgRefProduct::tmode3Diagnostics(
@@ -1815,7 +1824,8 @@ void HpgRefProduct::tmode3Diagnostics(
 //
 // U-Blox High Precision GNSS Rover
 //
-HpgRovProduct::HpgRovProduct(uint16_t nav_rate) : nav_rate_(nav_rate)
+HpgRovProduct::HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater)
+  : nav_rate_(nav_rate), updater_(updater)
 {
   nav_rel_pos_ned_pub_ =
     nh->advertise<ublox_msgs::NavRELPOSNED>("navrelposned", kROSQueueSize);
@@ -1846,10 +1856,10 @@ void HpgRovProduct::subscribe() {
 void HpgRovProduct::initializeRosDiagnostics() {
   freq_rtcm_ = UbloxTopicDiagnostic(std::string("rxmrtcm"),
                                     kRtcmFreqMin, kRtcmFreqMax,
-                                    kRtcmFreqTol, kRtcmFreqWindow);
-  updater->add("Carrier Phase Solution", this,
+                                    kRtcmFreqTol, kRtcmFreqWindow, updater_);
+  updater_->add("Carrier Phase Solution", this,
                 &HpgRovProduct::carrierPhaseDiagnostics);
-  updater->force_update();
+  updater_->force_update();
 }
 
 void HpgRovProduct::carrierPhaseDiagnostics(
@@ -1892,14 +1902,14 @@ void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
   }
 
   last_rel_pos_ = m;
-  updater->update();
+  updater_->update();
 }
 
 //
 // U-Blox High Precision Positioning Receiver
 //
-HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, const std::string & frame_id)
-  : HpgRefProduct(nav_rate, meas_rate, config_on_startup_flag), frame_id_(frame_id)
+HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater)
+  : HpgRefProduct(nav_rate, meas_rate, config_on_startup_flag, updater), frame_id_(frame_id)
 {
   nav_relposned_pub_ =
     nh->advertise<ublox_msgs::NavRELPOSNED9>("navrelposned", kROSQueueSize);
@@ -1947,13 +1957,13 @@ void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
   }
 
   last_rel_pos_ = m;
-  updater->update();
+  updater_->update();
 }
 
 //
 // U-Blox Time Sync Products, partially implemented.
 //
-TimProduct::TimProduct(const std::string & frame_id) : frame_id_(frame_id)
+TimProduct::TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater) : frame_id_(frame_id), updater_(updater)
 {
   timtm2_pub_ =
     nh->advertise<ublox_msgs::TimTM2>("timtm2", kROSQueueSize);
@@ -2027,11 +2037,11 @@ void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
     interrupt_time_pub_.publish(t_ref_);
   }
 
-  updater->force_update();
+  updater_->force_update();
 }
 
 void TimProduct::initializeRosDiagnostics() {
-  updater->force_update();
+  updater_->force_update();
 }
 
 }  // namespace ublox_node

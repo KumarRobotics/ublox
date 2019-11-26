@@ -86,8 +86,6 @@ constexpr static uint32_t kSubscribeRate = 1;
 constexpr static uint32_t kNavSvInfoSubscribeRate = 20;
 
 // ROS objects
-//! ROS diagnostic updater
-std::shared_ptr<diagnostic_updater::Updater> updater;
 //! Node Handle for GPS node
 std::shared_ptr<ros::NodeHandle> nh;
 
@@ -126,7 +124,7 @@ struct UbloxTopicDiagnostic {
    * @param freq_window the number of messages to use for diagnostic statistics
    */
   explicit UbloxTopicDiagnostic(const std::string & topic, double freq_tol, int freq_window,
-                                uint16_t nav_rate, uint16_t meas_rate) {
+                                uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater) {
     const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
     min_freq = target_freq;
     max_freq = target_freq;
@@ -148,7 +146,7 @@ struct UbloxTopicDiagnostic {
    * @param freq_window the number of messages to use for diagnostic statistics
    */
   explicit UbloxTopicDiagnostic(const std::string & topic, double freq_min, double freq_max,
-                                double freq_tol, int freq_window) {
+                                double freq_tol, int freq_window, std::shared_ptr<diagnostic_updater::Updater> updater) {
     min_freq = freq_min;
     max_freq = freq_max;
     diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
@@ -183,7 +181,8 @@ struct FixDiagnostic {
    * @param stamp_min the minimum allowed time delay
    */
   explicit FixDiagnostic(const std::string & name, double freq_tol, int freq_window,
-                         double stamp_min, uint16_t nav_rate, uint16_t meas_rate) {
+                         double stamp_min, uint16_t nav_rate, uint16_t meas_rate,
+                         std::shared_ptr<diagnostic_updater::Updater> updater) {
     const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
     min_freq = target_freq;
     max_freq = target_freq;
@@ -626,6 +625,9 @@ class UbloxNode final {
 
   //! The ROS frame ID of this device
   std::string frame_id_;
+
+  //! ROS diagnostic updater
+  std::shared_ptr<diagnostic_updater::Updater> updater_;
 };
 
 /**
@@ -635,6 +637,8 @@ class UbloxNode final {
  */
 class UbloxFirmware : public virtual ComponentInterface {
  public:
+  explicit UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater);
+
   /**
    * @brief Add the fix diagnostics to the updater.
    */
@@ -646,6 +650,8 @@ class UbloxFirmware : public virtual ComponentInterface {
    */
   virtual void fixDiagnostic(
       diagnostic_updater::DiagnosticStatusWrapper& stat) = 0;
+
+  std::shared_ptr<diagnostic_updater::Updater> updater_;
 };
 
 /**
@@ -653,7 +659,7 @@ class UbloxFirmware : public virtual ComponentInterface {
  */
 class UbloxFirmware6 final : public UbloxFirmware {
  public:
-  explicit UbloxFirmware6(const std::string & frame_id);
+  explicit UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater);
 
   /**
    * @brief Sets the fix status service type to GPS.
@@ -743,7 +749,8 @@ class UbloxFirmware6 final : public UbloxFirmware {
 template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
-  explicit UbloxFirmware7Plus(const std::string & frame_id) : frame_id_(frame_id) {
+  explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater)
+    : UbloxFirmware(updater), frame_id_(frame_id) {
     // NavPVT publisher
     nav_pvt_pub_ = nh->advertise<NavPVT>("navpvt", kROSQueueSize);
 
@@ -847,7 +854,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     //
     last_nav_pvt_ = m;
     freq_diag->diagnostic->tick(fix.header.stamp);
-    updater->update();
+    updater_->update();
   }
 
  protected:
@@ -925,7 +932,8 @@ class UbloxFirmware7Plus : public UbloxFirmware {
  */
 class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  public:
-  explicit UbloxFirmware7(const std::string & frame_id) : UbloxFirmware7Plus<ublox_msgs::NavPVT7>(frame_id) {
+  explicit UbloxFirmware7(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater)
+    : UbloxFirmware7Plus<ublox_msgs::NavPVT7>(frame_id, updater) {
     nav_svinfo_pub_ = nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", kROSQueueSize);
     mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
   }
@@ -967,8 +975,9 @@ class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  */
 class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  public:
-  explicit UbloxFirmware8(const std::string & frame_id) : UbloxFirmware7Plus<ublox_msgs::NavPVT>(frame_id) {
-    nav_sat_pub_ = nh->advertise<ublox_msgs::NavSAT>("navsate", kROSQueueSize);
+  explicit UbloxFirmware8(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater)
+    : UbloxFirmware7Plus<ublox_msgs::NavPVT>(frame_id, updater) {
+    nav_sat_pub_ = nh->advertise<ublox_msgs::NavSAT>("navstate", kROSQueueSize);
     mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
     rxm_rtcm_pub_ = nh->advertise<ublox_msgs::RxmRTCM>("rxmrtcm", kROSQueueSize);
   }
@@ -1025,7 +1034,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  */
 class UbloxFirmware9 final : public UbloxFirmware8 {
 public:
-  explicit UbloxFirmware9(const std::string & frame_id);
+  explicit UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater);
 };
 
 /**
@@ -1036,7 +1045,7 @@ class RawDataProduct final : public virtual ComponentInterface {
   double kRtcmFreqTol = 0.15;
   int kRtcmFreqWindow = 25;
 
-  explicit RawDataProduct(uint16_t nav_rate, uint16_t meas_rate);
+  explicit RawDataProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater);
 
   /**
    * @brief Does nothing since there are no Raw Data product specific settings.
@@ -1072,6 +1081,7 @@ class RawDataProduct final : public virtual ComponentInterface {
 
   uint16_t nav_rate_;
   uint16_t meas_rate_;
+  std::shared_ptr<diagnostic_updater::Updater> updater_;
 };
 
 /**
@@ -1080,7 +1090,7 @@ class RawDataProduct final : public virtual ComponentInterface {
  */
 class AdrUdrProduct final : public virtual ComponentInterface {
  public:
-  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id);
+  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater);
 
   /**
    * @brief Get the ADR/UDR parameters.
@@ -1136,6 +1146,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
   uint16_t meas_rate_;
 
   std::string frame_id_;
+  std::shared_ptr<diagnostic_updater::Updater> updater_;
 };
 
 /**
@@ -1144,7 +1155,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
  */
 class HpgRefProduct: public virtual ComponentInterface {
  public:
-  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag);
+  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, std::shared_ptr<diagnostic_updater::Updater> updater);
 
   /**
    * @brief Get the ROS parameters specific to the Reference Station
@@ -1254,6 +1265,7 @@ class HpgRefProduct: public virtual ComponentInterface {
   uint16_t nav_rate_;
   uint16_t meas_rate_;
   bool config_on_startup_flag_;
+  std::shared_ptr<diagnostic_updater::Updater> updater_;
 };
 
 /**
@@ -1271,7 +1283,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
   //! Diagnostic updater: RTCM topic frequency window [num messages]
   constexpr static int kRtcmFreqWindow = 25;
 
-  explicit HpgRovProduct(uint16_t nav_rate);
+  explicit HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater);
 
   /**
    * @brief Get the ROS parameters specific to the Rover configuration.
@@ -1328,11 +1340,12 @@ class HpgRovProduct final : public virtual ComponentInterface {
   ros::Publisher nav_rel_pos_ned_pub_;
 
   uint16_t nav_rate_;
+  std::shared_ptr<diagnostic_updater::Updater> updater_;
 };
 
 class HpPosRecProduct final : public virtual HpgRefProduct {
  public:
-  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, const std::string & frame_id);
+  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater);
 
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.
@@ -1365,7 +1378,7 @@ class HpPosRecProduct final : public virtual HpgRefProduct {
  */
 class TimProduct final : public virtual ComponentInterface {
  public:
-  explicit TimProduct(const std::string & frame_id);
+  explicit TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater);
 
   /**
    * @brief Get the Time Sync parameters.
@@ -1407,6 +1420,7 @@ class TimProduct final : public virtual ComponentInterface {
   ros::Publisher rxm_raw_pub_;
 
   std::string frame_id_;
+  std::shared_ptr<diagnostic_updater::Updater> updater_;
 };
 
 }
