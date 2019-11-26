@@ -157,11 +157,11 @@ void UbloxNode::addFirmwareInterface() {
 void UbloxNode::addProductInterface(const std::string & product_category,
                                     const std::string & ref_rov) {
   if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0) {
-    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, config_on_startup_flag_, updater_));
+    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, config_on_startup_flag_, updater_, rtcms_));
   } else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0) {
     components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_));
   } else if (product_category.compare("HPG") == 0) {
-    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, config_on_startup_flag_, frame_id_, updater_));
+    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, config_on_startup_flag_, frame_id_, updater_, rtcms_));
   } else if (product_category.compare("TIM") == 0) {
     components_.push_back(std::make_shared<TimProduct>(frame_id_, updater_));
   } else if (product_category.compare("ADR") == 0 ||
@@ -235,10 +235,10 @@ void UbloxNode::getRosParams() {
                              " must match size of rtcm_rates");
   }
 
-  rtcms.resize(rtcm_ids.size());
+  rtcms_.resize(rtcm_ids.size());
   for (size_t i = 0; i < rtcm_ids.size(); ++i) {
-    rtcms[i].id = rtcm_ids[i];
-    rtcms[i].rate = rtcm_rates[i];
+    rtcms_[i].id = rtcm_ids[i];
+    rtcms_[i].rate = rtcm_rates[i];
   }
 
   dmodel_ = modelFromString(dynamic_model_);
@@ -1620,8 +1620,8 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
 // u-blox High Precision GNSS Reference Station
 //
 
-HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, std::shared_ptr<diagnostic_updater::Updater> updater)
-  : nav_rate_(nav_rate), meas_rate_(meas_rate), config_on_startup_flag_(config_on_startup_flag), updater_(updater)
+HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms)
+  : nav_rate_(nav_rate), meas_rate_(meas_rate), config_on_startup_flag_(config_on_startup_flag), updater_(updater), rtcms_(rtcms)
 {
   navsvin_pub_ =
     nh->advertise<ublox_msgs::NavSVIN>("navsvin", kROSQueueSize);
@@ -1684,7 +1684,7 @@ bool HpgRefProduct::configureUblox() {
                                fixed_pos_acc_)) {
       throw std::runtime_error("Failed to set TMODE3 to fixed.");
     }
-    if (!gps->configRtcm(rtcms)) {
+    if (!gps->configRtcm(rtcms_)) {
       throw std::runtime_error("Failed to set RTCM rates");
     }
     mode_ = FIXED;
@@ -1777,7 +1777,7 @@ bool HpgRefProduct::setTimeMode() {
               "navigation rate to ", nav_rate_);
   }
   // Enable the RTCM out messages
-  if (!gps->configRtcm(rtcms)) {
+  if (!gps->configRtcm(rtcms_)) {
     ROS_ERROR("Failed to configure RTCM IDs");
     return false;
   }
@@ -1918,8 +1918,8 @@ void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
 //
 // U-Blox High Precision Positioning Receiver
 //
-HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater)
-  : HpgRefProduct(nav_rate, meas_rate, config_on_startup_flag, updater), frame_id_(frame_id)
+HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms)
+  : HpgRefProduct(nav_rate, meas_rate, config_on_startup_flag, updater, rtcms), frame_id_(frame_id)
 {
   nav_relposned_pub_ =
     nh->advertise<ublox_msgs::NavRELPOSNED9>("navrelposned", kROSQueueSize);
