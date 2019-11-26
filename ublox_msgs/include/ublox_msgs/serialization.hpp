@@ -27,8 +27,10 @@
 //==============================================================================
 
 
-#ifndef UBLOX_SERIALIZATION_UBLOX_MSGS_HPP
-#define UBLOX_SERIALIZATION_UBLOX_MSGS_HPP
+#ifndef UBLOX_MSGS_SERIALIZATION_HPP
+#define UBLOX_MSGS_SERIALIZATION_HPP
+
+#include <cstdint>
 
 #include <ros/console.h>
 #include <ublox_serialization/serialization.hpp>
@@ -857,6 +859,6 @@ struct Serializer<ublox_msgs::EsfSTATUS_<ContainerAllocator> > {
 };
 
 
-} // namespace ublox
+}  // namespace ublox
 
-#endif // UBLOX_SERIALIZATION_UBLOX_MSGS_HPP
+#endif  // UBLOX_MSGS_SERIALIZATION_HPP

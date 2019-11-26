@@ -39,7 +39,7 @@
 // ROS
 #include <ros/console.h>
 // Other u-blox packages
-#include <ublox/serialization/ublox_msgs.hpp>
+#include <ublox_msgs/serialization.hpp>
 // u-blox gps
 #include <ublox_gps/async_worker.hpp>
 #include <ublox_gps/callback.hpp>

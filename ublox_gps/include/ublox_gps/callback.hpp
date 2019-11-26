@@ -37,7 +37,8 @@
 #include <utility>
 
 #include <ros/console.h>
-#include <ublox/serialization/ublox_msgs.hpp>
+
+#include <ublox_msgs/serialization.hpp>
 
 namespace ublox_gps {
 
