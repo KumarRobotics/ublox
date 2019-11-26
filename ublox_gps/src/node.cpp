@@ -38,6 +38,7 @@
 
 #include <tf2/LinearMath/Quaternion.h>
 
+#include <ublox_gps/fix_diagnostic.hpp>
 #include <ublox_gps/fts_product.hpp>
 #include <ublox_gps/gnss.hpp>
 #include <ublox_gps/node.hpp>
