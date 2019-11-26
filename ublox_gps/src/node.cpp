@@ -41,6 +41,7 @@
 #include <ublox_gps/fts_product.hpp>
 #include <ublox_gps/gnss.hpp>
 #include <ublox_gps/node.hpp>
+#include <ublox_gps/ublox_topic_diagnostic.hpp>
 
 namespace ublox_node {
 
