@@ -147,16 +147,16 @@ void UbloxNode::addFirmwareInterface() {
 void UbloxNode::addProductInterface(const std::string & product_category,
                                     const std::string & ref_rov) {
   if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0) {
-    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_));
+    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_));
   } else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0) {
     components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_));
   } else if (product_category.compare("HPG") == 0) {
-    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_));
+    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_));
   } else if (product_category.compare("TIM") == 0) {
     components_.push_back(std::make_shared<TimProduct>());
   } else if (product_category.compare("ADR") == 0 ||
              product_category.compare("UDR") == 0) {
-    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_));
+    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_));
   } else if (product_category.compare("FTS") == 0) {
     components_.push_back(std::make_shared<FtsProduct>());
   } else if (product_category.compare("SPG") != 0) {
@@ -258,7 +258,7 @@ void UbloxNode::getRosParams() {
   }
 
   // measurement period [ms]
-  meas_rate = 1000 / rate_;
+  meas_rate_ = 1000 / rate_;
 
   // activate/deactivate any config
   nh->param("config_on_startup", config_on_startup_flag_, true);
@@ -401,7 +401,7 @@ void UbloxNode::initializeRosDiagnostics() {
 
   // configure diagnostic updater for frequency
   freq_diag = std::make_shared<FixDiagnostic>(std::string("fix"), kFixFreqTol,
-                                              kFixFreqWindow, kTimeStampStatusMin, nav_rate_);
+                                              kFixFreqWindow, kTimeStampStatusMin, nav_rate_, meas_rate_);
   for (int i = 0; i < components_.size(); i++) {
     components_[i]->initializeRosDiagnostics();
   }
@@ -502,9 +502,9 @@ bool UbloxNode::configureUblox() {
       if (set_usb_) {
         gps->configUsb(usb_tx_, usb_in_, usb_out_);
       }
-      if (!gps->configRate(meas_rate, nav_rate_)) {
+      if (!gps->configRate(meas_rate_, nav_rate_)) {
         std::stringstream ss;
-        ss << "Failed to set measurement rate to " << meas_rate
+        ss << "Failed to set measurement rate to " << meas_rate_
           << "ms and navigation rate to " << nav_rate_;
         throw std::runtime_error(ss.str());
       }
@@ -626,7 +626,7 @@ void UbloxNode::initialize() {
   processMonVer();
   if (protocol_version_ <= 14) {
     if (nh->param("raw_data", false)) {
-      components_.push_back(std::make_shared<RawDataProduct>(nav_rate_));
+      components_.push_back(std::make_shared<RawDataProduct>(nav_rate_, meas_rate_));
     }
   }
   // Must set firmware & hardware params before initializing diagnostics
@@ -1368,7 +1368,7 @@ void UbloxFirmware8::subscribe() {
 //
 // Raw Data Products
 //
-RawDataProduct::RawDataProduct(uint16_t nav_rate) : nav_rate_(nav_rate) {
+RawDataProduct::RawDataProduct(uint16_t nav_rate, uint16_t meas_rate) : nav_rate_(nav_rate), meas_rate_(meas_rate) {
   rxm_raw_pub_ = nh->advertise<ublox_msgs::RxmRAW>("rxmraw", kROSQueueSize);
   rxm_sfrb_pub_ = nh->advertise<ublox_msgs::RxmSFRB>("rxmsfrb", kROSQueueSize);
   rxm_eph_pub_ = nh->advertise<ublox_msgs::RxmEPH>("rxmeph", kROSQueueSize);
@@ -1411,26 +1411,26 @@ void RawDataProduct::subscribe() {
 void RawDataProduct::initializeRosDiagnostics() {
   if (enabled["rxm_raw"]) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
-      "rxmraw", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_));
+      "rxmraw", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_));
   }
   if (enabled["rxm_sfrb"]) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
-      "rxmsfrb", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_));
+      "rxmsfrb", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_));
   }
   if (enabled["rxm_eph"]) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
-      "rxmeph", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_));
+      "rxmeph", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_));
   }
   if (enabled["rxm_alm"]) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
-      "rxmalm", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_));
+      "rxmalm", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_));
   }
 }
 
 //
 // u-blox ADR devices, partially implemented
 //
-AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate) : nav_rate_(nav_rate)
+AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate) : nav_rate_(nav_rate), meas_rate_(meas_rate)
 {
   imu_pub_ =
     nh->advertise<sensor_msgs::Imu>("imu_meas", kROSQueueSize);
@@ -1447,7 +1447,7 @@ AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate) : nav_rate_(nav_rate)
 void AdrUdrProduct::getRosParams() {
   nh->param("use_adr", use_adr_, true);
   // Check the nav rate
-  float nav_rate_hz = 1000 / (meas_rate * nav_rate_);
+  float nav_rate_hz = 1000 / (meas_rate_ * nav_rate_);
   if (nav_rate_hz != 1) {
     ROS_WARN("Nav Rate recommended to be 1 Hz");
   }
@@ -1607,7 +1607,7 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
 // u-blox High Precision GNSS Reference Station
 //
 
-HpgRefProduct::HpgRefProduct(uint16_t nav_rate) : nav_rate_(nav_rate)
+HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate) : nav_rate_(nav_rate), meas_rate_(meas_rate)
 {
   navsvin_pub_ =
     nh->advertise<ublox_msgs::NavSVIN>("navsvin", kROSQueueSize);
@@ -1615,7 +1615,7 @@ HpgRefProduct::HpgRefProduct(uint16_t nav_rate) : nav_rate_(nav_rate)
 
 void HpgRefProduct::getRosParams() {
   if (config_on_startup_flag_) {
-    if (nav_rate_ * meas_rate != 1000) {
+    if (nav_rate_ * meas_rate_ != 1000) {
       ROS_WARN("For HPG Ref devices, nav_rate should be exactly 1 Hz.");
     }
 
@@ -1705,7 +1705,7 @@ bool HpgRefProduct::configureUblox() {
     }
     // Reset the Survey In
     // For Survey in, meas rate must be at least 1 Hz
-    uint16_t meas_rate_temp = meas_rate < 1000 ? meas_rate : 1000; // [ms]
+    uint16_t meas_rate_temp = meas_rate_ < 1000 ? meas_rate_ : 1000; // [ms]
     // If measurement period isn't a factor of 1000, set to default
     if (1000 % meas_rate_temp != 0) {
       meas_rate_temp = kDefaultMeasPeriod;
@@ -1758,8 +1758,8 @@ bool HpgRefProduct::setTimeMode() {
 
   // Set the Measurement & nav rate to user config
   // (survey-in sets nav_rate to 1 Hz regardless of user setting)
-  if (!gps->configRate(meas_rate, nav_rate_)) {
-    ROS_ERROR("Failed to set measurement rate to %d ms %s %d", meas_rate,
+  if (!gps->configRate(meas_rate_, nav_rate_)) {
+    ROS_ERROR("Failed to set measurement rate to %d ms %s %d", meas_rate_,
               "navigation rate to ", nav_rate_);
   }
   // Enable the RTCM out messages
@@ -1903,7 +1903,7 @@ void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
 //
 // U-Blox High Precision Positioning Receiver
 //
-HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate) : HpgRefProduct(nav_rate)
+HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate) : HpgRefProduct(nav_rate, meas_rate)
 {
   nav_relposned_pub_ =
     nh->advertise<ublox_msgs::NavRELPOSNED9>("navrelposned", kROSQueueSize);

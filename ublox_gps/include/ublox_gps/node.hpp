@@ -106,8 +106,6 @@ std::string frame_id;
 //! The fix status service type, set in the Firmware Component
 //! based on the enabled GNSS
 int fix_status_service;
-//! The measurement [ms], see CfgRate.msg
-uint16_t meas_rate;
 //! IDs of RTCM out messages to configure.
 std::vector<uint8_t> rtcm_ids;
 //! Rates of RTCM out messages. Size must be the same as rtcm_ids
@@ -131,7 +129,8 @@ struct UbloxTopicDiagnostic {
    * @param freq_tol the tolerance [%] for the topic frequency
    * @param freq_window the number of messages to use for diagnostic statistics
    */
-  explicit UbloxTopicDiagnostic(const std::string & topic, double freq_tol, int freq_window, uint16_t nav_rate) {
+  explicit UbloxTopicDiagnostic(const std::string & topic, double freq_tol, int freq_window,
+                                uint16_t nav_rate, uint16_t meas_rate) {
     const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
     min_freq = target_freq;
     max_freq = target_freq;
@@ -188,7 +187,7 @@ struct FixDiagnostic {
    * @param stamp_min the minimum allowed time delay
    */
   explicit FixDiagnostic(const std::string & name, double freq_tol, int freq_window,
-                         double stamp_min, uint16_t nav_rate) {
+                         double stamp_min, uint16_t nav_rate, uint16_t meas_rate) {
     const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
     min_freq = target_freq;
     max_freq = target_freq;
@@ -622,6 +621,9 @@ class UbloxNode final {
 
   //! Navigation rate in measurement cycles, see CfgRate.msg
   uint16_t nav_rate_;
+
+  //! The measurement [ms], see CfgRate.msg
+  uint16_t meas_rate_;
 };
 
 /**
@@ -1019,7 +1021,7 @@ class RawDataProduct final : public virtual ComponentInterface {
   double kRtcmFreqTol = 0.15;
   int kRtcmFreqWindow = 25;
 
-  explicit RawDataProduct(uint16_t nav_rate);
+  explicit RawDataProduct(uint16_t nav_rate, uint16_t meas_rate);
 
   /**
    * @brief Does nothing since there are no Raw Data product specific settings.
@@ -1054,6 +1056,7 @@ class RawDataProduct final : public virtual ComponentInterface {
   ros::Publisher rxm_alm_pub_;
 
   uint16_t nav_rate_;
+  uint16_t meas_rate_;
 };
 
 /**
@@ -1062,7 +1065,7 @@ class RawDataProduct final : public virtual ComponentInterface {
  */
 class AdrUdrProduct final : public virtual ComponentInterface {
  public:
-  explicit AdrUdrProduct(uint16_t nav_rate);
+  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate);
 
   /**
    * @brief Get the ADR/UDR parameters.
@@ -1115,6 +1118,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
   ros::Publisher hnr_pvt_pub_;
 
   uint16_t nav_rate_;
+  uint16_t meas_rate_;
 };
 
 /**
@@ -1123,7 +1127,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
  */
 class HpgRefProduct: public virtual ComponentInterface {
  public:
-  explicit HpgRefProduct(uint16_t nav_rate);
+  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate);
 
   /**
    * @brief Get the ROS parameters specific to the Reference Station
@@ -1231,6 +1235,7 @@ class HpgRefProduct: public virtual ComponentInterface {
   ros::Publisher navsvin_pub_;
 
   uint16_t nav_rate_;
+  uint16_t meas_rate_;
 };
 
 /**
@@ -1309,7 +1314,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
 
 class HpPosRecProduct final : public virtual HpgRefProduct {
  public:
-  explicit HpPosRecProduct(uint16_t nav_rate);
+  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate);
 
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.
