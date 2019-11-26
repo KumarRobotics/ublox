@@ -110,8 +110,6 @@ int fix_status_service;
 std::vector<uint8_t> rtcm_ids;
 //! Rates of RTCM out messages. Size must be the same as rtcm_ids
 std::vector<uint8_t> rtcm_rates;
-//! Flag for enabling configuration on startup
-bool config_on_startup_flag_;
 
 
 //! Topic diagnostics for u-blox messages
@@ -624,6 +622,9 @@ class UbloxNode final {
 
   //! The measurement [ms], see CfgRate.msg
   uint16_t meas_rate_;
+
+  //! Flag for enabling configuration on startup
+  bool config_on_startup_flag_;
 };
 
 /**
@@ -1127,7 +1128,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
  */
 class HpgRefProduct: public virtual ComponentInterface {
  public:
-  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate);
+  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag);
 
   /**
    * @brief Get the ROS parameters specific to the Reference Station
@@ -1236,6 +1237,7 @@ class HpgRefProduct: public virtual ComponentInterface {
 
   uint16_t nav_rate_;
   uint16_t meas_rate_;
+  bool config_on_startup_flag_;
 };
 
 /**
@@ -1314,7 +1316,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
 
 class HpPosRecProduct final : public virtual HpgRefProduct {
  public:
-  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate);
+  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag);
 
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.

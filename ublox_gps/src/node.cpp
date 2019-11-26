@@ -147,11 +147,11 @@ void UbloxNode::addFirmwareInterface() {
 void UbloxNode::addProductInterface(const std::string & product_category,
                                     const std::string & ref_rov) {
   if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0) {
-    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_));
+    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, config_on_startup_flag_));
   } else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0) {
     components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_));
   } else if (product_category.compare("HPG") == 0) {
-    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_));
+    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, config_on_startup_flag_));
   } else if (product_category.compare("TIM") == 0) {
     components_.push_back(std::make_shared<TimProduct>());
   } else if (product_category.compare("ADR") == 0 ||
@@ -1607,7 +1607,8 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
 // u-blox High Precision GNSS Reference Station
 //
 
-HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate) : nav_rate_(nav_rate), meas_rate_(meas_rate)
+HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag)
+  : nav_rate_(nav_rate), meas_rate_(meas_rate), config_on_startup_flag_(config_on_startup_flag)
 {
   navsvin_pub_ =
     nh->advertise<ublox_msgs::NavSVIN>("navsvin", kROSQueueSize);
@@ -1903,7 +1904,8 @@ void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
 //
 // U-Blox High Precision Positioning Receiver
 //
-HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate) : HpgRefProduct(nav_rate, meas_rate)
+HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag)
+  : HpgRefProduct(nav_rate, meas_rate, config_on_startup_flag)
 {
   nav_relposned_pub_ =
     nh->advertise<ublox_msgs::NavRELPOSNED9>("navrelposned", kROSQueueSize);
