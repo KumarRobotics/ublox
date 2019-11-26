@@ -62,7 +62,7 @@ constexpr static unsigned int kBaudrates[] = { 4800,
 /**
  * @brief Handles communication with and configuration of the u-blox device
  */
-class Gps {
+class Gps final {
  public:
   //! Sleep time [ms] after setting the baudrate
   int kSetBaudrateSleepMs = 500;
@@ -71,7 +71,7 @@ class Gps {
   //! Size of write buffer for output messages
   constexpr static int kWriterSize = 2056;
 
-  Gps();
+  explicit Gps(int debug);
   virtual ~Gps();
 
   /**
@@ -472,6 +472,8 @@ class Gps {
   static const std::chrono::milliseconds default_timeout_;
   //! Stores last received ACK accessed by multiple threads
   mutable std::atomic<Ack> ack_;
+
+  int debug_;
 
   //! Callback handlers for u-blox messages
   CallbackHandlers callbacks_;

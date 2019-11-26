@@ -70,7 +70,7 @@ class CallbackHandler {
  * @typedef T the message type
  */
 template <typename T>
-class CallbackHandler_ : public CallbackHandler {
+class CallbackHandler_ final : public CallbackHandler {
  public:
   typedef std::function<void(const T&)> Callback; //!< A callback function
 
@@ -78,7 +78,7 @@ class CallbackHandler_ : public CallbackHandler {
    * @brief Initialize the Callback Handler with a callback function
    * @param func a callback function for the message, defaults to none
    */
-  CallbackHandler_(const Callback& func = Callback()) : func_(func) {}
+  explicit CallbackHandler_(const Callback& func = Callback(), int debug = 1) : func_(func), debug_(debug) {}
 
   /**
    * @brief Get the last received message.
@@ -89,11 +89,11 @@ class CallbackHandler_ : public CallbackHandler {
    * @brief Decode the U-Blox message & call the callback function if it exists.
    * @param reader a reader to decode the message buffer
    */
-  void handle(ublox::Reader& reader) {
+  void handle(ublox::Reader& reader) override {
     std::lock_guard<std::mutex> lock(mutex_);
     try {
       if (!reader.read<T>(message_)) {
-        ROS_DEBUG_COND(debug >= 2,
+        ROS_DEBUG_COND(debug_ >= 2,
                        "U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)",
                        static_cast<unsigned int>(reader.classId()),
                        static_cast<unsigned int>(reader.messageId()),
@@ -102,7 +102,7 @@ class CallbackHandler_ : public CallbackHandler {
         return;
       }
     } catch (std::runtime_error& e) {
-      ROS_DEBUG_COND(debug >= 2,
+      ROS_DEBUG_COND(debug_ >= 2,
                      "U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)",
                      static_cast<unsigned int>(reader.classId()),
                      static_cast<unsigned int>(reader.messageId()),
@@ -120,13 +120,16 @@ class CallbackHandler_ : public CallbackHandler {
  private:
   Callback func_; //!< the callback function to handle the message
   T message_; //!< The last received message
+  int debug_;
 };
 
 /**
  * @brief Callback handlers for incoming u-blox messages.
  */
-class CallbackHandlers {
+class CallbackHandlers final {
  public:
+  explicit CallbackHandlers(int debug) : debug_(debug) {}
+
   /**
    * @brief Add a callback handler for the given message type.
    * @param callback the callback handler for the message
@@ -137,7 +140,7 @@ class CallbackHandlers {
     std::lock_guard<std::mutex> lock(callback_mutex_);
     callbacks_.insert(
       std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
-                     std::make_shared<CallbackHandler_<T>>(callback)));
+                     std::make_shared<CallbackHandler_<T>>(callback, debug_)));
   }
 
   /**
@@ -155,7 +158,7 @@ class CallbackHandlers {
     std::lock_guard<std::mutex> lock(callback_mutex_);
     callbacks_.insert(
       std::make_pair(std::make_pair(T::CLASS_ID, message_id),
-                     std::make_shared<CallbackHandler_<T>>(callback)));
+                     std::make_shared<CallbackHandler_<T>>(callback, debug_)));
   }
 
   /**
@@ -183,7 +186,7 @@ class CallbackHandlers {
     bool result = false;
     // Create a callback handler for this message
     callback_mutex_.lock();
-    auto handler = std::make_shared<CallbackHandler_<T>>();
+    auto handler = std::make_shared<CallbackHandler_<T>>(typename CallbackHandler_<T>::Callback(), debug_);
     Callbacks::iterator callback = callbacks_.insert(
       (std::make_pair(std::make_pair(T::CLASS_ID, T::MESSAGE_ID),
                       handler)));
@@ -212,7 +215,7 @@ class CallbackHandlers {
     ublox::Reader reader(data, size);
     // Read all U-Blox messages in buffer
     while (reader.search() != reader.end() && reader.found()) {
-      if (debug >= 3) {
+      if (debug_ >= 3) {
         // Print the received bytes
         std::ostringstream oss;
         for (ublox::Reader::iterator it = reader.pos();
@@ -238,6 +241,7 @@ class CallbackHandlers {
   // Call back handlers for u-blox messages
   Callbacks callbacks_;
   std::mutex callback_mutex_;
+  int debug_;
 };
 
 }  // namespace ublox_gps

@@ -92,7 +92,7 @@ std::shared_ptr<diagnostic_updater::Updater> updater;
 std::shared_ptr<ros::NodeHandle> nh;
 
 //! Handles communication with the U-Blox Device
-ublox_gps::Gps gps;
+std::shared_ptr<ublox_gps::Gps> gps;
 //! Which GNSS are supported by the device
 std::set<std::string> supported;
 //! Whether or not to publish the given ublox message

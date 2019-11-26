@@ -46,7 +46,7 @@ const std::chrono::milliseconds Gps::default_timeout_ =
     std::chrono::milliseconds(
         static_cast<int>(Gps::kDefaultAckTimeout * 1000));
 
-Gps::Gps() : configured_(false), config_on_startup_flag_(true) {
+Gps::Gps(int debug) : configured_(false), config_on_startup_flag_(true), debug_(debug), callbacks_(debug) {
   subscribeAcks();
 }
 
@@ -82,7 +82,7 @@ void Gps::processAck(const ublox_msgs::Ack &m) {
   ack.msg_id = m.msg_id;
   // store the ack atomically
   ack_.store(ack, std::memory_order_seq_cst);
-  ROS_DEBUG_COND(debug >= 2, "U-blox: received ACK: 0x%02x / 0x%02x",
+  ROS_DEBUG_COND(debug_ >= 2, "U-blox: received ACK: 0x%02x / 0x%02x",
                  m.cls_id, m.msg_id);
 }
 
@@ -105,7 +105,7 @@ void Gps::processUpdSosAck(const ublox_msgs::UpdSOSAck &m) {
     ack.msg_id = m.MESSAGE_ID;
     // store the ack atomically
     ack_.store(ack, std::memory_order_seq_cst);
-    ROS_DEBUG_COND(ack.type == ACK && debug >= 2,
+    ROS_DEBUG_COND(ack.type == ACK && debug_ >= 2,
                    "U-blox: received UPD SOS Backup ACK");
     if (ack.type == NACK) {
       ROS_ERROR("U-blox: received UPD SOS Backup NACK");
@@ -139,7 +139,7 @@ void Gps::initializeSerial(const std::string & port, unsigned int baudrate,
   if (worker_) {
     return;
   }
-  setWorker(std::make_shared<AsyncWorker<asio::serial_port>>(serial, io_service));
+  setWorker(std::make_shared<AsyncWorker<asio::serial_port>>(serial, io_service, 8192, debug_));
 
   configured_ = false;
 
@@ -190,7 +190,7 @@ void Gps::resetSerial(const std::string & port) {
   if (worker_) {
     return;
   }
-  setWorker(std::make_shared<AsyncWorker<asio::serial_port>>(serial, io_service));
+  setWorker(std::make_shared<AsyncWorker<asio::serial_port>>(serial, io_service, 8192, debug_));
   configured_ = false;
 
   // Poll UART PRT Config
@@ -244,7 +244,7 @@ void Gps::initializeTcp(const std::string & host, const std::string & port) {
     return;
   }
   setWorker(std::make_shared<AsyncWorker<asio::ip::tcp::socket>>(socket,
-                                                                        io_service));
+                                                                 io_service, 8192, debug_));
 }
 
 void Gps::close() {
@@ -477,7 +477,7 @@ bool Gps::disableTmode3() {
 }
 
 bool Gps::setRate(uint8_t class_id, uint8_t message_id, uint8_t rate) {
-  ROS_DEBUG_COND(debug >= 2, "Setting rate 0x%02x, 0x%02x, %u", class_id,
+  ROS_DEBUG_COND(debug_ >= 2, "Setting rate 0x%02x, 0x%02x, %u", class_id,
                  message_id, rate);
   ublox_msgs::CfgMSG msg;
   msg.msg_class = class_id;
@@ -556,7 +556,7 @@ bool Gps::poll(uint8_t class_id, uint8_t message_id,
 
 bool Gps::waitForAcknowledge(const std::chrono::milliseconds& timeout,
                              uint8_t class_id, uint8_t msg_id) {
-  ROS_DEBUG_COND(debug >= 2, "Waiting for ACK 0x%02x / 0x%02x",
+  ROS_DEBUG_COND(debug_ >= 2, "Waiting for ACK 0x%02x / 0x%02x",
                  class_id, msg_id);
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
   std::chrono::system_clock::time_point wait_until = now + timeout;
@@ -591,7 +591,7 @@ bool Gps::setUTCtime() {
 }
 
 bool Gps::setTimtm2(uint8_t rate) {
-  ROS_DEBUG("TIM-TM2 send rate on current port set to %u", rate );
+  ROS_DEBUG("TIM-TM2 send rate on current port set to %u", rate);
   ublox_msgs::CfgMSG msg;
   msg.msg_class = ublox_msgs::TimTM2::CLASS_ID;
   msg.msg_id = ublox_msgs::TimTM2::MESSAGE_ID;

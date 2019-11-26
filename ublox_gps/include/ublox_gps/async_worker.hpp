@@ -47,13 +47,11 @@
 
 namespace ublox_gps {
 
-int debug; //!< Used to determine which debug messages to display
-
 /**
  * @brief Handles Asynchronous I/O reading and writing.
  */
 template <typename StreamT>
-class AsyncWorker : public Worker {
+class AsyncWorker final : public Worker {
  public:
   /**
    * @brief Construct an Asynchronous I/O worker.
@@ -61,38 +59,39 @@ class AsyncWorker : public Worker {
    * @param io_service the I/O service
    * @param buffer_size the size of the input and output buffers
    */
-  AsyncWorker(std::shared_ptr<StreamT> stream,
-              std::shared_ptr<asio::io_service> io_service,
-              std::size_t buffer_size = 8192);
-  virtual ~AsyncWorker();
+  explicit AsyncWorker(std::shared_ptr<StreamT> stream,
+                       std::shared_ptr<asio::io_service> io_service,
+                       std::size_t buffer_size = 8192,
+                       int debug = 1);
+  ~AsyncWorker();
 
   /**
    * @brief Set the callback function which handles input messages.
    * @param callback the read callback which handles received messages
    */
-  void setCallback(const Callback& callback) { read_callback_ = callback; }
+  void setCallback(const Callback& callback) override { read_callback_ = callback; }
 
   /**
    * @brief Set the callback function which handles raw data.
    * @param callback the write callback which handles raw data
    */
-  void setRawDataCallback(const Callback& callback) { write_callback_ = callback; }
+  void setRawDataCallback(const Callback& callback) override { write_callback_ = callback; }
 
   /**
    * @brief Send the data bytes via the I/O stream.
    * @param data the buffer of data bytes to send
    * @param size the size of the buffer
    */
-  bool send(const unsigned char* data, const unsigned int size);
+  bool send(const unsigned char* data, const unsigned int size) override;
   /**
    * @brief Wait for incoming messages.
    * @param timeout the maximum time to wait
    */
-  void wait(const std::chrono::milliseconds& timeout);
+  void wait(const std::chrono::milliseconds& timeout) override;
 
-  bool isOpen() const { return stream_->is_open(); }
+  bool isOpen() const override { return stream_->is_open(); }
 
- protected:
+ private:
   /**
    * @brief Read the input stream.
    */
@@ -134,13 +133,16 @@ class AsyncWorker : public Worker {
   Callback write_callback_; //!< Callback function to handle raw data
 
   bool stopping_; //!< Whether or not the I/O service is closed
+
+  bool debug_; //!< Used to determine which debug messages to display
 };
 
 template <typename StreamT>
 AsyncWorker<StreamT>::AsyncWorker(std::shared_ptr<StreamT> stream,
         std::shared_ptr<asio::io_service> io_service,
-        std::size_t buffer_size)
-    : stopping_(false) {
+        std::size_t buffer_size,
+        int debug)
+    : stopping_(false), debug_(debug) {
   stream_ = stream;
   io_service_ = io_service;
   in_.resize(buffer_size);
@@ -188,7 +190,7 @@ void AsyncWorker<StreamT>::doWrite() {
   // Write all the data in the out buffer
   asio::write(*stream_, asio::buffer(out_.data(), out_.size()));
 
-  if (debug >= 2) {
+  if (debug_ >= 2) {
     // Print the data that was sent
     std::ostringstream oss;
     for (std::vector<unsigned char>::iterator it = out_.begin();
@@ -230,7 +232,7 @@ void AsyncWorker<StreamT>::readEnd(const asio::error_code& error,
       write_callback_(pRawDataStart, raw_data_stream_size);
     }
 
-    if (debug >= 4) {
+    if (debug_ >= 4) {
       std::ostringstream oss;
       for (std::vector<unsigned char>::iterator it =
                in_.begin() + in_buffer_size_ - bytes_transfered;
