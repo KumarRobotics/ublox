@@ -77,9 +77,6 @@
  */
 namespace ublox_node {
 
-//! Subscribe Rate for u-blox SV Info messages
-constexpr static uint32_t kNavSvInfoSubscribeRate = 20;
-
 // ROS objects
 //! Node Handle for GPS node
 std::shared_ptr<ros::NodeHandle> nh;
@@ -629,6 +626,9 @@ class UbloxNode final {
  */
 class UbloxFirmware : public virtual ComponentInterface {
  public:
+  //! Subscribe Rate for u-blox SV Info messages
+  constexpr static uint32_t kNavSvInfoSubscribeRate = 20;
+
   explicit UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater);
 
   /**
