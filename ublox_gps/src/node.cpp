@@ -127,22 +127,26 @@ UbloxNode::UbloxNode() {
   updater_ = std::make_shared<diagnostic_updater::Updater>();
   updater_->setHardwareID("ublox");
 
+  // configure diagnostic updater for frequency
+  freq_diag_ = std::make_shared<FixDiagnostic>(std::string("fix"), kFixFreqTol,
+                                               kFixFreqWindow, kTimeStampStatusMin, nav_rate_, meas_rate_, updater_);
+
   initialize();
 }
 
 void UbloxNode::addFirmwareInterface() {
   int ublox_version;
   if (protocol_version_ < 14) {
-    components_.push_back(std::make_shared<UbloxFirmware6>(frame_id_, updater_));
+    components_.push_back(std::make_shared<UbloxFirmware6>(frame_id_, updater_, freq_diag_));
     ublox_version = 6;
   } else if (protocol_version_ >= 14 && protocol_version_ <= 15) {
-    components_.push_back(std::make_shared<UbloxFirmware7>(frame_id_, updater_));
+    components_.push_back(std::make_shared<UbloxFirmware7>(frame_id_, updater_, freq_diag_));
     ublox_version = 7;
   } else if (protocol_version_ > 15 && protocol_version_ <= 23) {
-    components_.push_back(std::make_shared<UbloxFirmware8>(frame_id_, updater_));
+    components_.push_back(std::make_shared<UbloxFirmware8>(frame_id_, updater_, freq_diag_));
     ublox_version = 8;
   } else {
-    components_.push_back(std::make_shared<UbloxFirmware9>(frame_id_, updater_));
+    components_.push_back(std::make_shared<UbloxFirmware9>(frame_id_, updater_, freq_diag_));
     ublox_version = 9;
   }
 
@@ -402,9 +406,6 @@ void UbloxNode::initializeRosDiagnostics() {
     nh->setParam("diagnostic_period", kDiagnosticPeriod);
   }
 
-  // configure diagnostic updater for frequency
-  freq_diag = std::make_shared<FixDiagnostic>(std::string("fix"), kFixFreqTol,
-                                              kFixFreqWindow, kTimeStampStatusMin, nav_rate_, meas_rate_, updater_);
   for (int i = 0; i < components_.size(); i++) {
     components_[i]->initializeRosDiagnostics();
   }
@@ -678,8 +679,8 @@ void UbloxFirmware::initializeRosDiagnostics() {
 //
 // U-Blox Firmware Version 6
 //
-UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater)
-  : UbloxFirmware(updater), frame_id_(frame_id)
+UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
+  : UbloxFirmware(updater), frame_id_(frame_id), freq_diag_(freq_diag)
 {
   nav_pos_llh_pub_ =
     nh->advertise<ublox_msgs::NavPOSLLH>("navposllh", kROSQueueSize);
@@ -871,7 +872,7 @@ void UbloxFirmware6::callbackNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
   fix_pub_.publish(fix_);
   last_nav_pos_ = m;
   //  update diagnostics
-  freq_diag->diagnostic->tick(fix_.header.stamp);
+  freq_diag_->diagnostic->tick(fix_.header.stamp);
   updater_->update();
 }
 
@@ -1362,7 +1363,8 @@ void UbloxFirmware8::subscribe() {
   }
 }
 
-UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater) : UbloxFirmware8(frame_id, updater)
+UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
+  : UbloxFirmware8(frame_id, updater, freq_diag)
 {
 }
 

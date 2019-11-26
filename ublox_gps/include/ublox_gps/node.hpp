@@ -204,9 +204,6 @@ struct FixDiagnostic {
   double max_freq;
 };
 
-//! fix frequency diagnostic updater
-std::shared_ptr<FixDiagnostic> freq_diag;
-
 /**
  * @brief Determine dynamic model from human-readable string.
  * @param model One of the following (case-insensitive):
@@ -628,6 +625,9 @@ class UbloxNode final {
 
   //! ROS diagnostic updater
   std::shared_ptr<diagnostic_updater::Updater> updater_;
+
+  //! fix frequency diagnostic updater
+  std::shared_ptr<FixDiagnostic> freq_diag_;
 };
 
 /**
@@ -659,7 +659,7 @@ class UbloxFirmware : public virtual ComponentInterface {
  */
 class UbloxFirmware6 final : public UbloxFirmware {
  public:
-  explicit UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater);
+  explicit UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag);
 
   /**
    * @brief Sets the fix status service type to GPS.
@@ -735,6 +735,7 @@ class UbloxFirmware6 final : public UbloxFirmware {
   ros::Publisher mon_hw_pub_;
 
   std::string frame_id_;
+  std::shared_ptr<FixDiagnostic> freq_diag_;
 };
 
 /**
@@ -749,8 +750,8 @@ class UbloxFirmware6 final : public UbloxFirmware {
 template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
-  explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater)
-    : UbloxFirmware(updater), frame_id_(frame_id) {
+  explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
+    : UbloxFirmware(updater), frame_id_(frame_id), freq_diag_(freq_diag) {
     // NavPVT publisher
     nav_pvt_pub_ = nh->advertise<NavPVT>("navpvt", kROSQueueSize);
 
@@ -853,7 +854,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     // Update diagnostics
     //
     last_nav_pvt_ = m;
-    freq_diag->diagnostic->tick(fix.header.stamp);
+    freq_diag_->diagnostic->tick(fix.header.stamp);
     updater_->update();
   }
 
@@ -925,6 +926,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   ros::Publisher vel_pub_;
 
   std::string frame_id_;
+  std::shared_ptr<FixDiagnostic> freq_diag_;
 };
 
 /**
@@ -932,8 +934,8 @@ class UbloxFirmware7Plus : public UbloxFirmware {
  */
 class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  public:
-  explicit UbloxFirmware7(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater)
-    : UbloxFirmware7Plus<ublox_msgs::NavPVT7>(frame_id, updater) {
+  explicit UbloxFirmware7(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
+    : UbloxFirmware7Plus<ublox_msgs::NavPVT7>(frame_id, updater, freq_diag) {
     nav_svinfo_pub_ = nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", kROSQueueSize);
     mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
   }
@@ -975,8 +977,8 @@ class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  */
 class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  public:
-  explicit UbloxFirmware8(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater)
-    : UbloxFirmware7Plus<ublox_msgs::NavPVT>(frame_id, updater) {
+  explicit UbloxFirmware8(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
+    : UbloxFirmware7Plus<ublox_msgs::NavPVT>(frame_id, updater, freq_diag) {
     nav_sat_pub_ = nh->advertise<ublox_msgs::NavSAT>("navstate", kROSQueueSize);
     mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
     rxm_rtcm_pub_ = nh->advertise<ublox_msgs::RxmRTCM>("rxmrtcm", kROSQueueSize);
@@ -1034,7 +1036,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  */
 class UbloxFirmware9 final : public UbloxFirmware8 {
 public:
-  explicit UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater);
+  explicit UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag);
 };
 
 /**
