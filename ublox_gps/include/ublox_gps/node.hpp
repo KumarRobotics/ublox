@@ -77,8 +77,6 @@
  */
 namespace ublox_node {
 
-//! Default subscribe Rate to u-blox messages [Hz]
-constexpr static uint32_t kSubscribeRate = 1;
 //! Subscribe Rate for u-blox SV Info messages
 constexpr static uint32_t kNavSvInfoSubscribeRate = 20;
 
