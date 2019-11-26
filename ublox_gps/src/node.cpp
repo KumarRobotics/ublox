@@ -117,12 +117,12 @@ UbloxNode::UbloxNode() {
   nh->param("debug", debug, 1);
   gps = std::make_shared<ublox_gps::Gps>(debug);
 
-  nav_status_pub_ = nh->advertise<ublox_msgs::NavSTATUS>("navstatus", kROSQueueSize);
-  nav_posecef_pub_ = nh->advertise<ublox_msgs::NavPOSECEF>("navposecef", kROSQueueSize);
-  nav_clock_pub_ = nh->advertise<ublox_msgs::NavCLOCK>("navclock", kROSQueueSize);
-  aid_alm_pub_ = nh->advertise<ublox_msgs::AidALM>("aidalm", kROSQueueSize);
-  aid_eph_pub_ = nh->advertise<ublox_msgs::AidEPH>("aideph", kROSQueueSize);
-  aid_hui_pub_ = nh->advertise<ublox_msgs::AidHUI>("aidhui", kROSQueueSize);
+  nav_status_pub_ = nh->advertise<ublox_msgs::NavSTATUS>("navstatus", 1);
+  nav_posecef_pub_ = nh->advertise<ublox_msgs::NavPOSECEF>("navposecef", 1);
+  nav_clock_pub_ = nh->advertise<ublox_msgs::NavCLOCK>("navclock", 1);
+  aid_alm_pub_ = nh->advertise<ublox_msgs::AidALM>("aidalm", 1);
+  aid_eph_pub_ = nh->advertise<ublox_msgs::AidEPH>("aideph", 1);
+  aid_hui_pub_ = nh->advertise<ublox_msgs::AidHUI>("aidhui", 1);
 
   updater_ = std::make_shared<diagnostic_updater::Updater>();
   updater_->setHardwareID("ublox");
@@ -691,25 +691,25 @@ UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<dia
   : UbloxFirmware(updater), frame_id_(frame_id), freq_diag_(freq_diag)
 {
   nav_pos_llh_pub_ =
-    nh->advertise<ublox_msgs::NavPOSLLH>("navposllh", kROSQueueSize);
+    nh->advertise<ublox_msgs::NavPOSLLH>("navposllh", 1);
   fix_pub_ =
-    nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
+    nh->advertise<sensor_msgs::NavSatFix>("fix", 1);
 
   nav_vel_ned_pub_ =
-    nh->advertise<ublox_msgs::NavVELNED>("navvelned", kROSQueueSize);
+    nh->advertise<ublox_msgs::NavVELNED>("navvelned", 1);
 
   vel_pub_ =
     nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
-                                                             kROSQueueSize);
+                                                             1);
 
   nav_sol_pub_ =
-    nh->advertise<ublox_msgs::NavSOL>("navsol", kROSQueueSize);
+    nh->advertise<ublox_msgs::NavSOL>("navsol", 1);
 
   nav_svinfo_pub_ =
-    nh->advertise<ublox_msgs::NavSVINFO>("navinfo", kROSQueueSize);
+    nh->advertise<ublox_msgs::NavSVINFO>("navinfo", 1);
 
   mon_hw_pub_ =
-    nh->advertise<ublox_msgs::MonHW6>("monhw", kROSQueueSize);
+    nh->advertise<ublox_msgs::MonHW6>("monhw", 1);
 }
 
 void UbloxFirmware6::getRosParams() {
@@ -1381,10 +1381,10 @@ UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<dia
 //
 RawDataProduct::RawDataProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater)
   : nav_rate_(nav_rate), meas_rate_(meas_rate), updater_(updater) {
-  rxm_raw_pub_ = nh->advertise<ublox_msgs::RxmRAW>("rxmraw", kROSQueueSize);
-  rxm_sfrb_pub_ = nh->advertise<ublox_msgs::RxmSFRB>("rxmsfrb", kROSQueueSize);
-  rxm_eph_pub_ = nh->advertise<ublox_msgs::RxmEPH>("rxmeph", kROSQueueSize);
-  rxm_alm_pub_ = nh->advertise<ublox_msgs::RxmALM>("rxmalm", kROSQueueSize);
+  rxm_raw_pub_ = nh->advertise<ublox_msgs::RxmRAW>("rxmraw", 1);
+  rxm_sfrb_pub_ = nh->advertise<ublox_msgs::RxmSFRB>("rxmsfrb", 1);
+  rxm_eph_pub_ = nh->advertise<ublox_msgs::RxmEPH>("rxmeph", 1);
+  rxm_alm_pub_ = nh->advertise<ublox_msgs::RxmALM>("rxmalm", 1);
 }
 
 void RawDataProduct::subscribe() {
@@ -1446,15 +1446,15 @@ AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::s
   : nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id), updater_(updater)
 {
   imu_pub_ =
-    nh->advertise<sensor_msgs::Imu>("imu_meas", kROSQueueSize);
+    nh->advertise<sensor_msgs::Imu>("imu_meas", 1);
   time_ref_pub_ =
-    nh->advertise<sensor_msgs::TimeReference>("interrupt_time", kROSQueueSize);
-  nav_att_pub_ = nh->advertise<ublox_msgs::NavATT>("navatt", kROSQueueSize);
-  esf_ins_pub_ = nh->advertise<ublox_msgs::EsfINS>("esfins", kROSQueueSize);
-  esf_meas_pub_ = nh->advertise<ublox_msgs::EsfMEAS>("esfmeas", kROSQueueSize);
-  esf_raw_pub_ = nh->advertise<ublox_msgs::EsfRAW>("esfraw", kROSQueueSize);
-  esf_status_pub_ = nh->advertise<ublox_msgs::EsfSTATUS>("esfstatus", kROSQueueSize);
-  hnr_pvt_pub_ = nh->advertise<ublox_msgs::HnrPVT>("hnrpvt", kROSQueueSize);
+    nh->advertise<sensor_msgs::TimeReference>("interrupt_time", 1);
+  nav_att_pub_ = nh->advertise<ublox_msgs::NavATT>("navatt", 1);
+  esf_ins_pub_ = nh->advertise<ublox_msgs::EsfINS>("esfins", 1);
+  esf_meas_pub_ = nh->advertise<ublox_msgs::EsfMEAS>("esfmeas", 1);
+  esf_raw_pub_ = nh->advertise<ublox_msgs::EsfRAW>("esfraw", 1);
+  esf_status_pub_ = nh->advertise<ublox_msgs::EsfSTATUS>("esfstatus", 1);
+  hnr_pvt_pub_ = nh->advertise<ublox_msgs::HnrPVT>("hnrpvt", 1);
 }
 
 void AdrUdrProduct::getRosParams() {
@@ -1624,7 +1624,7 @@ HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_
   : nav_rate_(nav_rate), meas_rate_(meas_rate), config_on_startup_flag_(config_on_startup_flag), updater_(updater), rtcms_(rtcms)
 {
   navsvin_pub_ =
-    nh->advertise<ublox_msgs::NavSVIN>("navsvin", kROSQueueSize);
+    nh->advertise<ublox_msgs::NavSVIN>("navsvin", 1);
 }
 
 void HpgRefProduct::getRosParams() {
@@ -1838,7 +1838,7 @@ HpgRovProduct::HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updat
   : nav_rate_(nav_rate), updater_(updater)
 {
   nav_rel_pos_ned_pub_ =
-    nh->advertise<ublox_msgs::NavRELPOSNED>("navrelposned", kROSQueueSize);
+    nh->advertise<ublox_msgs::NavRELPOSNED>("navrelposned", 1);
 }
 
 void HpgRovProduct::getRosParams() {
@@ -1922,10 +1922,10 @@ HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool con
   : HpgRefProduct(nav_rate, meas_rate, config_on_startup_flag, updater, rtcms), frame_id_(frame_id)
 {
   nav_relposned_pub_ =
-    nh->advertise<ublox_msgs::NavRELPOSNED9>("navrelposned", kROSQueueSize);
+    nh->advertise<ublox_msgs::NavRELPOSNED9>("navrelposned", 1);
 
   imu_pub_ =
-    nh->advertise<sensor_msgs::Imu>("navheading", kROSQueueSize);
+    nh->advertise<sensor_msgs::Imu>("navheading", 1);
 }
 
 void HpPosRecProduct::subscribe() {
@@ -1976,11 +1976,11 @@ void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
 TimProduct::TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater) : frame_id_(frame_id), updater_(updater)
 {
   timtm2_pub_ =
-    nh->advertise<ublox_msgs::TimTM2>("timtm2", kROSQueueSize);
+    nh->advertise<ublox_msgs::TimTM2>("timtm2", 1);
   interrupt_time_pub_ =
-    nh->advertise<sensor_msgs::TimeReference>("interrupt_time", kROSQueueSize);
-  rxm_sfrb_pub_ = nh->advertise<ublox_msgs::RxmSFRBX>("rxmsfrb", kROSQueueSize);
-  rxm_raw_pub_ = nh->advertise<ublox_msgs::RxmRAWX>("rxmraw", kROSQueueSize);
+    nh->advertise<sensor_msgs::TimeReference>("interrupt_time", 1);
+  rxm_sfrb_pub_ = nh->advertise<ublox_msgs::RxmSFRBX>("rxmsfrb", 1);
+  rxm_raw_pub_ = nh->advertise<ublox_msgs::RxmRAWX>("rxmraw", 1);
 }
 
 void TimProduct::getRosParams() {

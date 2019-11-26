@@ -77,8 +77,6 @@
  */
 namespace ublox_node {
 
-//! Queue size for ROS publishers
-constexpr static uint32_t kROSQueueSize = 1;
 //! Default measurement period for HPG devices
 constexpr static uint16_t kDefaultMeasPeriod = 250;
 //! Default subscribe Rate to u-blox messages [Hz]
@@ -751,13 +749,13 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
     : UbloxFirmware(updater), frame_id_(frame_id), freq_diag_(freq_diag) {
     // NavPVT publisher
-    nav_pvt_pub_ = nh->advertise<NavPVT>("navpvt", kROSQueueSize);
+    nav_pvt_pub_ = nh->advertise<NavPVT>("navpvt", 1);
 
     fix_pub_ =
-        nh->advertise<sensor_msgs::NavSatFix>("fix", kROSQueueSize);
+        nh->advertise<sensor_msgs::NavSatFix>("fix", 1);
     vel_pub_ =
         nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
-                                                                 kROSQueueSize);
+                                                                 1);
   }
 
   /**
@@ -934,8 +932,8 @@ class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  public:
   explicit UbloxFirmware7(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
     : UbloxFirmware7Plus<ublox_msgs::NavPVT7>(frame_id, updater, freq_diag) {
-    nav_svinfo_pub_ = nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", kROSQueueSize);
-    mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
+    nav_svinfo_pub_ = nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", 1);
+    mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", 1);
   }
 
   /**
@@ -977,9 +975,9 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  public:
   explicit UbloxFirmware8(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
     : UbloxFirmware7Plus<ublox_msgs::NavPVT>(frame_id, updater, freq_diag) {
-    nav_sat_pub_ = nh->advertise<ublox_msgs::NavSAT>("navstate", kROSQueueSize);
-    mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
-    rxm_rtcm_pub_ = nh->advertise<ublox_msgs::RxmRTCM>("rxmrtcm", kROSQueueSize);
+    nav_sat_pub_ = nh->advertise<ublox_msgs::NavSAT>("navstate", 1);
+    mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", 1);
+    rxm_rtcm_pub_ = nh->advertise<ublox_msgs::RxmRTCM>("rxmrtcm", 1);
   }
 
   /**
