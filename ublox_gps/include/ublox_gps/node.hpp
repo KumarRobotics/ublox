@@ -108,8 +108,6 @@ std::string frame_id;
 int fix_status_service;
 //! The measurement [ms], see CfgRate.msg
 uint16_t meas_rate;
-//! Navigation rate in measurement cycles, see CfgRate.msg
-uint16_t nav_rate;
 //! IDs of RTCM out messages to configure.
 std::vector<uint8_t> rtcm_ids;
 //! Rates of RTCM out messages. Size must be the same as rtcm_ids
@@ -133,7 +131,7 @@ struct UbloxTopicDiagnostic {
    * @param freq_tol the tolerance [%] for the topic frequency
    * @param freq_window the number of messages to use for diagnostic statistics
    */
-  UbloxTopicDiagnostic(const std::string & topic, double freq_tol, int freq_window) {
+  explicit UbloxTopicDiagnostic(const std::string & topic, double freq_tol, int freq_window, uint16_t nav_rate) {
     const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
     min_freq = target_freq;
     max_freq = target_freq;
@@ -154,8 +152,8 @@ struct UbloxTopicDiagnostic {
    * @param freq_tol the tolerance [%] for the topic frequency
    * @param freq_window the number of messages to use for diagnostic statistics
    */
-  UbloxTopicDiagnostic(const std::string & topic, double freq_min, double freq_max,
-                   double freq_tol, int freq_window) {
+  explicit UbloxTopicDiagnostic(const std::string & topic, double freq_min, double freq_max,
+                                double freq_tol, int freq_window) {
     min_freq = freq_min;
     max_freq = freq_max;
     diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
@@ -189,8 +187,8 @@ struct FixDiagnostic {
    * @param freq_window the number of messages to use for diagnostic statistics
    * @param stamp_min the minimum allowed time delay
    */
-  FixDiagnostic(const std::string & name, double freq_tol, int freq_window,
-                double stamp_min) {
+  explicit FixDiagnostic(const std::string & name, double freq_tol, int freq_window,
+                         double stamp_min, uint16_t nav_rate) {
     const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
     min_freq = target_freq;
     max_freq = target_freq;
@@ -621,6 +619,9 @@ class UbloxNode final {
   ros::Publisher aid_alm_pub_;
   ros::Publisher aid_eph_pub_;
   ros::Publisher aid_hui_pub_;
+
+  //! Navigation rate in measurement cycles, see CfgRate.msg
+  uint16_t nav_rate_;
 };
 
 /**
@@ -1018,7 +1019,7 @@ class RawDataProduct final : public virtual ComponentInterface {
   double kRtcmFreqTol = 0.15;
   int kRtcmFreqWindow = 25;
 
-  RawDataProduct();
+  explicit RawDataProduct(uint16_t nav_rate);
 
   /**
    * @brief Does nothing since there are no Raw Data product specific settings.
@@ -1051,6 +1052,8 @@ class RawDataProduct final : public virtual ComponentInterface {
   ros::Publisher rxm_sfrb_pub_;
   ros::Publisher rxm_eph_pub_;
   ros::Publisher rxm_alm_pub_;
+
+  uint16_t nav_rate_;
 };
 
 /**
@@ -1059,7 +1062,7 @@ class RawDataProduct final : public virtual ComponentInterface {
  */
 class AdrUdrProduct final : public virtual ComponentInterface {
  public:
-  AdrUdrProduct();
+  explicit AdrUdrProduct(uint16_t nav_rate);
 
   /**
    * @brief Get the ADR/UDR parameters.
@@ -1110,6 +1113,8 @@ class AdrUdrProduct final : public virtual ComponentInterface {
   ros::Publisher esf_raw_pub_;
   ros::Publisher esf_status_pub_;
   ros::Publisher hnr_pvt_pub_;
+
+  uint16_t nav_rate_;
 };
 
 /**
@@ -1118,7 +1123,8 @@ class AdrUdrProduct final : public virtual ComponentInterface {
  */
 class HpgRefProduct: public virtual ComponentInterface {
  public:
-  HpgRefProduct();
+  explicit HpgRefProduct(uint16_t nav_rate);
+
   /**
    * @brief Get the ROS parameters specific to the Reference Station
    * configuration.
@@ -1223,6 +1229,8 @@ class HpgRefProduct: public virtual ComponentInterface {
   } mode_;
 
   ros::Publisher navsvin_pub_;
+
+  uint16_t nav_rate_;
 };
 
 /**
@@ -1240,7 +1248,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
   //! Diagnostic updater: RTCM topic frequency window [num messages]
   constexpr static int kRtcmFreqWindow = 25;
 
-  HpgRovProduct();
+  explicit HpgRovProduct(uint16_t nav_rate);
 
   /**
    * @brief Get the ROS parameters specific to the Rover configuration.
@@ -1295,11 +1303,13 @@ class HpgRovProduct final : public virtual ComponentInterface {
   UbloxTopicDiagnostic freq_rtcm_;
 
   ros::Publisher nav_rel_pos_ned_pub_;
+
+  uint16_t nav_rate_;
 };
 
 class HpPosRecProduct final : public virtual HpgRefProduct {
  public:
-  HpPosRecProduct();
+  explicit HpPosRecProduct(uint16_t nav_rate);
 
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.
