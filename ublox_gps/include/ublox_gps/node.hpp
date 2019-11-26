@@ -101,8 +101,6 @@ std::set<std::string> supported;
  * (e.g. NavPVT instead of NavPVT7). Value indicates whether or not to enable
  * the message. */
 std::map<std::string, bool> enabled;
-//! The ROS frame ID of this device
-std::string frame_id;
 //! The fix status service type, set in the Firmware Component
 //! based on the enabled GNSS
 int fix_status_service;
@@ -625,6 +623,9 @@ class UbloxNode final {
 
   //! Flag for enabling configuration on startup
   bool config_on_startup_flag_;
+
+  //! The ROS frame ID of this device
+  std::string frame_id_;
 };
 
 /**
@@ -652,7 +653,7 @@ class UbloxFirmware : public virtual ComponentInterface {
  */
 class UbloxFirmware6 final : public UbloxFirmware {
  public:
-  UbloxFirmware6();
+  explicit UbloxFirmware6(const std::string & frame_id);
 
   /**
    * @brief Sets the fix status service type to GPS.
@@ -726,6 +727,8 @@ class UbloxFirmware6 final : public UbloxFirmware {
   ros::Publisher nav_sol_pub_;
   ros::Publisher nav_svinfo_pub_;
   ros::Publisher mon_hw_pub_;
+
+  std::string frame_id_;
 };
 
 /**
@@ -740,7 +743,7 @@ class UbloxFirmware6 final : public UbloxFirmware {
 template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
-  UbloxFirmware7Plus() {
+  explicit UbloxFirmware7Plus(const std::string & frame_id) : frame_id_(frame_id) {
     // NavPVT publisher
     nav_pvt_pub_ = nh->advertise<NavPVT>("navpvt", kROSQueueSize);
 
@@ -769,7 +772,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     // NavSatFix message
     //
     sensor_msgs::NavSatFix fix;
-    fix.header.frame_id = frame_id;
+    fix.header.frame_id = frame_id_;
     // set the timestamp
     uint8_t valid_time = m.VALID_DATE | m.VALID_TIME | m.VALID_FULLY_RESOLVED;
     if (((m.valid & valid_time) == valid_time) &&
@@ -823,7 +826,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     //
     geometry_msgs::TwistWithCovarianceStamped velocity;
     velocity.header.stamp = fix.header.stamp;
-    velocity.header.frame_id = frame_id;
+    velocity.header.frame_id = frame_id_;
 
     // convert to XYZ linear velocity [m/s] in ENU
     velocity.twist.twist.linear.x = m.vel_e * 1e-3;
@@ -913,6 +916,8 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   ros::Publisher nav_pvt_pub_;
   ros::Publisher fix_pub_;
   ros::Publisher vel_pub_;
+
+  std::string frame_id_;
 };
 
 /**
@@ -920,7 +925,10 @@ class UbloxFirmware7Plus : public UbloxFirmware {
  */
 class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  public:
-  UbloxFirmware7();
+  explicit UbloxFirmware7(const std::string & frame_id) : UbloxFirmware7Plus<ublox_msgs::NavPVT7>(frame_id) {
+    nav_svinfo_pub_ = nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", kROSQueueSize);
+    mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
+  }
 
   /**
    * @brief Get the parameters specific to firmware version 7.
@@ -959,7 +967,11 @@ class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  */
 class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  public:
-  UbloxFirmware8();
+  explicit UbloxFirmware8(const std::string & frame_id) : UbloxFirmware7Plus<ublox_msgs::NavPVT>(frame_id) {
+    nav_sat_pub_ = nh->advertise<ublox_msgs::NavSAT>("navsate", kROSQueueSize);
+    mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
+    rxm_rtcm_pub_ = nh->advertise<ublox_msgs::RxmRTCM>("rxmrtcm", kROSQueueSize);
+  }
 
   /**
    * @brief Get the ROS parameters specific to firmware version 8.
@@ -1012,6 +1024,8 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  *  but allows for future expansion of functionality
  */
 class UbloxFirmware9 final : public UbloxFirmware8 {
+public:
+  explicit UbloxFirmware9(const std::string & frame_id);
 };
 
 /**
@@ -1066,7 +1080,7 @@ class RawDataProduct final : public virtual ComponentInterface {
  */
 class AdrUdrProduct final : public virtual ComponentInterface {
  public:
-  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate);
+  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id);
 
   /**
    * @brief Get the ADR/UDR parameters.
@@ -1120,6 +1134,8 @@ class AdrUdrProduct final : public virtual ComponentInterface {
 
   uint16_t nav_rate_;
   uint16_t meas_rate_;
+
+  std::string frame_id_;
 };
 
 /**
@@ -1316,7 +1332,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
 
 class HpPosRecProduct final : public virtual HpgRefProduct {
  public:
-  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag);
+  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, const std::string & frame_id);
 
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.
@@ -1339,6 +1355,8 @@ class HpPosRecProduct final : public virtual HpgRefProduct {
 
   ros::Publisher nav_relposned_pub_;
   ros::Publisher imu_pub_;
+
+  std::string frame_id_;
 };
 
 /**
@@ -1347,7 +1365,7 @@ class HpPosRecProduct final : public virtual HpgRefProduct {
  */
 class TimProduct final : public virtual ComponentInterface {
  public:
-  TimProduct();
+  explicit TimProduct(const std::string & frame_id);
 
   /**
    * @brief Get the Time Sync parameters.
@@ -1387,6 +1405,8 @@ class TimProduct final : public virtual ComponentInterface {
   ros::Publisher interrupt_time_pub_;
   ros::Publisher rxm_sfrb_pub_;
   ros::Publisher rxm_raw_pub_;
+
+  std::string frame_id_;
 };
 
 }

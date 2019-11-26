@@ -127,16 +127,16 @@ UbloxNode::UbloxNode() {
 void UbloxNode::addFirmwareInterface() {
   int ublox_version;
   if (protocol_version_ < 14) {
-    components_.push_back(std::make_shared<UbloxFirmware6>());
+    components_.push_back(std::make_shared<UbloxFirmware6>(frame_id_));
     ublox_version = 6;
   } else if (protocol_version_ >= 14 && protocol_version_ <= 15) {
-    components_.push_back(std::make_shared<UbloxFirmware7>());
+    components_.push_back(std::make_shared<UbloxFirmware7>(frame_id_));
     ublox_version = 7;
   } else if (protocol_version_ > 15 && protocol_version_ <= 23) {
-    components_.push_back(std::make_shared<UbloxFirmware8>());
+    components_.push_back(std::make_shared<UbloxFirmware8>(frame_id_));
     ublox_version = 8;
   } else {
-    components_.push_back(std::make_shared<UbloxFirmware9>());
+    components_.push_back(std::make_shared<UbloxFirmware9>(frame_id_));
     ublox_version = 9;
   }
 
@@ -151,12 +151,12 @@ void UbloxNode::addProductInterface(const std::string & product_category,
   } else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0) {
     components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_));
   } else if (product_category.compare("HPG") == 0) {
-    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, config_on_startup_flag_));
+    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, config_on_startup_flag_, frame_id_));
   } else if (product_category.compare("TIM") == 0) {
-    components_.push_back(std::make_shared<TimProduct>());
+    components_.push_back(std::make_shared<TimProduct>(frame_id_));
   } else if (product_category.compare("ADR") == 0 ||
              product_category.compare("UDR") == 0) {
-    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_));
+    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_));
   } else if (product_category.compare("FTS") == 0) {
     components_.push_back(std::make_shared<FtsProduct>());
   } else if (product_category.compare("SPG") != 0) {
@@ -168,7 +168,7 @@ void UbloxNode::addProductInterface(const std::string & product_category,
 
 void UbloxNode::getRosParams() {
   nh->param("device", device_, std::string("/dev/ttyACM0"));
-  nh->param("frame_id", frame_id, std::string("gps"));
+  nh->param("frame_id", frame_id_, std::string("gps"));
 
   // Save configuration parameters
   getRosUint("load/mask", load_.load_mask, 0);
@@ -671,7 +671,7 @@ void UbloxFirmware::initializeRosDiagnostics() {
 //
 // U-Blox Firmware Version 6
 //
-UbloxFirmware6::UbloxFirmware6()
+UbloxFirmware6::UbloxFirmware6(const std::string & frame_id) : frame_id_(frame_id)
 {
   nav_pos_llh_pub_ =
     nh->advertise<ublox_msgs::NavPOSLLH>("navposllh", kROSQueueSize);
@@ -838,7 +838,7 @@ void UbloxFirmware6::callbackNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
     fix_.header.stamp = ros::Time::now(); // new timestamp
   }
 
-  fix_.header.frame_id = frame_id;
+  fix_.header.frame_id = frame_id_;
   fix_.latitude = m.lat * 1e-7;
   fix_.longitude = m.lon * 1e-7;
   fix_.altitude = m.height * 1e-3;
@@ -878,7 +878,7 @@ void UbloxFirmware6::callbackNavVelNed(const ublox_msgs::NavVELNED& m) {
   } else {
     velocity_.header.stamp = ros::Time::now(); // create a new timestamp
   }
-  velocity_.header.frame_id = frame_id;
+  velocity_.header.frame_id = frame_id_;
 
   //  convert to XYZ linear velocity
   velocity_.twist.twist.linear.x = m.vel_e / 100.0;
@@ -907,11 +907,6 @@ void UbloxFirmware6::callbackNavSol(const ublox_msgs::NavSOL& m) {
 //
 // Ublox Firmware Version 7
 //
-UbloxFirmware7::UbloxFirmware7() {
-  nav_svinfo_pub_ = nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", kROSQueueSize);
-  mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
-}
-
 void UbloxFirmware7::getRosParams() {
   //
   // GNSS configuration
@@ -1109,12 +1104,6 @@ void UbloxFirmware7::subscribe() {
 //
 // Ublox Version 8
 //
-UbloxFirmware8::UbloxFirmware8() {
-  nav_sat_pub_ = nh->advertise<ublox_msgs::NavSAT>("navsate", kROSQueueSize);
-  mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", kROSQueueSize);
-  rxm_rtcm_pub_ = nh->advertise<ublox_msgs::RxmRTCM>("rxmrtcm", kROSQueueSize);
-}
-
 void UbloxFirmware8::getRosParams() {
   // UPD SOS configuration
   nh->param("clear_bbr", clear_bbr_, false);
@@ -1365,6 +1354,10 @@ void UbloxFirmware8::subscribe() {
   }
 }
 
+UbloxFirmware9::UbloxFirmware9(const std::string & frame_id) : UbloxFirmware8(frame_id)
+{
+}
+
 //
 // Raw Data Products
 //
@@ -1430,7 +1423,8 @@ void RawDataProduct::initializeRosDiagnostics() {
 //
 // u-blox ADR devices, partially implemented
 //
-AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate) : nav_rate_(nav_rate), meas_rate_(meas_rate)
+AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id)
+  : nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id)
 {
   imu_pub_ =
     nh->advertise<sensor_msgs::Imu>("imu_meas", kROSQueueSize);
@@ -1513,7 +1507,7 @@ void AdrUdrProduct::subscribe() {
 void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
   if (enabled["esf_meas"]) {
     imu_.header.stamp = ros::Time::now();
-    imu_.header.frame_id = frame_id;
+    imu_.header.frame_id = frame_id_;
 
     float deg_per_sec = pow(2, -12);
     float m_per_sec_sq = pow(2, -10);
@@ -1585,7 +1579,7 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
       // create time ref message and put in the data
       //t_ref_.header.seq = m.risingEdgeCount;
       //t_ref_.header.stamp = ros::Time::now();
-      //t_ref_.header.frame_id = frame_id;
+      //t_ref_.header.frame_id = frame_id_;
 
       //t_ref_.time_ref = ros::Time((m.wnR * 604800 + m.towMsR / 1000), (m.towMsR % 1000) * 1000000 + m.towSubMsR);
 
@@ -1594,7 +1588,7 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
       //t_ref_.source = src.str();
 
       t_ref_.header.stamp = ros::Time::now(); // create a new timestamp
-      t_ref_.header.frame_id = frame_id;
+      t_ref_.header.frame_id = frame_id_;
 
       time_ref_pub_.publish(t_ref_);
       imu_pub_.publish(imu_);
@@ -1904,8 +1898,8 @@ void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
 //
 // U-Blox High Precision Positioning Receiver
 //
-HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag)
-  : HpgRefProduct(nav_rate, meas_rate, config_on_startup_flag)
+HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, const std::string & frame_id)
+  : HpgRefProduct(nav_rate, meas_rate, config_on_startup_flag), frame_id_(frame_id)
 {
   nav_relposned_pub_ =
     nh->advertise<ublox_msgs::NavRELPOSNED9>("navrelposned", kROSQueueSize);
@@ -1932,7 +1926,7 @@ void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
 
   if (enabled["nav_heading"]) {
     imu_.header.stamp = ros::Time::now();
-    imu_.header.frame_id = frame_id;
+    imu_.header.frame_id = frame_id_;
 
     imu_.linear_acceleration_covariance[0] = -1;
     imu_.angular_velocity_covariance[0] = -1;
@@ -1959,7 +1953,7 @@ void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
 //
 // U-Blox Time Sync Products, partially implemented.
 //
-TimProduct::TimProduct()
+TimProduct::TimProduct(const std::string & frame_id) : frame_id_(frame_id)
 {
   timtm2_pub_ =
     nh->advertise<ublox_msgs::TimTM2>("timtm2", kROSQueueSize);
@@ -2018,7 +2012,7 @@ void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
     // create time ref message and put in the data
     t_ref_.header.seq = m.rising_edge_count;
     t_ref_.header.stamp = ros::Time::now();
-    t_ref_.header.frame_id = frame_id;
+    t_ref_.header.frame_id = frame_id_;
 
     t_ref_.time_ref = ros::Time((m.wn_r * 604800 + m.tow_ms_r / 1000), (m.tow_ms_r % 1000) * 1000000 + m.tow_sub_ms_r);
 
@@ -2027,7 +2021,7 @@ void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
     t_ref_.source = src.str();
 
     t_ref_.header.stamp = ros::Time::now(); // create a new timestamp
-    t_ref_.header.frame_id = frame_id;
+    t_ref_.header.frame_id = frame_id_;
 
     timtm2_pub_.publish(m);
     interrupt_time_pub_.publish(t_ref_);
