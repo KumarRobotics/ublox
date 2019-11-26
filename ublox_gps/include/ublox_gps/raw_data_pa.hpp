@@ -33,13 +33,12 @@
 // measured data with the rtklib.
 
 
-#ifndef UBLOX_RAW_DATA_PA_H
-#define UBLOX_RAW_DATA_PA_H
+#ifndef UBLOX_GPS_RAW_DATA_PA_HPP
+#define UBLOX_GPS_RAW_DATA_PA_HPP
 
 // STL
 #include <fstream>
-#include <set>
-#include <vector>
+#include <string>
 
 // ROS includes
 #include <ros/ros.h>
@@ -57,7 +56,7 @@ namespace ublox_node {
 /**
  * @brief Implements functions for raw data stream.
  */
-class RawDataStreamPa {
+class RawDataStreamPa final {
  public:
 
 

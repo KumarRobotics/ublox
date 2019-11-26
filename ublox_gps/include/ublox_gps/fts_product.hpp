@@ -43,7 +43,7 @@ class FtsProduct final : public virtual ComponentInterface {
    * @brief Get the FTS parameters.
    * @todo Currently unimplemented.
    */
-  void getRosParams() {
+  void getRosParams() override {
     ROS_WARN("Functionality specific to u-blox FTS devices is %s",
              "unimplemented. See FtsProduct class in node.hpp & node.cpp.");
   }
@@ -52,19 +52,19 @@ class FtsProduct final : public virtual ComponentInterface {
    * @brief Configure FTS settings.
    * @todo Currently unimplemented.
    */
-  bool configureUblox() { return false; }
-
-  /**
-   * @brief Subscribe to FTS messages.
-   * @todo Currently unimplemented.
-   */
-  void subscribe() {}
+  bool configureUblox() override { return false; }
 
   /**
    * @brief Adds diagnostic updaters for FTS status.
    * @todo Currently unimplemented.
    */
-  void initializeRosDiagnostics() {}
+  void initializeRosDiagnostics() override {}
+
+  /**
+   * @brief Subscribe to FTS messages.
+   * @todo Currently unimplemented.
+   */
+  void subscribe() override {}
 };
 
 #endif

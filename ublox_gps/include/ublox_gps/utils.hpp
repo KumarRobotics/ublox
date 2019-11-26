@@ -1,13 +1,9 @@
-#ifndef UBLOX_GPS_UTILS_H
-#define UBLOX_GPS_UTILS_H
+#ifndef UBLOX_GPS_UTILS_HPP
+#define UBLOX_GPS_UTILS_HPP
 
-#include <math.h>
 #include <time.h>
-#include "ublox_msgs/NavPVT.h"
 
-extern "C" {
-  #include "ublox_gps/mkgmtime.h"
-}
+#include "ublox_gps/mkgmtime.h"
 
 /**
  * @brief Convert date/time to UTC time in seconds.

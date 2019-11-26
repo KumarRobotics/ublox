@@ -41,15 +41,23 @@
  *
  */
 
-#ifndef INCLUDED_MKGMTIME_H
-#define INCLUDED_MKGMTIME_H
+#ifndef UBLOX_GPS_MKGMTIME_H
+#define UBLOX_GPS_MKGMTIME_H
 
 #include <time.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Get the UTC time in seconds and nano-seconds from a time struct in
  * GM time.
  */
-extern time_t mkgmtime(struct tm * const tmp);
+time_t mkgmtime(struct tm * const tmp);
 
-#endif /* INCLUDED_MKGMTIME_H */
+#ifdef __cplusplus
+}
+#endif
+
+#endif // UBLOX_GPS_MKGMTIME_H

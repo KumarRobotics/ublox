@@ -633,7 +633,7 @@ class UbloxFirmware : public virtual ComponentInterface {
   /**
    * @brief Add the fix diagnostics to the updater.
    */
-  void initializeRosDiagnostics();
+  void initializeRosDiagnostics() override;
 
  protected:
   /**
@@ -646,32 +646,32 @@ class UbloxFirmware : public virtual ComponentInterface {
 /**
  * @brief Implements functions for firmware version 6.
  */
-class UbloxFirmware6 : public UbloxFirmware {
+class UbloxFirmware6 final : public UbloxFirmware {
  public:
   UbloxFirmware6();
 
   /**
    * @brief Sets the fix status service type to GPS.
    */
-  void getRosParams();
+  void getRosParams() override;
 
   /**
    * @brief Prints a warning, GNSS configuration not available in this version.
    * @return true if configured correctly, false otherwise
    */
-  bool configureUblox();
+  bool configureUblox() override;
 
   /**
    * @brief Subscribe to NavPVT, RxmRAW, and RxmSFRB messages.
    */
-  void subscribe();
+  void subscribe() override;
 
  protected:
   /**
    * @brief Updates fix diagnostic from NavPOSLLH, NavVELNED, and NavSOL
    * messages.
    */
-  void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat);
+  void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) override;
 
  private:
   /**
@@ -848,7 +848,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   /**
    * @brief Update the fix diagnostics from Nav PVT message.
    */
-  void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) {
+  void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) override {
     // check the last message, convert to diagnostic
     if (last_nav_pvt_.fix_type ==
         ublox_msgs::NavPVT::FIX_TYPE_DEAD_RECKONING_ONLY) {
@@ -914,7 +914,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
 /**
  * @brief Implements functions for firmware version 7.
  */
-class UbloxFirmware7 : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
+class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  public:
   UbloxFirmware7();
 
@@ -923,19 +923,19 @@ class UbloxFirmware7 : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
    *
    * @details Get the GNSS and NMEA settings.
    */
-  void getRosParams();
+  void getRosParams() override;
 
   /**
    * @brief Configure GNSS individually. Only configures GLONASS.
    */
-  bool configureUblox();
+  bool configureUblox() override;
 
   /**
    * @brief Subscribe to messages which are not generic to all firmware.
    *
    * @details Subscribe to NavPVT7 messages, RxmRAW, and RxmSFRB messages.
    */
-  void subscribe();
+  void subscribe() override;
 
  private:
   //! Used to configure NMEA (if set_nmea_)
@@ -962,7 +962,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
    *
    * @details Get the GNSS, NMEA, and UPD settings.
    */
-  void getRosParams();
+  void getRosParams() override;
 
   /**
    * @brief Configure settings specific to firmware 8 based on ROS parameters.
@@ -971,7 +971,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
    * Configure the NMEA if desired by the user. It also may clear the
    * flash memory based on the ROS parameters.
    */
-  bool configureUblox();
+  bool configureUblox() override;
 
   /**
    * @brief Subscribe to u-blox messages which are not generic to all firmware
@@ -980,7 +980,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
    * @details Subscribe to NavPVT, NavSAT, MonHW, and RxmRTCM messages based
    * on user settings.
    */
-  void subscribe();
+  void subscribe() override;
 
  private:
   // Set from ROS parameters
@@ -1007,13 +1007,13 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  *  For now it simply re-uses the firmware version 8 class
  *  but allows for future expansion of functionality
  */
-class UbloxFirmware9 : public UbloxFirmware8 {
+class UbloxFirmware9 final : public UbloxFirmware8 {
 };
 
 /**
  * @brief Implements functions for Raw Data products.
  */
-class RawDataProduct: public virtual ComponentInterface {
+class RawDataProduct final : public virtual ComponentInterface {
  public:
   double kRtcmFreqTol = 0.15;
   int kRtcmFreqWindow = 25;
@@ -1023,25 +1023,25 @@ class RawDataProduct: public virtual ComponentInterface {
   /**
    * @brief Does nothing since there are no Raw Data product specific settings.
    */
-  void getRosParams() {}
+  void getRosParams() override {}
 
   /**
    * @brief Does nothing since there are no Raw Data product specific settings.
    * @return always returns true
    */
-  bool configureUblox() { return true; }
+  bool configureUblox() override { return true; }
+
+  /**
+   * @brief Adds frequency diagnostics for RTCM topics.
+   */
+  void initializeRosDiagnostics() override;
 
   /**
    * @brief Subscribe to Raw Data Product messages and set up ROS publishers.
    *
    * @details Subscribe to RxmALM, RxmEPH, RxmRAW, and RxmSFRB messages.
    */
-  void subscribe();
-
-  /**
-   * @brief Adds frequency diagnostics for RTCM topics.
-   */
-  void initializeRosDiagnostics();
+  void subscribe() override;
 
  private:
   //! Topic diagnostic updaters
@@ -1057,7 +1057,7 @@ class RawDataProduct: public virtual ComponentInterface {
  * @brief Implements functions for Automotive Dead Reckoning (ADR) and
  * Untethered Dead Reckoning (UDR) Devices.
  */
-class AdrUdrProduct: public virtual ComponentInterface {
+class AdrUdrProduct final : public virtual ComponentInterface {
  public:
   AdrUdrProduct();
 
@@ -1066,14 +1066,23 @@ class AdrUdrProduct: public virtual ComponentInterface {
    *
    * @details Get the use_adr parameter and check that the nav_rate is 1 Hz.
    */
-  void getRosParams();
+  void getRosParams() override;
 
   /**
    * @brief Configure ADR/UDR settings.
    * @details Configure the use_adr setting.
    * @return true if configured correctly, false otherwise
    */
-  bool configureUblox();
+  bool configureUblox() override;
+
+  /**
+   * @brief Initialize the ROS diagnostics for the ADR/UDR device.
+   * @todo unimplemented
+   */
+  void initializeRosDiagnostics() override {
+    ROS_WARN("ROS Diagnostics specific to u-blox ADR/UDR devices is %s",
+             "unimplemented. See AdrUdrProduct class in node.hpp & node.cpp.");
+  }
 
   /**
    * @brief Subscribe to ADR/UDR messages.
@@ -1081,18 +1090,9 @@ class AdrUdrProduct: public virtual ComponentInterface {
    * @details Subscribe to NavATT, ESF and HNR messages based on user
    * parameters.
    */
-  void subscribe();
+  void subscribe() override;
 
-  /**
-   * @brief Initialize the ROS diagnostics for the ADR/UDR device.
-   * @todo unimplemented
-   */
-  void initializeRosDiagnostics() {
-    ROS_WARN("ROS Diagnostics specific to u-blox ADR/UDR devices is %s",
-             "unimplemented. See AdrUdrProduct class in node.hpp & node.cpp.");
-  }
-
- protected:
+ private:
   //! Whether or not to enable dead reckoning
   bool use_adr_;
 
@@ -1128,7 +1128,7 @@ class HpgRefProduct: public virtual ComponentInterface {
    * tmode3 parameter is set to survey in or it will get the fixed parameters if
    * it is set to fixed.
    */
-  void getRosParams();
+  void getRosParams() override;
 
   /**
    * @brief Configure the u-blox Reference Station settings.
@@ -1138,19 +1138,19 @@ class HpgRefProduct: public virtual ComponentInterface {
    * the RTCM messages.
    * @return true if configured correctly, false otherwise
    */
-  bool configureUblox();
+  bool configureUblox() override;
+
+  /**
+   * @brief Add diagnostic updaters for the TMODE3 status.
+   */
+  void initializeRosDiagnostics() override;
 
   /**
    * @brief Subscribe to u-blox Reference Station messages.
    *
    * @details Subscribe to NavSVIN messages based on user parameters.
    */
-  void subscribe();
-
-  /**
-   * @brief Add diagnostic updaters for the TMODE3 status.
-   */
-  void initializeRosDiagnostics();
+  void subscribe() override;
 
   /**
    * @brief Update the last received NavSVIN message and call diagnostic updater
@@ -1228,7 +1228,7 @@ class HpgRefProduct: public virtual ComponentInterface {
 /**
  * @brief Implements functions for High Precision GNSS Rover devices.
  */
-class HpgRovProduct: public virtual ComponentInterface {
+class HpgRovProduct final : public virtual ComponentInterface {
  public:
   // Constants for diagnostic updater
   //! Diagnostic updater: RTCM topic frequency min [Hz]
@@ -1247,7 +1247,7 @@ class HpgRovProduct: public virtual ComponentInterface {
    *
    * @details Get the DGNSS mode.
    */
-  void getRosParams();
+  void getRosParams() override;
 
   /**
    * @brief Configure rover settings.
@@ -1255,20 +1255,20 @@ class HpgRovProduct: public virtual ComponentInterface {
    * @details Configure the DGNSS mode.
    * @return true if configured correctly, false otherwise
    */
-  bool configureUblox();
-
-  /**
-   * @brief Subscribe to Rover messages, such as NavRELPOSNED.
-   */
-  void subscribe();
+  bool configureUblox() override;
 
   /**
    * @brief Add diagnostic updaters for rover GNSS status, including
    * status of RTCM messages.
    */
-  void initializeRosDiagnostics();
+  void initializeRosDiagnostics() override;
 
- protected:
+  /**
+   * @brief Subscribe to Rover messages, such as NavRELPOSNED.
+   */
+  void subscribe() override;
+
+ private:
   /**
    * @brief Update the rover diagnostics, including the carrier phase solution
    * status (float or fixed).
@@ -1297,16 +1297,16 @@ class HpgRovProduct: public virtual ComponentInterface {
   ros::Publisher nav_rel_pos_ned_pub_;
 };
 
-class HpPosRecProduct: public virtual HpgRefProduct {
+class HpPosRecProduct final : public virtual HpgRefProduct {
  public:
   HpPosRecProduct();
 
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.
    */
-  void subscribe();
+  void subscribe() override;
 
- protected:
+ private:
 
   /**
    * @brief Set the last received message and call rover diagnostic updater
@@ -1328,7 +1328,7 @@ class HpPosRecProduct: public virtual HpgRefProduct {
  * @brief Implements functions for Time Sync products.
  * @todo partially implemented
  */
-class TimProduct: public virtual ComponentInterface {
+class TimProduct final : public virtual ComponentInterface {
  public:
   TimProduct();
 
@@ -1336,28 +1336,28 @@ class TimProduct: public virtual ComponentInterface {
    * @brief Get the Time Sync parameters.
    * @todo Currently unimplemented.
    */
-  void getRosParams();
+  void getRosParams() override;
 
   /**
    * @brief Configure Time Sync settings.
    * @todo Currently unimplemented.
    */
-  bool configureUblox();
+  bool configureUblox() override;
+
+  /**
+   * @brief Adds diagnostic updaters for Time Sync status.
+   * @todo Currently unimplemented.
+   */
+  void initializeRosDiagnostics() override;
 
   /**
    * @brief Subscribe to Time Sync messages.
    *
    * @details Subscribes to RxmRAWX & RxmSFRBX messages.
    */
-  void subscribe();
+  void subscribe() override;
 
-  /**
-   * @brief Adds diagnostic updaters for Time Sync status.
-   * @todo Currently unimplemented.
-   */
-  void initializeRosDiagnostics();
-
- protected:
+ private:
   /**
    * @brief
    * @details Publish recieved TimTM2 messages if enabled
