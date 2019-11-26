@@ -32,10 +32,10 @@
 // STL
 #include <atomic>
 #include <chrono>
-#include <map>
-#include <vector>
 #include <locale>
+#include <map>
 #include <stdexcept>
+#include <vector>
 // ROS
 #include <ros/console.h>
 // Other u-blox packages
@@ -43,6 +43,7 @@
 // u-blox gps
 #include <ublox_gps/async_worker.hpp>
 #include <ublox_gps/callback.hpp>
+#include <ublox_gps/rtcm.hpp>
 
 /**
  * @namespace ublox_gps
@@ -72,7 +73,7 @@ class Gps final {
   constexpr static int kWriterSize = 2056;
 
   explicit Gps(int debug);
-  virtual ~Gps();
+  ~Gps();
 
   /**
    * @brief If called, when the node shuts down, it will send a command to
@@ -195,7 +196,7 @@ class Gps final {
    * @param rates the send rates for each RTCM message ID, valid range: [0, 255]
    * @return true on ACK, false on other conditions.
    */
-  bool configRtcm(std::vector<uint8_t> ids, std::vector<uint8_t> rates);
+  bool configRtcm(const std::vector<Rtcm> & rtcms);
 
   /**
    * @brief Configure the SBAS settings.

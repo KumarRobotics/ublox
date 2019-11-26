@@ -210,6 +210,8 @@ void UbloxNode::getRosParams() {
   nh->param("rate", rate_, 4.0);  // in Hz
   getRosUint("nav_rate", nav_rate_, 1);  // # of measurement rate cycles
   // RTCM params
+  std::vector<uint8_t> rtcm_ids;
+  std::vector<uint8_t> rtcm_rates;
   getRosUint("rtcm/ids", rtcm_ids);  // RTCM output message IDs
   getRosUint("rtcm/rates", rtcm_rates);  // RTCM output message rates
   // PPP: Advanced Setting
@@ -231,6 +233,12 @@ void UbloxNode::getRosParams() {
   if (rtcm_ids.size() != rtcm_rates.size()) {
     throw std::runtime_error(std::string("Invalid settings: size of rtcm_ids") +
                              " must match size of rtcm_rates");
+  }
+
+  rtcms.resize(rtcm_ids.size());
+  for (size_t i = 0; i < rtcm_ids.size(); ++i) {
+    rtcms[i].id = rtcm_ids[i];
+    rtcms[i].rate = rtcm_rates[i];
   }
 
   dmodel_ = modelFromString(dynamic_model_);
@@ -1676,7 +1684,7 @@ bool HpgRefProduct::configureUblox() {
                                fixed_pos_acc_)) {
       throw std::runtime_error("Failed to set TMODE3 to fixed.");
     }
-    if (!gps->configRtcm(rtcm_ids, rtcm_rates)) {
+    if (!gps->configRtcm(rtcms)) {
       throw std::runtime_error("Failed to set RTCM rates");
     }
     mode_ = FIXED;
@@ -1769,7 +1777,7 @@ bool HpgRefProduct::setTimeMode() {
               "navigation rate to ", nav_rate_);
   }
   // Enable the RTCM out messages
-  if (!gps->configRtcm(rtcm_ids, rtcm_rates)) {
+  if (!gps->configRtcm(rtcms)) {
     ROS_ERROR("Failed to configure RTCM IDs");
     return false;
   }

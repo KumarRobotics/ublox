@@ -50,6 +50,7 @@
 // Ublox GPS includes
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gps.hpp>
+#include <ublox_gps/rtcm.hpp>
 #include <ublox_gps/utils.hpp>
 #include <ublox_gps/raw_data_pa.hpp>
 
@@ -102,11 +103,8 @@ std::map<std::string, bool> enabled;
 //! The fix status service type, set in the Firmware Component
 //! based on the enabled GNSS
 int fix_status_service;
-//! IDs of RTCM out messages to configure.
-std::vector<uint8_t> rtcm_ids;
-//! Rates of RTCM out messages. Size must be the same as rtcm_ids
-std::vector<uint8_t> rtcm_rates;
 
+std::vector<ublox_gps::Rtcm> rtcms;
 
 //! Topic diagnostics for u-blox messages
 struct UbloxTopicDiagnostic {

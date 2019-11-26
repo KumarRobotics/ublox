@@ -400,11 +400,11 @@ bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
   return configure(rate);
 }
 
-bool Gps::configRtcm(std::vector<uint8_t> ids, std::vector<uint8_t> rates) {
-  for (size_t i = 0; i < ids.size(); ++i) {
-    ROS_DEBUG("Setting RTCM %d Rate %u", ids[i], rates[i]);
-    if (!setRate(ublox_msgs::Class::RTCM, (uint8_t)ids[i], rates[i])) {
-      ROS_ERROR("Could not set RTCM %d to rate %u", ids[i], rates[i]);
+bool Gps::configRtcm(const std::vector<Rtcm> & rtcms) {
+  for (size_t i = 0; i < rtcms.size(); ++i) {
+    ROS_DEBUG("Setting RTCM %d Rate %u", rtcms[i].id, rtcms[i].rate);
+    if (!setRate(ublox_msgs::Class::RTCM, rtcms[i].id, rtcms[i].rate)) {
+      ROS_ERROR("Could not set RTCM %d to rate %u", rtcms[i].id, rtcms[i].rate);
       return false;
     }
   }
