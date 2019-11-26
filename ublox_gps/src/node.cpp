@@ -39,7 +39,8 @@
 #include <tf2/LinearMath/Quaternion.h>
 
 #include <ublox_gps/fts_product.hpp>
-#include "ublox_gps/node.hpp"
+#include <ublox_gps/gnss.hpp>
+#include <ublox_gps/node.hpp>
 
 namespace ublox_node {
 
@@ -117,6 +118,8 @@ UbloxNode::UbloxNode() {
   nh->param("debug", debug, 1);
   gps = std::make_shared<ublox_gps::Gps>(debug);
 
+  gnss_ = std::make_shared<Gnss>();
+
   nav_status_pub_ = nh->advertise<ublox_msgs::NavSTATUS>("navstatus", 1);
   nav_posecef_pub_ = nh->advertise<ublox_msgs::NavPOSECEF>("navposecef", 1);
   nav_clock_pub_ = nh->advertise<ublox_msgs::NavCLOCK>("navclock", 1);
@@ -137,16 +140,16 @@ UbloxNode::UbloxNode() {
 void UbloxNode::addFirmwareInterface() {
   int ublox_version;
   if (protocol_version_ < 14) {
-    components_.push_back(std::make_shared<UbloxFirmware6>(frame_id_, updater_, freq_diag_));
+    components_.push_back(std::make_shared<UbloxFirmware6>(frame_id_, updater_, freq_diag_, gnss_));
     ublox_version = 6;
   } else if (protocol_version_ >= 14 && protocol_version_ <= 15) {
-    components_.push_back(std::make_shared<UbloxFirmware7>(frame_id_, updater_, freq_diag_));
+    components_.push_back(std::make_shared<UbloxFirmware7>(frame_id_, updater_, freq_diag_, gnss_));
     ublox_version = 7;
   } else if (protocol_version_ > 15 && protocol_version_ <= 23) {
-    components_.push_back(std::make_shared<UbloxFirmware8>(frame_id_, updater_, freq_diag_));
+    components_.push_back(std::make_shared<UbloxFirmware8>(frame_id_, updater_, freq_diag_, gnss_));
     ublox_version = 8;
   } else {
-    components_.push_back(std::make_shared<UbloxFirmware9>(frame_id_, updater_, freq_diag_));
+    components_.push_back(std::make_shared<UbloxFirmware9>(frame_id_, updater_, freq_diag_, gnss_));
     ublox_version = 9;
   }
 
@@ -460,7 +463,7 @@ void UbloxNode::processMonVer() {
       strs = stringSplit(extension[extension.size() - 1], ";");
     }
     for (size_t i = 0; i < strs.size(); i++) {
-      supported.insert(strs[i]);
+      gnss_->add(strs[i]);
     }
   } else {
     for (std::size_t i = 0; i < extension.size(); ++i) {
@@ -483,7 +486,7 @@ void UbloxNode::processMonVer() {
       if (i >= extension.size() - 2) {
         strs = stringSplit(extension[i], ";");
         for (size_t i = 0; i < strs.size(); i++) {
-          supported.insert(strs[i]);
+          gnss_->add(strs[i]);
         }
       }
     }
@@ -521,7 +524,7 @@ bool UbloxNode::configureUblox() {
         throw std::runtime_error(ss.str());
       }
       // If device doesn't have SBAS, will receive NACK (causes exception)
-      if (supportsGnss("SBAS")) {
+      if (gnss_->isSupported("SBAS")) {
         if (!gps->configSbas(enable_sbas_, sbas_usage_, max_sbas_)) {
           throw std::runtime_error(std::string("Failed to ") +
                                   ((enable_sbas_) ? "enable" : "disable") +
@@ -675,7 +678,7 @@ void UbloxNode::shutdown() {
 //
 // U-Blox Firmware (all versions)
 //
-UbloxFirmware::UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater) : updater_(updater)
+UbloxFirmware::UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<Gnss> gnss) : updater_(updater), gnss_(gnss)
 {
 }
 
@@ -687,8 +690,8 @@ void UbloxFirmware::initializeRosDiagnostics() {
 //
 // U-Blox Firmware Version 6
 //
-UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
-  : UbloxFirmware(updater), frame_id_(frame_id), freq_diag_(freq_diag)
+UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss)
+  : UbloxFirmware(updater, gnss), frame_id_(frame_id), freq_diag_(freq_diag)
 {
   nav_pos_llh_pub_ =
     nh->advertise<ublox_msgs::NavPOSLLH>("navposllh", 1);
@@ -936,17 +939,17 @@ void UbloxFirmware7::getRosParams() {
               ublox_msgs::CfgGNSSBlock::SIG_CFG_QZSS_L1CA);
   nh->param("gnss/sbas", enable_sbas_, false);
 
-  if (enable_gps_ && !supportsGnss("GPS")) {
+  if (enable_gps_ && !gnss_->isSupported("GPS")) {
     ROS_WARN("gnss/gps is true, but GPS GNSS is not supported by this device");
   }
-  if (enable_glonass_ && !supportsGnss("GLO")) {
+  if (enable_glonass_ && !gnss_->isSupported("GLO")) {
     ROS_WARN("gnss/glonass is true, but GLONASS is not %s",
              "supported by this device");
   }
-  if (enable_qzss_ && !supportsGnss("QZSS")) {
+  if (enable_qzss_ && !gnss_->isSupported("QZSS")) {
     ROS_WARN("gnss/qzss is true, but QZSS is not supported by this device");
   }
-  if (enable_sbas_ && !supportsGnss("SBAS")) {
+  if (enable_sbas_ && !gnss_->isSupported("SBAS")) {
     ROS_WARN("gnss/sbas is true, but SBAS is not supported by this device");
   }
 
@@ -1042,7 +1045,7 @@ bool UbloxFirmware7::configureUblox() {
   cfgGNSSWrite.msg_ver = 0;
 
   // configure GLONASS
-  if (supportsGnss("GLO")) {
+  if (gnss_->isSupported("GLO")) {
     ublox_msgs::CfgGNSSBlock block;
     block.gnss_id = block.GNSS_ID_GLONASS;
     block.res_trk_ch = block.RES_TRK_CH_GLONASS;
@@ -1056,7 +1059,7 @@ bool UbloxFirmware7::configureUblox() {
     }
   }
 
-  if (supportsGnss("QZSS")) {
+  if (gnss_->isSupported("QZSS")) {
     // configure QZSS
     ublox_msgs::CfgGNSSBlock block;
     block.gnss_id = block.GNSS_ID_QZSS;
@@ -1071,7 +1074,7 @@ bool UbloxFirmware7::configureUblox() {
     }
   }
 
-  if (supportsGnss("SBAS")) {
+  if (gnss_->isSupported("SBAS")) {
     // configure SBAS
     ublox_msgs::CfgGNSSBlock block;
     block.gnss_id = block.GNSS_ID_SBAS;
@@ -1138,30 +1141,30 @@ void UbloxFirmware8::getRosParams() {
   getRosUint("gnss/qzss_sig_cfg", qzss_sig_cfg_,
               ublox_msgs::CfgGNSSBlock::SIG_CFG_QZSS_L1CA);
 
-  if (enable_gps_ && !supportsGnss("GPS")) {
+  if (enable_gps_ && !gnss_->isSupported("GPS")) {
     ROS_WARN("gnss/gps is true, but GPS GNSS is not supported by %s",
              "this device");
   }
-  if (enable_glonass_ && !supportsGnss("GLO")) {
+  if (enable_glonass_ && !gnss_->isSupported("GLO")) {
     ROS_WARN("gnss/glonass is true, but GLONASS is not supported by %s",
              "this device");
   }
-  if (enable_galileo_ && !supportsGnss("GAL")) {
+  if (enable_galileo_ && !gnss_->isSupported("GAL")) {
     ROS_WARN("gnss/galileo is true, but Galileo GNSS is not supported %s",
              "by this device");
   }
-  if (enable_beidou_ && !supportsGnss("BDS")) {
+  if (enable_beidou_ && !gnss_->isSupported("BDS")) {
     ROS_WARN("gnss/beidou is true, but Beidou GNSS is not supported %s",
              "by this device");
   }
-  if (enable_imes_ && !supportsGnss("IMES")) {
+  if (enable_imes_ && !gnss_->isSupported("IMES")) {
     ROS_WARN("gnss/imes is true, but IMES GNSS is not supported by %s",
              "this device");
   }
-  if (enable_qzss_ && !supportsGnss("QZSS")) {
+  if (enable_qzss_ && !gnss_->isSupported("QZSS")) {
     ROS_WARN("gnss/qzss is true, but QZSS is not supported by this device");
   }
-  if (enable_sbas_ && !supportsGnss("SBAS")) {
+  if (enable_sbas_ && !gnss_->isSupported("SBAS")) {
     ROS_WARN("gnss/sbas is true, but SBAS is not supported by this device");
   }
 
@@ -1371,8 +1374,8 @@ void UbloxFirmware8::subscribe() {
   }
 }
 
-UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
-  : UbloxFirmware8(frame_id, updater, freq_diag)
+UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss)
+  : UbloxFirmware8(frame_id, updater, freq_diag, gnss)
 {
 }
 

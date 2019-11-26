@@ -83,8 +83,6 @@ std::shared_ptr<ros::NodeHandle> nh;
 
 //! Handles communication with the U-Blox Device
 std::shared_ptr<ublox_gps::Gps> gps;
-//! Which GNSS are supported by the device
-std::set<std::string> supported;
 //! Whether or not to publish the given ublox message
 /*!
  * key is the message name (all lowercase) without firmware version numbers
@@ -402,15 +400,6 @@ void publish(const MessageT& m, ros::Publisher & publisher) {
 }
 
 /**
- * @param gnss The string representing the GNSS. Refer MonVER message protocol.
- * i.e. GPS, GLO, GAL, BDS, QZSS, SBAS, IMES
- * @return true if the device supports the given GNSS
- */
-bool supportsGnss(const std::string & gnss) {
-  return supported.count(gnss) > 0;
-}
-
-/**
  * @brief This class represents u-blox ROS node for *all* firmware and product
  * versions.
  *
@@ -617,6 +606,9 @@ class UbloxNode final {
   std::shared_ptr<FixDiagnostic> freq_diag_;
 
   std::vector<ublox_gps::Rtcm> rtcms_;
+
+  //! Which GNSS are supported by the device
+  std::shared_ptr<Gnss> gnss_;
 };
 
 /**
@@ -629,7 +621,7 @@ class UbloxFirmware : public virtual ComponentInterface {
   //! Subscribe Rate for u-blox SV Info messages
   constexpr static uint32_t kNavSvInfoSubscribeRate = 20;
 
-  explicit UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater);
+  explicit UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<Gnss> gnss);
 
   /**
    * @brief Add the fix diagnostics to the updater.
@@ -644,6 +636,7 @@ class UbloxFirmware : public virtual ComponentInterface {
       diagnostic_updater::DiagnosticStatusWrapper& stat) = 0;
 
   std::shared_ptr<diagnostic_updater::Updater> updater_;
+  std::shared_ptr<Gnss> gnss_;
 };
 
 /**
@@ -651,7 +644,7 @@ class UbloxFirmware : public virtual ComponentInterface {
  */
 class UbloxFirmware6 final : public UbloxFirmware {
  public:
-  explicit UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag);
+  explicit UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss);
 
   /**
    * @brief Sets the fix status service type to GPS.
@@ -742,8 +735,8 @@ class UbloxFirmware6 final : public UbloxFirmware {
 template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
-  explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
-    : UbloxFirmware(updater), frame_id_(frame_id), freq_diag_(freq_diag) {
+  explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss)
+    : UbloxFirmware(updater, gnss), frame_id_(frame_id), freq_diag_(freq_diag) {
     // NavPVT publisher
     nav_pvt_pub_ = nh->advertise<NavPVT>("navpvt", 1);
 
@@ -926,8 +919,8 @@ class UbloxFirmware7Plus : public UbloxFirmware {
  */
 class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  public:
-  explicit UbloxFirmware7(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
-    : UbloxFirmware7Plus<ublox_msgs::NavPVT7>(frame_id, updater, freq_diag) {
+  explicit UbloxFirmware7(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss)
+    : UbloxFirmware7Plus<ublox_msgs::NavPVT7>(frame_id, updater, freq_diag, gnss) {
     nav_svinfo_pub_ = nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", 1);
     mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", 1);
   }
@@ -969,8 +962,8 @@ class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  */
 class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  public:
-  explicit UbloxFirmware8(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag)
-    : UbloxFirmware7Plus<ublox_msgs::NavPVT>(frame_id, updater, freq_diag) {
+  explicit UbloxFirmware8(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss)
+    : UbloxFirmware7Plus<ublox_msgs::NavPVT>(frame_id, updater, freq_diag, gnss) {
     nav_sat_pub_ = nh->advertise<ublox_msgs::NavSAT>("navstate", 1);
     mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", 1);
     rxm_rtcm_pub_ = nh->advertise<ublox_msgs::RxmRTCM>("rxmrtcm", 1);
@@ -1028,7 +1021,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  */
 class UbloxFirmware9 final : public UbloxFirmware8 {
 public:
-  explicit UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag);
+  explicit UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss);
 };
 
 /**
