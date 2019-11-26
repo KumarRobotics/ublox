@@ -77,8 +77,6 @@
  */
 namespace ublox_node {
 
-//! Default measurement period for HPG devices
-constexpr static uint16_t kDefaultMeasPeriod = 250;
 //! Default subscribe Rate to u-blox messages [Hz]
 constexpr static uint32_t kSubscribeRate = 1;
 //! Subscribe Rate for u-blox SV Info messages
@@ -1153,6 +1151,9 @@ class AdrUdrProduct final : public virtual ComponentInterface {
  */
 class HpgRefProduct: public virtual ComponentInterface {
  public:
+  //! Default measurement period for HPG devices
+  constexpr static uint16_t kDefaultMeasPeriod = 250;
+
   explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms);
 
   /**
