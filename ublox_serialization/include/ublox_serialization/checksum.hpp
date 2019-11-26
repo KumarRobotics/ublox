@@ -26,10 +26,10 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#ifndef UBLOX_MSGS_CHECKSUM_HPP
-#define UBLOX_MSGS_CHECKSUM_HPP
+#ifndef UBLOX_SERIALIZATION_CHECKSUM_HPP
+#define UBLOX_SERIALIZATION_CHECKSUM_HPP
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace ublox {
 
@@ -67,6 +67,6 @@ static inline uint16_t calculateChecksum(const uint8_t *data,
   return checksum;
 }
 
-} // namespace ublox
+}  // namespace ublox
 
-#endif // UBLOX_MSGS_CHECKSUM_HPP
+#endif  // UBLOX_SERIALIZATION_CHECKSUM_HPP

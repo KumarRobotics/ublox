@@ -26,13 +26,15 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#ifndef UBLOX_SERIALIZATION_ROS_HPP
-#define UBLOX_SERIALIZATION_ROS_HPP
+#ifndef UBLOX_SERIALIZATION_SERIALIZATION_ROS_HPP
+#define UBLOX_SERIALIZATION_SERIALIZATION_ROS_HPP
+
+#include <cstdint>
+
+#include <ros/serialization.h>
 
 #include "serialization.hpp"
 #include "checksum.hpp"
-
-#include <ros/serialization.h>
 
 namespace ublox {
 
@@ -54,6 +56,6 @@ void Serializer<T>::write(uint8_t *data, uint32_t size, const T &message) {
   ros::serialization::Serializer<T>::write(stream, message);
 }
 
-} // namespace ublox
+}  // namespace ublox
 
-#endif // UBLOX_SERIALIZATION_ROS_HPP
+#endif  // UBLOX_SERIALIZATION_SERIALIZATION_ROS_HPP

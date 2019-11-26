@@ -31,7 +31,7 @@
 #define UBLOX_SERIALIZATION_UBLOX_MSGS_HPP
 
 #include <ros/console.h>
-#include <ublox/serialization.hpp>
+#include <ublox_serialization/serialization.hpp>
 #include <ublox_msgs/ublox_msgs.hpp>
 
 ///

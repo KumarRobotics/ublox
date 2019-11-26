@@ -26,13 +26,15 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#ifndef UBLOX_SERIALIZATION_HPP
-#define UBLOX_SERIALIZATION_HPP
+#ifndef UBLOX_SERIALIZATION_SERIALIZATION_HPP
+#define UBLOX_SERIALIZATION_SERIALIZATION_HPP
+
+#include <algorithm>
+#include <cstdint>
+#include <utility>
+#include <vector>
 
 #include <ros/console.h>
-#include <stdint.h>
-#include <vector>
-#include <algorithm>
 
 #include "checksum.hpp"
 
@@ -407,7 +409,9 @@ class Writer {
     size_ -= options_.header_length;
 
     // write message
-    if (message) std::copy(message, message + length, data_);
+    if (message) {
+      std::copy(message, message + length, data_);
+    }
     data_ += length;
     size_ -= length;
 
@@ -435,7 +439,7 @@ class Writer {
   Options options_;
 };
 
-} // namespace ublox
+}  // namespace ublox
 
 // Use to declare u-blox messages and message serializers
 #define DECLARE_UBLOX_MESSAGE(class_id, message_id, package, message) \
@@ -457,4 +461,4 @@ class Writer {
 // use implementation of class Serializer in "serialization_ros.hpp"
 #include "serialization_ros.hpp"
 
-#endif // UBLOX_SERIALIZATION_HPP
+#endif  // UBLOX_SERIALIZATION_SERIALIZATION_HPP
