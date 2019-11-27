@@ -1129,7 +1129,7 @@ void UbloxFirmware7::subscribe() {
 void UbloxFirmware8::getRosParams() {
   // UPD SOS configuration
   nh->param("clear_bbr", clear_bbr_, false);
-  gps->setSaveOnShutdown(nh->param("save_on_shutdown", false));
+  nh->param("save_on_shutdown", save_on_shutdown_, false);
 
   // GNSS enable/disable
   nh->param("gnss/gps", enable_gps_, true);
@@ -1257,6 +1257,9 @@ bool UbloxFirmware8::configureUblox() {
       ROS_ERROR("u-blox failed to clear flash memory");
     }
   }
+
+  gps->setSaveOnShutdown(save_on_shutdown_);
+
   //
   // Configure the GNSS, only if the configuration is different
   //
@@ -1757,7 +1760,7 @@ void HpgRefProduct::subscribe() {
       &HpgRefProduct::callbackNavSvIn, this, std::placeholders::_1), 1);
 }
 
-void HpgRefProduct::callbackNavSvIn(ublox_msgs::NavSVIN m) {
+void HpgRefProduct::callbackNavSvIn(const ublox_msgs::NavSVIN& m) {
   if (enabled["nav_svin"]) {
     navsvin_pub_.publish(m);
   }

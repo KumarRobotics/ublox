@@ -31,8 +31,11 @@
 #define UBLOX_GPS_NODE_HPP
 
 // STL
+#include <limits>
 #include <memory>
-#include <set>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 #include <vector>
 // ROS includes
 #include <ros/ros.h>
@@ -914,6 +917,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
   ublox_msgs::CfgNMEA cfg_nmea_;
   //! Whether to clear the flash memory during configuration
   bool clear_bbr_;
+  bool save_on_shutdown_;
 
   ros::Publisher nav_sat_pub_;
   ros::Publisher mon_hw_pub_;
@@ -1094,7 +1098,7 @@ class HpgRefProduct: public virtual ComponentInterface {
    * configured RTCM messages. Publish received Nav SVIN messages if enabled.
    * @param m the message to process
    */
-  void callbackNavSvIn(ublox_msgs::NavSVIN m);
+  void callbackNavSvIn(const ublox_msgs::NavSVIN& m);
 
  protected:
   /**
