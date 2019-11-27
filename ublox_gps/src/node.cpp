@@ -328,10 +328,14 @@ void UbloxNode::getRosParams() {
   declareRosBoolean("publish/nav/all", getRosBoolean("publish/all"));
   declareRosBoolean("publish/nav/att", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/clock", getRosBoolean("publish/nav/all"));
+  declareRosBoolean("publish/nav/heading", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/posecef", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/posllh", getRosBoolean("publish/nav/all"));
+  declareRosBoolean("publish/nav/pvt", getRosBoolean("publish/nav/all"));
+  declareRosBoolean("publish/nav/relposned", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/sat", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/sol", getRosBoolean("publish/nav/all"));
+  declareRosBoolean("publish/nav/svin", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/svinfo", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/status", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/velned", getRosBoolean("publish/nav/all"));
@@ -351,6 +355,8 @@ void UbloxNode::getRosParams() {
   declareRosBoolean("publish/mon/all", getRosBoolean("publish/all"));
   declareRosBoolean("publish/mon/hw", getRosBoolean("publish/mon/all"));
 
+  declareRosBoolean("publish/tim/tm2", false);
+
   // INF parameters
   declareRosBoolean("inf/all", true);
   declareRosBoolean("inf/debug", false);
@@ -361,10 +367,10 @@ void UbloxNode::getRosParams() {
 
   // ESF parameters
   declareRosBoolean("publish/esf/all", true);
-  declareRosBoolean("publish/esf/ins", enabled["esf"]);
-  declareRosBoolean("publish/esf/meas", enabled["esf"]);
-  declareRosBoolean("publish/esf/raw", enabled["esf"]);
-  declareRosBoolean("publish/esf/status", enabled["esf"]);
+  declareRosBoolean("publish/esf/ins", getRosBoolean("publish/esf/all"));
+  declareRosBoolean("publish/esf/meas", getRosBoolean("publish/esf/all"));
+  declareRosBoolean("publish/esf/raw", getRosBoolean("publish/esf/all"));
+  declareRosBoolean("publish/esf/status", getRosBoolean("publish/esf/all"));
 
   // HNR parameters
   declareRosBoolean("publish/hnr/pvt", true);
@@ -1764,8 +1770,6 @@ bool HpgRefProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void HpgRefProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
-  // Whether to publish Nav Survey-In messages
-  nh->param("publish/nav/svin", enabled["nav_svin"], getRosBoolean("publish/nav/all"));
   // Subscribe to Nav Survey-In
   // Save off the gps pointer so we can use it in the callback later.
   gps_ = gps;
@@ -1774,7 +1778,7 @@ void HpgRefProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void HpgRefProduct::callbackNavSvIn(const ublox_msgs::NavSVIN& m) {
-  if (enabled["nav_svin"]) {
+  if (getRosBoolean("publish/nav/svin")) {
     navsvin_pub_.publish(m);
   }
 
@@ -1877,8 +1881,6 @@ bool HpgRovProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void HpgRovProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
-  // Whether to publish Nav Relative Position NED
-  nh->param("publish/nav/relposned", enabled["nav_relposned"], getRosBoolean("publish/nav/all"));
   // Subscribe to Nav Relative Position NED messages (also updates diagnostics)
   gps->subscribe<ublox_msgs::NavRELPOSNED>(std::bind(
      &HpgRovProduct::callbackNavRelPosNed, this, std::placeholders::_1), 1);
@@ -1928,7 +1930,7 @@ void HpgRovProduct::carrierPhaseDiagnostics(
 }
 
 void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
-  if (enabled["nav_relposned"]) {
+  if (getRosBoolean("publish/nav/relposned")) {
     nav_rel_pos_ned_pub_.publish(m);
   }
 
@@ -1951,21 +1953,17 @@ HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const st
 
 void HpPosRecProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Whether to publish Nav Relative Position NED
-  nh->param("publish/nav/relposned", enabled["nav_relposned"], getRosBoolean("publish/nav/all"));
   // Subscribe to Nav Relative Position NED messages (also updates diagnostics)
   gps->subscribe<ublox_msgs::NavRELPOSNED9>(std::bind(
      &HpPosRecProduct::callbackNavRelPosNed, this, std::placeholders::_1), 1);
-
-  // Whether to publish the Heading info from Nav Relative Position NED
-  nh->param("publish/nav/heading", enabled["nav_heading"], getRosBoolean("publish/nav/all"));
 }
 
 void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
-  if (enabled["nav_relposned"]) {
+  if (getRosBoolean("publish/nav/relposned")) {
     nav_relposned_pub_.publish(m);
   }
 
-  if (enabled["nav_heading"]) {
+  if (getRosBoolean("publish/nav/heading")) {
     imu_.header.stamp = ros::Time::now();
     imu_.header.frame_id = frame_id_;
 
@@ -2022,11 +2020,6 @@ bool TimProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void TimProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
-  ROS_INFO("TIM is Enabled: %u", enabled["tim"]);
-  ROS_INFO("TIM-TM2 is Enabled: %u", enabled["tim_tm2"]);
-  // Subscribe to TIM-TM2 messages (Time mark messages)
-  nh->param("publish/tim/tm2", enabled["tim_tm2"], enabled["tim"]);
-
   gps->subscribe<ublox_msgs::TimTM2>(std::bind(
     &TimProduct::callbackTimTM2, this, std::placeholders::_1), 1);
 
@@ -2047,7 +2040,7 @@ void TimProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
 
 void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
 
-  if (enabled["tim_tm2"]) {
+  if (getRosBoolean("publish/tim/tm2")) {
     // create time ref message and put in the data
     t_ref_.header.seq = m.rising_edge_count;
     t_ref_.header.stamp = ros::Time::now();

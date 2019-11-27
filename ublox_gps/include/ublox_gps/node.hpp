@@ -86,13 +86,6 @@ namespace ublox_node {
 //! Node Handle for GPS node
 std::shared_ptr<ros::NodeHandle> nh;
 
-//! Whether or not to publish the given ublox message
-/*!
- * key is the message name (all lowercase) without firmware version numbers
- * (e.g. NavPVT instead of NavPVT7). Value indicates whether or not to enable
- * the message. */
-std::map<std::string, bool> enabled;
-
 /**
  * @brief Check that the parameter is above the minimum.
  * @param val the value to check
@@ -639,7 +632,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
    * @param m the message to publish
    */
   void callbackNavPvt(const NavPVT& m) {
-    if (enabled["nav_pvt"]) {
+    if (getRosBoolean("publish/nav/pvt")) {
       // NavPVT publisher
       nav_pvt_pub_.publish(m);
     }
