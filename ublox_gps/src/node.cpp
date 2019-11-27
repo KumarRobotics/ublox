@@ -46,9 +46,21 @@
 
 namespace ublox_node {
 
-//
-// ublox_node namespace
-//
+/**
+ * @brief Determine dynamic model from human-readable string.
+ * @param model One of the following (case-insensitive):
+ *  - portable
+ *  - stationary
+ *  - pedestrian
+ *  - automotive
+ *  - sea
+ *  - airborne1
+ *  - airborne2
+ *  - airborne4
+ *  - wristwatch
+ * @return DynamicModel
+ * @throws std::runtime_error on invalid argument.
+ */
 uint8_t modelFromString(const std::string& model) {
   std::string lower = model;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
@@ -76,6 +88,15 @@ uint8_t modelFromString(const std::string& model) {
                            " is not a valid dynamic model.");
 }
 
+/**
+ * @brief Determine fix mode from human-readable string.
+ * @param mode One of the following (case-insensitive):
+ *  - 2d
+ *  - 3d
+ *  - auto
+ * @return FixMode
+ * @throws std::runtime_error on invalid argument.
+ */
 uint8_t fixModeFromString(const std::string& mode) {
   std::string lower = mode;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);

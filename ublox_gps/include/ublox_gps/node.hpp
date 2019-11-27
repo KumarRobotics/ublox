@@ -97,34 +97,6 @@ std::map<std::string, bool> enabled;
 int fix_status_service;
 
 /**
- * @brief Determine dynamic model from human-readable string.
- * @param model One of the following (case-insensitive):
- *  - portable
- *  - stationary
- *  - pedestrian
- *  - automotive
- *  - sea
- *  - airborne1
- *  - airborne2
- *  - airborne4
- *  - wristwatch
- * @return DynamicModel
- * @throws std::runtime_error on invalid argument.
- */
-uint8_t modelFromString(const std::string& model);
-
-/**
- * @brief Determine fix mode from human-readable string.
- * @param mode One of the following (case-insensitive):
- *  - 2d
- *  - 3d
- *  - auto
- * @return FixMode
- * @throws std::runtime_error on invalid argument.
- */
-uint8_t fixModeFromString(const std::string& mode);
-
-/**
  * @brief Check that the parameter is above the minimum.
  * @param val the value to check
  * @param min the minimum for this value
