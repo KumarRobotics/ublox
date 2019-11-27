@@ -593,8 +593,6 @@ class UbloxFirmware6 final : public UbloxFirmware {
 
   //! Used to configure NMEA (if set_nmea_) filled with ROS parameters
   ublox_msgs::CfgNMEA6 cfg_nmea_;
-  //! Whether or not to configure the NMEA settings
-  bool set_nmea_;
 
   ros::Publisher nav_pos_llh_pub_;
   ros::Publisher fix_pub_;
@@ -833,8 +831,6 @@ class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
    * Filled from ROS parameters
    */
   ublox_msgs::CfgNMEA7 cfg_nmea_;
-  //! Whether or not to Configure the NMEA settings
-  bool set_nmea_;
 
   ros::Publisher nav_svinfo_pub_;
   ros::Publisher mon_hw_pub_;
@@ -885,8 +881,6 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
   bool enable_beidou_;
   //! Whether or not to enable the IMES GNSS
   bool enable_imes_;
-  //! Whether or not to configure the NMEA settings
-  bool set_nmea_;
   //! Desired NMEA configuration.
   ublox_msgs::CfgNMEA cfg_nmea_;
   //! Whether to clear the flash memory during configuration
