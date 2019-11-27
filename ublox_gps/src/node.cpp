@@ -326,15 +326,22 @@ void UbloxNode::getRosParams() {
   declareRosBoolean("publish/all", false);
 
   declareRosBoolean("publish/nav/all", getRosBoolean("publish/all"));
+  declareRosBoolean("publish/nav/att", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/clock", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/posecef", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/posllh", getRosBoolean("publish/nav/all"));
+  declareRosBoolean("publish/nav/sat", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/sol", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/svinfo", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/status", getRosBoolean("publish/nav/all"));
   declareRosBoolean("publish/nav/velned", getRosBoolean("publish/nav/all"));
 
   declareRosBoolean("publish/rxm/all", getRosBoolean("publish/all"));
+  declareRosBoolean("publish/rxm/almRaw", getRosBoolean("publish/rxm/all"));
+  declareRosBoolean("publish/rxm/eph", getRosBoolean("publish/rxm/all"));
+  declareRosBoolean("publish/rxm/rtcm", getRosBoolean("publish/rxm/all"));
+  declareRosBoolean("publish/rxm/raw", getRosBoolean("publish/rxm/all"));
+  declareRosBoolean("publish/rxm/sfrb", getRosBoolean("publish/rxm/all"));
 
   declareRosBoolean("publish/aid/all", getRosBoolean("publish/all"));
   declareRosBoolean("publish/aid/alm", getRosBoolean("publish/aid/all"));
@@ -351,6 +358,16 @@ void UbloxNode::getRosParams() {
   declareRosBoolean("inf/notice", getRosBoolean("inf/all"));
   declareRosBoolean("inf/test", getRosBoolean("inf/all"));
   declareRosBoolean("inf/warning", getRosBoolean("inf/all"));
+
+  // ESF parameters
+  declareRosBoolean("publish/esf/all", true);
+  declareRosBoolean("publish/esf/ins", enabled["esf"]);
+  declareRosBoolean("publish/esf/meas", enabled["esf"]);
+  declareRosBoolean("publish/esf/raw", enabled["esf"]);
+  declareRosBoolean("publish/esf/status", enabled["esf"]);
+
+  // HNR parameters
+  declareRosBoolean("publish/hnr/pvt", true);
 }
 
 void UbloxNode::pollMessages(const ros::TimerEvent& event) {
@@ -1120,8 +1137,6 @@ bool UbloxFirmware7::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void UbloxFirmware7::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
-  // Whether to publish Nav PVT messages to a ROS topic
-  nh->param("publish/nav/pvt", enabled["nav_pvt"], getRosBoolean("publish/nav/all"));
   // Subscribe to Nav PVT (always does so since fix information is published
   // from this)
   gps->subscribe<ublox_msgs::NavPVT7>(std::bind(
@@ -1367,15 +1382,12 @@ bool UbloxFirmware8::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void UbloxFirmware8::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
-  // Whether to publish Nav PVT messages
-  nh->param("publish/nav/pvt", enabled["nav_pvt"], getRosBoolean("publish/nav/all"));
   // Subscribe to Nav PVT
   gps->subscribe<ublox_msgs::NavPVT>(
     std::bind(&UbloxFirmware7Plus::callbackNavPvt, this, std::placeholders::_1), 1);
 
   // Subscribe to Nav SAT messages
-  nh->param("publish/nav/sat", enabled["nav_sat"], getRosBoolean("publish/nav/all"));
-  if (enabled["nav_sat"]) {
+  if (getRosBoolean("publish/nav/sat")) {
     gps->subscribe<ublox_msgs::NavSAT>([this](const ublox_msgs::NavSAT &m) { nav_sat_pub_.publish(m); },
                                        kNavSvInfoSubscribeRate);
   }
@@ -1387,8 +1399,7 @@ void UbloxFirmware8::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   }
 
   // Subscribe to RTCM messages
-  nh->param("publish/rxm/rtcm", enabled["rxm_rtcm"], getRosBoolean("publish/rxm/all"));
-  if (enabled["rxm_rtcm"]) {
+  if (getRosBoolean("publish/rxm/rtcm")) {
     gps->subscribe<ublox_msgs::RxmRTCM>([this](const ublox_msgs::RxmRTCM &m) { rxm_rtcm_pub_.publish(m); },
                                         1);
   }
@@ -1412,48 +1423,44 @@ RawDataProduct::RawDataProduct(uint16_t nav_rate, uint16_t meas_rate, std::share
 
 void RawDataProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Subscribe to RXM Raw
-  nh->param("publish/rxm/raw", enabled["rxm_raw"], getRosBoolean("publish/rxm/all"));
-  if (enabled["rxm_raw"]) {
+  if (getRosBoolean("publish/rxm/raw")) {
     gps->subscribe<ublox_msgs::RxmRAW>([this](const ublox_msgs::RxmRAW &m) { rxm_raw_pub_.publish(m); },
                                        1);
   }
 
   // Subscribe to RXM SFRB
-  nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], getRosBoolean("publish/rxm/all"));
-  if (enabled["rxm_sfrb"]) {
+  if (getRosBoolean("publish/rxm/sfrb")) {
     gps->subscribe<ublox_msgs::RxmSFRB>([this](const ublox_msgs::RxmSFRB &m) { rxm_sfrb_pub_.publish(m); },
                                         1);
   }
 
   // Subscribe to RXM EPH
-  nh->param("publish/rxm/eph", enabled["rxm_eph"], getRosBoolean("publish/rxm/all"));
-  if (enabled["rxm_eph"]) {
+  if (getRosBoolean("publish/rxm/eph")) {
     gps->subscribe<ublox_msgs::RxmEPH>([this](const ublox_msgs::RxmEPH &m) { rxm_eph_pub_.publish(m); },
                                        1);
   }
 
   // Subscribe to RXM ALM
-  nh->param("publish/rxm/almRaw", enabled["rxm_alm"], getRosBoolean("publish/rxm/all"));
-  if (enabled["rxm_alm"]) {
+  if (getRosBoolean("publish/rxm/almRaw")) {
     gps->subscribe<ublox_msgs::RxmALM>([this](const ublox_msgs::RxmALM &m) { rxm_alm_pub_.publish(m); },
                                        1);
   }
 }
 
 void RawDataProduct::initializeRosDiagnostics() {
-  if (enabled["rxm_raw"]) {
+  if (getRosBoolean("publish/rxm/raw")) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
       "rxmraw", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_, updater_));
   }
-  if (enabled["rxm_sfrb"]) {
+  if (getRosBoolean("publish/rxm/sfrb")) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
       "rxmsfrb", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_, updater_));
   }
-  if (enabled["rxm_eph"]) {
+  if (getRosBoolean("publish/rxm/eph")) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
       "rxmeph", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_, updater_));
   }
-  if (enabled["rxm_alm"]) {
+  if (getRosBoolean("publish/rxm/almRaw")) {
     freq_diagnostics_.push_back(std::make_shared<UbloxTopicDiagnostic>(
       "rxmalm", kRtcmFreqTol, kRtcmFreqWindow, nav_rate_, meas_rate_, updater_));
   }
@@ -1495,25 +1502,20 @@ bool AdrUdrProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void AdrUdrProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
-  nh->param("publish/esf/all", enabled["esf"], true);
-
   // Subscribe to NAV ATT messages
-  nh->param("publish/nav/att", enabled["nav_att"], getRosBoolean("publish/nav/all"));
-  if (enabled["nav_att"]) {
+  if (getRosBoolean("publish/nav/att")) {
     gps->subscribe<ublox_msgs::NavATT>([this](const ublox_msgs::NavATT &m) { nav_att_pub_.publish(m); },
                                        1);
   }
 
   // Subscribe to ESF INS messages
-  nh->param("publish/esf/ins", enabled["esf_ins"], enabled["esf"]);
-  if (enabled["esf_ins"]) {
+  if (getRosBoolean("publish/esf/ins")) {
     gps->subscribe<ublox_msgs::EsfINS>([this](const ublox_msgs::EsfINS &m) { esf_ins_pub_.publish(m); },
                                        1);
   }
 
   // Subscribe to ESF Meas messages
-  nh->param("publish/esf/meas", enabled["esf_meas"], enabled["esf"]);
-  if (enabled["esf_meas"]) {
+  if (getRosBoolean("publish/esf/meas")) {
     gps->subscribe<ublox_msgs::EsfMEAS>([this](const ublox_msgs::EsfMEAS &m) { esf_meas_pub_.publish(m); },
                                         1);
     // also publish sensor_msgs::Imu
@@ -1522,29 +1524,26 @@ void AdrUdrProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   }
 
   // Subscribe to ESF Raw messages
-  nh->param("publish/esf/raw", enabled["esf_raw"], enabled["esf"]);
-  if (enabled["esf_raw"]) {
+  if (getRosBoolean("publish/esf/raw")) {
     gps->subscribe<ublox_msgs::EsfRAW>([this](const ublox_msgs::EsfRAW &m) { esf_raw_pub_.publish(m); },
                                        1);
   }
 
   // Subscribe to ESF Status messages
-  nh->param("publish/esf/status", enabled["esf_status"], enabled["esf"]);
-  if (enabled["esf_status"]) {
+  if (getRosBoolean("publish/esf/status")) {
     gps->subscribe<ublox_msgs::EsfSTATUS>([this](const ublox_msgs::EsfSTATUS &m) { esf_status_pub_.publish(m); },
                                           1);
   }
 
   // Subscribe to HNR PVT messages
-  nh->param("publish/hnr/pvt", enabled["hnr_pvt"], true);
-  if (enabled["hnr_pvt"]) {
+  if (getRosBoolean("publish/hnr/pvt")) {
     gps->subscribe<ublox_msgs::HnrPVT>([this](const ublox_msgs::HnrPVT &m) { hnr_pvt_pub_.publish(m); },
                                        1);
   }
 }
 
 void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
-  if (enabled["esf_meas"]) {
+  if (getRosBoolean("publish/esf/meas")) {
     imu_.header.stamp = ros::Time::now();
     imu_.header.frame_id = frame_id_;
 
@@ -2034,15 +2033,13 @@ void TimProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   ROS_INFO("Subscribed to TIM-TM2 messages on topic tim/tm2");
 
   // Subscribe to SFRBX messages
-  nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], getRosBoolean("publish/rxm/all"));
-  if (enabled["rxm_sfrb"]) {
+  if (getRosBoolean("publish/rxm/sfrb")) {
     gps->subscribe<ublox_msgs::RxmSFRBX>([this](const ublox_msgs::RxmSFRBX &m) { rxm_sfrb_pub_.publish(m); },
                                          1);
   }
 
    // Subscribe to RawX messages
-   nh->param("publish/rxm/raw", enabled["rxm_raw"], getRosBoolean("publish/rxm/all"));
-   if (enabled["rxm_raw"]) {
+   if (getRosBoolean("publish/rxm/raw")) {
      gps->subscribe<ublox_msgs::RxmRAWX>([this](const ublox_msgs::RxmRAWX &m) { rxm_raw_pub_.publish(m); },
                                          1);
    }
