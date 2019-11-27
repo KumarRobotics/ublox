@@ -243,7 +243,7 @@ void UbloxNode::getRosParams() {
   // PPP: Advanced Setting
   declareRosBoolean("enable_ppp", false);
   // SBAS params, only for some devices
-  nh->param("sbas", enable_sbas_, false);
+  declareRosBoolean("gnss/sbas", false);
   getRosUint("sbas/max", max_sbas_, 0); // Maximum number of SBAS channels
   getRosUint("sbas/usage", sbas_usage_, 0);
   nh->param("dynamic_model", dynamic_model_, std::string("portable"));
@@ -516,13 +516,15 @@ void UbloxNode::processMonVer() {
 
 bool UbloxNode::configureUblox() {
   try {
-    if (!gps_->isInitialized())
+    if (!gps_->isInitialized()) {
       throw std::runtime_error("Failed to initialize.");
+    }
     if (load_.load_mask != 0) {
       ROS_DEBUG("Loading u-blox configuration from memory. %u", load_.load_mask);
-      if (!gps_->configure(load_))
+      if (!gps_->configure(load_)) {
         throw std::runtime_error(std::string("Failed to load configuration ") +
                                  "from memory");
+      }
       if (load_.load_mask & load_.MASK_IO_PORT) {
         ROS_DEBUG("Loaded I/O configuration from memory, resetting serial %s",
           "communications.");
@@ -546,9 +548,9 @@ bool UbloxNode::configureUblox() {
       }
       // If device doesn't have SBAS, will receive NACK (causes exception)
       if (gnss_->isSupported("SBAS")) {
-        if (!gps_->configSbas(enable_sbas_, sbas_usage_, max_sbas_)) {
+        if (!gps_->configSbas(getRosBoolean("gnss/sbas"), sbas_usage_, max_sbas_)) {
           throw std::runtime_error(std::string("Failed to ") +
-                                  ((enable_sbas_) ? "enable" : "disable") +
+                                  (getRosBoolean("gnss/sbas") ? "enable" : "disable") +
                                   " SBAS.");
         }
       }
@@ -957,7 +959,6 @@ void UbloxFirmware7::getRosParams() {
   nh->param("gnss/qzss", enable_qzss_, false);
   getRosUint("gnss/qzss_sig_cfg", qzss_sig_cfg_,
               ublox_msgs::CfgGNSSBlock::SIG_CFG_QZSS_L1CA);
-  nh->param("gnss/sbas", enable_sbas_, false);
 
   if (enable_gps_ && !gnss_->isSupported("GPS")) {
     ROS_WARN("gnss/gps is true, but GPS GNSS is not supported by this device");
@@ -969,7 +970,7 @@ void UbloxFirmware7::getRosParams() {
   if (enable_qzss_ && !gnss_->isSupported("QZSS")) {
     ROS_WARN("gnss/qzss is true, but QZSS is not supported by this device");
   }
-  if (enable_sbas_ && !gnss_->isSupported("SBAS")) {
+  if (getRosBoolean("gnss/sbas") && !gnss_->isSupported("SBAS")) {
     ROS_WARN("gnss/sbas is true, but SBAS is not supported by this device");
   }
 
@@ -1100,11 +1101,11 @@ bool UbloxFirmware7::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
     block.gnss_id = block.GNSS_ID_SBAS;
     block.res_trk_ch = block.RES_TRK_CH_SBAS;
     block.max_trk_ch = block.MAX_TRK_CH_SBAS;
-    block.flags = enable_sbas_ ? block.SIG_CFG_SBAS_L1CA : 0;
+    block.flags = getRosBoolean("gnss/sbas") ? block.SIG_CFG_SBAS_L1CA : 0;
     cfgGNSSWrite.blocks[0] = block;
     if (!gps->configure(cfgGNSSWrite)) {
       throw std::runtime_error(std::string("Failed to ") +
-                               ((enable_sbas_) ? "enable" : "disable") +
+                               (getRosBoolean("gnss/sbas") ? "enable" : "disable") +
                                " SBAS.");
     }
   }
@@ -1155,7 +1156,6 @@ void UbloxFirmware8::getRosParams() {
   nh->param("gnss/imes", enable_imes_, false);
   nh->param("gnss/glonass", enable_glonass_, false);
   nh->param("gnss/qzss", enable_qzss_, false);
-  nh->param("gnss/sbas", enable_sbas_, false);
   // QZSS Signal Configuration
   getRosUint("gnss/qzss_sig_cfg", qzss_sig_cfg_,
               ublox_msgs::CfgGNSSBlock::SIG_CFG_QZSS_L1CA);
@@ -1183,7 +1183,7 @@ void UbloxFirmware8::getRosParams() {
   if (enable_qzss_ && !gnss_->isSupported("QZSS")) {
     ROS_WARN("gnss/qzss is true, but QZSS is not supported by this device");
   }
-  if (enable_sbas_ && !gnss_->isSupported("SBAS")) {
+  if (getRosBoolean("gnss/sbas") && !gnss_->isSupported("SBAS")) {
     ROS_WARN("gnss/sbas is true, but SBAS is not supported by this device");
   }
 
@@ -1301,10 +1301,10 @@ bool UbloxFirmware8::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
           (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_gps_;
       ROS_DEBUG("GPS Configuration is different");
     } else if (block.gnss_id == block.GNSS_ID_SBAS
-               && enable_sbas_ != (block.flags & block.FLAGS_ENABLE)) {
+               && getRosBoolean("gnss/sbas") != (block.flags & block.FLAGS_ENABLE)) {
       correct = false;
       cfg_gnss.blocks[i].flags =
-          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_sbas_;
+          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | getRosBoolean("gnss/sbas");
       ROS_DEBUG("SBAS Configuration is different");
     } else if (block.gnss_id == block.GNSS_ID_GALILEO
                && enable_galileo_ != (block.flags & block.FLAGS_ENABLE)) {

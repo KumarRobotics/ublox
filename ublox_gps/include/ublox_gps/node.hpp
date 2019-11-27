@@ -448,8 +448,6 @@ class UbloxNode final {
   bool set_dat_;
   //! User-defined Datum
   ublox_msgs::CfgDAT cfg_dat_;
-  //! Whether or not to enable SBAS
-  bool enable_sbas_;
   //! SBAS Usage parameter (see CfgSBAS message)
   uint8_t sbas_usage_;
   //! Max SBAS parameter (see CfgSBAS message)
@@ -793,8 +791,6 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   bool enable_glonass_;
   //! Whether or not to enable QZSS
   bool enable_qzss_;
-  //! Whether or not to enable SBAS
-  bool enable_sbas_;
   //! The QZSS Signal configuration, see CfgGNSS message
   uint32_t qzss_sig_cfg_;
 
