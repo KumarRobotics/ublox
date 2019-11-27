@@ -30,9 +30,12 @@
 #ifndef UBLOX_GPS_FTS_PRODUCT_HPP
 #define UBLOX_GPS_FTS_PRODUCT_HPP
 
+#include <memory>
+
 #include <ros/console.h>
 
 #include <ublox_gps/component_interface.hpp>
+#include <ublox_gps/gps.hpp>
 
 namespace ublox_node {
 
@@ -54,7 +57,10 @@ class FtsProduct final : public virtual ComponentInterface {
    * @brief Configure FTS settings.
    * @todo Currently unimplemented.
    */
-  bool configureUblox() override { return false; }
+  bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) override {
+    (void)gps;
+    return false;
+  }
 
   /**
    * @brief Adds diagnostic updaters for FTS status.
@@ -66,7 +72,9 @@ class FtsProduct final : public virtual ComponentInterface {
    * @brief Subscribe to FTS messages.
    * @todo Currently unimplemented.
    */
-  void subscribe() override {}
+  void subscribe(std::shared_ptr<ublox_gps::Gps> gps) override {
+    (void)gps;
+  }
 };
 
 }

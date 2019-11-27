@@ -118,7 +118,7 @@ std::vector<std::string> stringSplit(const std::string &str,
 UbloxNode::UbloxNode() {
   int debug;
   nh->param("debug", debug, 1);
-  gps = std::make_shared<ublox_gps::Gps>(debug);
+  gps_ = std::make_shared<ublox_gps::Gps>(debug);
 
   gnss_ = std::make_shared<Gnss>();
 
@@ -293,13 +293,13 @@ void UbloxNode::getRosParams() {
 void UbloxNode::pollMessages(const ros::TimerEvent& event) {
   static std::vector<uint8_t> payload(1, 1);
   if (enabled["aid_alm"]) {
-    gps->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::ALM, payload);
+    gps_->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::ALM, payload);
   }
   if (enabled["aid_eph"]) {
-    gps->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::EPH, payload);
+    gps_->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::EPH, payload);
   }
   if (enabled["aid_hui"]) {
-    gps->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::HUI);
+    gps_->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::HUI);
   }
 
   payload[0]++;
@@ -333,26 +333,26 @@ void UbloxNode::subscribe() {
   // Nav Messages
   nh->param("publish/nav/status", enabled["nav_status"], enabled["nav"]);
   if (enabled["nav_status"]) {
-    gps->subscribe<ublox_msgs::NavSTATUS>(std::bind(
+    gps_->subscribe<ublox_msgs::NavSTATUS>(std::bind(
         publish<ublox_msgs::NavSTATUS>, std::placeholders::_1, nav_status_pub_), 1);
   }
 
   nh->param("publish/nav/posecef", enabled["nav_posecef"], enabled["nav"]);
   if (enabled["nav_posecef"]) {
-    gps->subscribe<ublox_msgs::NavPOSECEF>(std::bind(
+    gps_->subscribe<ublox_msgs::NavPOSECEF>(std::bind(
         publish<ublox_msgs::NavPOSECEF>, std::placeholders::_1, nav_posecef_pub_), 1);
   }
 
   nh->param("publish/nav/clock", enabled["nav_clock"], enabled["nav"]);
   if (enabled["nav_clock"]) {
-    gps->subscribe<ublox_msgs::NavCLOCK>(std::bind(
+    gps_->subscribe<ublox_msgs::NavCLOCK>(std::bind(
         publish<ublox_msgs::NavCLOCK>, std::placeholders::_1, nav_clock_pub_), 1);
   }
 
   // INF messages
   nh->param("inf/debug", enabled["inf_debug"], false);
   if (enabled["inf_debug"]) {
-    gps->subscribeId<ublox_msgs::Inf>(
+    gps_->subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::DEBUG),
         ublox_msgs::Message::INF::DEBUG);
@@ -360,7 +360,7 @@ void UbloxNode::subscribe() {
 
   nh->param("inf/error", enabled["inf_error"], enabled["inf"]);
   if (enabled["inf_error"]) {
-    gps->subscribeId<ublox_msgs::Inf>(
+    gps_->subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::ERROR),
         ublox_msgs::Message::INF::ERROR);
@@ -368,7 +368,7 @@ void UbloxNode::subscribe() {
 
   nh->param("inf/notice", enabled["inf_notice"], enabled["inf"]);
   if (enabled["inf_notice"]) {
-    gps->subscribeId<ublox_msgs::Inf>(
+    gps_->subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::NOTICE),
         ublox_msgs::Message::INF::NOTICE);
@@ -376,7 +376,7 @@ void UbloxNode::subscribe() {
 
   nh->param("inf/test", enabled["inf_test"], enabled["inf"]);
   if (enabled["inf_test"]) {
-    gps->subscribeId<ublox_msgs::Inf>(
+    gps_->subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::TEST),
         ublox_msgs::Message::INF::TEST);
@@ -384,7 +384,7 @@ void UbloxNode::subscribe() {
 
   nh->param("inf/warning", enabled["inf_warning"], enabled["inf"]);
   if (enabled["inf_warning"]) {
-    gps->subscribeId<ublox_msgs::Inf>(
+    gps_->subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::WARNING),
         ublox_msgs::Message::INF::WARNING);
@@ -393,24 +393,24 @@ void UbloxNode::subscribe() {
   // AID messages
   nh->param("publish/aid/alm", enabled["aid_alm"], enabled["aid"]);
   if (enabled["aid_alm"]) {
-    gps->subscribe<ublox_msgs::AidALM>(std::bind(
+    gps_->subscribe<ublox_msgs::AidALM>(std::bind(
         publish<ublox_msgs::AidALM>, std::placeholders::_1, aid_alm_pub_), 1);
   }
 
   nh->param("publish/aid/eph", enabled["aid_eph"], enabled["aid"]);
   if (enabled["aid_eph"]) {
-    gps->subscribe<ublox_msgs::AidEPH>(std::bind(
+    gps_->subscribe<ublox_msgs::AidEPH>(std::bind(
         publish<ublox_msgs::AidEPH>, std::placeholders::_1, aid_eph_pub_), 1);
   }
 
   nh->param("publish/aid/hui", enabled["aid_hui"], enabled["aid"]);
   if (enabled["aid_hui"]) {
-    gps->subscribe<ublox_msgs::AidHUI>(std::bind(
+    gps_->subscribe<ublox_msgs::AidHUI>(std::bind(
         publish<ublox_msgs::AidHUI>, std::placeholders::_1, aid_hui_pub_), 1);
   }
 
   for (size_t i = 0; i < components_.size(); i++) {
-    components_[i]->subscribe();
+    components_[i]->subscribe(gps_);
   }
 }
 
@@ -426,7 +426,7 @@ void UbloxNode::initializeRosDiagnostics() {
 
 void UbloxNode::processMonVer() {
   ublox_msgs::MonVER monVer;
-  if (!gps->poll(monVer)) {
+  if (!gps_->poll(monVer)) {
     throw std::runtime_error("Failed to poll MonVER & set relevant settings");
   }
 
@@ -497,19 +497,19 @@ void UbloxNode::processMonVer() {
 
 bool UbloxNode::configureUblox() {
   try {
-    if (!gps->isInitialized())
+    if (!gps_->isInitialized())
       throw std::runtime_error("Failed to initialize.");
     if (load_.load_mask != 0) {
       ROS_DEBUG("Loading u-blox configuration from memory. %u", load_.load_mask);
-      if (!gps->configure(load_))
+      if (!gps_->configure(load_))
         throw std::runtime_error(std::string("Failed to load configuration ") +
                                  "from memory");
       if (load_.load_mask & load_.MASK_IO_PORT) {
         ROS_DEBUG("Loaded I/O configuration from memory, resetting serial %s",
           "communications.");
         std::chrono::seconds wait(kResetWait);
-        gps->reset(wait);
-        if (!gps->isConfigured())
+        gps_->reset(wait);
+        if (!gps_->isConfigured())
           throw std::runtime_error(std::string("Failed to reset serial I/O") +
             "after loading I/O configurations from device memory.");
       }
@@ -517,9 +517,9 @@ bool UbloxNode::configureUblox() {
 
     if (config_on_startup_flag_) {
       if (set_usb_) {
-        gps->configUsb(usb_tx_, usb_in_, usb_out_);
+        gps_->configUsb(usb_tx_, usb_in_, usb_out_);
       }
-      if (!gps->configRate(meas_rate_, nav_rate_)) {
+      if (!gps_->configRate(meas_rate_, nav_rate_)) {
         std::stringstream ss;
         ss << "Failed to set measurement rate to " << meas_rate_
           << "ms and navigation rate to " << nav_rate_;
@@ -527,34 +527,34 @@ bool UbloxNode::configureUblox() {
       }
       // If device doesn't have SBAS, will receive NACK (causes exception)
       if (gnss_->isSupported("SBAS")) {
-        if (!gps->configSbas(enable_sbas_, sbas_usage_, max_sbas_)) {
+        if (!gps_->configSbas(enable_sbas_, sbas_usage_, max_sbas_)) {
           throw std::runtime_error(std::string("Failed to ") +
                                   ((enable_sbas_) ? "enable" : "disable") +
                                   " SBAS.");
         }
       }
-      if (!gps->setPpp(enable_ppp_)) {
+      if (!gps_->setPpp(enable_ppp_)) {
         throw std::runtime_error(std::string("Failed to ") +
                                 ((enable_ppp_) ? "enable" : "disable")
                                 + " PPP.");
       }
-      if (!gps->setDynamicModel(dmodel_)) {
+      if (!gps_->setDynamicModel(dmodel_)) {
         throw std::runtime_error("Failed to set model: " + dynamic_model_ + ".");
       }
-      if (!gps->setFixMode(fmode_)) {
+      if (!gps_->setFixMode(fmode_)) {
         throw std::runtime_error("Failed to set fix mode: " + fix_mode_ + ".");
       }
-      if (!gps->setDeadReckonLimit(dr_limit_)) {
+      if (!gps_->setDeadReckonLimit(dr_limit_)) {
         std::stringstream ss;
         ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
         throw std::runtime_error(ss.str());
       }
-      if (set_dat_ && !gps->configure(cfg_dat_)) {
+      if (set_dat_ && !gps_->configure(cfg_dat_)) {
         throw std::runtime_error("Failed to set user-defined datum.");
       }
       // Configure each component
       for (int i = 0; i < components_.size(); i++) {
-        if (!components_[i]->configureUblox()) {
+        if (!components_[i]->configureUblox(gps_)) {
           return false;
         }
       }
@@ -562,7 +562,7 @@ bool UbloxNode::configureUblox() {
     if (save_.save_mask != 0) {
       ROS_DEBUG("Saving the u-blox configuration, mask %u, device %u",
                 save_.save_mask, save_.device_mask);
-      if (!gps->configure(save_)) {
+      if (!gps_->configure(save_)) {
         ROS_ERROR("u-blox unable to save configuration to non-volatile memory");
       }
     }
@@ -602,13 +602,13 @@ void UbloxNode::configureInf() {
   }
 
   ROS_DEBUG("Configuring INF messages");
-  if (!gps->configure(msg)) {
+  if (!gps_->configure(msg)) {
     ROS_WARN("Failed to configure INF messages");
   }
 }
 
 void UbloxNode::initializeIo() {
-  gps->setConfigOnStartup(config_on_startup_flag_);
+  gps_->setConfigOnStartup(config_on_startup_flag_);
 
   std::smatch match;
   if (std::regex_match(device_, match,
@@ -619,17 +619,17 @@ void UbloxNode::initializeIo() {
       std::string port(match[3]);
       ROS_INFO("Connecting to %s://%s:%s ...", proto.c_str(), host.c_str(),
                port.c_str());
-      gps->initializeTcp(host, port);
+      gps_->initializeTcp(host, port);
     } else {
       throw std::runtime_error("Protocol '" + proto + "' is unsupported");
     }
   } else {
-    gps->initializeSerial(device_, baudrate_, uart_in_, uart_out_);
+    gps_->initializeSerial(device_, baudrate_, uart_in_, uart_out_);
   }
 
   // raw data stream logging
   if (rawDataStreamPa_.isEnabled()) {
-    gps->setRawDataCallback(
+    gps_->setRawDataCallback(
       std::bind(&RawDataStreamPa::ubloxCallback, &rawDataStreamPa_, std::placeholders::_1, std::placeholders::_2));
     rawDataStreamPa_.initialize();
   }
@@ -671,8 +671,8 @@ void UbloxNode::initialize() {
 }
 
 void UbloxNode::shutdown() {
-  if (gps->isInitialized()) {
-    gps->close();
+  if (gps_->isInitialized()) {
+    gps_->close();
     ROS_INFO("Closed connection to %s.", device_.c_str());
   }
 }
@@ -763,7 +763,7 @@ void UbloxFirmware6::getRosParams() {
   }
 }
 
-bool UbloxFirmware6::configureUblox() {
+bool UbloxFirmware6::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
   ROS_WARN("ublox_version < 7, ignoring GNSS settings");
 
   if (set_nmea_ && !gps->configure(cfg_nmea_)) {
@@ -773,7 +773,7 @@ bool UbloxFirmware6::configureUblox() {
   return true;
 }
 
-void UbloxFirmware6::subscribe() {
+void UbloxFirmware6::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Whether or not to publish Nav POS LLH (always subscribes)
   nh->param("publish/nav/posllh", enabled["nav_posllh"], enabled["nav"]);
   nh->param("publish/nav/sol", enabled["nav_sol"], enabled["nav"]);
@@ -1029,7 +1029,7 @@ void UbloxFirmware7::getRosParams() {
   }
 }
 
-bool UbloxFirmware7::configureUblox() {
+bool UbloxFirmware7::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
   /** Configure the GNSS **/
   ublox_msgs::CfgGNSS cfgGNSSRead;
   if (gps->poll(cfgGNSSRead)) {
@@ -1098,7 +1098,7 @@ bool UbloxFirmware7::configureUblox() {
   return true;
 }
 
-void UbloxFirmware7::subscribe() {
+void UbloxFirmware7::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Whether to publish Nav PVT messages to a ROS topic
   nh->param("publish/nav/pvt", enabled["nav_pvt"], enabled["nav"]);
   // Subscribe to Nav PVT (always does so since fix information is published
@@ -1250,7 +1250,7 @@ void UbloxFirmware8::getRosParams() {
 }
 
 
-bool UbloxFirmware8::configureUblox() {
+bool UbloxFirmware8::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
   if (clear_bbr_) {
     // clear flash memory
     if (!gps->clearBbr()) {
@@ -1350,7 +1350,7 @@ bool UbloxFirmware8::configureUblox() {
   return true;
 }
 
-void UbloxFirmware8::subscribe() {
+void UbloxFirmware8::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Whether to publish Nav PVT messages
   nh->param("publish/nav/pvt", enabled["nav_pvt"], enabled["nav"]);
   // Subscribe to Nav PVT
@@ -1395,7 +1395,7 @@ RawDataProduct::RawDataProduct(uint16_t nav_rate, uint16_t meas_rate, std::share
   rxm_alm_pub_ = nh->advertise<ublox_msgs::RxmALM>("rxmalm", 1);
 }
 
-void RawDataProduct::subscribe() {
+void RawDataProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Defaults to true instead of to all
   nh->param("publish/rxm/all", enabled["rxm"], true);
 
@@ -1474,7 +1474,7 @@ void AdrUdrProduct::getRosParams() {
   }
 }
 
-bool AdrUdrProduct::configureUblox() {
+bool AdrUdrProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
   if (!gps->setUseAdr(use_adr_)) {
     throw std::runtime_error(std::string("Failed to ")
                              + (use_adr_ ? "enable" : "disable") + "use_adr");
@@ -1482,7 +1482,7 @@ bool AdrUdrProduct::configureUblox() {
   return true;
 }
 
-void AdrUdrProduct::subscribe() {
+void AdrUdrProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   nh->param("publish/esf/all", enabled["esf"], true);
 
   // Subscribe to NAV ATT messages
@@ -1680,7 +1680,7 @@ void HpgRefProduct::getRosParams() {
   }
 }
 
-bool HpgRefProduct::configureUblox() {
+bool HpgRefProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
   // Configure TMODE3
   if (tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_DISABLED) {
     if (!gps->disableTmode3()) {
@@ -1710,7 +1710,7 @@ bool HpgRefProduct::configureUblox() {
       }
       // Don't reset survey-in if it already has a valid value
       if (nav_svin.valid) {
-        setTimeMode();
+        setTimeMode(gps);
         return true;
       }
       ublox_msgs::NavPVT nav_pvt;
@@ -1721,7 +1721,7 @@ bool HpgRefProduct::configureUblox() {
       // Don't reset survey in if in time mode with a good fix
       if (nav_pvt.fix_type == nav_pvt.FIX_TYPE_TIME_ONLY
           && nav_pvt.flags & nav_pvt.FLAGS_GNSS_FIX_OK) {
-        setTimeMode();
+        setTimeMode(gps);
         return true;
       }
     }
@@ -1752,10 +1752,12 @@ bool HpgRefProduct::configureUblox() {
   return true;
 }
 
-void HpgRefProduct::subscribe() {
+void HpgRefProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Whether to publish Nav Survey-In messages
   nh->param("publish/nav/svin", enabled["nav_svin"], enabled["nav"]);
   // Subscribe to Nav Survey-In
+  // Save off the gps pointer so we can use it in the callback later.
+  gps_ = gps;
   gps->subscribe<ublox_msgs::NavSVIN>(std::bind(
       &HpgRefProduct::callbackNavSvIn, this, std::placeholders::_1), 1);
 }
@@ -1768,13 +1770,13 @@ void HpgRefProduct::callbackNavSvIn(const ublox_msgs::NavSVIN& m) {
   last_nav_svin_ = m;
 
   if (!m.active && m.valid && mode_ == SURVEY_IN) {
-    setTimeMode();
+    setTimeMode(gps_);
   }
 
   updater_->update();
 }
 
-bool HpgRefProduct::setTimeMode() {
+bool HpgRefProduct::setTimeMode(std::shared_ptr<ublox_gps::Gps> gps) {
   ROS_INFO("Setting mode (internal state) to Time Mode");
   mode_ = TIME;
 
@@ -1855,7 +1857,7 @@ void HpgRovProduct::getRosParams() {
               ublox_msgs::CfgDGNSS::DGNSS_MODE_RTK_FIXED);
 }
 
-bool HpgRovProduct::configureUblox() {
+bool HpgRovProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
   // Configure the DGNSS
   if (!gps->setDgnss(dgnss_mode_)) {
     throw std::runtime_error(std::string("Failed to Configure DGNSS"));
@@ -1863,7 +1865,7 @@ bool HpgRovProduct::configureUblox() {
   return true;
 }
 
-void HpgRovProduct::subscribe() {
+void HpgRovProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Whether to publish Nav Relative Position NED
   nh->param("publish/nav/relposned", enabled["nav_relposned"], enabled["nav"]);
   // Subscribe to Nav Relative Position NED messages (also updates diagnostics)
@@ -1936,7 +1938,7 @@ HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool con
     nh->advertise<sensor_msgs::Imu>("navheading", 1);
 }
 
-void HpPosRecProduct::subscribe() {
+void HpPosRecProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Whether to publish Nav Relative Position NED
   nh->param("publish/nav/relposned", enabled["nav_relposned"], enabled["nav"]);
   // Subscribe to Nav Relative Position NED messages (also updates diagnostics)
@@ -1994,7 +1996,7 @@ TimProduct::TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_
 void TimProduct::getRosParams() {
 }
 
-bool TimProduct::configureUblox() {
+bool TimProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
   uint8_t r = 1;
   // Configure the reciever
   if (!gps->setUTCtime()) {
@@ -2008,7 +2010,7 @@ bool TimProduct::configureUblox() {
   return true;
 }
 
-void TimProduct::subscribe() {
+void TimProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   ROS_INFO("TIM is Enabled: %u", enabled["tim"]);
   ROS_INFO("TIM-TM2 is Enabled: %u", enabled["tim_tm2"]);
   // Subscribe to TIM-TM2 messages (Time mark messages)

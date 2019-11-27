@@ -30,6 +30,10 @@
 #ifndef UBLOX_GPS_COMPONENT_INTERFACE_HPP
 #define UBLOX_GPS_COMPONENT_INTERFACE_HPP
 
+#include <memory>
+
+#include <ublox_gps/gps.hpp>
+
 // This file declares the ComponentInterface which acts as a high level
 // interface for u-blox firmware, product categories, etc. It contains methods
 // to configure the u-blox and subscribe to u-blox messages.
@@ -56,7 +60,7 @@ class ComponentInterface {
    * @brief Configure the U-Blox settings.
    * @return true if configured correctly, false otherwise
    */
-  virtual bool configureUblox() = 0;
+  virtual bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) = 0;
 
   /**
    * @brief Initialize the diagnostics.
@@ -68,7 +72,7 @@ class ComponentInterface {
   /**
    * @brief Subscribe to u-blox messages and publish to ROS topics.
    */
-  virtual void subscribe() = 0;
+  virtual void subscribe(std::shared_ptr<ublox_gps::Gps> gps) = 0;
 };
 
 }

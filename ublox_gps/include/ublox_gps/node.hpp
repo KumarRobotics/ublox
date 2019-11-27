@@ -86,8 +86,6 @@ namespace ublox_node {
 //! Node Handle for GPS node
 std::shared_ptr<ros::NodeHandle> nh;
 
-//! Handles communication with the U-Blox Device
-std::shared_ptr<ublox_gps::Gps> gps;
 //! Whether or not to publish the given ublox message
 /*!
  * key is the message name (all lowercase) without firmware version numbers
@@ -518,6 +516,9 @@ class UbloxNode final {
 
   //! Which GNSS are supported by the device
   std::shared_ptr<Gnss> gnss_;
+
+  //! Handles communication with the U-Blox Device
+  std::shared_ptr<ublox_gps::Gps> gps_;
 };
 
 /**
@@ -564,12 +565,12 @@ class UbloxFirmware6 final : public UbloxFirmware {
    * @brief Prints a warning, GNSS configuration not available in this version.
    * @return true if configured correctly, false otherwise
    */
-  bool configureUblox() override;
+  bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) override;
 
   /**
    * @brief Subscribe to NavPVT, RxmRAW, and RxmSFRB messages.
    */
-  void subscribe() override;
+  void subscribe(std::shared_ptr<ublox_gps::Gps> gps) override;
 
  protected:
   /**
@@ -844,14 +845,14 @@ class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
   /**
    * @brief Configure GNSS individually. Only configures GLONASS.
    */
-  bool configureUblox() override;
+  bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) override;
 
   /**
    * @brief Subscribe to messages which are not generic to all firmware.
    *
    * @details Subscribe to NavPVT7 messages, RxmRAW, and RxmSFRB messages.
    */
-  void subscribe() override;
+  void subscribe(std::shared_ptr<ublox_gps::Gps> gps) override;
 
  private:
   //! Used to configure NMEA (if set_nmea_)
@@ -892,7 +893,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
    * Configure the NMEA if desired by the user. It also may clear the
    * flash memory based on the ROS parameters.
    */
-  bool configureUblox() override;
+  bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) override;
 
   /**
    * @brief Subscribe to u-blox messages which are not generic to all firmware
@@ -901,7 +902,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
    * @details Subscribe to NavPVT, NavSAT, MonHW, and RxmRTCM messages based
    * on user settings.
    */
-  void subscribe() override;
+  void subscribe(std::shared_ptr<ublox_gps::Gps> gps) override;
 
  private:
   // Set from ROS parameters
@@ -953,7 +954,10 @@ class RawDataProduct final : public virtual ComponentInterface {
    * @brief Does nothing since there are no Raw Data product specific settings.
    * @return always returns true
    */
-  bool configureUblox() override { return true; }
+  bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) override {
+    (void)gps;
+    return true;
+  }
 
   /**
    * @brief Adds frequency diagnostics for RTCM topics.
@@ -965,7 +969,7 @@ class RawDataProduct final : public virtual ComponentInterface {
    *
    * @details Subscribe to RxmALM, RxmEPH, RxmRAW, and RxmSFRB messages.
    */
-  void subscribe() override;
+  void subscribe(std::shared_ptr<ublox_gps::Gps> gps) override;
 
  private:
   //! Topic diagnostic updaters
@@ -1001,7 +1005,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
    * @details Configure the use_adr setting.
    * @return true if configured correctly, false otherwise
    */
-  bool configureUblox() override;
+  bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) override;
 
   /**
    * @brief Initialize the ROS diagnostics for the ADR/UDR device.
@@ -1018,7 +1022,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
    * @details Subscribe to NavATT, ESF and HNR messages based on user
    * parameters.
    */
-  void subscribe() override;
+  void subscribe(std::shared_ptr<ublox_gps::Gps> gps) override;
 
  private:
   //! Whether or not to enable dead reckoning
@@ -1076,7 +1080,7 @@ class HpgRefProduct: public virtual ComponentInterface {
    * the RTCM messages.
    * @return true if configured correctly, false otherwise
    */
-  bool configureUblox() override;
+  bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) override;
 
   /**
    * @brief Add diagnostic updaters for the TMODE3 status.
@@ -1088,7 +1092,7 @@ class HpgRefProduct: public virtual ComponentInterface {
    *
    * @details Subscribe to NavSVIN messages based on user parameters.
    */
-  void subscribe() override;
+  void subscribe(std::shared_ptr<ublox_gps::Gps> gps) override;
 
   /**
    * @brief Update the last received NavSVIN message and call diagnostic updater
@@ -1114,7 +1118,7 @@ class HpgRefProduct: public virtual ComponentInterface {
    *
    * @details Configure the RTCM messages and measurement and navigation rate.
    */
-  bool setTimeMode();
+  bool setTimeMode(std::shared_ptr<ublox_gps::Gps> gps);
 
   //! The last received Nav SVIN message
   ublox_msgs::NavSVIN last_nav_svin_;
@@ -1168,6 +1172,7 @@ class HpgRefProduct: public virtual ComponentInterface {
   std::shared_ptr<diagnostic_updater::Updater> updater_;
 
   std::vector<ublox_gps::Rtcm> rtcms_;
+  std::shared_ptr<ublox_gps::Gps> gps_;
 };
 
 /**
@@ -1200,7 +1205,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
    * @details Configure the DGNSS mode.
    * @return true if configured correctly, false otherwise
    */
-  bool configureUblox() override;
+  bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) override;
 
   /**
    * @brief Add diagnostic updaters for rover GNSS status, including
@@ -1211,7 +1216,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.
    */
-  void subscribe() override;
+  void subscribe(std::shared_ptr<ublox_gps::Gps> gps) override;
 
  private:
   /**
@@ -1252,7 +1257,7 @@ class HpPosRecProduct final : public virtual HpgRefProduct {
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.
    */
-  void subscribe() override;
+  void subscribe(std::shared_ptr<ublox_gps::Gps> gps) override;
 
  private:
 
@@ -1292,7 +1297,7 @@ class TimProduct final : public virtual ComponentInterface {
    * @brief Configure Time Sync settings.
    * @todo Currently unimplemented.
    */
-  bool configureUblox() override;
+  bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) override;
 
   /**
    * @brief Adds diagnostic updaters for Time Sync status.
@@ -1305,7 +1310,7 @@ class TimProduct final : public virtual ComponentInterface {
    *
    * @details Subscribes to RxmRAWX & RxmSFRBX messages.
    */
-  void subscribe() override;
+  void subscribe(std::shared_ptr<ublox_gps::Gps> gps) override;
 
  private:
   /**
