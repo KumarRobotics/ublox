@@ -34,6 +34,8 @@
 
 #include <ublox_gps/component_interface.hpp>
 
+namespace ublox_node {
+
 /**
  * @brief Implements functions for FTS products. Currently unimplemented.
  * @todo Unimplemented.
@@ -66,5 +68,7 @@ class FtsProduct final : public virtual ComponentInterface {
    */
   void subscribe() override {}
 };
+
+}
 
 #endif

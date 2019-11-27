@@ -35,6 +35,8 @@
 // to configure the u-blox and subscribe to u-blox messages.
 //
 
+namespace ublox_node {
+
 /**
  * @brief This interface is used to add functionality to the main node.
  *
@@ -68,5 +70,7 @@ class ComponentInterface {
    */
   virtual void subscribe() = 0;
 };
+
+}
 
 #endif
