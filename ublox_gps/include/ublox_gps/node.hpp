@@ -92,9 +92,6 @@ std::shared_ptr<ros::NodeHandle> nh;
  * (e.g. NavPVT instead of NavPVT7). Value indicates whether or not to enable
  * the message. */
 std::map<std::string, bool> enabled;
-//! The fix status service type, set in the Firmware Component
-//! based on the enabled GNSS
-int fix_status_service;
 
 /**
  * @brief Check that the parameter is above the minimum.
@@ -519,6 +516,9 @@ class UbloxFirmware : public virtual ComponentInterface {
 
   std::shared_ptr<diagnostic_updater::Updater> updater_;
   std::shared_ptr<Gnss> gnss_;
+  //! The fix status service type, set in the Firmware Component
+  //! based on the enabled GNSS
+  int fix_status_service_{0};
 };
 
 /**
@@ -683,7 +683,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
       fix.status.status = fix.status.STATUS_NO_FIX;
     }
     // Set the service based on GNSS configuration
-    fix.status.service = fix_status_service;
+    fix.status.service = fix_status_service_;
 
     // Set the position covariance
     const double var_h = pow(m.h_acc / 1000.0, 2); // to [m^2]

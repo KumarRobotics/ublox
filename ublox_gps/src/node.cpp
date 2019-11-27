@@ -740,7 +740,7 @@ UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<dia
 
 void UbloxFirmware6::getRosParams() {
   // Fix Service type, used when publishing fix status messages
-  fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS;
+  fix_status_service_ = sensor_msgs::NavSatStatus::SERVICE_GPS;
 
   nh->param("nmea/set", set_nmea_, false);
   if (set_nmea_) {
@@ -987,7 +987,7 @@ void UbloxFirmware7::getRosParams() {
   }
 
   // Fix Service type, used when publishing fix status messages
-  fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS
+  fix_status_service_ = sensor_msgs::NavSatStatus::SERVICE_GPS
       + (enable_glonass_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GLONASS;
 
   //
@@ -1192,7 +1192,7 @@ void UbloxFirmware8::getRosParams() {
   }
 
   // Fix Service type, used when publishing fix status messages
-  fix_status_service = sensor_msgs::NavSatStatus::SERVICE_GPS
+  fix_status_service_ = sensor_msgs::NavSatStatus::SERVICE_GPS
       + (enable_glonass_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GLONASS
       + (enable_beidou_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_COMPASS
       + (enable_galileo_ ? 1 : 0) * sensor_msgs::NavSatStatus::SERVICE_GALILEO;
