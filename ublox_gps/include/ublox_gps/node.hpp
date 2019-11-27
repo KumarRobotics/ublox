@@ -263,19 +263,6 @@ bool getRosInt(const std::string& key, std::vector<I> &i) {
 }
 
 /**
- * @brief Publish a ROS message of type MessageT.
- *
- * @details This function should be used to publish all messages which are
- * simply read from u-blox and published.
- * @param m the message to publish
- * @param topic the topic to publish the message on
- */
-template <typename MessageT>
-void publish(const MessageT& m, ros::Publisher & publisher) {
-  publisher.publish(m);
-}
-
-/**
  * @brief This class represents u-blox ROS node for *all* firmware and product
  * versions.
  *

@@ -354,20 +354,20 @@ void UbloxNode::subscribe() {
   // Nav Messages
   nh->param("publish/nav/status", enabled["nav_status"], enabled["nav"]);
   if (enabled["nav_status"]) {
-    gps_->subscribe<ublox_msgs::NavSTATUS>(std::bind(
-        publish<ublox_msgs::NavSTATUS>, std::placeholders::_1, nav_status_pub_), 1);
+    gps_->subscribe<ublox_msgs::NavSTATUS>([this](const ublox_msgs::NavSTATUS &m) { nav_status_pub_.publish(m); },
+                                           1);
   }
 
   nh->param("publish/nav/posecef", enabled["nav_posecef"], enabled["nav"]);
   if (enabled["nav_posecef"]) {
-    gps_->subscribe<ublox_msgs::NavPOSECEF>(std::bind(
-        publish<ublox_msgs::NavPOSECEF>, std::placeholders::_1, nav_posecef_pub_), 1);
+    gps_->subscribe<ublox_msgs::NavPOSECEF>([this](const ublox_msgs::NavPOSECEF &m) { nav_posecef_pub_.publish(m); },
+                                            1);
   }
 
   nh->param("publish/nav/clock", enabled["nav_clock"], enabled["nav"]);
   if (enabled["nav_clock"]) {
-    gps_->subscribe<ublox_msgs::NavCLOCK>(std::bind(
-        publish<ublox_msgs::NavCLOCK>, std::placeholders::_1, nav_clock_pub_), 1);
+    gps_->subscribe<ublox_msgs::NavCLOCK>([this](const ublox_msgs::NavCLOCK &m) { nav_clock_pub_.publish(m); },
+                                          1);
   }
 
   // INF messages
@@ -414,20 +414,20 @@ void UbloxNode::subscribe() {
   // AID messages
   nh->param("publish/aid/alm", enabled["aid_alm"], enabled["aid"]);
   if (enabled["aid_alm"]) {
-    gps_->subscribe<ublox_msgs::AidALM>(std::bind(
-        publish<ublox_msgs::AidALM>, std::placeholders::_1, aid_alm_pub_), 1);
+    gps_->subscribe<ublox_msgs::AidALM>([this](const ublox_msgs::AidALM &m) { aid_alm_pub_.publish(m); },
+                                        1);
   }
 
   nh->param("publish/aid/eph", enabled["aid_eph"], enabled["aid"]);
   if (enabled["aid_eph"]) {
-    gps_->subscribe<ublox_msgs::AidEPH>(std::bind(
-        publish<ublox_msgs::AidEPH>, std::placeholders::_1, aid_eph_pub_), 1);
+    gps_->subscribe<ublox_msgs::AidEPH>([this](const ublox_msgs::AidEPH &m) { aid_eph_pub_.publish(m); },
+                                        1);
   }
 
   nh->param("publish/aid/hui", enabled["aid_hui"], enabled["aid"]);
   if (enabled["aid_hui"]) {
-    gps_->subscribe<ublox_msgs::AidHUI>(std::bind(
-        publish<ublox_msgs::AidHUI>, std::placeholders::_1, aid_hui_pub_), 1);
+    gps_->subscribe<ublox_msgs::AidHUI>([this](const ublox_msgs::AidHUI &m) { aid_hui_pub_.publish(m); },
+                                        1);
   }
 
   for (size_t i = 0; i < components_.size(); i++) {
@@ -814,16 +814,15 @@ void UbloxFirmware6::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Subscribe to Nav SVINFO
   nh->param("publish/nav/svinfo", enabled["nav_svinfo"], enabled["nav"]);
   if (enabled["nav_svinfo"]) {
-    gps->subscribe<ublox_msgs::NavSVINFO>(std::bind(
-        publish<ublox_msgs::NavSVINFO>, std::placeholders::_1, nav_svinfo_pub_),
-        kNavSvInfoSubscribeRate);
+    gps->subscribe<ublox_msgs::NavSVINFO>([this](const ublox_msgs::NavSVINFO &m) { nav_svinfo_pub_.publish(m); },
+                                          kNavSvInfoSubscribeRate);
   }
 
   // Subscribe to Mon HW
   nh->param("publish/mon_hw", enabled["mon_hw"], enabled["mon"]);
   if (enabled["mon_hw"]) {
-    gps->subscribe<ublox_msgs::MonHW6>(std::bind(
-        publish<ublox_msgs::MonHW6>, std::placeholders::_1, mon_hw_pub_), 1);
+    gps->subscribe<ublox_msgs::MonHW6>([this](const ublox_msgs::MonHW6 &m) { mon_hw_pub_.publish(m); },
+                                       1);
   }
 }
 
@@ -1131,16 +1130,15 @@ void UbloxFirmware7::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Subscribe to Nav SVINFO
   nh->param("publish/nav/svinfo", enabled["nav_svinfo"], enabled["nav"]);
   if (enabled["nav_svinfo"]) {
-    gps->subscribe<ublox_msgs::NavSVINFO>(std::bind(
-        publish<ublox_msgs::NavSVINFO>, std::placeholders::_1, nav_svinfo_pub_),
-        kNavSvInfoSubscribeRate);
+    gps->subscribe<ublox_msgs::NavSVINFO>([this](const ublox_msgs::NavSVINFO &m) { nav_svinfo_pub_.publish(m); },
+                                          kNavSvInfoSubscribeRate);
   }
 
   // Subscribe to Mon HW
   nh->param("publish/mon_hw", enabled["mon_hw"], enabled["mon"]);
   if (enabled["mon_hw"]) {
-    gps->subscribe<ublox_msgs::MonHW>(std::bind(
-        publish<ublox_msgs::MonHW>, std::placeholders::_1, mon_hw_pub_), 1);
+    gps->subscribe<ublox_msgs::MonHW>([this](const ublox_msgs::MonHW &m) { mon_hw_pub_.publish(m); },
+                                      1);
   }
 }
 
@@ -1381,22 +1379,22 @@ void UbloxFirmware8::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Subscribe to Nav SAT messages
   nh->param("publish/nav/sat", enabled["nav_sat"], enabled["nav"]);
   if (enabled["nav_sat"]) {
-    gps->subscribe<ublox_msgs::NavSAT>(std::bind(
-        publish<ublox_msgs::NavSAT>, std::placeholders::_1, nav_sat_pub_), kNavSvInfoSubscribeRate);
+    gps->subscribe<ublox_msgs::NavSAT>([this](const ublox_msgs::NavSAT &m) { nav_sat_pub_.publish(m); },
+                                       kNavSvInfoSubscribeRate);
   }
 
   // Subscribe to Mon HW
   nh->param("publish/mon/hw", enabled["mon_hw"], enabled["mon"]);
   if (enabled["mon_hw"]) {
-    gps->subscribe<ublox_msgs::MonHW>(std::bind(
-        publish<ublox_msgs::MonHW>, std::placeholders::_1, mon_hw_pub_), 1);
+    gps->subscribe<ublox_msgs::MonHW>([this](const ublox_msgs::MonHW &m) { mon_hw_pub_.publish(m); },
+                                      1);
   }
 
   // Subscribe to RTCM messages
   nh->param("publish/rxm/rtcm", enabled["rxm_rtcm"], enabled["rxm"]);
   if (enabled["rxm_rtcm"]) {
-    gps->subscribe<ublox_msgs::RxmRTCM>(std::bind(
-        publish<ublox_msgs::RxmRTCM>, std::placeholders::_1, rxm_rtcm_pub_), 1);
+    gps->subscribe<ublox_msgs::RxmRTCM>([this](const ublox_msgs::RxmRTCM &m) { rxm_rtcm_pub_.publish(m); },
+                                        1);
   }
 }
 
@@ -1423,29 +1421,29 @@ void RawDataProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Subscribe to RXM Raw
   nh->param("publish/rxm/raw", enabled["rxm_raw"], enabled["rxm"]);
   if (enabled["rxm_raw"]) {
-    gps->subscribe<ublox_msgs::RxmRAW>(std::bind(
-        publish<ublox_msgs::RxmRAW>, std::placeholders::_1, rxm_raw_pub_), 1);
+    gps->subscribe<ublox_msgs::RxmRAW>([this](const ublox_msgs::RxmRAW &m) { rxm_raw_pub_.publish(m); },
+                                       1);
   }
 
   // Subscribe to RXM SFRB
   nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], enabled["rxm"]);
   if (enabled["rxm_sfrb"]) {
-    gps->subscribe<ublox_msgs::RxmSFRB>(std::bind(
-        publish<ublox_msgs::RxmSFRB>, std::placeholders::_1, rxm_sfrb_pub_), 1);
+    gps->subscribe<ublox_msgs::RxmSFRB>([this](const ublox_msgs::RxmSFRB &m) { rxm_sfrb_pub_.publish(m); },
+                                        1);
   }
 
   // Subscribe to RXM EPH
   nh->param("publish/rxm/eph", enabled["rxm_eph"], enabled["rxm"]);
   if (enabled["rxm_eph"]) {
-    gps->subscribe<ublox_msgs::RxmEPH>(std::bind(
-        publish<ublox_msgs::RxmEPH>, std::placeholders::_1, rxm_eph_pub_), 1);
+    gps->subscribe<ublox_msgs::RxmEPH>([this](const ublox_msgs::RxmEPH &m) { rxm_eph_pub_.publish(m); },
+                                       1);
   }
 
   // Subscribe to RXM ALM
   nh->param("publish/rxm/almRaw", enabled["rxm_alm"], enabled["rxm"]);
   if (enabled["rxm_alm"]) {
-    gps->subscribe<ublox_msgs::RxmALM>(std::bind(
-        publish<ublox_msgs::RxmALM>, std::placeholders::_1, rxm_alm_pub_), 1);
+    gps->subscribe<ublox_msgs::RxmALM>([this](const ublox_msgs::RxmALM &m) { rxm_alm_pub_.publish(m); },
+                                       1);
   }
 }
 
@@ -1509,22 +1507,22 @@ void AdrUdrProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Subscribe to NAV ATT messages
   nh->param("publish/nav/att", enabled["nav_att"], enabled["nav"]);
   if (enabled["nav_att"]) {
-    gps->subscribe<ublox_msgs::NavATT>(std::bind(
-        publish<ublox_msgs::NavATT>, std::placeholders::_1, nav_att_pub_), 1);
+    gps->subscribe<ublox_msgs::NavATT>([this](const ublox_msgs::NavATT &m) { nav_att_pub_.publish(m); },
+                                       1);
   }
 
   // Subscribe to ESF INS messages
   nh->param("publish/esf/ins", enabled["esf_ins"], enabled["esf"]);
   if (enabled["esf_ins"]) {
-    gps->subscribe<ublox_msgs::EsfINS>(std::bind(
-        publish<ublox_msgs::EsfINS>, std::placeholders::_1, esf_ins_pub_), 1);
+    gps->subscribe<ublox_msgs::EsfINS>([this](const ublox_msgs::EsfINS &m) { esf_ins_pub_.publish(m); },
+                                       1);
   }
 
   // Subscribe to ESF Meas messages
   nh->param("publish/esf/meas", enabled["esf_meas"], enabled["esf"]);
   if (enabled["esf_meas"]) {
-    gps->subscribe<ublox_msgs::EsfMEAS>(std::bind(
-        publish<ublox_msgs::EsfMEAS>, std::placeholders::_1, esf_meas_pub_), 1);
+    gps->subscribe<ublox_msgs::EsfMEAS>([this](const ublox_msgs::EsfMEAS &m) { esf_meas_pub_.publish(m); },
+                                        1);
     // also publish sensor_msgs::Imu
     gps->subscribe<ublox_msgs::EsfMEAS>(std::bind(
       &AdrUdrProduct::callbackEsfMEAS, this, std::placeholders::_1), 1);
@@ -1533,22 +1531,22 @@ void AdrUdrProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Subscribe to ESF Raw messages
   nh->param("publish/esf/raw", enabled["esf_raw"], enabled["esf"]);
   if (enabled["esf_raw"]) {
-    gps->subscribe<ublox_msgs::EsfRAW>(std::bind(
-        publish<ublox_msgs::EsfRAW>, std::placeholders::_1, esf_raw_pub_), 1);
+    gps->subscribe<ublox_msgs::EsfRAW>([this](const ublox_msgs::EsfRAW &m) { esf_raw_pub_.publish(m); },
+                                       1);
   }
 
   // Subscribe to ESF Status messages
   nh->param("publish/esf/status", enabled["esf_status"], enabled["esf"]);
   if (enabled["esf_status"]) {
-    gps->subscribe<ublox_msgs::EsfSTATUS>(std::bind(
-        publish<ublox_msgs::EsfSTATUS>, std::placeholders::_1, esf_status_pub_), 1);
+    gps->subscribe<ublox_msgs::EsfSTATUS>([this](const ublox_msgs::EsfSTATUS &m) { esf_status_pub_.publish(m); },
+                                          1);
   }
 
   // Subscribe to HNR PVT messages
   nh->param("publish/hnr/pvt", enabled["hnr_pvt"], true);
   if (enabled["hnr_pvt"]) {
-    gps->subscribe<ublox_msgs::HnrPVT>(std::bind(
-        publish<ublox_msgs::HnrPVT>, std::placeholders::_1, hnr_pvt_pub_), 1);
+    gps->subscribe<ublox_msgs::HnrPVT>([this](const ublox_msgs::HnrPVT &m) { hnr_pvt_pub_.publish(m); },
+                                       1);
   }
 }
 
@@ -2045,15 +2043,15 @@ void TimProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   // Subscribe to SFRBX messages
   nh->param("publish/rxm/sfrb", enabled["rxm_sfrb"], enabled["rxm"]);
   if (enabled["rxm_sfrb"]) {
-    gps->subscribe<ublox_msgs::RxmSFRBX>(std::bind(
-        publish<ublox_msgs::RxmSFRBX>, std::placeholders::_1, rxm_sfrb_pub_), 1);
+    gps->subscribe<ublox_msgs::RxmSFRBX>([this](const ublox_msgs::RxmSFRBX &m) { rxm_sfrb_pub_.publish(m); },
+                                         1);
   }
 
    // Subscribe to RawX messages
    nh->param("publish/rxm/raw", enabled["rxm_raw"], enabled["rxm"]);
    if (enabled["rxm_raw"]) {
-     gps->subscribe<ublox_msgs::RxmRAWX>(std::bind(
-        publish<ublox_msgs::RxmRAWX>, std::placeholders::_1, rxm_raw_pub_), 1);
+     gps->subscribe<ublox_msgs::RxmRAWX>([this](const ublox_msgs::RxmRAWX &m) { rxm_raw_pub_.publish(m); },
+                                         1);
    }
 }
 
