@@ -475,9 +475,6 @@ class UbloxNode final {
   //! The measurement [ms], see CfgRate.msg
   uint16_t meas_rate_;
 
-  //! Flag for enabling configuration on startup
-  bool config_on_startup_flag_;
-
   //! The ROS frame ID of this device
   std::string frame_id_;
 
@@ -1035,7 +1032,7 @@ class HpgRefProduct: public virtual ComponentInterface {
   //! Default measurement period for HPG devices
   constexpr static uint16_t kDefaultMeasPeriod = 250;
 
-  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms);
+  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms);
 
   /**
    * @brief Get the ROS parameters specific to the Reference Station
@@ -1144,7 +1141,6 @@ class HpgRefProduct: public virtual ComponentInterface {
 
   uint16_t nav_rate_;
   uint16_t meas_rate_;
-  bool config_on_startup_flag_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
 
   std::vector<ublox_gps::Rtcm> rtcms_;
@@ -1228,7 +1224,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
 
 class HpPosRecProduct final : public virtual HpgRefProduct {
  public:
-  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms);
+  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms);
 
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.

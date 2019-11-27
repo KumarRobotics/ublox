@@ -183,11 +183,11 @@ void UbloxNode::addFirmwareInterface() {
 void UbloxNode::addProductInterface(const std::string & product_category,
                                     const std::string & ref_rov) {
   if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0) {
-    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, config_on_startup_flag_, updater_, rtcms_));
+    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, updater_, rtcms_));
   } else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0) {
     components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_));
   } else if (product_category.compare("HPG") == 0) {
-    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, config_on_startup_flag_, frame_id_, updater_, rtcms_));
+    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, frame_id_, updater_, rtcms_));
   } else if (product_category.compare("TIM") == 0) {
     components_.push_back(std::make_shared<TimProduct>(frame_id_, updater_));
   } else if (product_category.compare("ADR") == 0 ||
@@ -305,7 +305,7 @@ void UbloxNode::getRosParams() {
   meas_rate_ = 1000 / rate_;
 
   // activate/deactivate any config
-  nh->param("config_on_startup", config_on_startup_flag_, true);
+  declareRosBoolean("config_on_startup", true);
 
   // raw data stream logging
   rawDataStreamPa_.getRosParams();
@@ -536,7 +536,7 @@ bool UbloxNode::configureUblox() {
       }
     }
 
-    if (config_on_startup_flag_) {
+    if (getRosBoolean("config_on_startup")) {
       if (set_usb_) {
         gps_->configUsb(usb_tx_, usb_in_, usb_out_);
       }
@@ -629,7 +629,7 @@ void UbloxNode::configureInf() {
 }
 
 void UbloxNode::initializeIo() {
-  gps_->setConfigOnStartup(config_on_startup_flag_);
+  gps_->setConfigOnStartup(getRosBoolean("config_on_startup"));
 
   std::smatch match;
   if (std::regex_match(device_, match,
@@ -1645,15 +1645,15 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
 // u-blox High Precision GNSS Reference Station
 //
 
-HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms)
-  : nav_rate_(nav_rate), meas_rate_(meas_rate), config_on_startup_flag_(config_on_startup_flag), updater_(updater), rtcms_(rtcms)
+HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms)
+  : nav_rate_(nav_rate), meas_rate_(meas_rate), updater_(updater), rtcms_(rtcms)
 {
   navsvin_pub_ =
     nh->advertise<ublox_msgs::NavSVIN>("navsvin", 1);
 }
 
 void HpgRefProduct::getRosParams() {
-  if (config_on_startup_flag_) {
+  if (getRosBoolean("config_on_startup")) {
     if (nav_rate_ * meas_rate_ != 1000) {
       ROS_WARN("For HPG Ref devices, nav_rate should be exactly 1 Hz.");
     }
@@ -1945,8 +1945,8 @@ void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
 //
 // U-Blox High Precision Positioning Receiver
 //
-HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, bool config_on_startup_flag, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms)
-  : HpgRefProduct(nav_rate, meas_rate, config_on_startup_flag, updater, rtcms), frame_id_(frame_id)
+HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms)
+  : HpgRefProduct(nav_rate, meas_rate, updater, rtcms), frame_id_(frame_id)
 {
   nav_relposned_pub_ =
     nh->advertise<ublox_msgs::NavRELPOSNED9>("navrelposned", 1);
