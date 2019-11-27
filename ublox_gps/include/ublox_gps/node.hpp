@@ -444,8 +444,6 @@ class UbloxNode final {
   uint16_t usb_out_ ;
   //! The measurement rate in Hz
   double rate_;
-  //! If true, set configure the User-Defined Datum
-  bool set_dat_;
   //! User-defined Datum
   ublox_msgs::CfgDAT cfg_dat_;
   //! SBAS Usage parameter (see CfgSBAS message)

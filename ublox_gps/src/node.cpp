@@ -270,8 +270,8 @@ void UbloxNode::getRosParams() {
   dmodel_ = modelFromString(dynamic_model_);
   fmode_ = fixModeFromString(fix_mode_);
 
-  nh->param("dat/set", set_dat_, false);
-  if (set_dat_) {
+  declareRosBoolean("dat/set", false);
+  if (getRosBoolean("dat/set")) {
     std::vector<float> shift, rot;
     if (!nh->getParam("dat/majA", cfg_dat_.maj_a)
         || nh->getParam("dat/flat", cfg_dat_.flat)
@@ -570,7 +570,7 @@ bool UbloxNode::configureUblox() {
         ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
         throw std::runtime_error(ss.str());
       }
-      if (set_dat_ && !gps_->configure(cfg_dat_)) {
+      if (getRosBoolean("dat/set") && !gps_->configure(cfg_dat_)) {
         throw std::runtime_error("Failed to set user-defined datum.");
       }
       // Configure each component
