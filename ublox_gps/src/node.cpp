@@ -306,11 +306,51 @@ void UbloxNode::getRosParams() {
 
   // activate/deactivate any config
   declareRosBoolean("config_on_startup", true);
+  declareRosBoolean("raw_data", false);
 
   // raw data stream logging
   rawDataStreamPa_.getRosParams();
 
+  // NMEA parameters
   declareRosBoolean("nmea/set", false);
+  declareRosBoolean("nmea/filter/pos", false);
+  declareRosBoolean("nmea/filter/msk_pos", false);
+  declareRosBoolean("nmea/filter/time", false);
+  declareRosBoolean("nmea/filter/date", false);
+  declareRosBoolean("nmea/filter/sbas", false);
+  declareRosBoolean("nmea/filter/track", false);
+  declareRosBoolean("nmea/compat", false);
+  declareRosBoolean("nmea/consider", false);
+
+  // Publish parameters
+  declareRosBoolean("publish/all", false);
+
+  declareRosBoolean("publish/nav/all", getRosBoolean("publish/all"));
+  declareRosBoolean("publish/nav/clock", getRosBoolean("publish/nav/all"));
+  declareRosBoolean("publish/nav/posecef", getRosBoolean("publish/nav/all"));
+  declareRosBoolean("publish/nav/posllh", getRosBoolean("publish/nav/all"));
+  declareRosBoolean("publish/nav/sol", getRosBoolean("publish/nav/all"));
+  declareRosBoolean("publish/nav/svinfo", getRosBoolean("publish/nav/all"));
+  declareRosBoolean("publish/nav/status", getRosBoolean("publish/nav/all"));
+  declareRosBoolean("publish/nav/velned", getRosBoolean("publish/nav/all"));
+
+  declareRosBoolean("publish/rxm/all", getRosBoolean("publish/all"));
+
+  declareRosBoolean("publish/aid/all", getRosBoolean("publish/all"));
+  declareRosBoolean("publish/aid/alm", getRosBoolean("publish/aid/all"));
+  declareRosBoolean("publish/aid/eph", getRosBoolean("publish/aid/all"));
+  declareRosBoolean("publish/aid/hui", getRosBoolean("publish/aid/all"));
+
+  declareRosBoolean("publish/mon/all", getRosBoolean("publish/all"));
+  declareRosBoolean("publish/mon/hw", getRosBoolean("publish/mon/all"));
+
+  // INF parameters
+  declareRosBoolean("inf/all", true);
+  declareRosBoolean("inf/debug", false);
+  declareRosBoolean("inf/error", getRosBoolean("inf/all"));
+  declareRosBoolean("inf/notice", getRosBoolean("inf/all"));
+  declareRosBoolean("inf/test", getRosBoolean("inf/all"));
+  declareRosBoolean("inf/warning", getRosBoolean("inf/all"));
 }
 
 void UbloxNode::pollMessages(const ros::TimerEvent& event) {
@@ -346,34 +386,24 @@ void UbloxNode::printInf(const ublox_msgs::Inf &m, uint8_t id) {
 void UbloxNode::subscribe() {
   ROS_DEBUG("Subscribing to U-Blox messages");
   // subscribe messages
-  declareRosBoolean("publish/all", false);
-  declareRosBoolean("inf/all", true);
-  declareRosBoolean("publish/nav/all", getRosBoolean("publish/all"));
-  declareRosBoolean("publish/rxm/all", getRosBoolean("publish/all"));
-  declareRosBoolean("publish/aid/all", getRosBoolean("publish/all"));
-  declareRosBoolean("publish/mon/all", getRosBoolean("publish/all"));
 
   // Nav Messages
-  declareRosBoolean("publish/nav/status", getRosBoolean("publish/nav/all"));
   if (getRosBoolean("publish/nav/status")) {
     gps_->subscribe<ublox_msgs::NavSTATUS>([this](const ublox_msgs::NavSTATUS &m) { nav_status_pub_.publish(m); },
                                            1);
   }
 
-  declareRosBoolean("publish/nav/posecef", getRosBoolean("publish/nav/all"));
   if (getRosBoolean("publish/nav/posecef")) {
     gps_->subscribe<ublox_msgs::NavPOSECEF>([this](const ublox_msgs::NavPOSECEF &m) { nav_posecef_pub_.publish(m); },
                                             1);
   }
 
-  declareRosBoolean("publish/nav/clock", getRosBoolean("publish/nav/all"));
   if (getRosBoolean("publish/nav/clock")) {
     gps_->subscribe<ublox_msgs::NavCLOCK>([this](const ublox_msgs::NavCLOCK &m) { nav_clock_pub_.publish(m); },
                                           1);
   }
 
   // INF messages
-  declareRosBoolean("inf/debug", false);
   if (getRosBoolean("inf/debug")) {
     gps_->subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
@@ -381,7 +411,6 @@ void UbloxNode::subscribe() {
         ublox_msgs::Message::INF::DEBUG);
   }
 
-  declareRosBoolean("inf/error", getRosBoolean("inf/all"));
   if (getRosBoolean("inf/error")) {
     gps_->subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
@@ -389,7 +418,6 @@ void UbloxNode::subscribe() {
         ublox_msgs::Message::INF::ERROR);
   }
 
-  declareRosBoolean("inf/notice", getRosBoolean("inf/all"));
   if (getRosBoolean("inf/notice")) {
     gps_->subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
@@ -397,7 +425,6 @@ void UbloxNode::subscribe() {
         ublox_msgs::Message::INF::NOTICE);
   }
 
-  declareRosBoolean("inf/test", getRosBoolean("inf/all"));
   if (getRosBoolean("inf/test")) {
     gps_->subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
@@ -405,7 +432,6 @@ void UbloxNode::subscribe() {
         ublox_msgs::Message::INF::TEST);
   }
 
-  declareRosBoolean("inf/warning", getRosBoolean("inf/all"));
   if (getRosBoolean("inf/warning")) {
     gps_->subscribeId<ublox_msgs::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
@@ -414,19 +440,16 @@ void UbloxNode::subscribe() {
   }
 
   // AID messages
-  declareRosBoolean("publish/aid/alm", getRosBoolean("publish/aid/all"));
   if (getRosBoolean("publish/aid/alm")) {
     gps_->subscribe<ublox_msgs::AidALM>([this](const ublox_msgs::AidALM &m) { aid_alm_pub_.publish(m); },
                                         1);
   }
 
-  declareRosBoolean("publish/aid/eph", getRosBoolean("publish/aid/all"));
   if (getRosBoolean("publish/aid/eph")) {
     gps_->subscribe<ublox_msgs::AidEPH>([this](const ublox_msgs::AidEPH &m) { aid_eph_pub_.publish(m); },
                                         1);
   }
 
-  declareRosBoolean("publish/aid/hui", getRosBoolean("publish/aid/all"));
   if (getRosBoolean("publish/aid/hui")) {
     gps_->subscribe<ublox_msgs::AidHUI>([this](const ublox_msgs::AidHUI &m) { aid_hui_pub_.publish(m); },
                                         1);
@@ -665,7 +688,6 @@ void UbloxNode::initialize() {
   // Must process Mon VER before setting firmware/hardware params
   processMonVer();
   if (protocol_version_ <= 14) {
-    declareRosBoolean("raw_data", false);
     if (getRosBoolean("raw_data")) {
       components_.push_back(std::make_shared<RawDataProduct>(nav_rate_, meas_rate_, updater_));
     }
@@ -756,33 +778,19 @@ void UbloxFirmware6::getRosParams() {
       throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
                 "true, therefore nmea/num_sv must be set");
     }
-    if (!nh->getParam("nmea/compat", compat)) {
-        throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
-          "true, therefore nmea/compat must be set");
-    }
-    if (!nh->getParam("nmea/consider", consider)) {
-      throw std::runtime_error(std::string("Invalid settings: nmea/set is ") +
-          "true, therefore nmea/consider must be set");
-    }
 
     // set flags
-    cfg_nmea_.flags = compat ? cfg_nmea_.FLAGS_COMPAT : 0;
-    cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
+    cfg_nmea_.flags = getRosBoolean("nmea/compat") ? cfg_nmea_.FLAGS_COMPAT : 0;
+    cfg_nmea_.flags |= getRosBoolean("nmea/consider") ? cfg_nmea_.FLAGS_CONSIDER : 0;
 
     // set filter
     bool temp;
-    nh->param("nmea/filter/pos", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_POS : 0;
-    nh->param("nmea/filter/msk_pos", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_MSK_POS : 0;
-    nh->param("nmea/filter/time", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TIME : 0;
-    nh->param("nmea/filter/date", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_DATE : 0;
-    nh->param("nmea/filter/sbas", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_SBAS_FILT : 0;
-    nh->param("nmea/filter/track", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TRACK : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/pos") ? cfg_nmea_.FILTER_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/msk_pos") ? cfg_nmea_.FILTER_MSK_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/time") ? cfg_nmea_.FILTER_TIME : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/date") ? cfg_nmea_.FILTER_DATE : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/sbas") ? cfg_nmea_.FILTER_SBAS_FILT : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/track") ? cfg_nmea_.FILTER_TRACK : 0;
   }
 }
 
@@ -797,11 +805,6 @@ bool UbloxFirmware6::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void UbloxFirmware6::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
-  // Whether or not to publish Nav POS LLH (always subscribes)
-  nh->param("publish/nav/posllh", enabled["nav_posllh"], getRosBoolean("publish/nav/all"));
-  nh->param("publish/nav/sol", enabled["nav_sol"], getRosBoolean("publish/nav/all"));
-  nh->param("publish/nav/velned", enabled["nav_velned"], getRosBoolean("publish/nav/all"));
-
   // Always subscribes to these messages, but may not publish to ROS topic
   // Subscribe to Nav POSLLH
   gps->subscribe<ublox_msgs::NavPOSLLH>(std::bind(
@@ -814,15 +817,13 @@ void UbloxFirmware6::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
       &UbloxFirmware6::callbackNavVelNed, this, std::placeholders::_1), 1);
 
   // Subscribe to Nav SVINFO
-  nh->param("publish/nav/svinfo", enabled["nav_svinfo"], getRosBoolean("publish/nav/all"));
-  if (enabled["nav_svinfo"]) {
+  if (getRosBoolean("publish/nav/svinfo")) {
     gps->subscribe<ublox_msgs::NavSVINFO>([this](const ublox_msgs::NavSVINFO &m) { nav_svinfo_pub_.publish(m); },
                                           kNavSvInfoSubscribeRate);
   }
 
   // Subscribe to Mon HW
-  nh->param("publish/mon_hw", enabled["mon_hw"], getRosBoolean("publish/mon/all"));
-  if (enabled["mon_hw"]) {
+  if (getRosBoolean("publish/mon/hw")) {
     gps->subscribe<ublox_msgs::MonHW6>([this](const ublox_msgs::MonHW6 &m) { mon_hw_pub_.publish(m); },
                                        1);
   }
@@ -871,7 +872,7 @@ void UbloxFirmware6::fixDiagnostic(
 }
 
 void UbloxFirmware6::callbackNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
-  if (enabled["nav_posllh"]) {
+  if (getRosBoolean("publish/nav/posllh")) {
     nav_pos_llh_pub_.publish(m);
   }
 
@@ -912,7 +913,7 @@ void UbloxFirmware6::callbackNavPosLlh(const ublox_msgs::NavPOSLLH& m) {
 }
 
 void UbloxFirmware6::callbackNavVelNed(const ublox_msgs::NavVELNED& m) {
-  if (enabled["nav_velned"]) {
+  if (getRosBoolean("publish/nav/velned")) {
     nav_vel_ned_pub_.publish(m);
   }
 
@@ -942,7 +943,7 @@ void UbloxFirmware6::callbackNavVelNed(const ublox_msgs::NavVELNED& m) {
 }
 
 void UbloxFirmware6::callbackNavSol(const ublox_msgs::NavSOL& m) {
-  if (enabled["nav_sol"]) {
+  if (getRosBoolean("publish/nav/sol")) {
     nav_sol_pub_.publish(m);
   }
   last_nav_sol_ = m;
@@ -1128,15 +1129,13 @@ void UbloxFirmware7::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
         1);
 
   // Subscribe to Nav SVINFO
-  nh->param("publish/nav/svinfo", enabled["nav_svinfo"], getRosBoolean("publish/nav/all"));
-  if (enabled["nav_svinfo"]) {
+  if (getRosBoolean("publish/nav/svinfo")) {
     gps->subscribe<ublox_msgs::NavSVINFO>([this](const ublox_msgs::NavSVINFO &m) { nav_svinfo_pub_.publish(m); },
                                           kNavSvInfoSubscribeRate);
   }
 
   // Subscribe to Mon HW
-  nh->param("publish/mon_hw", enabled["mon_hw"], getRosBoolean("publish/mon/all"));
-  if (enabled["mon_hw"]) {
+  if (getRosBoolean("publish/mon/hw")) {
     gps->subscribe<ublox_msgs::MonHW>([this](const ublox_msgs::MonHW &m) { mon_hw_pub_.publish(m); },
                                       1);
   }
@@ -1382,8 +1381,7 @@ void UbloxFirmware8::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   }
 
   // Subscribe to Mon HW
-  nh->param("publish/mon/hw", enabled["mon_hw"], getRosBoolean("publish/mon/all"));
-  if (enabled["mon_hw"]) {
+  if (getRosBoolean("publish/mon/hw")) {
     gps->subscribe<ublox_msgs::MonHW>([this](const ublox_msgs::MonHW &m) { mon_hw_pub_.publish(m); },
                                       1);
   }
