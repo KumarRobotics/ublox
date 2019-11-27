@@ -241,7 +241,7 @@ void UbloxNode::getRosParams() {
   getRosUint("rtcm/ids", rtcm_ids);  // RTCM output message IDs
   getRosUint("rtcm/rates", rtcm_rates);  // RTCM output message rates
   // PPP: Advanced Setting
-  nh->param("enable_ppp", enable_ppp_, false);
+  declareRosBoolean("enable_ppp", false);
   // SBAS params, only for some devices
   nh->param("sbas", enable_sbas_, false);
   getRosUint("sbas/max", max_sbas_, 0); // Maximum number of SBAS channels
@@ -250,7 +250,7 @@ void UbloxNode::getRosParams() {
   nh->param("fix_mode", fix_mode_, std::string("auto"));
   getRosUint("dr_limit", dr_limit_, 0); // Dead reckoning limit
 
-  if (enable_ppp_) {
+  if (getRosBoolean("enable_ppp")) {
     ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
   }
 
@@ -436,9 +436,7 @@ void UbloxNode::subscribe() {
 }
 
 void UbloxNode::initializeRosDiagnostics() {
-  if (!nh->hasParam("diagnostic_period")) {
-    nh->setParam("diagnostic_period", kDiagnosticPeriod);
-  }
+  declareRosBoolean("diagnostic_period", kDiagnosticPeriod);
 
   for (int i = 0; i < components_.size(); i++) {
     components_[i]->initializeRosDiagnostics();
@@ -554,9 +552,9 @@ bool UbloxNode::configureUblox() {
                                   " SBAS.");
         }
       }
-      if (!gps_->setPpp(enable_ppp_)) {
+      if (!gps_->setPpp(getRosBoolean("enable_ppp"))) {
         throw std::runtime_error(std::string("Failed to ") +
-                                ((enable_ppp_) ? "enable" : "disable")
+                                (getRosBoolean("enable_ppp") ? "enable" : "disable")
                                 + " PPP.");
       }
       if (!gps_->setDynamicModel(dmodel_)) {

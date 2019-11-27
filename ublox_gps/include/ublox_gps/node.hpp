@@ -262,6 +262,31 @@ bool getRosInt(const std::string& key, std::vector<I> &i) {
   return true;
 }
 
+bool declareRosBoolean(const std::string &name, bool default_value)
+{
+  bool ret;
+
+  if (!nh->hasParam(name)) {
+    nh->setParam(name, default_value);
+  }
+  // implicit else: If the ROS node already has the parameter, just leave it
+
+  if (!nh->getParam(name, ret)) {
+    throw std::runtime_error("Required parameter '" + name + "' has the wrong type (expected bool)");
+  }
+}
+
+bool getRosBoolean(const std::string &name)
+{
+  bool ret;
+  if (!nh->getParam(name, ret)) {
+    // Note that if this is used after declareRosBoolean, this should never happen.
+    throw std::runtime_error("Required parameter '" + name + "' has the wrong type (expected bool)");
+  }
+
+  return ret;
+}
+
 /**
  * @brief This class represents u-blox ROS node for *all* firmware and product
  * versions.
@@ -425,8 +450,6 @@ class UbloxNode final {
   ublox_msgs::CfgDAT cfg_dat_;
   //! Whether or not to enable SBAS
   bool enable_sbas_;
-  //! Whether or not to enable PPP (advanced setting)
-  bool enable_ppp_;
   //! SBAS Usage parameter (see CfgSBAS message)
   uint8_t sbas_usage_;
   //! Max SBAS parameter (see CfgSBAS message)
