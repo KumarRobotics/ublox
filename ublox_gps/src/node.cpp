@@ -48,6 +48,7 @@
 #include <ublox_gps/tim_product.hpp>
 #include <ublox_gps/ublox_firmware.hpp>
 #include <ublox_gps/ublox_firmware6.hpp>
+#include <ublox_gps/ublox_firmware7plus.hpp>
 #include <ublox_gps/ublox_topic_diagnostic.hpp>
 
 namespace ublox_node {
