@@ -244,6 +244,12 @@ void UbloxNode::getRosParams() {
   declareRosBoolean("enable_ppp", false);
   // SBAS params, only for some devices
   declareRosBoolean("gnss/sbas", false);
+  declareRosBoolean("gnss/gps", true);
+  declareRosBoolean("gnss/glonass", false);
+  declareRosBoolean("gnss/qzss", false);
+  declareRosBoolean("gnss/galileo", false);
+  declareRosBoolean("gnss/beidou", false);
+  declareRosBoolean("gnss/imes", false);
   getRosUint("sbas/max", max_sbas_, 0); // Maximum number of SBAS channels
   getRosUint("sbas/usage", sbas_usage_, 0);
   nh->param("dynamic_model", dynamic_model_, std::string("portable"));
@@ -307,20 +313,30 @@ void UbloxNode::getRosParams() {
   // activate/deactivate any config
   declareRosBoolean("config_on_startup", true);
   declareRosBoolean("raw_data", false);
+  declareRosBoolean("clear_bbr", false);
+  declareRosBoolean("save_on_shutdown", false);
 
   // raw data stream logging
   rawDataStreamPa_.getRosParams();
 
   // NMEA parameters
   declareRosBoolean("nmea/set", false);
+  declareRosBoolean("nmea/compat", false);
+  declareRosBoolean("nmea/consider", false);
+  declareRosBoolean("nmea/limit82", false);
+  declareRosBoolean("nmea/high_prec", false);
   declareRosBoolean("nmea/filter/pos", false);
   declareRosBoolean("nmea/filter/msk_pos", false);
   declareRosBoolean("nmea/filter/time", false);
   declareRosBoolean("nmea/filter/date", false);
   declareRosBoolean("nmea/filter/sbas", false);
   declareRosBoolean("nmea/filter/track", false);
-  declareRosBoolean("nmea/compat", false);
-  declareRosBoolean("nmea/consider", false);
+  declareRosBoolean("nmea/filter/gps_only", false);
+  declareRosBoolean("nmea/gnssToFilter/gps", false);
+  declareRosBoolean("nmea/gnssToFilter/sbas", false);
+  declareRosBoolean("nmea/gnssToFilter/qzss", false);
+  declareRosBoolean("nmea/gnssToFilter/glonass", false);
+  declareRosBoolean("nmea/gnssToFilter/beidou", false);
 
   // Publish parameters
   declareRosBoolean("publish/all", false);
@@ -980,9 +996,10 @@ void UbloxFirmware7::getRosParams() {
   // GNSS configuration
   //
   // GNSS enable/disable
-  nh->param("gnss/gps", enable_gps_, true);
-  nh->param("gnss/glonass", enable_glonass_, false);
-  nh->param("gnss/qzss", enable_qzss_, false);
+  enable_gps_ = getRosBoolean("gnss/gps");
+  enable_glonass_ = getRosBoolean("gnss/glonass");
+  enable_qzss_ = getRosBoolean("gnss/qzss");
+
   getRosUint("gnss/qzss_sig_cfg", qzss_sig_cfg_,
               ublox_msgs::CfgGNSSBlock::SIG_CFG_QZSS_L1CA);
 
@@ -1045,28 +1062,17 @@ void UbloxFirmware7::getRosParams() {
     cfg_nmea_.flags = compat ? cfg_nmea_.FLAGS_COMPAT : 0;
     cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
     // set filter
-    bool temp;
-    nh->param("nmea/filter/pos", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_POS : 0;
-    nh->param("nmea/filter/msk_pos", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_MSK_POS : 0;
-    nh->param("nmea/filter/time", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TIME : 0;
-    nh->param("nmea/filter/date", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_DATE : 0;
-    nh->param("nmea/filter/gps_only", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_GPS_ONLY : 0;
-    nh->param("nmea/filter/track", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TRACK : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/pos") ? cfg_nmea_.FILTER_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/msk_pos") ? cfg_nmea_.FILTER_MSK_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/time") ? cfg_nmea_.FILTER_TIME : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/date") ? cfg_nmea_.FILTER_DATE : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/gps_only") ? cfg_nmea_.FILTER_GPS_ONLY : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/track") ? cfg_nmea_.FILTER_TRACK : 0;
     // set gnssToFilter
-    nh->param("nmea/gnssToFilter/gps", temp, false);
-    cfg_nmea_.gnss_to_filter |= temp ? cfg_nmea_.GNSS_TO_FILTER_GPS : 0;
-    nh->param("nmea/gnssToFilter/sbas", temp, false);
-    cfg_nmea_.gnss_to_filter |= temp ? cfg_nmea_.GNSS_TO_FILTER_SBAS : 0;
-    nh->param("nmea/gnssToFilter/qzss", temp, false);
-    cfg_nmea_.gnss_to_filter |= temp ? cfg_nmea_.GNSS_TO_FILTER_QZSS : 0;
-    nh->param("nmea/gnssToFilter/glonass", temp, false);
-    cfg_nmea_.gnss_to_filter |= temp ? cfg_nmea_.GNSS_TO_FILTER_GLONASS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean("nmea/gnssToFilter/gps") ? cfg_nmea_.GNSS_TO_FILTER_GPS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean("nmea/gnssToFilter/sbas") ? cfg_nmea_.GNSS_TO_FILTER_SBAS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean("nmea/gnssToFilter/qzss") ? cfg_nmea_.GNSS_TO_FILTER_QZSS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean("nmea/gnssToFilter/glonass") ? cfg_nmea_.GNSS_TO_FILTER_GLONASS : 0;
 
     getRosUint("nmea/main_talker_id", cfg_nmea_.main_talker_id);
     getRosUint("nmea/gsv_talker_id", cfg_nmea_.gsv_talker_id);
@@ -1167,16 +1173,17 @@ void UbloxFirmware7::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
 //
 void UbloxFirmware8::getRosParams() {
   // UPD SOS configuration
-  nh->param("clear_bbr", clear_bbr_, false);
-  nh->param("save_on_shutdown", save_on_shutdown_, false);
+  clear_bbr_ = getRosBoolean("clear_bbr");
+  save_on_shutdown_ = getRosBoolean("save_on_shutdown");
 
   // GNSS enable/disable
-  nh->param("gnss/gps", enable_gps_, true);
-  nh->param("gnss/galileo", enable_galileo_, false);
-  nh->param("gnss/beidou", enable_beidou_, false);
-  nh->param("gnss/imes", enable_imes_, false);
-  nh->param("gnss/glonass", enable_glonass_, false);
-  nh->param("gnss/qzss", enable_qzss_, false);
+  enable_gps_ = getRosBoolean("gnss/gps");
+  enable_galileo_ = getRosBoolean("gnss/galileo");
+  enable_beidou_ = getRosBoolean("gnss/beidou");
+  enable_imes_ = getRosBoolean("gnss/imes");
+  enable_glonass_ = getRosBoolean("gnss/glonass");
+  enable_qzss_ = getRosBoolean("gnss/qzss");
+
   // QZSS Signal Configuration
   getRosUint("gnss/qzss_sig_cfg", qzss_sig_cfg_,
               ublox_msgs::CfgGNSSBlock::SIG_CFG_QZSS_L1CA);
@@ -1246,35 +1253,21 @@ void UbloxFirmware8::getRosParams() {
     // set flags
     cfg_nmea_.flags = compat ? cfg_nmea_.FLAGS_COMPAT : 0;
     cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
-    bool temp;
-    nh->param("nmea/limit82", temp, false);
-    cfg_nmea_.flags |= temp ? cfg_nmea_.FLAGS_LIMIT82 : 0;
-    nh->param("nmea/high_prec", temp, false);
-    cfg_nmea_.flags |= temp ? cfg_nmea_.FLAGS_HIGH_PREC : 0;
+    cfg_nmea_.flags |= getRosBoolean("nmea/limit82") ? cfg_nmea_.FLAGS_LIMIT82 : 0;
+    cfg_nmea_.flags |= getRosBoolean("nmea/high_prec") ? cfg_nmea_.FLAGS_HIGH_PREC : 0;
     // set filter
-    nh->param("nmea/filter/pos", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_POS : 0;
-    nh->param("nmea/filter/msk_pos", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_MSK_POS : 0;
-    nh->param("nmea/filter/time", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TIME : 0;
-    nh->param("nmea/filter/date", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_DATE : 0;
-    nh->param("nmea/filter/gps_only", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_GPS_ONLY : 0;
-    nh->param("nmea/filter/track", temp, false);
-    cfg_nmea_.filter |= temp ? cfg_nmea_.FILTER_TRACK : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/pos") ? cfg_nmea_.FILTER_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/msk_pos") ? cfg_nmea_.FILTER_MSK_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/time") ? cfg_nmea_.FILTER_TIME : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/date") ? cfg_nmea_.FILTER_DATE : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/gps_only") ? cfg_nmea_.FILTER_GPS_ONLY : 0;
+    cfg_nmea_.filter |= getRosBoolean("nmea/filter/track") ? cfg_nmea_.FILTER_TRACK : 0;
     // set gnssToFilter
-    nh->param("nmea/gnssToFilter/gps", temp, false);
-    cfg_nmea_.gnss_to_filter |= temp ? cfg_nmea_.GNSS_TO_FILTER_GPS : 0;
-    nh->param("nmea/gnssToFilter/sbas", temp, false);
-    cfg_nmea_.gnss_to_filter |= temp ? cfg_nmea_.GNSS_TO_FILTER_SBAS : 0;
-    nh->param("nmea/gnssToFilter/qzss", temp, false);
-    cfg_nmea_.gnss_to_filter |= temp ? cfg_nmea_.GNSS_TO_FILTER_QZSS : 0;
-    nh->param("nmea/gnssToFilter/glonass", temp, false);
-    cfg_nmea_.gnss_to_filter |= temp ? cfg_nmea_.GNSS_TO_FILTER_GLONASS : 0;
-    nh->param("nmea/gnssToFilter/beidou", temp, false);
-    cfg_nmea_.gnss_to_filter |= temp ? cfg_nmea_.GNSS_TO_FILTER_BEIDOU : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean("nmea/gnssToFilter/gps") ? cfg_nmea_.GNSS_TO_FILTER_GPS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean("nmea/gnssToFilter/sbas") ? cfg_nmea_.GNSS_TO_FILTER_SBAS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean("nmea/gnssToFilter/qzss") ? cfg_nmea_.GNSS_TO_FILTER_QZSS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean("nmea/gnssToFilter/glonass") ? cfg_nmea_.GNSS_TO_FILTER_GLONASS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean("nmea/gnssToFilter/beidou") ? cfg_nmea_.GNSS_TO_FILTER_BEIDOU : 0;
 
     getRosUint("nmea/main_talker_id", cfg_nmea_.main_talker_id);
     getRosUint("nmea/gsv_talker_id", cfg_nmea_.gsv_talker_id);
@@ -1285,7 +1278,6 @@ void UbloxFirmware8::getRosParams() {
     cfg_nmea_.bds_talker_id[1] = bds_talker_id[1];
   }
 }
-
 
 bool UbloxFirmware8::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
   if (clear_bbr_) {
