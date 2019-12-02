@@ -4,6 +4,10 @@
 #include <memory>
 #include <string>
 
+#include <diagnostic_updater/diagnostic_updater.h>
+#include <diagnostic_updater/publisher.h>
+#include <diagnostic_updater/update_functions.h>
+
 namespace ublox_node {
 
 //! Topic diagnostics for u-blox messages
@@ -62,6 +66,6 @@ struct UbloxTopicDiagnostic {
   double max_freq;
 };
 
-}
+}  // namespace ublox_node
 
 #endif
