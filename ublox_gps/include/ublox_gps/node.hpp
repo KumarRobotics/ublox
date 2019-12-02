@@ -296,16 +296,6 @@ class UbloxNode final {
 };
 
 /**
- *  @brief Implements functions for firmware version 9.
- *  For now it simply re-uses the firmware version 8 class
- *  but allows for future expansion of functionality
- */
-class UbloxFirmware9 final : public UbloxFirmware8 {
-public:
-  explicit UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node);
-};
-
-/**
  * @brief Implements functions for High Precision GNSS Reference station
  * devices.
  */

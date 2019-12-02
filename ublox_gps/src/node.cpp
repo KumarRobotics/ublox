@@ -51,6 +51,7 @@
 #include <ublox_gps/ublox_firmware7.hpp>
 #include <ublox_gps/ublox_firmware7plus.hpp>
 #include <ublox_gps/ublox_firmware8.hpp>
+#include <ublox_gps/ublox_firmware9.hpp>
 #include <ublox_gps/ublox_topic_diagnostic.hpp>
 
 namespace ublox_node {
@@ -781,11 +782,6 @@ void UbloxNode::shutdown() {
     gps_->close();
     ROS_INFO("Closed connection to %s.", device_.c_str());
   }
-}
-
-UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node)
-  : UbloxFirmware8(frame_id, updater, freq_diag, gnss, node)
-{
 }
 
 //
