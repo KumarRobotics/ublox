@@ -27,16 +27,29 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
+#include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <functional>
 #include <memory>
 #include <regex>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <sstream>
 #include <vector>
 
-#include <tf2/LinearMath/Quaternion.h>
+#include <ublox_msgs/AidALM.h>
+#include <ublox_msgs/AidEPH.h>
+#include <ublox_msgs/AidHUI.h>
+#include <ublox_msgs/CfgINF.h>
+#include <ublox_msgs/CfgINFBlock.h>
+#include <ublox_msgs/CfgNAV5.h>
+#include <ublox_msgs/CfgPRT.h>
+#include <ublox_msgs/Inf.h>
+#include <ublox_msgs/MonVER.h>
+#include <ublox_msgs/NavCLOCK.h>
+#include <ublox_msgs/NavPOSECEF.h>
+#include <ublox_msgs/NavSTATUS.h>
 
 #include <ublox_gps/adr_udr_product.hpp>
 #include <ublox_gps/fix_diagnostic.hpp>
@@ -48,13 +61,10 @@
 #include <ublox_gps/node.hpp>
 #include <ublox_gps/raw_data_product.hpp>
 #include <ublox_gps/tim_product.hpp>
-#include <ublox_gps/ublox_firmware.hpp>
 #include <ublox_gps/ublox_firmware6.hpp>
 #include <ublox_gps/ublox_firmware7.hpp>
-#include <ublox_gps/ublox_firmware7plus.hpp>
 #include <ublox_gps/ublox_firmware8.hpp>
 #include <ublox_gps/ublox_firmware9.hpp>
-#include <ublox_gps/ublox_topic_diagnostic.hpp>
 
 namespace ublox_node {
 

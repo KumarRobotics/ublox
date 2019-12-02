@@ -9,6 +9,10 @@
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gnss.hpp>
 
+// This file declares UbloxFirmware is an abstract class which implements
+// ComponentInterface and functions generic to all firmware (such as the
+// initializing the fix diagnostics).
+
 namespace ublox_node {
 
 /**

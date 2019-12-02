@@ -31,53 +31,28 @@
 #define UBLOX_GPS_NODE_HPP
 
 // STL
-#include <limits>
 #include <memory>
-#include <sstream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 // ROS includes
 #include <ros/ros.h>
-#include <ros/console.h>
 #include <diagnostic_updater/diagnostic_updater.h>
-#include <diagnostic_updater/publisher.h>
-// ROS messages
-#include <geometry_msgs/TwistWithCovarianceStamped.h>
-#include <geometry_msgs/Vector3Stamped.h>
-#include <sensor_msgs/NavSatFix.h>
-#include <sensor_msgs/TimeReference.h>
-#include <sensor_msgs/Imu.h>
-// Other U-Blox package includes
-#include <ublox_msgs/ublox_msgs.hpp>
+// U-Blox msgs nicludes
+#include <ublox_msgs/CfgCFG.h>
+#include <ublox_msgs/CfgDAT.h>
+#include <ublox_msgs/Inf.h>
 // Ublox GPS includes
-#include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/fix_diagnostic.hpp>
 #include <ublox_gps/gps.hpp>
-#include <ublox_gps/hpg_ref_product.hpp>
 #include <ublox_gps/rtcm.hpp>
-#include <ublox_gps/utils.hpp>
 #include <ublox_gps/raw_data_pa.hpp>
-#include <ublox_gps/ublox_firmware.hpp>
-#include <ublox_gps/ublox_firmware7plus.hpp>
-#include <ublox_gps/ublox_firmware8.hpp>
-#include <ublox_gps/ublox_topic_diagnostic.hpp>
 
-// This file also declares UbloxNode which implements ComponentInterface and is
-// the main class and ros node. it implements functionality which applies to
-// any u-blox device, regardless of the firmware version or product type.
-// The class is designed in compositional style; it contains ComponentInterfaces
-// which implement features specific to the device based on its firmware version
-// and product category. UbloxNode calls the public methods of each component.
-//
-// This file declares UbloxFirmware is an abstract class which implements
-// ComponentInterface and functions generic to all firmware (such as the
-// initializing the fix diagnostics). Subclasses of UbloxFirmware for firmware
-// versions 6-8 are also declared in this file.
-//
-// Lastly, this file declares classes for each product category which also
-// implement u-blox interface, currently only the class for High Precision
-// GNSS devices has been fully implemented and tested.
+// This file also declares UbloxNode which is the main class and ros node. It
+// implements functionality which applies to any u-blox device, regardless of
+// the firmware version or product type.  The class is designed in compositional
+// style; it contains ComponentInterfaces which implement features specific to
+// the device based on its firmware version and product category. UbloxNode
+// calls the public methods of each component.
 
 /**
  * @namespace ublox_node
@@ -293,7 +268,6 @@ class UbloxNode final {
 
   //! Node Handle for GPS node
   std::shared_ptr<ros::NodeHandle> nh_;
-
 };
 
 }
