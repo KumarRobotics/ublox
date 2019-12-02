@@ -97,6 +97,8 @@ class UbloxNode final {
    */
   UbloxNode();
 
+  ~UbloxNode();
+
   /**
    * @brief Get the node parameters from the ROS Parameter Server.
    */
@@ -268,6 +270,8 @@ class UbloxNode final {
 
   //! Node Handle for GPS node
   std::shared_ptr<ros::NodeHandle> nh_;
+
+  ros::Timer poller_;
 };
 
 }

@@ -779,14 +779,10 @@ void UbloxNode::initialize() {
     // Configure INF messages (needs INF params, call after subscribing)
     configureInf();
 
-    ros::Timer poller;
-    poller = nh_->createTimer(ros::Duration(kPollDuration),
-                             &UbloxNode::pollMessages,
-                             this);
-    poller.start();
-    ros::spin();
+    poller_ = nh_->createTimer(ros::Duration(kPollDuration),
+                               &UbloxNode::pollMessages,
+                               this);
   }
-  shutdown();
 }
 
 void UbloxNode::shutdown() {
@@ -796,10 +792,17 @@ void UbloxNode::shutdown() {
   }
 }
 
+UbloxNode::~UbloxNode() {
+  shutdown();
+}
+
 }  // namespace ublox_node
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ublox_gps");
   ublox_node::UbloxNode node;
+
+  ros::spin();
+
   return 0;
 }
