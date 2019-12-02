@@ -496,7 +496,7 @@ class UbloxFirmware : public virtual ComponentInterface {
   //! Subscribe Rate for u-blox SV Info messages
   constexpr static uint32_t kNavSvInfoSubscribeRate = 20;
 
-  explicit UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<Gnss> gnss);
+  explicit UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node);
 
   /**
    * @brief Add the fix diagnostics to the updater.
@@ -515,6 +515,7 @@ class UbloxFirmware : public virtual ComponentInterface {
   //! The fix status service type, set in the Firmware Component
   //! based on the enabled GNSS
   int fix_status_service_{0};
+  ros::NodeHandle* node_;
 };
 
 /**
@@ -522,7 +523,7 @@ class UbloxFirmware : public virtual ComponentInterface {
  */
 class UbloxFirmware6 final : public UbloxFirmware {
  public:
-  explicit UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss);
+  explicit UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node);
 
   /**
    * @brief Sets the fix status service type to GPS.
@@ -612,14 +613,14 @@ template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
   explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node)
-    : UbloxFirmware(updater, gnss), frame_id_(frame_id), freq_diag_(freq_diag) {
+    : UbloxFirmware(updater, gnss, node), frame_id_(frame_id), freq_diag_(freq_diag) {
     // NavPVT publisher
-    nav_pvt_pub_ = node->advertise<NavPVT>("navpvt", 1);
+    nav_pvt_pub_ = node_->advertise<NavPVT>("navpvt", 1);
 
     fix_pub_ =
-        node->advertise<sensor_msgs::NavSatFix>("fix", 1);
+        node_->advertise<sensor_msgs::NavSatFix>("fix", 1);
     vel_pub_ =
-        node->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
+        node_->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
                                                                    1);
   }
 
@@ -631,8 +632,8 @@ class UbloxFirmware7Plus : public UbloxFirmware {
    * is published. This function also calls the ROS diagnostics updater.
    * @param m the message to publish
    */
-  void callbackNavPvt(ros::NodeHandle* node, const NavPVT& m) {
-    if (getRosBoolean(node, "publish/nav/pvt")) {
+  void callbackNavPvt(const NavPVT& m) {
+    if (getRosBoolean(node_, "publish/nav/pvt")) {
       // NavPVT publisher
       nav_pvt_pub_.publish(m);
     }
@@ -903,7 +904,7 @@ class RawDataProduct final : public virtual ComponentInterface {
   double kRtcmFreqTol = 0.15;
   int kRtcmFreqWindow = 25;
 
-  explicit RawDataProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater);
+  explicit RawDataProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, ros::NodeHandle* node);
 
   /**
    * @brief Does nothing since there are no Raw Data product specific settings.
@@ -943,6 +944,7 @@ class RawDataProduct final : public virtual ComponentInterface {
   uint16_t nav_rate_;
   uint16_t meas_rate_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
+  ros::NodeHandle* node_;
 };
 
 /**
@@ -951,7 +953,7 @@ class RawDataProduct final : public virtual ComponentInterface {
  */
 class AdrUdrProduct final : public virtual ComponentInterface {
  public:
-  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater);
+  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, ros::NodeHandle* node);
 
   /**
    * @brief Get the ADR/UDR parameters.
@@ -1008,6 +1010,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
 
   std::string frame_id_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
+  ros::NodeHandle* node_;
 };
 
 /**
