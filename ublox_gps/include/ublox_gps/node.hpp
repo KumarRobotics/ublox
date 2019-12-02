@@ -145,9 +145,9 @@ void checkRange(std::vector<V> val, T min, T max, const std::string & name) {
  * @return true if found, false if not found.
  */
 template <typename U>
-bool getRosUint(const std::string& key, U &u) {
+bool getRosUint(ros::NodeHandle* node, const std::string& key, U &u) {
   int param;
-  if (!nh->getParam(key, param)) {
+  if (!node->getParam(key, param)) {
     return false;
   }
   // Check the bounds
@@ -168,8 +168,8 @@ bool getRosUint(const std::string& key, U &u) {
  * @return true if found, false if not found.
  */
 template <typename U, typename V>
-void getRosUint(const std::string& key, U &u, V default_val) {
-  if (!getRosUint(key, u)) {
+void getRosUint(ros::NodeHandle* node, const std::string& key, U &u, V default_val) {
+  if (!getRosUint(node, key, u)) {
     u = default_val;
   }
 }
@@ -180,9 +180,9 @@ void getRosUint(const std::string& key, U &u, V default_val) {
  * @return true if found, false if not found.
  */
 template <typename U>
-bool getRosUint(const std::string& key, std::vector<U> &u) {
+bool getRosUint(ros::NodeHandle* node, const std::string& key, std::vector<U> &u) {
   std::vector<int> param;
-  if (!nh->getParam(key, param)) {
+  if (!node->getParam(key, param)) {
     return false;
   }
 
@@ -204,9 +204,9 @@ bool getRosUint(const std::string& key, std::vector<U> &u) {
  * @return true if found, false if not found.
  */
 template <typename I>
-bool getRosInt(const std::string& key, I &u) {
+bool getRosInt(ros::NodeHandle* node, const std::string& key, I &u) {
   int param;
-  if (!nh->getParam(key, param)) {
+  if (!node->getParam(key, param)) {
     return false;
   }
   // Check the bounds
@@ -227,8 +227,8 @@ bool getRosInt(const std::string& key, I &u) {
  * @return true if found, false if not found.
  */
 template <typename U, typename V>
-void getRosInt(const std::string& key, U &u, V default_val) {
-  if (!getRosInt(key, u)) {
+void getRosInt(ros::NodeHandle* node, const std::string& key, U &u, V default_val) {
+  if (!getRosInt(node, key, u)) {
     u = default_val;
   }
 }
@@ -239,9 +239,9 @@ void getRosInt(const std::string& key, U &u, V default_val) {
  * @return true if found, false if not found.
  */
 template <typename I>
-bool getRosInt(const std::string& key, std::vector<I> &i) {
+bool getRosInt(ros::NodeHandle* node, const std::string& key, std::vector<I> &i) {
   std::vector<int> param;
-  if (!nh->getParam(key, param)) {
+  if (!node->getParam(key, param)) {
     return false;
   }
 
@@ -255,24 +255,24 @@ bool getRosInt(const std::string& key, std::vector<I> &i) {
   return true;
 }
 
-bool declareRosBoolean(const std::string &name, bool default_value)
+bool declareRosBoolean(ros::NodeHandle* node, const std::string &name, bool default_value)
 {
   bool ret;
 
-  if (!nh->hasParam(name)) {
-    nh->setParam(name, default_value);
+  if (!node->hasParam(name)) {
+    node->setParam(name, default_value);
   }
   // implicit else: If the ROS node already has the parameter, just leave it
 
-  if (!nh->getParam(name, ret)) {
+  if (!node->getParam(name, ret)) {
     throw std::runtime_error("Required parameter '" + name + "' has the wrong type (expected bool)");
   }
 }
 
-bool getRosBoolean(const std::string &name)
+bool getRosBoolean(ros::NodeHandle* node, const std::string &name)
 {
   bool ret;
-  if (!nh->getParam(name, ret)) {
+  if (!node->getParam(name, ret)) {
     // Note that if this is used after declareRosBoolean, this should never happen.
     throw std::runtime_error("Required parameter '" + name + "' has the wrong type (expected bool)");
   }
@@ -611,16 +611,16 @@ class UbloxFirmware6 final : public UbloxFirmware {
 template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
-  explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss)
+  explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node)
     : UbloxFirmware(updater, gnss), frame_id_(frame_id), freq_diag_(freq_diag) {
     // NavPVT publisher
-    nav_pvt_pub_ = nh->advertise<NavPVT>("navpvt", 1);
+    nav_pvt_pub_ = node->advertise<NavPVT>("navpvt", 1);
 
     fix_pub_ =
-        nh->advertise<sensor_msgs::NavSatFix>("fix", 1);
+        node->advertise<sensor_msgs::NavSatFix>("fix", 1);
     vel_pub_ =
-        nh->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
-                                                                 1);
+        node->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
+                                                                   1);
   }
 
   /**
@@ -631,8 +631,8 @@ class UbloxFirmware7Plus : public UbloxFirmware {
    * is published. This function also calls the ROS diagnostics updater.
    * @param m the message to publish
    */
-  void callbackNavPvt(const NavPVT& m) {
-    if (getRosBoolean("publish/nav/pvt")) {
+  void callbackNavPvt(ros::NodeHandle* node, const NavPVT& m) {
+    if (getRosBoolean(node, "publish/nav/pvt")) {
       // NavPVT publisher
       nav_pvt_pub_.publish(m);
     }
@@ -793,10 +793,10 @@ class UbloxFirmware7Plus : public UbloxFirmware {
  */
 class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  public:
-  explicit UbloxFirmware7(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss)
-    : UbloxFirmware7Plus<ublox_msgs::NavPVT7>(frame_id, updater, freq_diag, gnss) {
-    nav_svinfo_pub_ = nh->advertise<ublox_msgs::NavSVINFO>("navsvinfo", 1);
-    mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", 1);
+  explicit UbloxFirmware7(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node)
+    : UbloxFirmware7Plus<ublox_msgs::NavPVT7>(frame_id, updater, freq_diag, gnss, node) {
+    nav_svinfo_pub_ = node->advertise<ublox_msgs::NavSVINFO>("navsvinfo", 1);
+    mon_hw_pub_ = node->advertise<ublox_msgs::MonHW>("monhw", 1);
   }
 
   /**
@@ -834,11 +834,11 @@ class UbloxFirmware7 final : public UbloxFirmware7Plus<ublox_msgs::NavPVT7> {
  */
 class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  public:
-  explicit UbloxFirmware8(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss)
-    : UbloxFirmware7Plus<ublox_msgs::NavPVT>(frame_id, updater, freq_diag, gnss) {
-    nav_sat_pub_ = nh->advertise<ublox_msgs::NavSAT>("navstate", 1);
-    mon_hw_pub_ = nh->advertise<ublox_msgs::MonHW>("monhw", 1);
-    rxm_rtcm_pub_ = nh->advertise<ublox_msgs::RxmRTCM>("rxmrtcm", 1);
+  explicit UbloxFirmware8(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node)
+    : UbloxFirmware7Plus<ublox_msgs::NavPVT>(frame_id, updater, freq_diag, gnss, node) {
+    nav_sat_pub_ = node->advertise<ublox_msgs::NavSAT>("navstate", 1);
+    mon_hw_pub_ = node->advertise<ublox_msgs::MonHW>("monhw", 1);
+    rxm_rtcm_pub_ = node->advertise<ublox_msgs::RxmRTCM>("rxmrtcm", 1);
   }
 
   /**
@@ -892,7 +892,7 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
  */
 class UbloxFirmware9 final : public UbloxFirmware8 {
 public:
-  explicit UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss);
+  explicit UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node);
 };
 
 /**
