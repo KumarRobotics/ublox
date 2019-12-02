@@ -35,7 +35,7 @@ target_link_libraries(ublox_gps
 )
 
 # build node
-add_executable(ublox_gps_node src/node.cpp src/mkgmtime.c src/raw_data_pa.cpp src/gnss.cpp src/tim_product.cpp src/adr_udr_product.cpp src/hpg_rov_product.cpp src/raw_data_product.cpp src/ublox_firmware.cpp)
+add_executable(ublox_gps_node src/node.cpp src/mkgmtime.c src/raw_data_pa.cpp src/gnss.cpp src/tim_product.cpp src/adr_udr_product.cpp src/hpg_rov_product.cpp src/raw_data_product.cpp src/ublox_firmware.cpp src/ublox_firmware6.cpp)
 set_target_properties(ublox_gps_node PROPERTIES OUTPUT_NAME ublox_gps)
 
 target_link_libraries(ublox_gps_node ${catkin_LIBRARIES})
