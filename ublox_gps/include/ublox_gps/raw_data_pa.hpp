@@ -41,10 +41,10 @@
 #include <string>
 
 // ROS includes
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 // ROS messages
-#include <std_msgs/UInt8MultiArray.h>
+#include <std_msgs/msg/u_int8_multi_array.hpp>
 
 /**
  * @namespace ublox_node
@@ -56,7 +56,7 @@ namespace ublox_node {
 /**
  * @brief Implements functions for raw data stream.
  */
-class RawDataStreamPa final {
+class RawDataStreamPa final : public rclcpp::Node {
  public:
 
 
@@ -93,17 +93,17 @@ class RawDataStreamPa final {
   void ubloxCallback(const unsigned char* data,
      const std::size_t size);
 
+ private:
   /**
    * @brief Callback function which handles raw data.
    * @param msg ros message
    */
-  void msgCallback(const std_msgs::UInt8MultiArray::ConstPtr& msg);
+  void msgCallback(const std_msgs::msg::UInt8MultiArray::SharedPtr msg);
 
- private:
   /**
    * @brief Converts a string into an uint8 multibyte array
    */
-  std_msgs::UInt8MultiArray str2uint8(const std::string & str);
+  std_msgs::msg::UInt8MultiArray str2uint8(const std::string & str);
 
   /**
    * @brief Publishes data stream as ros message
@@ -132,13 +132,8 @@ class RawDataStreamPa final {
   //! false: publishing ros messages and/or storing to file
   bool is_ros_subscriber_;
 
-  //! ROS private node handle (for params and publisher)
-  ros::NodeHandle pnh_;
-  //! ROS node handle (only for subscriber)
-  ros::NodeHandle nh_;
-
-  ros::Publisher raw_pub_;
-  ros::Subscriber raw_data_stream_sub_;
+  rclcpp::Publisher<std_msgs::msg::UInt8MultiArray>::SharedPtr raw_pub_;
+  rclcpp::Subscription<std_msgs::msg::UInt8MultiArray>::SharedPtr raw_data_stream_sub_;
 };
 
 }

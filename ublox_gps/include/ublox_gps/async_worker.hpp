@@ -134,7 +134,7 @@ class AsyncWorker final : public Worker {
 
   bool stopping_; //!< Whether or not the I/O service is closed
 
-  bool debug_; //!< Used to determine which debug messages to display
+  int debug_; //!< Used to determine which debug messages to display
 };
 
 template <typename StreamT>
@@ -166,12 +166,12 @@ bool AsyncWorker<StreamT>::send(const unsigned char* data,
                                 const unsigned int size) {
   std::lock_guard<std::mutex> lock(write_mutex_);
   if (size == 0) {
-    ROS_ERROR("Ublox AsyncWorker::send: Size of message to send is 0");
+    // RCLCPP_ERROR("Ublox AsyncWorker::send: Size of message to send is 0");
     return true;
   }
 
   if (out_.capacity() - out_.size() < size) {
-    ROS_ERROR("Ublox AsyncWorker::send: Output buffer too full to send message");
+    // RCLCPP_ERROR("Ublox AsyncWorker::send: Output buffer too full to send message");
     return false;
   }
   out_.insert(out_.end(), data, data + size);
@@ -197,7 +197,7 @@ void AsyncWorker<StreamT>::doWrite() {
          it != out_.end(); ++it) {
       oss << std::hex << static_cast<unsigned int>(*it) << " ";
     }
-    ROS_DEBUG("U-Blox sent %li bytes: \n%s", out_.size(), oss.str().c_str());
+    // RCLCPP_DEBUG("U-Blox sent %li bytes: \n%s", out_.size(), oss.str().c_str());
   }
   // Clear the buffer & unlock
   out_.clear();
@@ -219,9 +219,9 @@ void AsyncWorker<StreamT>::readEnd(const asio::error_code& error,
                                    std::size_t bytes_transfered) {
   std::lock_guard<std::mutex> lock(read_mutex_);
   if (error) {
-    ROS_ERROR("U-Blox ASIO input buffer read error: %s, %li",
-              error.message().c_str(),
-              bytes_transfered);
+    // RCLCPP_ERROR("U-Blox ASIO input buffer read error: %s, %li",
+    //           error.message().c_str(),
+    //           bytes_transfered);
   } else if (bytes_transfered > 0) {
     in_buffer_size_ += bytes_transfered;
 
@@ -239,8 +239,8 @@ void AsyncWorker<StreamT>::readEnd(const asio::error_code& error,
            it != in_.begin() + in_buffer_size_; ++it) {
         oss << std::hex << static_cast<unsigned int>(*it) << " ";
       }
-      ROS_DEBUG("U-Blox received %li bytes \n%s", bytes_transfered,
-                oss.str().c_str());
+      // RCLCPP_DEBUG("U-Blox received %li bytes \n%s", bytes_transfered,
+      //           oss.str().c_str());
     }
 
     if (read_callback_) {
@@ -262,8 +262,8 @@ void AsyncWorker<StreamT>::doClose() {
   asio::error_code error;
   stream_->close(error);
   if (error) {
-    ROS_ERROR_STREAM(
-        "Error while closing the AsyncWorker stream: " << error.message());
+    // RCLCPP_ERROR_STREAM(
+    //     "Error while closing the AsyncWorker stream: " << error.message());
   }
 }
 

@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include <diagnostic_updater/diagnostic_updater.h>
-#include <ros/ros.h>
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gnss.hpp>
@@ -25,7 +25,7 @@ class UbloxFirmware : public virtual ComponentInterface {
   //! Subscribe Rate for u-blox SV Info messages
   constexpr static uint32_t kNavSvInfoSubscribeRate = 20;
 
-  explicit UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node);
+  explicit UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<Gnss> gnss, rclcpp::Node* node);
 
   /**
    * @brief Add the fix diagnostics to the updater.
@@ -44,7 +44,7 @@ class UbloxFirmware : public virtual ComponentInterface {
   //! The fix status service type, set in the Firmware Component
   //! based on the enabled GNSS
   int fix_status_service_{0};
-  ros::NodeHandle* node_;
+  rclcpp::Node* node_;
 };
 
 }  // namespace ublox_node

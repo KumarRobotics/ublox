@@ -4,14 +4,14 @@
 #include <memory>
 #include <string>
 
-#include <diagnostic_updater/diagnostic_updater.h>
-#include <ros/ros.h>
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include <rclcpp/rclcpp.hpp>
 
-#include <ublox_msgs/CfgNMEA.h>
-#include <ublox_msgs/MonHW.h>
-#include <ublox_msgs/NavPVT.h>
-#include <ublox_msgs/NavSAT.h>
-#include <ublox_msgs/RxmRTCM.h>
+#include <ublox_msgs/msg/cfg_nmea.hpp>
+#include <ublox_msgs/msg/mon_hw.hpp>
+#include <ublox_msgs/msg/nav_pvt.hpp>
+#include <ublox_msgs/msg/nav_sat.hpp>
+#include <ublox_msgs/msg/rxm_rtcm.hpp>
 
 #include <ublox_gps/gps.hpp>
 #include <ublox_gps/ublox_firmware7plus.hpp>
@@ -21,13 +21,13 @@ namespace ublox_node {
 /**
  *  @brief Implements functions for firmware version 8.
  */
-class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
+class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::msg::NavPVT> {
  public:
-  explicit UbloxFirmware8(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node)
-    : UbloxFirmware7Plus<ublox_msgs::NavPVT>(frame_id, updater, freq_diag, gnss, node) {
-    nav_sat_pub_ = node->advertise<ublox_msgs::NavSAT>("navstate", 1);
-    mon_hw_pub_ = node->advertise<ublox_msgs::MonHW>("monhw", 1);
-    rxm_rtcm_pub_ = node->advertise<ublox_msgs::RxmRTCM>("rxmrtcm", 1);
+  explicit UbloxFirmware8(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node)
+    : UbloxFirmware7Plus<ublox_msgs::msg::NavPVT>(frame_id, updater, freq_diag, gnss, node) {
+    nav_sat_pub_ = node->create_publisher<ublox_msgs::msg::NavSAT>("navstate", 1);
+    mon_hw_pub_ = node->create_publisher<ublox_msgs::msg::MonHW>("monhw", 1);
+    rxm_rtcm_pub_ = node->create_publisher<ublox_msgs::msg::RxmRTCM>("rxmrtcm", 1);
   }
 
   /**
@@ -64,14 +64,14 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::NavPVT> {
   //! Whether or not to enable the IMES GNSS
   bool enable_imes_;
   //! Desired NMEA configuration.
-  ublox_msgs::CfgNMEA cfg_nmea_;
+  ublox_msgs::msg::CfgNMEA cfg_nmea_;
   //! Whether to clear the flash memory during configuration
   bool clear_bbr_;
   bool save_on_shutdown_;
 
-  ros::Publisher nav_sat_pub_;
-  ros::Publisher mon_hw_pub_;
-  ros::Publisher rxm_rtcm_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::NavSAT>::SharedPtr nav_sat_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::MonHW>::SharedPtr mon_hw_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::RxmRTCM>::SharedPtr rxm_rtcm_pub_;
 };
 
 }  // namespace ublox_node

@@ -1,12 +1,20 @@
-#include <ros/ros.h>
+#include <memory>
+
+#include <rclcpp/rclcpp.hpp>
 
 #include <ublox_gps/node.hpp>
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "ublox_gps");
-  ublox_node::UbloxNode node;
+  // Force flush of the stdout buffer.
+  setvbuf(stdout, nullptr, _IONBF, BUFSIZ);
 
-  ros::spin();
+  rclcpp::init(argc, argv);
+
+  auto node = std::make_shared<ublox_node::UbloxNode>();
+
+  rclcpp::spin(node);
+
+  rclcpp::shutdown();
 
   return 0;
 }

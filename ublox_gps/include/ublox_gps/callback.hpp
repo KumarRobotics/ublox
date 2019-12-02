@@ -37,8 +37,6 @@
 #include <stdexcept>
 #include <utility>
 
-#include <ros/console.h>
-
 #include <ublox_msgs/serialization.hpp>
 
 namespace ublox_gps {
@@ -94,20 +92,20 @@ class CallbackHandler_ final : public CallbackHandler {
     std::lock_guard<std::mutex> lock(mutex_);
     try {
       if (!reader.read<T>(message_)) {
-        ROS_DEBUG_COND(debug_ >= 2,
-                       "U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)",
-                       static_cast<unsigned int>(reader.classId()),
-                       static_cast<unsigned int>(reader.messageId()),
-                       reader.length());
+        // RCLCPP_DEBUG_COND(debug_ >= 2,
+        //                "U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)",
+        //                static_cast<unsigned int>(reader.classId()),
+        //                static_cast<unsigned int>(reader.messageId()),
+        //                reader.length());
         condition_.notify_all();
         return;
       }
     } catch (std::runtime_error& e) {
-      ROS_DEBUG_COND(debug_ >= 2,
-                     "U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)",
-                     static_cast<unsigned int>(reader.classId()),
-                     static_cast<unsigned int>(reader.messageId()),
-                     reader.length());
+      // RCLCPP_DEBUG_COND(debug_ >= 2,
+      //                "U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)",
+      //                static_cast<unsigned int>(reader.classId()),
+      //                static_cast<unsigned int>(reader.messageId()),
+      //                reader.length());
       condition_.notify_all();
       return;
     }
@@ -223,8 +221,8 @@ class CallbackHandlers final {
              it != reader.pos() + reader.length() + 8; ++it) {
           oss << std::hex << static_cast<unsigned int>(*it) << " ";
         }
-        ROS_DEBUG("U-blox: reading %d bytes\n%s", reader.length() + 8,
-                  oss.str().c_str());
+        // RCLCPP_DEBUG("U-blox: reading %d bytes\n%s", reader.length() + 8,
+        //           oss.str().c_str());
       }
 
       handle(reader);

@@ -36,8 +36,6 @@
 #include <map>
 #include <stdexcept>
 #include <vector>
-// ROS
-#include <ros/console.h>
 // Other u-blox packages
 #include <ublox_msgs/serialization.hpp>
 // u-blox gps
@@ -142,7 +140,7 @@ class Gps final {
    * @return true if the GNSS was configured, the device was reset, and the
    * I/O reset successfully
    */
-  bool configGnss(ublox_msgs::CfgGNSS gnss,
+  bool configGnss(ublox_msgs::msg::CfgGNSS gnss,
                   const std::chrono::milliseconds& wait);
 
   /**
@@ -169,7 +167,7 @@ class Gps final {
    * configuration parameters
    * @return true on ACK, false on other conditions.
    */
-  bool disableUart1(ublox_msgs::CfgPRT& prev_cfg);
+  bool disableUart1(ublox_msgs::msg::CfgPRT& prev_cfg);
 
   /**
    * @brief Configure the USB Port.
@@ -223,7 +221,7 @@ class Gps final {
    * @return true on ACK, false if settings are incorrect or on other conditions
    */
   bool configTmode3Fixed(bool lla_flag,
-                         std::vector<float> arp_position,
+                         std::vector<double> arp_position,
                          std::vector<int8_t> arp_position_hp,
                          float fixed_pos_acc);
 
@@ -433,19 +431,19 @@ class Gps final {
    * @brief Callback handler for UBX-ACK message.
    * @param m the message to process
    */
-  void processAck(const ublox_msgs::Ack &m);
+  void processAck(const ublox_msgs::msg::Ack &m);
 
   /**
    * @brief Callback handler for UBX-NACK message.
    * @param m the message to process
    */
-  void processNack(const ublox_msgs::Ack &m);
+  void processNack(const ublox_msgs::msg::Ack &m);
 
   /**
    * @brief Callback handler for UBX-UPD-SOS-ACK message.
    * @param m the message to process
    */
-  void processUpdSosAck(const ublox_msgs::UpdSOSAck &m);
+  void processUpdSosAck(const ublox_msgs::msg::UpdSOSAck &m);
 
   /**
    * @brief Execute save on shutdown procedure.
@@ -535,8 +533,8 @@ bool Gps::configure(const ConfigT& message, bool wait) {
   std::vector<unsigned char> out(kWriterSize);
   ublox::Writer writer(out.data(), out.size());
   if (!writer.write(message)) {
-    ROS_ERROR("Failed to encode config message 0x%02x / 0x%02x",
-              message.CLASS_ID, message.MESSAGE_ID);
+    // RCLCPP_ERROR("Failed to encode config message 0x%02x / 0x%02x",
+    //           message.CLASS_ID, message.MESSAGE_ID);
     return false;
   }
   // Send the message to the device

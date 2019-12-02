@@ -4,9 +4,9 @@
 #include <memory>
 #include <string>
 
-#include <diagnostic_updater/diagnostic_updater.h>
-#include <diagnostic_updater/publisher.h>
-#include <diagnostic_updater/update_functions.h>
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include <diagnostic_updater/publisher.hpp>
+#include <diagnostic_updater/update_functions.hpp>
 
 namespace ublox_node {
 

@@ -4,10 +4,10 @@
 #include <memory>
 #include <vector>
 
-#include <diagnostic_updater/diagnostic_updater.h>
-#include <ros/ros.h>
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include <rclcpp/rclcpp.hpp>
 
-#include <ublox_msgs/NavSVIN.h>
+#include <ublox_msgs/msg/nav_svin.hpp>
 
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gps.hpp>
@@ -24,7 +24,7 @@ class HpgRefProduct: public virtual ComponentInterface {
   //! Default measurement period for HPG devices
   constexpr static uint16_t kDefaultMeasPeriod = 250;
 
-  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, ros::NodeHandle* node);
+  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, rclcpp::Node* node);
 
   /**
    * @brief Get the ROS parameters specific to the Reference Station
@@ -67,7 +67,7 @@ class HpgRefProduct: public virtual ComponentInterface {
    * configured RTCM messages. Publish received Nav SVIN messages if enabled.
    * @param m the message to process
    */
-  void callbackNavSvIn(const ublox_msgs::NavSVIN& m);
+  void callbackNavSvIn(const ublox_msgs::msg::NavSVIN& m);
 
  protected:
   /**
@@ -86,7 +86,7 @@ class HpgRefProduct: public virtual ComponentInterface {
   bool setTimeMode(std::shared_ptr<ublox_gps::Gps> gps);
 
   //! The last received Nav SVIN message
-  ublox_msgs::NavSVIN last_nav_svin_;
+  ublox_msgs::msg::NavSVIN last_nav_svin_;
 
   //! TMODE3 to set, such as disabled, survey-in, fixed
   uint8_t tmode3_;
@@ -97,7 +97,7 @@ class HpgRefProduct: public virtual ComponentInterface {
   bool lla_flag_;
   //! Antenna Reference Point Position [m] or [deg]
   /*! Used only for fixed mode */
-  std::vector<float> arp_position_;
+  std::vector<double> arp_position_;
   //! Antenna Reference Point Position High Precision [0.1 mm] or [deg * 1e-9]
   /*! Used only for fixed mode */
   std::vector<int8_t> arp_position_hp_;
@@ -129,7 +129,7 @@ class HpgRefProduct: public virtual ComponentInterface {
     TIME //!< Time mode, after survey-in or after configuring fixed mode
   } mode_;
 
-  ros::Publisher navsvin_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::NavSVIN>::SharedPtr navsvin_pub_;
 
   uint16_t nav_rate_;
   uint16_t meas_rate_;
@@ -137,7 +137,7 @@ class HpgRefProduct: public virtual ComponentInterface {
 
   std::vector<ublox_gps::Rtcm> rtcms_;
   std::shared_ptr<ublox_gps::Gps> gps_;
-  ros::NodeHandle* node_;
+  rclcpp::Node* node_;
 };
 
 }  // namespace ublox_node

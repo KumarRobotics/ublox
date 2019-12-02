@@ -3,10 +3,10 @@
 
 #include <memory>
 
-#include <diagnostic_updater/diagnostic_updater.h>
-#include <ros/ros.h>
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include <rclcpp/rclcpp.hpp>
 
-#include <ublox_msgs/NavRELPOSNED.h>
+#include <ublox_msgs/msg/nav_relposned.hpp>
 
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gps.hpp>
@@ -29,7 +29,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
   //! Diagnostic updater: RTCM topic frequency window [num messages]
   constexpr static int kRtcmFreqWindow = 25;
 
-  explicit HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater, ros::NodeHandle* node);
+  explicit HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node);
 
   /**
    * @brief Get the ROS parameters specific to the Rover configuration.
@@ -70,11 +70,11 @@ class HpgRovProduct final : public virtual ComponentInterface {
    *
    * @details Publish received NavRELPOSNED messages if enabled
    */
-  void callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m);
+  void callbackNavRelPosNed(const ublox_msgs::msg::NavRELPOSNED &m);
 
 
   //! Last relative position (used for diagnostic updater)
-  ublox_msgs::NavRELPOSNED last_rel_pos_;
+  ublox_msgs::msg::NavRELPOSNED last_rel_pos_;
 
   //! The DGNSS mode
   /*! see CfgDGNSS message for possible values */
@@ -83,11 +83,11 @@ class HpgRovProduct final : public virtual ComponentInterface {
   //! The RTCM topic frequency diagnostic updater
   UbloxTopicDiagnostic freq_rtcm_;
 
-  ros::Publisher nav_rel_pos_ned_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::NavRELPOSNED>::SharedPtr nav_rel_pos_ned_pub_;
 
   uint16_t nav_rate_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
-  ros::NodeHandle* node_;
+  rclcpp::Node* node_;
 };
 
 }  // namespace ublox_node

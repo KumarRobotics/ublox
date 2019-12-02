@@ -38,18 +38,18 @@
 #include <string>
 #include <vector>
 
-#include <ublox_msgs/AidALM.h>
-#include <ublox_msgs/AidEPH.h>
-#include <ublox_msgs/AidHUI.h>
-#include <ublox_msgs/CfgINF.h>
-#include <ublox_msgs/CfgINFBlock.h>
-#include <ublox_msgs/CfgNAV5.h>
-#include <ublox_msgs/CfgPRT.h>
-#include <ublox_msgs/Inf.h>
-#include <ublox_msgs/MonVER.h>
-#include <ublox_msgs/NavCLOCK.h>
-#include <ublox_msgs/NavPOSECEF.h>
-#include <ublox_msgs/NavSTATUS.h>
+#include <ublox_msgs/msg/aid_alm.hpp>
+#include <ublox_msgs/msg/aid_eph.hpp>
+#include <ublox_msgs/msg/aid_hui.hpp>
+#include <ublox_msgs/msg/cfg_inf.hpp>
+#include <ublox_msgs/msg/cfg_inf_block.hpp>
+#include <ublox_msgs/msg/cfg_nav5.hpp>
+#include <ublox_msgs/msg/cfg_prt.hpp>
+#include <ublox_msgs/msg/inf.hpp>
+#include <ublox_msgs/msg/mon_ver.hpp>
+#include <ublox_msgs/msg/nav_clock.hpp>
+#include <ublox_msgs/msg/nav_posecef.hpp>
+#include <ublox_msgs/msg/nav_status.hpp>
 
 #include <ublox_gps/adr_udr_product.hpp>
 #include <ublox_gps/fix_diagnostic.hpp>
@@ -87,23 +87,23 @@ uint8_t modelFromString(const std::string& model) {
   std::string lower = model;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
   if (lower == "portable") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_PORTABLE;
+    return ublox_msgs::msg::CfgNAV5::DYN_MODEL_PORTABLE;
   } else if (lower == "stationary") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_STATIONARY;
+    return ublox_msgs::msg::CfgNAV5::DYN_MODEL_STATIONARY;
   } else if (lower == "pedestrian") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_PEDESTRIAN;
+    return ublox_msgs::msg::CfgNAV5::DYN_MODEL_PEDESTRIAN;
   } else if (lower == "automotive") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AUTOMOTIVE;
+    return ublox_msgs::msg::CfgNAV5::DYN_MODEL_AUTOMOTIVE;
   } else if (lower == "sea") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_SEA;
+    return ublox_msgs::msg::CfgNAV5::DYN_MODEL_SEA;
   } else if (lower == "airborne1") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_1G;
+    return ublox_msgs::msg::CfgNAV5::DYN_MODEL_AIRBORNE_1G;
   } else if (lower == "airborne2") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_2G;
+    return ublox_msgs::msg::CfgNAV5::DYN_MODEL_AIRBORNE_2G;
   } else if (lower == "airborne4") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_4G;
+    return ublox_msgs::msg::CfgNAV5::DYN_MODEL_AIRBORNE_4G;
   } else if (lower == "wristwatch") {
-    return ublox_msgs::CfgNAV5::DYN_MODEL_WRIST_WATCH;
+    return ublox_msgs::msg::CfgNAV5::DYN_MODEL_WRIST_WATCH;
   }
 
   throw std::runtime_error("Invalid settings: " + lower +
@@ -123,11 +123,11 @@ uint8_t fixModeFromString(const std::string& mode) {
   std::string lower = mode;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
   if (lower == "2d") {
-    return ublox_msgs::CfgNAV5::FIX_MODE_2D_ONLY;
+    return ublox_msgs::msg::CfgNAV5::FIX_MODE_2D_ONLY;
   } else if (lower == "3d") {
-    return ublox_msgs::CfgNAV5::FIX_MODE_3D_ONLY;
+    return ublox_msgs::msg::CfgNAV5::FIX_MODE_3D_ONLY;
   } else if (lower == "auto") {
-    return ublox_msgs::CfgNAV5::FIX_MODE_AUTO;
+    return ublox_msgs::msg::CfgNAV5::FIX_MODE_AUTO;
   }
 
   throw std::runtime_error("Invalid settings: " + mode +
@@ -158,30 +158,27 @@ std::vector<std::string> stringSplit(const std::string &str,
 //
 // u-blox ROS Node
 //
-UbloxNode::UbloxNode() {
-  nh_ = std::make_shared<ros::NodeHandle>("~");
-
-  int debug;
-  nh_->param("debug", debug, 1);
+UbloxNode::UbloxNode() : rclcpp::Node("ublox_gps_node") {
+  int debug = this->declare_parameter("debug", 1);
   if (debug) {
-    if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
-                                       ros::console::levels::Debug)) {
-      ros::console::notifyLoggerLevelsChanged();
-    }
+    // if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
+    //                                    ros::console::levels::Debug)) {
+    //   ros::console::notifyLoggerLevelsChanged();
+    // }
   }
 
   gps_ = std::make_shared<ublox_gps::Gps>(debug);
 
   gnss_ = std::make_shared<Gnss>();
 
-  nav_status_pub_ = nh_->advertise<ublox_msgs::NavSTATUS>("navstatus", 1);
-  nav_posecef_pub_ = nh_->advertise<ublox_msgs::NavPOSECEF>("navposecef", 1);
-  nav_clock_pub_ = nh_->advertise<ublox_msgs::NavCLOCK>("navclock", 1);
-  aid_alm_pub_ = nh_->advertise<ublox_msgs::AidALM>("aidalm", 1);
-  aid_eph_pub_ = nh_->advertise<ublox_msgs::AidEPH>("aideph", 1);
-  aid_hui_pub_ = nh_->advertise<ublox_msgs::AidHUI>("aidhui", 1);
+  nav_status_pub_ = this->create_publisher<ublox_msgs::msg::NavSTATUS>("navstatus", 1);
+  nav_posecef_pub_ = this->create_publisher<ublox_msgs::msg::NavPOSECEF>("navposecef", 1);
+  nav_clock_pub_ = this->create_publisher<ublox_msgs::msg::NavCLOCK>("navclock", 1);
+  aid_alm_pub_ = this->create_publisher<ublox_msgs::msg::AidALM>("aidalm", 1);
+  aid_eph_pub_ = this->create_publisher<ublox_msgs::msg::AidEPH>("aideph", 1);
+  aid_hui_pub_ = this->create_publisher<ublox_msgs::msg::AidHUI>("aidhui", 1);
 
-  updater_ = std::make_shared<diagnostic_updater::Updater>();
+  updater_ = std::make_shared<diagnostic_updater::Updater>(this);
   updater_->setHardwareID("ublox");
 
   // configure diagnostic updater for frequency
@@ -194,101 +191,101 @@ UbloxNode::UbloxNode() {
 void UbloxNode::addFirmwareInterface() {
   int ublox_version;
   if (protocol_version_ < 14) {
-    components_.push_back(std::make_shared<UbloxFirmware6>(frame_id_, updater_, freq_diag_, gnss_, nh_.get()));
+    components_.push_back(std::make_shared<UbloxFirmware6>(frame_id_, updater_, freq_diag_, gnss_, this));
     ublox_version = 6;
   } else if (protocol_version_ >= 14 && protocol_version_ <= 15) {
-    components_.push_back(std::make_shared<UbloxFirmware7>(frame_id_, updater_, freq_diag_, gnss_, nh_.get()));
+    components_.push_back(std::make_shared<UbloxFirmware7>(frame_id_, updater_, freq_diag_, gnss_, this));
     ublox_version = 7;
   } else if (protocol_version_ > 15 && protocol_version_ <= 23) {
-    components_.push_back(std::make_shared<UbloxFirmware8>(frame_id_, updater_, freq_diag_, gnss_, nh_.get()));
+    components_.push_back(std::make_shared<UbloxFirmware8>(frame_id_, updater_, freq_diag_, gnss_, this));
     ublox_version = 8;
   } else {
-    components_.push_back(std::make_shared<UbloxFirmware9>(frame_id_, updater_, freq_diag_, gnss_, nh_.get()));
+    components_.push_back(std::make_shared<UbloxFirmware9>(frame_id_, updater_, freq_diag_, gnss_, this));
     ublox_version = 9;
   }
 
-  ROS_INFO("U-Blox Firmware Version: %d", ublox_version);
+  RCLCPP_INFO(this->get_logger(), "U-Blox Firmware Version: %d", ublox_version);
 }
 
 
 void UbloxNode::addProductInterface(const std::string & product_category,
                                     const std::string & ref_rov) {
   if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0) {
-    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, updater_, rtcms_, nh_.get()));
+    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, updater_, rtcms_, this));
   } else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0) {
-    components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_, nh_.get()));
+    components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_, this));
   } else if (product_category.compare("HPG") == 0) {
-    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, frame_id_, updater_, rtcms_, nh_.get()));
+    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, frame_id_, updater_, rtcms_, this));
   } else if (product_category.compare("TIM") == 0) {
-    components_.push_back(std::make_shared<TimProduct>(frame_id_, updater_, nh_.get()));
+    components_.push_back(std::make_shared<TimProduct>(frame_id_, updater_, this));
   } else if (product_category.compare("ADR") == 0 ||
              product_category.compare("UDR") == 0) {
-    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_, nh_.get()));
+    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_, this));
   } else if (product_category.compare("FTS") == 0) {
     components_.push_back(std::make_shared<FtsProduct>());
   } else if (product_category.compare("SPG") != 0) {
-    ROS_WARN("Product category %s %s from MonVER message not recognized %s",
+    RCLCPP_WARN(this->get_logger(), "Product category %s %s from MonVER message not recognized %s",
              product_category.c_str(), ref_rov.c_str(),
              "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, SPG");
   }
 }
 
 void UbloxNode::getRosParams() {
-  nh_->param("device", device_, std::string("/dev/ttyACM0"));
-  nh_->param("frame_id", frame_id_, std::string("gps"));
+  device_ = this->declare_parameter("device", std::string("/dev/ttyACM0"));
+  frame_id_ = this->declare_parameter("frame_id", std::string("gps"));
 
   // Save configuration parameters
-  getRosUint(nh_.get(), "load/mask", load_.load_mask, 0);
-  getRosUint(nh_.get(), "load/device", load_.device_mask, 0);
-  getRosUint(nh_.get(), "save/mask", save_.save_mask, 0);
-  getRosUint(nh_.get(), "save/device", save_.device_mask, 0);
+  getRosUint(this, "load.mask", load_.load_mask, 0);
+  getRosUint(this, "load.device", load_.device_mask, 0);
+  getRosUint(this, "save.mask", save_.save_mask, 0);
+  getRosUint(this, "save.device", save_.device_mask, 0);
 
   // UART 1 params
-  getRosUint(nh_.get(), "uart1/baudrate", baudrate_, 9600);
-  getRosUint(nh_.get(), "uart1/in", uart_in_, ublox_msgs::CfgPRT::PROTO_UBX
-                                    | ublox_msgs::CfgPRT::PROTO_NMEA
-                                    | ublox_msgs::CfgPRT::PROTO_RTCM);
-  getRosUint(nh_.get(), "uart1/out", uart_out_, ublox_msgs::CfgPRT::PROTO_UBX);
+  getRosUint(this, "uart1.baudrate", baudrate_, 9600);
+  getRosUint(this, "uart1.in", uart_in_, ublox_msgs::msg::CfgPRT::PROTO_UBX
+                                    | ublox_msgs::msg::CfgPRT::PROTO_NMEA
+                                    | ublox_msgs::msg::CfgPRT::PROTO_RTCM);
+  getRosUint(this, "uart1.out", uart_out_, ublox_msgs::msg::CfgPRT::PROTO_UBX);
   // USB params
   set_usb_ = false;
-  if (nh_->hasParam("usb/in") || nh_->hasParam("usb/out")) {
+  if (this->has_parameter("usb.in") || this->has_parameter("usb.out")) {
     set_usb_ = true;
-    if (!getRosUint(nh_.get(), "usb/in", usb_in_)) {
-      throw std::runtime_error(std::string("usb/out is set, therefore ") +
-        "usb/in must be set");
+    if (!getRosUint(this, "usb.in", usb_in_)) {
+      throw std::runtime_error(std::string("usb.out is set, therefore ") +
+        "usb.in must be set");
     }
-    if (!getRosUint(nh_.get(), "usb/out", usb_out_)) {
-      throw std::runtime_error(std::string("usb/in is set, therefore ") +
-        "usb/out must be set");
+    if (!getRosUint(this, "usb.out", usb_out_)) {
+      throw std::runtime_error(std::string("usb.in is set, therefore ") +
+        "usb.out must be set");
     }
-    getRosUint(nh_.get(), "usb/tx_ready", usb_tx_, 0);
+    getRosUint(this, "usb.tx_ready", usb_tx_, 0);
   }
   // Measurement rate params
-  nh_->param("rate", rate_, 4.0);  // in Hz
-  getRosUint(nh_.get(), "nav_rate", nav_rate_, 1);  // # of measurement rate cycles
+  rate_ = this->declare_parameter("rate", 4.0);  // in Hz
+  getRosUint(this, "nav_rate", nav_rate_, 1);  // # of measurement rate cycles
   // RTCM params
   std::vector<uint8_t> rtcm_ids;
   std::vector<uint8_t> rtcm_rates;
-  getRosUint(nh_.get(), "rtcm/ids", rtcm_ids);  // RTCM output message IDs
-  getRosUint(nh_.get(), "rtcm/rates", rtcm_rates);  // RTCM output message rates
+  getRosUint(this, "rtcm.ids", rtcm_ids);  // RTCM output message IDs
+  getRosUint(this, "rtcm.rates", rtcm_rates);  // RTCM output message rates
   // PPP: Advanced Setting
-  declareRosBoolean(nh_.get(), "enable_ppp", false);
+  declareRosBoolean(this, "enable_ppp", false);
   // SBAS params, only for some devices
-  declareRosBoolean(nh_.get(), "gnss/sbas", false);
-  declareRosBoolean(nh_.get(), "gnss/gps", true);
-  declareRosBoolean(nh_.get(), "gnss/glonass", false);
-  declareRosBoolean(nh_.get(), "gnss/qzss", false);
-  declareRosBoolean(nh_.get(), "gnss/galileo", false);
-  declareRosBoolean(nh_.get(), "gnss/beidou", false);
-  declareRosBoolean(nh_.get(), "gnss/imes", false);
-  getRosUint(nh_.get(), "sbas/max", max_sbas_, 0); // Maximum number of SBAS channels
-  getRosUint(nh_.get(), "sbas/usage", sbas_usage_, 0);
-  nh_->param("dynamic_model", dynamic_model_, std::string("portable"));
-  nh_->param("fix_mode", fix_mode_, std::string("auto"));
-  getRosUint(nh_.get(), "dr_limit", dr_limit_, 0); // Dead reckoning limit
+  declareRosBoolean(this, "gnss.sbas", false);
+  declareRosBoolean(this, "gnss.gps", true);
+  declareRosBoolean(this, "gnss.glonass", false);
+  declareRosBoolean(this, "gnss.qzss", false);
+  declareRosBoolean(this, "gnss.galileo", false);
+  declareRosBoolean(this, "gnss.beidou", false);
+  declareRosBoolean(this, "gnss.imes", false);
+  getRosUint(this, "sbas.max", max_sbas_, 0); // Maximum number of SBAS channels
+  getRosUint(this, "sbas.usage", sbas_usage_, 0);
+  dynamic_model_ = this->declare_parameter("dynamic_model", std::string("portable"));
+  fix_mode_ = this->declare_parameter("fix_mode", std::string("auto"));
+  getRosUint(this, "dr_limit", dr_limit_, 0); // Dead reckoning limit
 
-  if (getRosBoolean(nh_.get(), "enable_ppp")) {
-    ROS_WARN("Warning: PPP is enabled - this is an expert setting.");
+  if (getRosBoolean(this, "enable_ppp")) {
+    RCLCPP_WARN(this->get_logger(), "Warning: PPP is enabled - this is an expert setting.");
   }
 
   checkMin(rate_, 0, "rate");
@@ -307,30 +304,30 @@ void UbloxNode::getRosParams() {
   dmodel_ = modelFromString(dynamic_model_);
   fmode_ = fixModeFromString(fix_mode_);
 
-  declareRosBoolean(nh_.get(), "dat/set", false);
-  if (getRosBoolean(nh_.get(), "dat/set")) {
-    std::vector<float> shift, rot;
-    if (!nh_->getParam("dat/majA", cfg_dat_.maj_a)
-        || nh_->getParam("dat/flat", cfg_dat_.flat)
-        || nh_->getParam("dat/shift", shift)
-        || nh_->getParam("dat/rot", rot)
-        || nh_->getParam("dat/scale", cfg_dat_.scale)) {
-      throw std::runtime_error(std::string("dat/set is true, therefore ") +
-         "dat/majA, dat/flat, dat/shift, dat/rot, & dat/scale must be set");
+  declareRosBoolean(this, "dat.set", false);
+  if (getRosBoolean(this, "dat.set")) {
+    std::vector<double> shift, rot;
+    if (!this->get_parameter("dat.majA", cfg_dat_.maj_a)
+        || this->get_parameter("dat.flat", cfg_dat_.flat)
+        || this->get_parameter("dat.shift", shift)
+        || this->get_parameter("dat.rot", rot)
+        || this->get_parameter("dat.scale", cfg_dat_.scale)) {
+      throw std::runtime_error(std::string("dat.set is true, therefore ") +
+         "dat.majA, dat.flat, dat.shift, dat.rot, & dat.scale must be set");
     }
     if (shift.size() != 3 || rot.size() != 3) {
-      throw std::runtime_error(std::string("size of dat/shift & dat/rot ") +
+      throw std::runtime_error(std::string("size of dat.shift & dat.rot ") +
                                "must be 3");
     }
-    checkRange(cfg_dat_.maj_a, 6300000.0, 6500000.0, "dat/majA");
-    checkRange(cfg_dat_.flat, 0.0, 500.0, "dat/flat");
+    checkRange(cfg_dat_.maj_a, 6300000.0, 6500000.0, "dat.majA");
+    checkRange(cfg_dat_.flat, 0.0, 500.0, "dat.flat");
 
-    checkRange(shift, 0.0, 500.0, "dat/shift");
+    checkRange(shift, 0.0, 500.0, "dat.shift");
     cfg_dat_.d_x = shift[0];
     cfg_dat_.d_y = shift[1];
     cfg_dat_.d_z = shift[2];
 
-    checkRange(rot, -5000.0, 5000.0, "dat/rot");
+    checkRange(rot, -5000.0, 5000.0, "dat.rot");
     cfg_dat_.rot_x = rot[0];
     cfg_dat_.rot_y = rot[1];
     cfg_dat_.rot_z = rot[2];
@@ -342,99 +339,111 @@ void UbloxNode::getRosParams() {
   meas_rate_ = 1000 / rate_;
 
   // activate/deactivate any config
-  declareRosBoolean(nh_.get(), "config_on_startup", true);
-  declareRosBoolean(nh_.get(), "raw_data", false);
-  declareRosBoolean(nh_.get(), "clear_bbr", false);
-  declareRosBoolean(nh_.get(), "save_on_shutdown", false);
-  declareRosBoolean(nh_.get(), "use_adr", true);
+  declareRosBoolean(this, "config_on_startup", true);
+  declareRosBoolean(this, "raw_data", false);
+  declareRosBoolean(this, "clear_bbr", false);
+  declareRosBoolean(this, "save_on_shutdown", false);
+  declareRosBoolean(this, "use_adr", true);
 
-  declareRosBoolean(nh_.get(), "sv_in/reset", true);
+  declareRosBoolean(this, "sv_in.reset", true);
+  this->declare_parameter("sv_in.min_dur", 0);
+  this->declare_parameter("sv_in.acc_lim", 0.0);
+
+  this->declare_parameter("dgnss_mode", ublox_msgs::msg::CfgDGNSS::DGNSS_MODE_RTK_FLOAT);
 
   // raw data stream logging
   rawDataStreamPa_.getRosParams();
 
   // NMEA parameters
-  declareRosBoolean(nh_.get(), "nmea/set", false);
-  declareRosBoolean(nh_.get(), "nmea/compat", false);
-  declareRosBoolean(nh_.get(), "nmea/consider", false);
-  declareRosBoolean(nh_.get(), "nmea/limit82", false);
-  declareRosBoolean(nh_.get(), "nmea/high_prec", false);
-  declareRosBoolean(nh_.get(), "nmea/filter/pos", false);
-  declareRosBoolean(nh_.get(), "nmea/filter/msk_pos", false);
-  declareRosBoolean(nh_.get(), "nmea/filter/time", false);
-  declareRosBoolean(nh_.get(), "nmea/filter/date", false);
-  declareRosBoolean(nh_.get(), "nmea/filter/sbas", false);
-  declareRosBoolean(nh_.get(), "nmea/filter/track", false);
-  declareRosBoolean(nh_.get(), "nmea/filter/gps_only", false);
-  declareRosBoolean(nh_.get(), "nmea/gnssToFilter/gps", false);
-  declareRosBoolean(nh_.get(), "nmea/gnssToFilter/sbas", false);
-  declareRosBoolean(nh_.get(), "nmea/gnssToFilter/qzss", false);
-  declareRosBoolean(nh_.get(), "nmea/gnssToFilter/glonass", false);
-  declareRosBoolean(nh_.get(), "nmea/gnssToFilter/beidou", false);
+  declareRosBoolean(this, "nmea.set", false);
+  declareRosBoolean(this, "nmea.compat", false);
+  declareRosBoolean(this, "nmea.consider", false);
+  declareRosBoolean(this, "nmea.limit82", false);
+  declareRosBoolean(this, "nmea.high_prec", false);
+  declareRosBoolean(this, "nmea.filter.pos", false);
+  declareRosBoolean(this, "nmea.filter.msk_pos", false);
+  declareRosBoolean(this, "nmea.filter.time", false);
+  declareRosBoolean(this, "nmea.filter.date", false);
+  declareRosBoolean(this, "nmea.filter.sbas", false);
+  declareRosBoolean(this, "nmea.filter.track", false);
+  declareRosBoolean(this, "nmea.filter.gps_only", false);
+  declareRosBoolean(this, "nmea.gnssToFilter.gps", false);
+  declareRosBoolean(this, "nmea.gnssToFilter.sbas", false);
+  declareRosBoolean(this, "nmea.gnssToFilter.qzss", false);
+  declareRosBoolean(this, "nmea.gnssToFilter.glonass", false);
+  declareRosBoolean(this, "nmea.gnssToFilter.beidou", false);
 
   // Publish parameters
-  declareRosBoolean(nh_.get(), "publish/all", false);
+  declareRosBoolean(this, "publish.all", false);
 
-  declareRosBoolean(nh_.get(), "publish/nav/all", getRosBoolean(nh_.get(), "publish/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/att", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/clock", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/heading", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/posecef", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/posllh", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/pvt", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/relposned", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/sat", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/sol", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/svin", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/svinfo", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/status", getRosBoolean(nh_.get(), "publish/nav/all"));
-  declareRosBoolean(nh_.get(), "publish/nav/velned", getRosBoolean(nh_.get(), "publish/nav/all"));
+  declareRosBoolean(this, "publish.nav.all", getRosBoolean(this, "publish.all"));
+  declareRosBoolean(this, "publish.nav.att", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.clock", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.heading", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.posecef", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.posllh", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.pvt", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.relposned", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.sat", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.sol", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.svin", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.svinfo", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.status", getRosBoolean(this, "publish.nav.all"));
+  declareRosBoolean(this, "publish.nav.velned", getRosBoolean(this, "publish.nav.all"));
 
-  declareRosBoolean(nh_.get(), "publish/rxm/all", getRosBoolean(nh_.get(), "publish/all"));
-  declareRosBoolean(nh_.get(), "publish/rxm/almRaw", getRosBoolean(nh_.get(), "publish/rxm/all"));
-  declareRosBoolean(nh_.get(), "publish/rxm/eph", getRosBoolean(nh_.get(), "publish/rxm/all"));
-  declareRosBoolean(nh_.get(), "publish/rxm/rtcm", getRosBoolean(nh_.get(), "publish/rxm/all"));
-  declareRosBoolean(nh_.get(), "publish/rxm/raw", getRosBoolean(nh_.get(), "publish/rxm/all"));
-  declareRosBoolean(nh_.get(), "publish/rxm/sfrb", getRosBoolean(nh_.get(), "publish/rxm/all"));
+  declareRosBoolean(this, "publish.rxm.all", getRosBoolean(this, "publish.all"));
+  declareRosBoolean(this, "publish.rxm.almRaw", getRosBoolean(this, "publish.rxm.all"));
+  declareRosBoolean(this, "publish.rxm.eph", getRosBoolean(this, "publish.rxm.all"));
+  declareRosBoolean(this, "publish.rxm.rtcm", getRosBoolean(this, "publish.rxm.all"));
+  declareRosBoolean(this, "publish.rxm.raw", getRosBoolean(this, "publish.rxm.all"));
+  declareRosBoolean(this, "publish.rxm.sfrb", getRosBoolean(this, "publish.rxm.all"));
 
-  declareRosBoolean(nh_.get(), "publish/aid/all", getRosBoolean(nh_.get(), "publish/all"));
-  declareRosBoolean(nh_.get(), "publish/aid/alm", getRosBoolean(nh_.get(), "publish/aid/all"));
-  declareRosBoolean(nh_.get(), "publish/aid/eph", getRosBoolean(nh_.get(), "publish/aid/all"));
-  declareRosBoolean(nh_.get(), "publish/aid/hui", getRosBoolean(nh_.get(), "publish/aid/all"));
+  declareRosBoolean(this, "publish.aid.all", getRosBoolean(this, "publish.all"));
+  declareRosBoolean(this, "publish.aid.alm", getRosBoolean(this, "publish.aid.all"));
+  declareRosBoolean(this, "publish.aid.eph", getRosBoolean(this, "publish.aid.all"));
+  declareRosBoolean(this, "publish.aid.hui", getRosBoolean(this, "publish.aid.all"));
 
-  declareRosBoolean(nh_.get(), "publish/mon/all", getRosBoolean(nh_.get(), "publish/all"));
-  declareRosBoolean(nh_.get(), "publish/mon/hw", getRosBoolean(nh_.get(), "publish/mon/all"));
+  declareRosBoolean(this, "publish.mon.all", getRosBoolean(this, "publish.all"));
+  declareRosBoolean(this, "publish.mon.hw", getRosBoolean(this, "publish.mon.all"));
 
-  declareRosBoolean(nh_.get(), "publish/tim/tm2", false);
+  declareRosBoolean(this, "publish.tim.tm2", false);
 
   // INF parameters
-  declareRosBoolean(nh_.get(), "inf/all", true);
-  declareRosBoolean(nh_.get(), "inf/debug", false);
-  declareRosBoolean(nh_.get(), "inf/error", getRosBoolean(nh_.get(), "inf/all"));
-  declareRosBoolean(nh_.get(), "inf/notice", getRosBoolean(nh_.get(), "inf/all"));
-  declareRosBoolean(nh_.get(), "inf/test", getRosBoolean(nh_.get(), "inf/all"));
-  declareRosBoolean(nh_.get(), "inf/warning", getRosBoolean(nh_.get(), "inf/all"));
+  declareRosBoolean(this, "inf.all", true);
+  declareRosBoolean(this, "inf.debug", false);
+  declareRosBoolean(this, "inf.error", getRosBoolean(this, "inf.all"));
+  declareRosBoolean(this, "inf.notice", getRosBoolean(this, "inf.all"));
+  declareRosBoolean(this, "inf.test", getRosBoolean(this, "inf.all"));
+  declareRosBoolean(this, "inf.warning", getRosBoolean(this, "inf.all"));
 
   // ESF parameters
-  declareRosBoolean(nh_.get(), "publish/esf/all", true);
-  declareRosBoolean(nh_.get(), "publish/esf/ins", getRosBoolean(nh_.get(), "publish/esf/all"));
-  declareRosBoolean(nh_.get(), "publish/esf/meas", getRosBoolean(nh_.get(), "publish/esf/all"));
-  declareRosBoolean(nh_.get(), "publish/esf/raw", getRosBoolean(nh_.get(), "publish/esf/all"));
-  declareRosBoolean(nh_.get(), "publish/esf/status", getRosBoolean(nh_.get(), "publish/esf/all"));
+  declareRosBoolean(this, "publish.esf.all", true);
+  declareRosBoolean(this, "publish.esf.ins", getRosBoolean(this, "publish.esf.all"));
+  declareRosBoolean(this, "publish.esf.meas", getRosBoolean(this, "publish.esf.all"));
+  declareRosBoolean(this, "publish.esf.raw", getRosBoolean(this, "publish.esf.all"));
+  declareRosBoolean(this, "publish.esf.status", getRosBoolean(this, "publish.esf.all"));
 
   // HNR parameters
-  declareRosBoolean(nh_.get(), "publish/hnr/pvt", true);
+  declareRosBoolean(this, "publish.hnr.pvt", true);
+
+  this->declare_parameter("tmode3", ublox_msgs::msg::CfgTMODE3::FLAGS_MODE_DISABLED);
+  std::vector<double> empty_double;
+  std::vector<long int> empty_int;
+  this->declare_parameter("arp.position", empty_double);
+  this->declare_parameter("arp.position_hp", empty_int);
+  this->declare_parameter("arp.acc", 0.0);
+  this->declare_parameter("arp.lla_flag", false);
 }
 
-void UbloxNode::pollMessages(const ros::TimerEvent& event) {
+void UbloxNode::pollMessages() {
   static std::vector<uint8_t> payload(1, 1);
-  if (getRosBoolean(nh_.get(), "publish/aid/alm")) {
+  if (getRosBoolean(this, "publish.aid.alm")) {
     gps_->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::ALM, payload);
   }
-  if (getRosBoolean(nh_.get(), "publish/aid/eph")) {
+  if (getRosBoolean(this, "publish.aid.eph")) {
     gps_->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::EPH, payload);
   }
-  if (getRosBoolean(nh_.get(), "publish/aid/hui")) {
+  if (getRosBoolean(this, "publish.aid.hui")) {
     gps_->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::HUI);
   }
 
@@ -444,87 +453,87 @@ void UbloxNode::pollMessages(const ros::TimerEvent& event) {
   }
 }
 
-void UbloxNode::printInf(const ublox_msgs::Inf &m, uint8_t id) {
+void UbloxNode::printInf(const ublox_msgs::msg::Inf &m, uint8_t id) {
   if (id == ublox_msgs::Message::INF::ERROR) {
-    ROS_ERROR_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
+    // RCLCPP_ERROR_STREAM(this->get_logger(), "INF: " << std::string(m.str.begin(), m.str.end(this->get_logger(), )));
   } else if (id == ublox_msgs::Message::INF::WARNING) {
-    ROS_WARN_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
+    // RCLCPP_WARN_STREAM("INF: " << std::string(m.str.begin(), m.str.end(this->get_logger(), )));
   } else if (id == ublox_msgs::Message::INF::DEBUG) {
-    ROS_DEBUG_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
+    // RCLCPP_DEBUG_STREAM("INF: " << std::string(m.str.begin(), m.str.end(this->get_logger(), )));
   } else {
-    ROS_INFO_STREAM("INF: " << std::string(m.str.begin(), m.str.end()));
+    // RCLCPP_INFO_STREAM("INF: " << std::string(m.str.begin(), m.str.end(this->get_logger(), )));
   }
 }
 
 void UbloxNode::subscribe() {
-  ROS_DEBUG("Subscribing to U-Blox messages");
+  RCLCPP_DEBUG(this->get_logger(), "Subscribing to U-Blox messages");
   // subscribe messages
 
   // Nav Messages
-  if (getRosBoolean(nh_.get(), "publish/nav/status")) {
-    gps_->subscribe<ublox_msgs::NavSTATUS>([this](const ublox_msgs::NavSTATUS &m) { nav_status_pub_.publish(m); },
+  if (getRosBoolean(this, "publish.nav.status")) {
+    gps_->subscribe<ublox_msgs::msg::NavSTATUS>([this](const ublox_msgs::msg::NavSTATUS &m) { nav_status_pub_->publish(m); },
                                            1);
   }
 
-  if (getRosBoolean(nh_.get(), "publish/nav/posecef")) {
-    gps_->subscribe<ublox_msgs::NavPOSECEF>([this](const ublox_msgs::NavPOSECEF &m) { nav_posecef_pub_.publish(m); },
+  if (getRosBoolean(this, "publish.nav.posecef")) {
+    gps_->subscribe<ublox_msgs::msg::NavPOSECEF>([this](const ublox_msgs::msg::NavPOSECEF &m) { nav_posecef_pub_->publish(m); },
                                             1);
   }
 
-  if (getRosBoolean(nh_.get(), "publish/nav/clock")) {
-    gps_->subscribe<ublox_msgs::NavCLOCK>([this](const ublox_msgs::NavCLOCK &m) { nav_clock_pub_.publish(m); },
+  if (getRosBoolean(this, "publish.nav.clock")) {
+    gps_->subscribe<ublox_msgs::msg::NavCLOCK>([this](const ublox_msgs::msg::NavCLOCK &m) { nav_clock_pub_->publish(m); },
                                           1);
   }
 
   // INF messages
-  if (getRosBoolean(nh_.get(), "inf/debug")) {
-    gps_->subscribeId<ublox_msgs::Inf>(
+  if (getRosBoolean(this, "inf.debug")) {
+    gps_->subscribeId<ublox_msgs::msg::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::DEBUG),
         ublox_msgs::Message::INF::DEBUG);
   }
 
-  if (getRosBoolean(nh_.get(), "inf/error")) {
-    gps_->subscribeId<ublox_msgs::Inf>(
+  if (getRosBoolean(this, "inf.error")) {
+    gps_->subscribeId<ublox_msgs::msg::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::ERROR),
         ublox_msgs::Message::INF::ERROR);
   }
 
-  if (getRosBoolean(nh_.get(), "inf/notice")) {
-    gps_->subscribeId<ublox_msgs::Inf>(
+  if (getRosBoolean(this, "inf.notice")) {
+    gps_->subscribeId<ublox_msgs::msg::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::NOTICE),
         ublox_msgs::Message::INF::NOTICE);
   }
 
-  if (getRosBoolean(nh_.get(), "inf/test")) {
-    gps_->subscribeId<ublox_msgs::Inf>(
+  if (getRosBoolean(this, "inf.test")) {
+    gps_->subscribeId<ublox_msgs::msg::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::TEST),
         ublox_msgs::Message::INF::TEST);
   }
 
-  if (getRosBoolean(nh_.get(), "inf/warning")) {
-    gps_->subscribeId<ublox_msgs::Inf>(
+  if (getRosBoolean(this, "inf.warning")) {
+    gps_->subscribeId<ublox_msgs::msg::Inf>(
         std::bind(&UbloxNode::printInf, this, std::placeholders::_1,
                     ublox_msgs::Message::INF::WARNING),
         ublox_msgs::Message::INF::WARNING);
   }
 
   // AID messages
-  if (getRosBoolean(nh_.get(), "publish/aid/alm")) {
-    gps_->subscribe<ublox_msgs::AidALM>([this](const ublox_msgs::AidALM &m) { aid_alm_pub_.publish(m); },
+  if (getRosBoolean(this, "publish.aid.alm")) {
+    gps_->subscribe<ublox_msgs::msg::AidALM>([this](const ublox_msgs::msg::AidALM &m) { aid_alm_pub_->publish(m); },
                                         1);
   }
 
-  if (getRosBoolean(nh_.get(), "publish/aid/eph")) {
-    gps_->subscribe<ublox_msgs::AidEPH>([this](const ublox_msgs::AidEPH &m) { aid_eph_pub_.publish(m); },
+  if (getRosBoolean(this, "publish.aid.eph")) {
+    gps_->subscribe<ublox_msgs::msg::AidEPH>([this](const ublox_msgs::msg::AidEPH &m) { aid_eph_pub_->publish(m); },
                                         1);
   }
 
-  if (getRosBoolean(nh_.get(), "publish/aid/hui")) {
-    gps_->subscribe<ublox_msgs::AidHUI>([this](const ublox_msgs::AidHUI &m) { aid_hui_pub_.publish(m); },
+  if (getRosBoolean(this, "publish.aid.hui")) {
+    gps_->subscribe<ublox_msgs::msg::AidHUI>([this](const ublox_msgs::msg::AidHUI &m) { aid_hui_pub_->publish(m); },
                                         1);
   }
 
@@ -534,26 +543,26 @@ void UbloxNode::subscribe() {
 }
 
 void UbloxNode::initializeRosDiagnostics() {
-  declareRosBoolean(nh_.get(), "diagnostic_period", kDiagnosticPeriod);
+  declareRosBoolean(this, "diagnostic_period", kDiagnosticPeriod);
 
-  for (int i = 0; i < components_.size(); i++) {
+  for (size_t i = 0; i < components_.size(); i++) {
     components_[i]->initializeRosDiagnostics();
   }
 }
 
 void UbloxNode::processMonVer() {
-  ublox_msgs::MonVER monVer;
+  ublox_msgs::msg::MonVER monVer;
   if (!gps_->poll(monVer)) {
     throw std::runtime_error("Failed to poll MonVER & set relevant settings");
   }
 
-  ROS_DEBUG("%s, HW VER: %s", monVer.sw_version.c_array(),
-            monVer.hw_version.c_array());
+  // RCLCPP_DEBUG(this->get_logger(), "%s, HW VER: %s", monVer.sw_version.array(),
+  //              monVer.hw_version.array());
   // Convert extension to vector of strings
   std::vector<std::string> extension;
   extension.reserve(monVer.extension.size());
   for (std::size_t i = 0; i < monVer.extension.size(); ++i) {
-    ROS_DEBUG("%s", monVer.extension[i].field.c_array());
+    // RCLCPP_DEBUG(this->get_logger(), "%s", monVer.extension[i].field.array());
     // Find the end of the string (null character)
     unsigned char* end = std::find(monVer.extension[i].field.begin(),
           monVer.extension[i].field.end(), '\0');
@@ -570,7 +579,7 @@ void UbloxNode::processMonVer() {
     }
   }
   if (protocol_version_ == 0) {
-    ROS_WARN("Failed to parse MonVER and determine protocol version. %s",
+    RCLCPP_WARN(this->get_logger(), "Failed to parse MonVER and determine protocol version. %s",
              "Defaulting to firmware version 6.");
   }
   addFirmwareInterface();
@@ -618,13 +627,13 @@ bool UbloxNode::configureUblox() {
       throw std::runtime_error("Failed to initialize.");
     }
     if (load_.load_mask != 0) {
-      ROS_DEBUG("Loading u-blox configuration from memory. %u", load_.load_mask);
+      RCLCPP_DEBUG(this->get_logger(), "Loading u-blox configuration from memory. %u", load_.load_mask);
       if (!gps_->configure(load_)) {
         throw std::runtime_error(std::string("Failed to load configuration ") +
                                  "from memory");
       }
       if (load_.load_mask & load_.MASK_IO_PORT) {
-        ROS_DEBUG("Loaded I/O configuration from memory, resetting serial %s",
+        RCLCPP_DEBUG(this->get_logger(), "Loaded I/O configuration from memory, resetting serial %s",
           "communications.");
         std::chrono::seconds wait(kResetWait);
         gps_->reset(wait);
@@ -634,7 +643,7 @@ bool UbloxNode::configureUblox() {
       }
     }
 
-    if (getRosBoolean(nh_.get(), "config_on_startup")) {
+    if (getRosBoolean(this, "config_on_startup")) {
       if (set_usb_) {
         gps_->configUsb(usb_tx_, usb_in_, usb_out_);
       }
@@ -646,15 +655,15 @@ bool UbloxNode::configureUblox() {
       }
       // If device doesn't have SBAS, will receive NACK (causes exception)
       if (gnss_->isSupported("SBAS")) {
-        if (!gps_->configSbas(getRosBoolean(nh_.get(), "gnss/sbas"), sbas_usage_, max_sbas_)) {
+        if (!gps_->configSbas(getRosBoolean(this, "gnss.sbas"), sbas_usage_, max_sbas_)) {
           throw std::runtime_error(std::string("Failed to ") +
-                                  (getRosBoolean(nh_.get(), "gnss/sbas") ? "enable" : "disable") +
+                                  (getRosBoolean(this, "gnss.sbas") ? "enable" : "disable") +
                                   " SBAS.");
         }
       }
-      if (!gps_->setPpp(getRosBoolean(nh_.get(), "enable_ppp"))) {
+      if (!gps_->setPpp(getRosBoolean(this, "enable_ppp"))) {
         throw std::runtime_error(std::string("Failed to ") +
-                                (getRosBoolean(nh_.get(), "enable_ppp") ? "enable" : "disable")
+                                (getRosBoolean(this, "enable_ppp") ? "enable" : "disable")
                                 + " PPP.");
       }
       if (!gps_->setDynamicModel(dmodel_)) {
@@ -668,41 +677,41 @@ bool UbloxNode::configureUblox() {
         ss << "Failed to set dead reckoning limit: " << dr_limit_ << ".";
         throw std::runtime_error(ss.str());
       }
-      if (getRosBoolean(nh_.get(), "dat/set") && !gps_->configure(cfg_dat_)) {
+      if (getRosBoolean(this, "dat.set") && !gps_->configure(cfg_dat_)) {
         throw std::runtime_error("Failed to set user-defined datum.");
       }
       // Configure each component
-      for (int i = 0; i < components_.size(); i++) {
+      for (size_t i = 0; i < components_.size(); i++) {
         if (!components_[i]->configureUblox(gps_)) {
           return false;
         }
       }
     }
     if (save_.save_mask != 0) {
-      ROS_DEBUG("Saving the u-blox configuration, mask %u, device %u",
+      RCLCPP_DEBUG(this->get_logger(), "Saving the u-blox configuration, mask %u, device %u",
                 save_.save_mask, save_.device_mask);
       if (!gps_->configure(save_)) {
-        ROS_ERROR("u-blox unable to save configuration to non-volatile memory");
+        RCLCPP_ERROR(this->get_logger(), "u-blox unable to save configuration to non-volatile memory");
       }
     }
   } catch (std::exception& e) {
-    ROS_FATAL("Error configuring u-blox: %s", e.what());
+    RCLCPP_FATAL(this->get_logger(), "Error configuring u-blox: %s", e.what());
     return false;
   }
   return true;
 }
 
 void UbloxNode::configureInf() {
-  ublox_msgs::CfgINF msg;
+  ublox_msgs::msg::CfgINF msg;
   // Subscribe to UBX INF messages
-  ublox_msgs::CfgINFBlock block;
+  ublox_msgs::msg::CfgINFBlock block;
   block.protocol_id = block.PROTOCOL_ID_UBX;
   // Enable desired INF messages on each UBX port
-  uint8_t mask = (getRosBoolean(nh_.get(), "inf/error") ? block.INF_MSG_ERROR : 0) |
-                 (getRosBoolean(nh_.get(), "inf/warning") ? block.INF_MSG_WARNING : 0) |
-                 (getRosBoolean(nh_.get(), "inf/notice") ? block.INF_MSG_NOTICE : 0) |
-                 (getRosBoolean(nh_.get(), "inf/test") ? block.INF_MSG_TEST : 0) |
-                 (getRosBoolean(nh_.get(), "inf/debug") ? block.INF_MSG_DEBUG : 0);
+  uint8_t mask = (getRosBoolean(this, "inf.error") ? block.INF_MSG_ERROR : 0) |
+                 (getRosBoolean(this, "inf.warning") ? block.INF_MSG_WARNING : 0) |
+                 (getRosBoolean(this, "inf.notice") ? block.INF_MSG_NOTICE : 0) |
+                 (getRosBoolean(this, "inf.test") ? block.INF_MSG_TEST : 0) |
+                 (getRosBoolean(this, "inf.debug") ? block.INF_MSG_DEBUG : 0);
   for (size_t i = 0; i < block.inf_msg_mask.size(); i++) {
     block.inf_msg_mask[i] = mask;
   }
@@ -710,8 +719,8 @@ void UbloxNode::configureInf() {
   msg.blocks.push_back(block);
 
   // IF NMEA is enabled
-  if (uart_in_ & ublox_msgs::CfgPRT::PROTO_NMEA) {
-    ublox_msgs::CfgINFBlock block;
+  if (uart_in_ & ublox_msgs::msg::CfgPRT::PROTO_NMEA) {
+    ublox_msgs::msg::CfgINFBlock block;
     block.protocol_id = block.PROTOCOL_ID_NMEA;
     // Enable desired INF messages on each NMEA port
     for (size_t i = 0; i < block.inf_msg_mask.size(); i++) {
@@ -720,14 +729,14 @@ void UbloxNode::configureInf() {
     msg.blocks.push_back(block);
   }
 
-  ROS_DEBUG("Configuring INF messages");
+  RCLCPP_DEBUG(this->get_logger(), "Configuring INF messages");
   if (!gps_->configure(msg)) {
-    ROS_WARN("Failed to configure INF messages");
+    RCLCPP_WARN(this->get_logger(), "Failed to configure INF messages");
   }
 }
 
 void UbloxNode::initializeIo() {
-  gps_->setConfigOnStartup(getRosBoolean(nh_.get(), "config_on_startup"));
+  gps_->setConfigOnStartup(getRosBoolean(this, "config_on_startup"));
 
   std::smatch match;
   if (std::regex_match(device_, match,
@@ -736,7 +745,7 @@ void UbloxNode::initializeIo() {
     if (proto == "tcp") {
       std::string host(match[2]);
       std::string port(match[3]);
-      ROS_INFO("Connecting to %s://%s:%s ...", proto.c_str(), host.c_str(),
+      RCLCPP_INFO(this->get_logger(), "Connecting to %s://%s:%s ...", proto.c_str(), host.c_str(),
                port.c_str());
       gps_->initializeTcp(host, port);
     } else {
@@ -761,8 +770,8 @@ void UbloxNode::initialize() {
   // Must process Mon VER before setting firmware/hardware params
   processMonVer();
   if (protocol_version_ <= 14) {
-    if (getRosBoolean(nh_.get(), "raw_data")) {
-      components_.push_back(std::make_shared<RawDataProduct>(nav_rate_, meas_rate_, updater_, nh_.get()));
+    if (getRosBoolean(this, "raw_data")) {
+      components_.push_back(std::make_shared<RawDataProduct>(nav_rate_, meas_rate_, updater_, this));
     }
   }
   // Must set firmware & hardware params before initializing diagnostics
@@ -773,22 +782,21 @@ void UbloxNode::initialize() {
   initializeRosDiagnostics();
 
   if (configureUblox()) {
-    ROS_INFO("U-Blox configured successfully.");
+    RCLCPP_INFO(this->get_logger(), "U-Blox configured successfully.");
     // Subscribe to all U-Blox messages
     subscribe();
     // Configure INF messages (needs INF params, call after subscribing)
     configureInf();
 
-    poller_ = nh_->createTimer(ros::Duration(kPollDuration),
-                               &UbloxNode::pollMessages,
-                               this);
+    poller_ = this->create_wall_timer(std::chrono::milliseconds(static_cast<int64_t>(kPollDuration * 1000.0)),
+                                      std::bind(&UbloxNode::pollMessages, this));
   }
 }
 
 void UbloxNode::shutdown() {
   if (gps_->isInitialized()) {
     gps_->close();
-    ROS_INFO("Closed connection to %s.", device_.c_str());
+    RCLCPP_INFO(this->get_logger(), "Closed connection to %s.", device_.c_str());
   }
 }
 

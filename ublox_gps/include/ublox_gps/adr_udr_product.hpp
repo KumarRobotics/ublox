@@ -4,13 +4,18 @@
 #include <memory>
 #include <string>
 
-#include <diagnostic_updater/diagnostic_updater.h>
-#include <ros/ros.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/TimeReference.h>
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/time_reference.hpp>
 
-#include <ublox_msgs/EsfMEAS.h>
-#include <ublox_msgs/TimTM2.h>
+#include <ublox_msgs/msg/esf_ins.hpp>
+#include <ublox_msgs/msg/esf_meas.hpp>
+#include <ublox_msgs/msg/esf_raw.hpp>
+#include <ublox_msgs/msg/esf_status.hpp>
+#include <ublox_msgs/msg/hnr_pvt.hpp>
+#include <ublox_msgs/msg/nav_att.hpp>
+#include <ublox_msgs/msg/tim_tm2.hpp>
 
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gps.hpp>
@@ -23,7 +28,7 @@ namespace ublox_node {
  */
 class AdrUdrProduct final : public virtual ComponentInterface {
  public:
-  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, ros::NodeHandle* node);
+  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node);
 
   /**
    * @brief Get the ADR/UDR parameters.
@@ -44,8 +49,8 @@ class AdrUdrProduct final : public virtual ComponentInterface {
    * @todo unimplemented
    */
   void initializeRosDiagnostics() override {
-    ROS_WARN("ROS Diagnostics specific to u-blox ADR/UDR devices is %s",
-             "unimplemented. See AdrUdrProduct class in node.hpp & node.cpp.");
+    // RCLCPP_WARN("ROS Diagnostics specific to u-blox ADR/UDR devices is %s",
+    //          "unimplemented. See AdrUdrProduct class in node.hpp & node.cpp.");
   }
 
   /**
@@ -60,27 +65,26 @@ class AdrUdrProduct final : public virtual ComponentInterface {
   //! Whether or not to enable dead reckoning
   bool use_adr_;
 
-  sensor_msgs::Imu imu_;
-  sensor_msgs::TimeReference t_ref_;
-  ublox_msgs::TimTM2 timtm2;
+  sensor_msgs::msg::Imu imu_;
+  sensor_msgs::msg::TimeReference t_ref_;
 
-  void callbackEsfMEAS(const ublox_msgs::EsfMEAS &m);
+  void callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m);
 
-  ros::Publisher imu_pub_;
-  ros::Publisher time_ref_pub_;
-  ros::Publisher nav_att_pub_;
-  ros::Publisher esf_ins_pub_;
-  ros::Publisher esf_meas_pub_;
-  ros::Publisher esf_raw_pub_;
-  ros::Publisher esf_status_pub_;
-  ros::Publisher hnr_pvt_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::TimeReference>::SharedPtr time_ref_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::NavATT>::SharedPtr nav_att_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::EsfINS>::SharedPtr esf_ins_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::EsfMEAS>::SharedPtr esf_meas_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::EsfRAW>::SharedPtr esf_raw_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::EsfSTATUS>::SharedPtr esf_status_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::HnrPVT>::SharedPtr hnr_pvt_pub_;
 
   uint16_t nav_rate_;
   uint16_t meas_rate_;
 
   std::string frame_id_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
-  ros::NodeHandle* node_;
+  rclcpp::Node* node_;
 };
 
 }  // namespace ublox_node

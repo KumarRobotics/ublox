@@ -4,11 +4,13 @@
 #include <memory>
 #include <string>
 
-#include <diagnostic_updater/diagnostic_updater.h>
-#include <ros/ros.h>
-#include <sensor_msgs/TimeReference.h>
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/time_reference.hpp>
 
-#include <ublox_msgs/TimTM2.h>
+#include <ublox_msgs/msg/rxm_rawx.hpp>
+#include <ublox_msgs/msg/rxm_sfrbx.hpp>
+#include <ublox_msgs/msg/tim_tm2.hpp>
 
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gps.hpp>
@@ -21,7 +23,7 @@ namespace ublox_node {
  */
 class TimProduct final : public virtual ComponentInterface {
  public:
-  explicit TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, ros::NodeHandle* node);
+  explicit TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node);
 
   /**
    * @brief Get the Time Sync parameters.
@@ -53,19 +55,19 @@ class TimProduct final : public virtual ComponentInterface {
    * @brief
    * @details Publish recieved TimTM2 messages if enabled
    */
-  void callbackTimTM2(const ublox_msgs::TimTM2 &m);
+  void callbackTimTM2(const ublox_msgs::msg::TimTM2 &m);
 
-  sensor_msgs::TimeReference t_ref_;
+  sensor_msgs::msg::TimeReference t_ref_;
 
-  ros::Publisher timtm2_pub_;
-  ros::Publisher interrupt_time_pub_;
-  ros::Publisher rxm_sfrb_pub_;
-  ros::Publisher rxm_raw_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::TimTM2>::SharedPtr timtm2_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::TimeReference>::SharedPtr interrupt_time_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::RxmSFRBX>::SharedPtr rxm_sfrb_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::RxmRAWX>::SharedPtr rxm_raw_pub_;
 
   std::string frame_id_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
 
-  ros::NodeHandle* node_;
+  rclcpp::Node* node_;
 };
 
 }  // namespace ublox_node

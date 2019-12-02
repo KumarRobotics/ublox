@@ -9,7 +9,7 @@
 
 #include <time.h>
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <ublox_gps/mkgmtime.h>
 
@@ -93,11 +93,12 @@ void checkRange(std::vector<V> val, T min, T max, const std::string & name) {
  * @return true if found, false if not found.
  */
 template <typename U>
-bool getRosUint(ros::NodeHandle* node, const std::string& key, U &u) {
-  int param;
-  if (!node->getParam(key, param)) {
+bool getRosUint(rclcpp::Node* node, const std::string& key, U &u) {
+  rclcpp::Parameter parameter;
+  if (!node->get_parameter(key, parameter)) {
     return false;
   }
+  int param = parameter.get_value<U>();
   // Check the bounds
   U min = std::numeric_limits<U>::lowest();
   U max = std::numeric_limits<U>::max();
@@ -116,7 +117,7 @@ bool getRosUint(ros::NodeHandle* node, const std::string& key, U &u) {
  * @return true if found, false if not found.
  */
 template <typename U, typename V>
-void getRosUint(ros::NodeHandle* node, const std::string& key, U &u, V default_val) {
+void getRosUint(rclcpp::Node* node, const std::string& key, U &u, V default_val) {
   if (!getRosUint(node, key, u)) {
     u = default_val;
   }
@@ -128,9 +129,9 @@ void getRosUint(ros::NodeHandle* node, const std::string& key, U &u, V default_v
  * @return true if found, false if not found.
  */
 template <typename U>
-bool getRosUint(ros::NodeHandle* node, const std::string& key, std::vector<U> &u) {
-  std::vector<int> param;
-  if (!node->getParam(key, param)) {
+bool getRosUint(rclcpp::Node* node, const std::string& key, std::vector<U> &u) {
+  std::vector<long int> param;
+  if (!node->get_parameter(key, param)) {
     return false;
   }
 
@@ -152,11 +153,13 @@ bool getRosUint(ros::NodeHandle* node, const std::string& key, std::vector<U> &u
  * @return true if found, false if not found.
  */
 template <typename I>
-bool getRosInt(ros::NodeHandle* node, const std::string& key, I &u) {
-  int param;
-  if (!node->getParam(key, param)) {
+bool getRosInt(rclcpp::Node* node, const std::string& key, I &u) {
+  rclcpp::Parameter parameter;
+  if (!node->get_parameter(key, parameter)) {
     return false;
   }
+
+  int param = parameter.get_value<I>();
   // Check the bounds
   I min = std::numeric_limits<I>::lowest();
   I max = std::numeric_limits<I>::max();
@@ -175,7 +178,7 @@ bool getRosInt(ros::NodeHandle* node, const std::string& key, I &u) {
  * @return true if found, false if not found.
  */
 template <typename U, typename V>
-void getRosInt(ros::NodeHandle* node, const std::string& key, U &u, V default_val) {
+void getRosInt(rclcpp::Node* node, const std::string& key, U &u, V default_val) {
   if (!getRosInt(node, key, u)) {
     u = default_val;
   }
@@ -187,9 +190,9 @@ void getRosInt(ros::NodeHandle* node, const std::string& key, U &u, V default_va
  * @return true if found, false if not found.
  */
 template <typename I>
-bool getRosInt(ros::NodeHandle* node, const std::string& key, std::vector<I> &i) {
-  std::vector<int> param;
-  if (!node->getParam(key, param)) {
+bool getRosInt(rclcpp::Node* node, const std::string& key, std::vector<I> &i) {
+  std::vector<long int> param;
+  if (!node->get_parameter(key, param)) {
     return false;
   }
 
@@ -203,29 +206,20 @@ bool getRosInt(ros::NodeHandle* node, const std::string& key, std::vector<I> &i)
   return true;
 }
 
-static inline bool declareRosBoolean(ros::NodeHandle* node, const std::string &name, bool default_value)
+static inline void declareRosBoolean(rclcpp::Node* node, const std::string &name, bool default_value)
 {
-  bool ret;
-
-  if (!node->hasParam(name)) {
-    node->setParam(name, default_value);
-  }
-  // implicit else: If the ROS node already has the parameter, just leave it
-
-  if (!node->getParam(name, ret)) {
-    throw std::runtime_error("Required parameter '" + name + "' has the wrong type (expected bool)");
-  }
+  node->declare_parameter(name, default_value);
 }
 
-static inline bool getRosBoolean(ros::NodeHandle* node, const std::string &name)
+static inline bool getRosBoolean(rclcpp::Node* node, const std::string &name)
 {
-  bool ret;
-  if (!node->getParam(name, ret)) {
+  rclcpp::Parameter parameter;
+  if (!node->get_parameter(name, parameter)) {
     // Note that if this is used after declareRosBoolean, this should never happen.
     throw std::runtime_error("Required parameter '" + name + "' has the wrong type (expected bool)");
   }
 
-  return ret;
+  return parameter.get_value<bool>();
 }
 
 }  // namespace ublox_node

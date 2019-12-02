@@ -35,12 +35,12 @@
 #include <string>
 #include <vector>
 // ROS includes
-#include <ros/ros.h>
-#include <diagnostic_updater/diagnostic_updater.h>
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include <rclcpp/rclcpp.hpp>
 // U-Blox msgs nicludes
-#include <ublox_msgs/CfgCFG.h>
-#include <ublox_msgs/CfgDAT.h>
-#include <ublox_msgs/Inf.h>
+#include <ublox_msgs/msg/cfg_cfg.hpp>
+#include <ublox_msgs/msg/cfg_dat.hpp>
+#include <ublox_msgs/msg/inf.h>
 // Ublox GPS includes
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/fix_diagnostic.hpp>
@@ -78,7 +78,7 @@ namespace ublox_node {
  * The UbloxNode calls the public methods of ComponentInterface for each
  * element in the components vector.
  */
-class UbloxNode final {
+class UbloxNode final : public rclcpp::Node {
  public:
   //! How long to wait during I/O reset [s]
   constexpr static int kResetWait = 10;
@@ -125,7 +125,7 @@ class UbloxNode final {
   /**
    * @brief Print an INF message to the ROS console.
    */
-  void printInf(const ublox_msgs::Inf &m, uint8_t id);
+  void printInf(const ublox_msgs::msg::Inf &m, uint8_t id);
 
  private:
 
@@ -178,7 +178,7 @@ class UbloxNode final {
    * @brief Poll messages from the U-Blox device.
    * @param event a timer indicating how often to poll the messages
    */
-  void pollMessages(const ros::TimerEvent& event);
+  void pollMessages();
 
   /**
    * @brief Configure INF messages, call after subscribe.
@@ -223,7 +223,7 @@ class UbloxNode final {
   //! The measurement rate in Hz
   double rate_;
   //! User-defined Datum
-  ublox_msgs::CfgDAT cfg_dat_;
+  ublox_msgs::msg::CfgDAT cfg_dat_;
   //! SBAS Usage parameter (see CfgSBAS message)
   uint8_t sbas_usage_;
   //! Max SBAS parameter (see CfgSBAS message)
@@ -231,21 +231,21 @@ class UbloxNode final {
   //! Dead reckoning limit parameter
   uint8_t dr_limit_;
   //! Parameters to load from non-volatile memory during configuration
-  ublox_msgs::CfgCFG load_;
+  ublox_msgs::msg::CfgCFG load_;
   //! Parameters to save to non-volatile memory after configuration
-  ublox_msgs::CfgCFG save_;
+  ublox_msgs::msg::CfgCFG save_;
   //! rate for TIM-TM2
   uint8_t tim_rate_;
 
   //! raw data stream logging
   RawDataStreamPa rawDataStreamPa_;
 
-  ros::Publisher nav_status_pub_;
-  ros::Publisher nav_posecef_pub_;
-  ros::Publisher nav_clock_pub_;
-  ros::Publisher aid_alm_pub_;
-  ros::Publisher aid_eph_pub_;
-  ros::Publisher aid_hui_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::NavSTATUS>::SharedPtr nav_status_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::NavPOSECEF>::SharedPtr nav_posecef_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::NavCLOCK>::SharedPtr nav_clock_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::AidALM>::SharedPtr aid_alm_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::AidEPH>::SharedPtr aid_eph_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::AidHUI>::SharedPtr aid_hui_pub_;
 
   //! Navigation rate in measurement cycles, see CfgRate.msg
   uint16_t nav_rate_;
@@ -270,10 +270,7 @@ class UbloxNode final {
   //! Handles communication with the U-Blox Device
   std::shared_ptr<ublox_gps::Gps> gps_;
 
-  //! Node Handle for GPS node
-  std::shared_ptr<ros::NodeHandle> nh_;
-
-  ros::Timer poller_;
+  rclcpp::TimerBase::SharedPtr poller_;
 };
 
 }

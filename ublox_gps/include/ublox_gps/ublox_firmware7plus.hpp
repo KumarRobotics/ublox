@@ -4,13 +4,13 @@
 #include <memory>
 #include <string>
 
-#include <diagnostic_msgs/DiagnosticStatus.h>
-#include <diagnostic_updater/diagnostic_updater.h>
-#include <geometry_msgs/TwistWithCovarianceStamped.h>
-#include <ros/ros.h>
-#include <sensor_msgs/NavSatFix.h>
+#include <diagnostic_msgs/msg/diagnostic_status.hpp>
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/nav_sat_fix.hpp>
 
-#include <ublox_msgs/NavPVT.h>
+#include <ublox_msgs/msg/nav_pvt.hpp>
 
 #include <ublox_gps/fix_diagnostic.hpp>
 #include <ublox_gps/gnss.hpp>
@@ -31,15 +31,15 @@ namespace ublox_node {
 template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
-  explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node)
+  explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node)
     : UbloxFirmware(updater, gnss, node), frame_id_(frame_id), freq_diag_(freq_diag) {
     // NavPVT publisher
-    nav_pvt_pub_ = node_->advertise<NavPVT>("navpvt", 1);
+    nav_pvt_pub_ = node_->create_publisher<NavPVT>("navpvt", 1);
 
     fix_pub_ =
-        node_->advertise<sensor_msgs::NavSatFix>("fix", 1);
+        node_->create_publisher<sensor_msgs::msg::NavSatFix>("fix", 1);
     vel_pub_ =
-        node_->advertise<geometry_msgs::TwistWithCovarianceStamped>("fix_velocity",
+        node_->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("fix_velocity",
                                                                    1);
   }
 
@@ -52,15 +52,15 @@ class UbloxFirmware7Plus : public UbloxFirmware {
    * @param m the message to publish
    */
   void callbackNavPvt(const NavPVT& m) {
-    if (getRosBoolean(node_, "publish/nav/pvt")) {
+    if (getRosBoolean(node_, "publish.nav.pvt")) {
       // NavPVT publisher
-      nav_pvt_pub_.publish(m);
+      nav_pvt_pub_->publish(m);
     }
 
     //
     // NavSatFix message
     //
-    sensor_msgs::NavSatFix fix;
+    sensor_msgs::msg::NavSatFix fix;
     fix.header.frame_id = frame_id_;
     // set the timestamp
     uint8_t valid_time = m.VALID_DATE | m.VALID_TIME | m.VALID_FULLY_RESOLVED;
@@ -72,15 +72,15 @@ class UbloxFirmware7Plus : public UbloxFirmware {
       //  converted to a positive value
       if (m.nano < 0) {
         fix.header.stamp.sec = toUtcSeconds(m) - 1;
-        fix.header.stamp.nsec = (uint32_t)(m.nano + 1e9);
+        fix.header.stamp.nanosec = (uint32_t)(m.nano + 1e9);
       }
       else {
         fix.header.stamp.sec = toUtcSeconds(m);
-        fix.header.stamp.nsec = (uint32_t)(m.nano);
+        fix.header.stamp.nanosec = (uint32_t)(m.nano);
       }
     } else {
       // Use ROS time since NavPVT timestamp is not valid
-      fix.header.stamp = ros::Time::now();
+      fix.header.stamp = node_->now();
     }
     // Set the LLA
     fix.latitude = m.lat * 1e-7; // to deg
@@ -106,14 +106,14 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     fix.position_covariance[4] = var_h;
     fix.position_covariance[8] = var_v;
     fix.position_covariance_type =
-        sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
+        sensor_msgs::msg::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
 
-    fix_pub_.publish(fix);
+    fix_pub_->publish(fix);
 
     //
     // Twist message
     //
-    geometry_msgs::TwistWithCovarianceStamped velocity;
+    geometry_msgs::msg::TwistWithCovarianceStamped velocity;
     velocity.header.stamp = fix.header.stamp;
     velocity.header.frame_id = frame_id_;
 
@@ -129,14 +129,14 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     velocity.twist.covariance[cols * 2 + 2] = cov_speed;
     velocity.twist.covariance[cols * 3 + 3] = -1;  //  angular rate unsupported
 
-    vel_pub_.publish(velocity);
+    vel_pub_->publish(velocity);
 
     //
     // Update diagnostics
     //
     last_nav_pvt_ = m;
     freq_diag_->diagnostic->tick(fix.header.stamp);
-    updater_->update();
+    updater_->force_update();
   }
 
  protected:
@@ -147,33 +147,33 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   void fixDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& stat) override {
     // check the last message, convert to diagnostic
     if (last_nav_pvt_.fix_type ==
-        ublox_msgs::NavPVT::FIX_TYPE_DEAD_RECKONING_ONLY) {
-      stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+        ublox_msgs::msg::NavPVT::FIX_TYPE_DEAD_RECKONING_ONLY) {
+      stat.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
       stat.message = "Dead reckoning only";
-    } else if (last_nav_pvt_.fix_type == ublox_msgs::NavPVT::FIX_TYPE_2D) {
-      stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+    } else if (last_nav_pvt_.fix_type == ublox_msgs::msg::NavPVT::FIX_TYPE_2D) {
+      stat.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
       stat.message = "2D fix";
-    } else if (last_nav_pvt_.fix_type == ublox_msgs::NavPVT::FIX_TYPE_3D) {
-      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+    } else if (last_nav_pvt_.fix_type == ublox_msgs::msg::NavPVT::FIX_TYPE_3D) {
+      stat.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
       stat.message = "3D fix";
     } else if (last_nav_pvt_.fix_type ==
-               ublox_msgs::NavPVT::FIX_TYPE_GNSS_DEAD_RECKONING_COMBINED) {
-      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+               ublox_msgs::msg::NavPVT::FIX_TYPE_GNSS_DEAD_RECKONING_COMBINED) {
+      stat.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
       stat.message = "GPS and dead reckoning combined";
     } else if (last_nav_pvt_.fix_type ==
-               ublox_msgs::NavPVT::FIX_TYPE_TIME_ONLY) {
-      stat.level = diagnostic_msgs::DiagnosticStatus::OK;
+               ublox_msgs::msg::NavPVT::FIX_TYPE_TIME_ONLY) {
+      stat.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
       stat.message = "Time only fix";
     }
 
     // If fix not ok (w/in DOP & Accuracy Masks), raise the diagnostic level
-    if (!(last_nav_pvt_.flags & ublox_msgs::NavPVT::FLAGS_GNSS_FIX_OK)) {
-      stat.level = diagnostic_msgs::DiagnosticStatus::WARN;
+    if (!(last_nav_pvt_.flags & ublox_msgs::msg::NavPVT::FLAGS_GNSS_FIX_OK)) {
+      stat.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
       stat.message += ", fix not ok";
     }
     // Raise diagnostic level to error if no fix
-    if (last_nav_pvt_.fix_type == ublox_msgs::NavPVT::FIX_TYPE_NO_FIX) {
-      stat.level = diagnostic_msgs::DiagnosticStatus::ERROR;
+    if (last_nav_pvt_.fix_type == ublox_msgs::msg::NavPVT::FIX_TYPE_NO_FIX) {
+      stat.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
       stat.message = "No fix";
     }
 
@@ -200,9 +200,9 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   //! The QZSS Signal configuration, see CfgGNSS message
   uint32_t qzss_sig_cfg_;
 
-  ros::Publisher nav_pvt_pub_;
-  ros::Publisher fix_pub_;
-  ros::Publisher vel_pub_;
+  typename rclcpp::Publisher<NavPVT>::SharedPtr nav_pvt_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::NavSatFix>::SharedPtr fix_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr vel_pub_;
 
   std::string frame_id_;
   std::shared_ptr<FixDiagnostic> freq_diag_;

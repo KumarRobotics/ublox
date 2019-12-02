@@ -32,8 +32,6 @@
 
 #include <memory>
 
-#include <ros/console.h>
-
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gps.hpp>
 
@@ -49,8 +47,8 @@ class FtsProduct final : public virtual ComponentInterface {
    * @todo Currently unimplemented.
    */
   void getRosParams() override {
-    ROS_WARN("Functionality specific to u-blox FTS devices is %s",
-             "unimplemented. See FtsProduct class in node.hpp & node.cpp.");
+    // RCLCPP_WARN("Functionality specific to u-blox FTS devices is %s",
+    //          "unimplemented. See FtsProduct class in node.hpp & node.cpp.");
   }
 
   /**
