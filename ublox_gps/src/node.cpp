@@ -46,6 +46,7 @@
 #include <ublox_gps/node.hpp>
 #include <ublox_gps/raw_data_product.hpp>
 #include <ublox_gps/tim_product.hpp>
+#include <ublox_gps/ublox_firmware.hpp>
 #include <ublox_gps/ublox_topic_diagnostic.hpp>
 
 namespace ublox_node {
@@ -776,18 +777,6 @@ void UbloxNode::shutdown() {
     gps_->close();
     ROS_INFO("Closed connection to %s.", device_.c_str());
   }
-}
-
-//
-// U-Blox Firmware (all versions)
-//
-UbloxFirmware::UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<Gnss> gnss, ros::NodeHandle* node) : updater_(updater), gnss_(gnss), node_(node)
-{
-}
-
-void UbloxFirmware::initializeRosDiagnostics() {
-  updater_->add("fix", this, &UbloxFirmware::fixDiagnostic);
-  updater_->force_update();
 }
 
 //
