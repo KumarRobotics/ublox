@@ -82,10 +82,6 @@
  */
 namespace ublox_node {
 
-// ROS objects
-//! Node Handle for GPS node
-std::shared_ptr<ros::NodeHandle> nh;
-
 /**
  * @brief Check that the parameter is above the minimum.
  * @param val the value to check
@@ -484,6 +480,10 @@ class UbloxNode final {
 
   //! Handles communication with the U-Blox Device
   std::shared_ptr<ublox_gps::Gps> gps_;
+
+  //! Node Handle for GPS node
+  std::shared_ptr<ros::NodeHandle> nh_;
+
 };
 
 /**
