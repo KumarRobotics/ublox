@@ -26,88 +26,88 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==============================================================================
 
-#ifndef UBLOX_MSGS_HPP
-#define UBLOX_MSGS_HPP
+#ifndef UBLOX_MSGS_UBLOX_MSGS_HPP
+#define UBLOX_MSGS_UBLOX_MSGS_HPP
 
-#include <ublox_msgs/NavATT.h>
-#include <ublox_msgs/NavCLOCK.h>
-#include <ublox_msgs/NavDGPS.h>
-#include <ublox_msgs/NavDOP.h>
-#include <ublox_msgs/NavPOSECEF.h>
-#include <ublox_msgs/NavPOSLLH.h>
-#include <ublox_msgs/NavRELPOSNED.h>
-#include <ublox_msgs/NavRELPOSNED9.h>
-#include <ublox_msgs/NavSBAS.h>
-#include <ublox_msgs/NavSOL.h>
-#include <ublox_msgs/NavPVT.h>
-#include <ublox_msgs/NavPVT7.h>
-#include <ublox_msgs/NavSTATUS.h>
-#include <ublox_msgs/NavSAT.h>
-#include <ublox_msgs/NavSVIN.h>
-#include <ublox_msgs/NavSVINFO.h>
-#include <ublox_msgs/NavTIMEGPS.h>
-#include <ublox_msgs/NavTIMEUTC.h>
-#include <ublox_msgs/NavVELECEF.h>
-#include <ublox_msgs/NavVELNED.h>
+#include <ublox_msgs/msg/nav_att.hpp>
+#include <ublox_msgs/msg/nav_clock.hpp>
+#include <ublox_msgs/msg/nav_dgps.hpp>
+#include <ublox_msgs/msg/nav_dop.hpp>
+#include <ublox_msgs/msg/nav_posecef.hpp>
+#include <ublox_msgs/msg/nav_posllh.hpp>
+#include <ublox_msgs/msg/nav_relposned.hpp>
+#include <ublox_msgs/msg/nav_relposned9.hpp>
+#include <ublox_msgs/msg/nav_sbas.hpp>
+#include <ublox_msgs/msg/nav_sol.hpp>
+#include <ublox_msgs/msg/nav_pvt.hpp>
+#include <ublox_msgs/msg/nav_pvt7.hpp>
+#include <ublox_msgs/msg/nav_status.hpp>
+#include <ublox_msgs/msg/nav_sat.hpp>
+#include <ublox_msgs/msg/nav_svin.hpp>
+#include <ublox_msgs/msg/nav_svinfo.hpp>
+#include <ublox_msgs/msg/nav_timegps.hpp>
+#include <ublox_msgs/msg/nav_timeutc.hpp>
+#include <ublox_msgs/msg/nav_velecef.hpp>
+#include <ublox_msgs/msg/nav_velned.hpp>
 
-#include <ublox_msgs/RxmALM.h>
-#include <ublox_msgs/RxmEPH.h>
-#include <ublox_msgs/RxmRAW.h>
-#include <ublox_msgs/RxmRAWSV.h>
-#include <ublox_msgs/RxmRAWX.h>
-#include <ublox_msgs/RxmRAWXMeas.h>
-#include <ublox_msgs/RxmRTCM.h>
-#include <ublox_msgs/RxmSFRB.h>
-#include <ublox_msgs/RxmSFRBX.h>
-#include <ublox_msgs/RxmSVSI.h>
+#include <ublox_msgs/msg/rxm_alm.hpp>
+#include <ublox_msgs/msg/rxm_eph.hpp>
+#include <ublox_msgs/msg/rxm_raw.hpp>
+#include <ublox_msgs/msg/rxm_rawsv.hpp>
+#include <ublox_msgs/msg/rxm_rawx.hpp>
+#include <ublox_msgs/msg/rxm_rawx_meas.hpp>
+#include <ublox_msgs/msg/rxm_rtcm.hpp>
+#include <ublox_msgs/msg/rxm_sfrb.hpp>
+#include <ublox_msgs/msg/rxm_sfrbx.hpp>
+#include <ublox_msgs/msg/rxm_svsi.hpp>
 
-#include <ublox_msgs/Inf.h>
-#include <ublox_msgs/Ack.h>
+#include <ublox_msgs/msg/inf.hpp>
+#include <ublox_msgs/msg/ack.hpp>
 
-#include <ublox_msgs/CfgANT.h>
-#include <ublox_msgs/CfgCFG.h>
-#include <ublox_msgs/CfgDAT.h>
-#include <ublox_msgs/CfgDGNSS.h>
-#include <ublox_msgs/CfgGNSS.h>
-#include <ublox_msgs/CfgHNR.h>
-#include <ublox_msgs/CfgINF.h>
-#include <ublox_msgs/CfgINFBlock.h>
-#include <ublox_msgs/CfgMSG.h>
-#include <ublox_msgs/CfgNAV5.h>
-#include <ublox_msgs/CfgNAVX5.h>
-#include <ublox_msgs/CfgNMEA.h>
-#include <ublox_msgs/CfgNMEA6.h>
-#include <ublox_msgs/CfgNMEA7.h>
-#include <ublox_msgs/CfgPRT.h>
-#include <ublox_msgs/CfgRATE.h>
-#include <ublox_msgs/CfgRST.h>
-#include <ublox_msgs/CfgSBAS.h>
-#include <ublox_msgs/CfgTMODE3.h>
-#include <ublox_msgs/CfgUSB.h>
+#include <ublox_msgs/msg/cfg_ant.hpp>
+#include <ublox_msgs/msg/cfg_cfg.hpp>
+#include <ublox_msgs/msg/cfg_dat.hpp>
+#include <ublox_msgs/msg/cfg_dgnss.hpp>
+#include <ublox_msgs/msg/cfg_gnss.hpp>
+#include <ublox_msgs/msg/cfg_hnr.hpp>
+#include <ublox_msgs/msg/cfg_inf.hpp>
+#include <ublox_msgs/msg/cfg_inf_block.hpp>
+#include <ublox_msgs/msg/cfg_msg.hpp>
+#include <ublox_msgs/msg/cfg_nav5.hpp>
+#include <ublox_msgs/msg/cfg_navx5.hpp>
+#include <ublox_msgs/msg/cfg_nmea.hpp>
+#include <ublox_msgs/msg/cfg_nmea6.hpp>
+#include <ublox_msgs/msg/cfg_nmea7.hpp>
+#include <ublox_msgs/msg/cfg_prt.hpp>
+#include <ublox_msgs/msg/cfg_rate.hpp>
+#include <ublox_msgs/msg/cfg_rst.hpp>
+#include <ublox_msgs/msg/cfg_sbas.hpp>
+#include <ublox_msgs/msg/cfg_tmode3.hpp>
+#include <ublox_msgs/msg/cfg_usb.hpp>
 
-#include <ublox_msgs/UpdSOS.h>
-#include <ublox_msgs/UpdSOSAck.h>
+#include <ublox_msgs/msg/upd_sos.hpp>
+#include <ublox_msgs/msg/upd_sos_ack.hpp>
 
-#include <ublox_msgs/MonGNSS.h>
-#include <ublox_msgs/MonHW.h>
-#include <ublox_msgs/MonHW6.h>
-#include <ublox_msgs/MonVER.h>
+#include <ublox_msgs/msg/mon_gnss.hpp>
+#include <ublox_msgs/msg/mon_hw.hpp>
+#include <ublox_msgs/msg/mon_hw6.hpp>
+#include <ublox_msgs/msg/mon_ver.hpp>
 
-#include <ublox_msgs/AidALM.h>
-#include <ublox_msgs/AidEPH.h>
-#include <ublox_msgs/AidHUI.h>
+#include <ublox_msgs/msg/aid_alm.hpp>
+#include <ublox_msgs/msg/aid_eph.hpp>
+#include <ublox_msgs/msg/aid_hui.hpp>
 
-#include <ublox_msgs/EsfINS.h>
-#include <ublox_msgs/EsfMEAS.h>
-#include <ublox_msgs/EsfRAW.h>
-#include <ublox_msgs/EsfSTATUS.h>
-#include <ublox_msgs/EsfSTATUSSens.h>
+#include <ublox_msgs/msg/esf_ins.hpp>
+#include <ublox_msgs/msg/esf_meas.hpp>
+#include <ublox_msgs/msg/esf_raw.hpp>
+#include <ublox_msgs/msg/esf_status.hpp>
+#include <ublox_msgs/msg/esf_status_sens.hpp>
 
-#include <ublox_msgs/MgaGAL.h>
+#include <ublox_msgs/msg/mga_gal.hpp>
 
-#include <ublox_msgs/HnrPVT.h>
+#include <ublox_msgs/msg/hnr_pvt.hpp>
 
-#include <ublox_msgs/TimTM2.h>
+#include <ublox_msgs/msg/tim_tm2.hpp>
 
 namespace ublox_msgs {
 
@@ -152,36 +152,36 @@ namespace Class {
 
 namespace Message {
   namespace NAV {
-    static const uint8_t ATT = NavATT::MESSAGE_ID;
-    static const uint8_t CLOCK = NavCLOCK::MESSAGE_ID;
-    static const uint8_t DGPS = NavDGPS::MESSAGE_ID;
-    static const uint8_t DOP = NavDOP::MESSAGE_ID;
-    static const uint8_t POSECEF = NavPOSECEF::MESSAGE_ID;
-    static const uint8_t POSLLH = NavPOSLLH::MESSAGE_ID;
-    static const uint8_t RELPOSNED = NavRELPOSNED::MESSAGE_ID;
-    static const uint8_t RELPOSNED9 = NavRELPOSNED9::MESSAGE_ID;
-    static const uint8_t SBAS = NavSBAS::MESSAGE_ID;
-    static const uint8_t SOL = NavSOL::MESSAGE_ID;
-    static const uint8_t PVT = NavPVT::MESSAGE_ID;
-    static const uint8_t SAT = NavSAT::MESSAGE_ID;
-    static const uint8_t STATUS = NavSTATUS::MESSAGE_ID;
-    static const uint8_t SVINFO = NavSVINFO::MESSAGE_ID;
-    static const uint8_t SVIN = NavSVIN::MESSAGE_ID;
-    static const uint8_t TIMEGPS = NavTIMEGPS::MESSAGE_ID;
-    static const uint8_t TIMEUTC = NavTIMEUTC::MESSAGE_ID;
-    static const uint8_t VELECEF = NavVELECEF::MESSAGE_ID;
-    static const uint8_t VELNED = NavVELNED::MESSAGE_ID;
+    static const uint8_t ATT = ublox_msgs::msg::NavATT::MESSAGE_ID;
+    static const uint8_t CLOCK = ublox_msgs::msg::NavCLOCK::MESSAGE_ID;
+    static const uint8_t DGPS = ublox_msgs::msg::NavDGPS::MESSAGE_ID;
+    static const uint8_t DOP = ublox_msgs::msg::NavDOP::MESSAGE_ID;
+    static const uint8_t POSECEF = ublox_msgs::msg::NavPOSECEF::MESSAGE_ID;
+    static const uint8_t POSLLH = ublox_msgs::msg::NavPOSLLH::MESSAGE_ID;
+    static const uint8_t RELPOSNED = ublox_msgs::msg::NavRELPOSNED::MESSAGE_ID;
+    static const uint8_t RELPOSNED9 = ublox_msgs::msg::NavRELPOSNED9::MESSAGE_ID;
+    static const uint8_t SBAS = ublox_msgs::msg::NavSBAS::MESSAGE_ID;
+    static const uint8_t SOL = ublox_msgs::msg::NavSOL::MESSAGE_ID;
+    static const uint8_t PVT = ublox_msgs::msg::NavPVT::MESSAGE_ID;
+    static const uint8_t SAT = ublox_msgs::msg::NavSAT::MESSAGE_ID;
+    static const uint8_t STATUS = ublox_msgs::msg::NavSTATUS::MESSAGE_ID;
+    static const uint8_t SVINFO = ublox_msgs::msg::NavSVINFO::MESSAGE_ID;
+    static const uint8_t SVIN = ublox_msgs::msg::NavSVIN::MESSAGE_ID;
+    static const uint8_t TIMEGPS = ublox_msgs::msg::NavTIMEGPS::MESSAGE_ID;
+    static const uint8_t TIMEUTC = ublox_msgs::msg::NavTIMEUTC::MESSAGE_ID;
+    static const uint8_t VELECEF = ublox_msgs::msg::NavVELECEF::MESSAGE_ID;
+    static const uint8_t VELNED = ublox_msgs::msg::NavVELNED::MESSAGE_ID;
   }
 
   namespace RXM {
-    static const uint8_t ALM = RxmALM::MESSAGE_ID;
-    static const uint8_t EPH = RxmEPH::MESSAGE_ID;
-    static const uint8_t RAW = RxmRAW::MESSAGE_ID;
-    static const uint8_t RAWX = RxmRAWX::MESSAGE_ID;
-    static const uint8_t RTCM = RxmRTCM::MESSAGE_ID;
-    static const uint8_t SFRB = RxmSFRB::MESSAGE_ID;
-    static const uint8_t SFRBX = RxmSFRBX::MESSAGE_ID;
-    static const uint8_t SVSI = RxmSVSI::MESSAGE_ID;
+    static const uint8_t ALM = ublox_msgs::msg::RxmALM::MESSAGE_ID;
+    static const uint8_t EPH = ublox_msgs::msg::RxmEPH::MESSAGE_ID;
+    static const uint8_t RAW = ublox_msgs::msg::RxmRAW::MESSAGE_ID;
+    static const uint8_t RAWX = ublox_msgs::msg::RxmRAWX::MESSAGE_ID;
+    static const uint8_t RTCM = ublox_msgs::msg::RxmRTCM::MESSAGE_ID;
+    static const uint8_t SFRB = ublox_msgs::msg::RxmSFRB::MESSAGE_ID;
+    static const uint8_t SFRBX = ublox_msgs::msg::RxmSFRBX::MESSAGE_ID;
+    static const uint8_t SVSI = ublox_msgs::msg::RxmSVSI::MESSAGE_ID;
   }
 
   namespace INF {
@@ -198,62 +198,62 @@ namespace Message {
   }
 
   namespace AID {
-    static const uint8_t ALM = AidALM::MESSAGE_ID;
-    static const uint8_t EPH = AidEPH::MESSAGE_ID;
-    static const uint8_t HUI = AidHUI::MESSAGE_ID;
+    static const uint8_t ALM = ublox_msgs::msg::AidALM::MESSAGE_ID;
+    static const uint8_t EPH = ublox_msgs::msg::AidEPH::MESSAGE_ID;
+    static const uint8_t HUI = ublox_msgs::msg::AidHUI::MESSAGE_ID;
   }
 
   namespace CFG {
-    static const uint8_t ANT = CfgANT::MESSAGE_ID;
-    static const uint8_t CFG = CfgCFG::MESSAGE_ID;
-    static const uint8_t DAT = CfgDAT::MESSAGE_ID;
-    static const uint8_t GNSS = CfgGNSS::MESSAGE_ID;
-    static const uint8_t HNR = CfgHNR::MESSAGE_ID;
-    static const uint8_t INF = CfgINF::MESSAGE_ID;
-    static const uint8_t DGNSS = CfgDGNSS::MESSAGE_ID;
-    static const uint8_t MSG = CfgMSG::MESSAGE_ID;
-    static const uint8_t NAV5 = CfgNAV5::MESSAGE_ID;
-    static const uint8_t NAVX5 = CfgNAVX5::MESSAGE_ID;
-    static const uint8_t NMEA = CfgNMEA::MESSAGE_ID;
-    static const uint8_t PRT = CfgPRT::MESSAGE_ID;
-    static const uint8_t RATE = CfgRATE::MESSAGE_ID;
-    static const uint8_t RST = CfgRST::MESSAGE_ID;
-    static const uint8_t SBAS = CfgSBAS::MESSAGE_ID;
-    static const uint8_t TMODE3 = CfgTMODE3::MESSAGE_ID;
-    static const uint8_t USB = CfgUSB::MESSAGE_ID;
+    static const uint8_t ANT = ublox_msgs::msg::CfgANT::MESSAGE_ID;
+    static const uint8_t CFG = ublox_msgs::msg::CfgCFG::MESSAGE_ID;
+    static const uint8_t DAT = ublox_msgs::msg::CfgDAT::MESSAGE_ID;
+    static const uint8_t GNSS = ublox_msgs::msg::CfgGNSS::MESSAGE_ID;
+    static const uint8_t HNR = ublox_msgs::msg::CfgHNR::MESSAGE_ID;
+    static const uint8_t INF = ublox_msgs::msg::CfgINF::MESSAGE_ID;
+    static const uint8_t DGNSS = ublox_msgs::msg::CfgDGNSS::MESSAGE_ID;
+    static const uint8_t MSG = ublox_msgs::msg::CfgMSG::MESSAGE_ID;
+    static const uint8_t NAV5 = ublox_msgs::msg::CfgNAV5::MESSAGE_ID;
+    static const uint8_t NAVX5 = ublox_msgs::msg::CfgNAVX5::MESSAGE_ID;
+    static const uint8_t NMEA = ublox_msgs::msg::CfgNMEA::MESSAGE_ID;
+    static const uint8_t PRT = ublox_msgs::msg::CfgPRT::MESSAGE_ID;
+    static const uint8_t RATE = ublox_msgs::msg::CfgRATE::MESSAGE_ID;
+    static const uint8_t RST = ublox_msgs::msg::CfgRST::MESSAGE_ID;
+    static const uint8_t SBAS = ublox_msgs::msg::CfgSBAS::MESSAGE_ID;
+    static const uint8_t TMODE3 = ublox_msgs::msg::CfgTMODE3::MESSAGE_ID;
+    static const uint8_t USB = ublox_msgs::msg::CfgUSB::MESSAGE_ID;
   }
 
   namespace UPD {
     //! SOS and SOS_Ack have the same message ID, but different lengths
-    static const uint8_t SOS = UpdSOS::MESSAGE_ID;
+    static const uint8_t SOS = ublox_msgs::msg::UpdSOS::MESSAGE_ID;
   }
 
   namespace MON {
-    static const uint8_t GNSS = MonGNSS::MESSAGE_ID;
-    static const uint8_t HW = MonHW::MESSAGE_ID;
-    static const uint8_t VER = MonVER::MESSAGE_ID;
+    static const uint8_t GNSS = ublox_msgs::msg::MonGNSS::MESSAGE_ID;
+    static const uint8_t HW = ublox_msgs::msg::MonHW::MESSAGE_ID;
+    static const uint8_t VER = ublox_msgs::msg::MonVER::MESSAGE_ID;
   }
 
   namespace ESF {
-    static const uint8_t INS = EsfINS::MESSAGE_ID;
-    static const uint8_t MEAS = EsfMEAS::MESSAGE_ID;
-    static const uint8_t RAW = EsfRAW::MESSAGE_ID;
-    static const uint8_t STATUS = EsfSTATUS::MESSAGE_ID;
+    static const uint8_t INS = ublox_msgs::msg::EsfINS::MESSAGE_ID;
+    static const uint8_t MEAS = ublox_msgs::msg::EsfMEAS::MESSAGE_ID;
+    static const uint8_t RAW = ublox_msgs::msg::EsfRAW::MESSAGE_ID;
+    static const uint8_t STATUS = ublox_msgs::msg::EsfSTATUS::MESSAGE_ID;
   }
 
   namespace MGA {
-    static const uint8_t GAL = MgaGAL::MESSAGE_ID;
+    static const uint8_t GAL = ublox_msgs::msg::MgaGAL::MESSAGE_ID;
   }
 
   namespace HNR {
-    static const uint8_t PVT = HnrPVT::MESSAGE_ID;
+    static const uint8_t PVT = ublox_msgs::msg::HnrPVT::MESSAGE_ID;
   }
 
   namespace TIM {
-    static const uint8_t TM2 = TimTM2::MESSAGE_ID;
+    static const uint8_t TM2 = ublox_msgs::msg::TimTM2::MESSAGE_ID;
   }
 }
 
 } //!< namespace ublox_msgs
 
-#endif //!< UBLOX_MSGS_HPP
+#endif //!< UBLOX_MSGS_UBLOX_MSGS_HPP
