@@ -315,6 +315,9 @@ void UbloxNode::getRosParams() {
   declareRosBoolean("raw_data", false);
   declareRosBoolean("clear_bbr", false);
   declareRosBoolean("save_on_shutdown", false);
+  declareRosBoolean("use_adr", true);
+
+  declareRosBoolean("sv_in/reset", true);
 
   // raw data stream logging
   rawDataStreamPa_.getRosParams();
@@ -1017,13 +1020,13 @@ void UbloxFirmware7::getRosParams() {
     ROS_WARN("gnss/sbas is true, but SBAS is not supported by this device");
   }
 
-  if (nh->hasParam("gnss/galileo")) {
+  if (getRosBoolean("gnss/galileo")) {
     ROS_WARN("ublox_version < 8, ignoring Galileo GNSS Settings");
   }
-  if (nh->hasParam("gnss/beidou")) {
+  if (getRosBoolean("gnss/beidou")) {
     ROS_WARN("ublox_version < 8, ignoring BeiDou Settings");
   }
-  if (nh->hasParam("gnss/imes")) {
+  if (getRosBoolean("gnss/imes")) {
     ROS_WARN("ublox_version < 8, ignoring IMES GNSS Settings");
   }
 
@@ -1483,7 +1486,7 @@ AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::s
 }
 
 void AdrUdrProduct::getRosParams() {
-  nh->param("use_adr", use_adr_, true);
+  use_adr_ = getRosBoolean("use_adr");
   // Check the nav rate
   float nav_rate_hz = 1000 / (meas_rate_ * nav_rate_);
   if (nav_rate_hz != 1) {
@@ -1673,7 +1676,7 @@ void HpgRefProduct::getRosParams() {
         lla_flag_ = false;
       }
     } else if (tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
-      nh->param("sv_in/reset", svin_reset_, true);
+      svin_reset_ = getRosBoolean("sv_in/reset");
       if (!getRosUint("sv_in/min_dur", sv_in_min_dur_)) {
         throw std::runtime_error(std::string("Invalid settings: sv_in/min_dur ")
                                 + "must be set if TMODE3 is survey-in");
