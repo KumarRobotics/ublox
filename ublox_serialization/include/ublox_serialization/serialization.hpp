@@ -30,13 +30,11 @@
 #define UBLOX_SERIALIZATION_SERIALIZATION_HPP
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
+#include <cstring>
 #include <utility>
 #include <vector>
-
-#include <ros/console.h>
-
-#include <boost/array.hpp>
 
 #include "checksum.hpp"
 
@@ -214,75 +212,6 @@ inline uint32_t serializationLength(const std::array<T, N>& t)
 }
 
 /**
- * \brief Array serializer, default implementation does nothing
- */
-template<typename T, size_t N, class Enabled = void>
-struct BoostArraySerializer
-{};
-
-/**
- * \brief Array serializer, specialized for fixed-size, simple types
- */
-template<typename T, size_t N>
-struct BoostArraySerializer<T, N, typename std::enable_if<std::is_same<T, uint8_t>::value ||
-                                                          std::is_same<T, uint16_t>::value ||
-                                                          std::is_same<T, uint32_t>::value ||
-                                                          std::is_same<T, uint64_t>::value ||
-                                                          std::is_same<T, int8_t>::value ||
-                                                          std::is_same<T, int16_t>::value ||
-                                                          std::is_same<T, int32_t>::value ||
-                                                          std::is_same<T, int64_t>::value ||
-                                                          std::is_same<T, float>::value ||
-                                                          std::is_same<T, double>::value>::type>
-{
-  typedef boost::array<T, N> ArrayType;
-  typedef typename ArrayType::iterator IteratorType;
-  typedef typename ArrayType::const_iterator ConstIteratorType;
-
-  template<typename Stream>
-  inline static void write(Stream& stream, const ArrayType& v) {
-    const uint32_t data_len = N * sizeof(T);
-    std::memcpy(stream.advance(data_len), &v.front(), data_len);
-  }
-
-  template<typename Stream>
-  inline static void read(Stream& stream, ArrayType& v) {
-    const uint32_t data_len = N * sizeof(T);
-    std::memcpy(&v.front(), stream.advance(data_len), data_len);
-  }
-
-  inline static uint32_t serializedLength(const ArrayType& v) {
-    return N * sizeof(T);
-  }
-};
-
-/**
- * \brief serialize version for std::array
- */
-template<typename T, size_t N, typename Stream>
-inline void serialize(Stream& stream, const boost::array<T, N>& t)
-{
-  BoostArraySerializer<T, N>::write(stream, t);
-}
-
-/**
- * \brief deserialize version for std::array
- */
-template<typename T, size_t N, typename Stream>
-inline void deserialize(Stream& stream, boost::array<T, N>& t) {
-  BoostArraySerializer<T, N>::read(stream, t);
-}
-
-/**
- * \brief serializationLength version for std::array
- */
-template<typename T, size_t N>
-inline uint32_t serializationLength(const boost::array<T, N>& t)
-{
-  return BoostArraySerializer<T, N>::serializedLength(t);
-}
-
-/**
  * \brief UbloxStream base-class, provides common functionality for UbloxIStream and UbloxOStream
  */
 struct UbloxStream
@@ -422,7 +351,7 @@ struct Options {
    * @brief Get the number of bytes in the header and footer.
    * @return the number of bytes in the header and footer
    */
-  int wrapper_length() {
+  uint32_t wrapper_length() {
     return header_length + checksum_length;
   }
 };
@@ -564,8 +493,8 @@ class Reader {
     uint16_t chk;
     if (calculateChecksum(data_ + 2, length() + 4, chk) != this->checksum()) {
       // checksum error
-      ROS_DEBUG("U-Blox read checksum error: 0x%02x / 0x%02x", classId(),
-                messageId());
+      // ROS_DEBUG("U-Blox read checksum error: 0x%02x / 0x%02x", classId(),
+      //           messageId());
       return false;
     }
 
@@ -638,8 +567,8 @@ class Writer {
     // Check for buffer overflow
     uint32_t length = UbloxSerializer<T>::serializedLength(message);
     if (size_ < length + options_.wrapper_length()) {
-      ROS_ERROR("u-blox write buffer overflow. Message %u / %u not written",
-                class_id, message_id);
+      // ROS_ERROR("u-blox write buffer overflow. Message %u / %u not written",
+      //           class_id, message_id);
       return false;
     }
     // Encode the message and add it to the buffer
@@ -660,8 +589,8 @@ class Writer {
   bool write(const uint8_t* message, uint32_t length, uint8_t class_id,
              uint8_t message_id) {
     if (size_ < length + options_.wrapper_length()) {
-      ROS_ERROR("u-blox write buffer overflow. Message %u / %u not written",
-                class_id, message_id);
+      // ROS_ERROR("u-blox write buffer overflow. Message %u / %u not written",
+      //           class_id, message_id);
       return false;
     }
     iterator start = data_;
@@ -710,10 +639,10 @@ class Writer {
 
 // Use to declare u-blox messages and message serializers
 #define DECLARE_UBLOX_MESSAGE(class_id, message_id, package, message) \
-  template class ublox::UbloxSerializer<package::message>; \
-  template class ublox::Message<package::message>; \
+  template class ublox::UbloxSerializer<package::msg::message>; \
+  template class ublox::Message<package::msg::message>; \
   namespace package { namespace { \
-    static const ublox::Message<message>::StaticKeyInitializer static_key_initializer_##message(class_id, message_id); \
+    static const ublox::Message<package::msg::message>::StaticKeyInitializer static_key_initializer_##message(class_id, message_id); \
   } } \
 
 // Use for messages which have the same structure but different IDs, e.g. INF
@@ -721,7 +650,7 @@ class Writer {
 // for following declarations
 #define DECLARE_UBLOX_MESSAGE_ID(class_id, message_id, package, message, name) \
   namespace package { namespace { \
-    static const ublox::Message<message>::StaticKeyInitializer static_key_initializer_##name(class_id, message_id); \
+    static const ublox::Message<package::msg::message>::StaticKeyInitializer static_key_initializer_##name(class_id, message_id); \
   } } \
 
 #endif  // UBLOX_SERIALIZATION_SERIALIZATION_HPP
