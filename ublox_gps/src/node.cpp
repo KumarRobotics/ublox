@@ -183,13 +183,13 @@ void UbloxNode::addFirmwareInterface() {
 void UbloxNode::addProductInterface(const std::string & product_category,
                                     const std::string & ref_rov) {
   if (product_category.compare("HPG") == 0 && ref_rov.compare("REF") == 0) {
-    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, updater_, rtcms_));
+    components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, updater_, rtcms_, nh.get()));
   } else if (product_category.compare("HPG") == 0 && ref_rov.compare("ROV") == 0) {
-    components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_));
+    components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_, nh.get()));
   } else if (product_category.compare("HPG") == 0) {
-    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, frame_id_, updater_, rtcms_));
+    components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, frame_id_, updater_, rtcms_, nh.get()));
   } else if (product_category.compare("TIM") == 0) {
-    components_.push_back(std::make_shared<TimProduct>(frame_id_, updater_));
+    components_.push_back(std::make_shared<TimProduct>(frame_id_, updater_, nh.get()));
   } else if (product_category.compare("ADR") == 0 ||
              product_category.compare("UDR") == 0) {
     components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_, nh.get()));
@@ -1640,48 +1640,48 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
 // u-blox High Precision GNSS Reference Station
 //
 
-HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms)
-  : nav_rate_(nav_rate), meas_rate_(meas_rate), updater_(updater), rtcms_(rtcms)
+HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, ros::NodeHandle* node)
+  : nav_rate_(nav_rate), meas_rate_(meas_rate), updater_(updater), rtcms_(rtcms), node_(node)
 {
   navsvin_pub_ =
-    nh->advertise<ublox_msgs::NavSVIN>("navsvin", 1);
+    node_->advertise<ublox_msgs::NavSVIN>("navsvin", 1);
 }
 
 void HpgRefProduct::getRosParams() {
-  if (getRosBoolean(nh.get(), "config_on_startup")) {
+  if (getRosBoolean(node_, "config_on_startup")) {
     if (nav_rate_ * meas_rate_ != 1000) {
       ROS_WARN("For HPG Ref devices, nav_rate should be exactly 1 Hz.");
     }
 
-    if (!getRosUint(nh.get(), "tmode3", tmode3_)) {
+    if (!getRosUint(node_, "tmode3", tmode3_)) {
       throw std::runtime_error("Invalid settings: TMODE3 must be set");
     }
 
     if (tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_FIXED) {
-      if (!nh->getParam("arp/position", arp_position_)) {
+      if (!node_->getParam("arp/position", arp_position_)) {
         throw std::runtime_error(std::string("Invalid settings: arp/position ")
                                 + "must be set if TMODE3 is fixed");
       }
-      if (!getRosInt(nh.get(), "arp/position_hp", arp_position_hp_)) {
+      if (!getRosInt(node_, "arp/position_hp", arp_position_hp_)) {
         throw std::runtime_error(std::string("Invalid settings: arp/position_hp ")
                                 + "must be set if TMODE3 is fixed");
       }
-      if (!nh->getParam("arp/acc", fixed_pos_acc_)) {
+      if (!node_->getParam("arp/acc", fixed_pos_acc_)) {
         throw std::runtime_error(std::string("Invalid settings: arp/acc ")
                                 + "must be set if TMODE3 is fixed");
       }
-      if (!nh->getParam("arp/lla_flag", lla_flag_)) {
+      if (!node_->getParam("arp/lla_flag", lla_flag_)) {
         ROS_WARN("arp/lla_flag param not set, assuming ARP coordinates are %s",
                 "in ECEF");
         lla_flag_ = false;
       }
     } else if (tmode3_ == ublox_msgs::CfgTMODE3::FLAGS_MODE_SURVEY_IN) {
-      svin_reset_ = getRosBoolean(nh.get(), "sv_in/reset");
-      if (!getRosUint(nh.get(), "sv_in/min_dur", sv_in_min_dur_)) {
+      svin_reset_ = getRosBoolean(node_, "sv_in/reset");
+      if (!getRosUint(node_, "sv_in/min_dur", sv_in_min_dur_)) {
         throw std::runtime_error(std::string("Invalid settings: sv_in/min_dur ")
                                 + "must be set if TMODE3 is survey-in");
       }
-      if (!nh->getParam("sv_in/acc_lim", sv_in_acc_lim_)) {
+      if (!node_->getParam("sv_in/acc_lim", sv_in_acc_lim_)) {
         throw std::runtime_error(std::string("Invalid settings: sv_in/acc_lim ")
                                 + "must be set if TMODE3 is survey-in");
       }
@@ -1773,7 +1773,7 @@ void HpgRefProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void HpgRefProduct::callbackNavSvIn(const ublox_msgs::NavSVIN& m) {
-  if (getRosBoolean(nh.get(), "publish/nav/svin")) {
+  if (getRosBoolean(node_, "publish/nav/svin")) {
     navsvin_pub_.publish(m);
   }
 
@@ -1854,16 +1854,16 @@ void HpgRefProduct::tmode3Diagnostics(
 //
 // U-Blox High Precision GNSS Rover
 //
-HpgRovProduct::HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater)
-  : nav_rate_(nav_rate), updater_(updater)
+HpgRovProduct::HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater, ros::NodeHandle* node)
+  : nav_rate_(nav_rate), updater_(updater), node_(node)
 {
   nav_rel_pos_ned_pub_ =
-    nh->advertise<ublox_msgs::NavRELPOSNED>("navrelposned", 1);
+    node_->advertise<ublox_msgs::NavRELPOSNED>("navrelposned", 1);
 }
 
 void HpgRovProduct::getRosParams() {
   // default to float, see CfgDGNSS message for details
-  getRosUint(nh.get(), "dgnss_mode", dgnss_mode_,
+  getRosUint(node_, "dgnss_mode", dgnss_mode_,
              ublox_msgs::CfgDGNSS::DGNSS_MODE_RTK_FIXED);
 }
 
@@ -1925,7 +1925,7 @@ void HpgRovProduct::carrierPhaseDiagnostics(
 }
 
 void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
-  if (getRosBoolean(nh.get(), "publish/nav/relposned")) {
+  if (getRosBoolean(node_, "publish/nav/relposned")) {
     nav_rel_pos_ned_pub_.publish(m);
   }
 
@@ -1936,14 +1936,14 @@ void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
 //
 // U-Blox High Precision Positioning Receiver
 //
-HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms)
-  : HpgRefProduct(nav_rate, meas_rate, updater, rtcms), frame_id_(frame_id)
+HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, ros::NodeHandle* node)
+  : HpgRefProduct(nav_rate, meas_rate, updater, rtcms, node), frame_id_(frame_id)
 {
   nav_relposned_pub_ =
-    nh->advertise<ublox_msgs::NavRELPOSNED9>("navrelposned", 1);
+    node_->advertise<ublox_msgs::NavRELPOSNED9>("navrelposned", 1);
 
   imu_pub_ =
-    nh->advertise<sensor_msgs::Imu>("navheading", 1);
+    node_->advertise<sensor_msgs::Imu>("navheading", 1);
 }
 
 void HpPosRecProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
@@ -1954,11 +1954,11 @@ void HpPosRecProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
-  if (getRosBoolean(nh.get(), "publish/nav/relposned")) {
+  if (getRosBoolean(node_, "publish/nav/relposned")) {
     nav_relposned_pub_.publish(m);
   }
 
-  if (getRosBoolean(nh.get(), "publish/nav/heading")) {
+  if (getRosBoolean(node_, "publish/nav/heading")) {
     imu_.header.stamp = ros::Time::now();
     imu_.header.frame_id = frame_id_;
 
@@ -1987,14 +1987,14 @@ void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
 //
 // U-Blox Time Sync Products, partially implemented.
 //
-TimProduct::TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater) : frame_id_(frame_id), updater_(updater)
+TimProduct::TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, ros::NodeHandle* node) : frame_id_(frame_id), updater_(updater), node_(node)
 {
   timtm2_pub_ =
-    nh->advertise<ublox_msgs::TimTM2>("timtm2", 1);
+    node_->advertise<ublox_msgs::TimTM2>("timtm2", 1);
   interrupt_time_pub_ =
-    nh->advertise<sensor_msgs::TimeReference>("interrupt_time", 1);
-  rxm_sfrb_pub_ = nh->advertise<ublox_msgs::RxmSFRBX>("rxmsfrb", 1);
-  rxm_raw_pub_ = nh->advertise<ublox_msgs::RxmRAWX>("rxmraw", 1);
+    node_->advertise<sensor_msgs::TimeReference>("interrupt_time", 1);
+  rxm_sfrb_pub_ = node_->advertise<ublox_msgs::RxmSFRBX>("rxmsfrb", 1);
+  rxm_raw_pub_ = node_->advertise<ublox_msgs::RxmRAWX>("rxmraw", 1);
 }
 
 void TimProduct::getRosParams() {
@@ -2021,13 +2021,13 @@ void TimProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   ROS_INFO("Subscribed to TIM-TM2 messages on topic tim/tm2");
 
   // Subscribe to SFRBX messages
-  if (getRosBoolean(nh.get(), "publish/rxm/sfrb")) {
+  if (getRosBoolean(node_, "publish/rxm/sfrb")) {
     gps->subscribe<ublox_msgs::RxmSFRBX>([this](const ublox_msgs::RxmSFRBX &m) { rxm_sfrb_pub_.publish(m); },
                                          1);
   }
 
    // Subscribe to RawX messages
-   if (getRosBoolean(nh.get(), "publish/rxm/raw")) {
+   if (getRosBoolean(node_, "publish/rxm/raw")) {
      gps->subscribe<ublox_msgs::RxmRAWX>([this](const ublox_msgs::RxmRAWX &m) { rxm_raw_pub_.publish(m); },
                                          1);
    }
@@ -2035,7 +2035,7 @@ void TimProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
 
 void TimProduct::callbackTimTM2(const ublox_msgs::TimTM2 &m) {
 
-  if (getRosBoolean(nh.get(), "publish/tim/tm2")) {
+  if (getRosBoolean(node_, "publish/tim/tm2")) {
     // create time ref message and put in the data
     t_ref_.header.seq = m.rising_edge_count;
     t_ref_.header.stamp = ros::Time::now();

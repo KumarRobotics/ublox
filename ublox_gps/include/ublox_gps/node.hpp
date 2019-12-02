@@ -1022,7 +1022,7 @@ class HpgRefProduct: public virtual ComponentInterface {
   //! Default measurement period for HPG devices
   constexpr static uint16_t kDefaultMeasPeriod = 250;
 
-  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms);
+  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, ros::NodeHandle* node);
 
   /**
    * @brief Get the ROS parameters specific to the Reference Station
@@ -1135,6 +1135,7 @@ class HpgRefProduct: public virtual ComponentInterface {
 
   std::vector<ublox_gps::Rtcm> rtcms_;
   std::shared_ptr<ublox_gps::Gps> gps_;
+  ros::NodeHandle* node_;
 };
 
 /**
@@ -1152,7 +1153,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
   //! Diagnostic updater: RTCM topic frequency window [num messages]
   constexpr static int kRtcmFreqWindow = 25;
 
-  explicit HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater);
+  explicit HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater, ros::NodeHandle* node);
 
   /**
    * @brief Get the ROS parameters specific to the Rover configuration.
@@ -1210,11 +1211,12 @@ class HpgRovProduct final : public virtual ComponentInterface {
 
   uint16_t nav_rate_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
+  ros::NodeHandle* node_;
 };
 
 class HpPosRecProduct final : public virtual HpgRefProduct {
  public:
-  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms);
+  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, ros::NodeHandle* node);
 
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.
@@ -1247,7 +1249,7 @@ class HpPosRecProduct final : public virtual HpgRefProduct {
  */
 class TimProduct final : public virtual ComponentInterface {
  public:
-  explicit TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater);
+  explicit TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, ros::NodeHandle* node);
 
   /**
    * @brief Get the Time Sync parameters.
@@ -1290,6 +1292,8 @@ class TimProduct final : public virtual ComponentInterface {
 
   std::string frame_id_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
+
+  ros::NodeHandle* node_;
 };
 
 }
