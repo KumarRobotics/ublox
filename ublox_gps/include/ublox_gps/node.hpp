@@ -42,7 +42,9 @@
 #include <ublox_msgs/CfgDAT.h>
 #include <ublox_msgs/Inf.h>
 // Ublox GPS includes
+#include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/fix_diagnostic.hpp>
+#include <ublox_gps/gnss.hpp>
 #include <ublox_gps/gps.hpp>
 #include <ublox_gps/rtcm.hpp>
 #include <ublox_gps/raw_data_pa.hpp>

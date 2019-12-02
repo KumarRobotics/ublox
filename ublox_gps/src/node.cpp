@@ -797,12 +797,3 @@ UbloxNode::~UbloxNode() {
 }
 
 }  // namespace ublox_node
-
-int main(int argc, char** argv) {
-  ros::init(argc, argv, "ublox_gps");
-  ublox_node::UbloxNode node;
-
-  ros::spin();
-
-  return 0;
-}
