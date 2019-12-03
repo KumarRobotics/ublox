@@ -457,13 +457,13 @@ void UbloxNode::pollMessages() {
 
 void UbloxNode::printInf(const ublox_msgs::msg::Inf &m, uint8_t id) {
   if (id == ublox_msgs::Message::INF::ERROR) {
-    // RCLCPP_ERROR_STREAM(this->get_logger(), "INF: " << std::string(m.str.begin(), m.str.end(this->get_logger(), )));
+    RCLCPP_ERROR(this->get_logger(), "INF: %s", std::string(m.str.begin(), m.str.end()).c_str());
   } else if (id == ublox_msgs::Message::INF::WARNING) {
-    // RCLCPP_WARN_STREAM("INF: " << std::string(m.str.begin(), m.str.end(this->get_logger(), )));
+    RCLCPP_WARN(this->get_logger(), "INF: %s", std::string(m.str.begin(), m.str.end()).c_str());
   } else if (id == ublox_msgs::Message::INF::DEBUG) {
-    // RCLCPP_DEBUG_STREAM("INF: " << std::string(m.str.begin(), m.str.end(this->get_logger(), )));
+    RCLCPP_DEBUG(this->get_logger(), "INF: %s", std::string(m.str.begin(), m.str.end()).c_str());
   } else {
-    // RCLCPP_INFO_STREAM("INF: " << std::string(m.str.begin(), m.str.end(this->get_logger(), )));
+    RCLCPP_INFO(this->get_logger(), "INF: %s", std::string(m.str.begin(), m.str.end()).c_str());
   }
 }
 

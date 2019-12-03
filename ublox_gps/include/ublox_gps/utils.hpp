@@ -21,7 +21,7 @@ namespace ublox_node {
 template<typename NavPVT>
 long toUtcSeconds(const NavPVT& msg) {
   // Create TM struct for mkgmtime
-  struct tm time = {0};
+  struct tm time{};
   time.tm_year = msg.year - 1900;
   time.tm_mon = msg.month - 1;
   time.tm_mday = msg.day;
@@ -98,13 +98,13 @@ bool getRosUint(rclcpp::Node* node, const std::string& key, U &u) {
   if (!node->get_parameter(key, parameter)) {
     return false;
   }
-  int param = parameter.get_value<U>();
+  U param = parameter.get_value<U>();
   // Check the bounds
   U min = std::numeric_limits<U>::lowest();
   U max = std::numeric_limits<U>::max();
   checkRange(param, min, max, key);
   // set the output
-  u = (U) param;
+  u = static_cast<U>(param);
   return true;
 }
 
@@ -145,76 +145,15 @@ bool getRosUint(rclcpp::Node* node, const std::string& key, std::vector<U> &u) {
   return true;
 }
 
-/**
- * @brief Get a integer (size 8 or 16) value from the parameter server.
- * @param key the key to be used in the parameter server's dictionary
- * @param u storage for the retrieved value.
- * @throws std::runtime_error if the parameter is out of bounds
- * @return true if found, false if not found.
- */
-template <typename I>
-bool getRosInt(rclcpp::Node* node, const std::string& key, I &u) {
-  rclcpp::Parameter parameter;
-  if (!node->get_parameter(key, parameter)) {
-    return false;
-  }
-
-  int param = parameter.get_value<I>();
-  // Check the bounds
-  I min = std::numeric_limits<I>::lowest();
-  I max = std::numeric_limits<I>::max();
-  checkRange(param, min, max, key);
-  // set the output
-  u = (I) param;
-  return true;
-}
-
-/**
- * @brief Get an integer value (size 8 or 16) from the parameter server.
- * @param key the key to be used in the parameter server's dictionary
- * @param u storage for the retrieved value.
- * @param val value to use if the server doesn't contain this parameter.
- * @throws std::runtime_error if the parameter is out of bounds
- * @return true if found, false if not found.
- */
-template <typename U, typename V>
-void getRosInt(rclcpp::Node* node, const std::string& key, U &u, V default_val) {
-  if (!getRosInt(node, key, u)) {
-    u = default_val;
-  }
-}
-
-/**
- * @brief Get a int (size 8 or 16) vector from the parameter server.
- * @throws std::runtime_error if the parameter is out of bounds.
- * @return true if found, false if not found.
- */
-template <typename I>
-bool getRosInt(rclcpp::Node* node, const std::string& key, std::vector<I> &i) {
-  std::vector<long int> param;
-  if (!node->get_parameter(key, param)) {
-    return false;
-  }
-
-  // Check the bounds
-  I min = std::numeric_limits<I>::lowest();
-  I max = std::numeric_limits<I>::max();
-  checkRange(param, min, max, key);
-
-  // set the output
-  i.insert(i.begin(), param.begin(), param.end());
-  return true;
-}
-
 static inline bool getRosBoolean(rclcpp::Node* node, const std::string &name)
 {
-  rclcpp::Parameter parameter;
-  if (!node->get_parameter(name, parameter)) {
-    // Note that if this is used after declareRosBoolean, this should never happen.
-    throw std::runtime_error("Required parameter '" + name + "' has the wrong type (expected bool)");
+  bool ret;
+  if (!node->get_parameter(name, ret)) {
+    // Note that if this is used after declare_parameter, this should never happen.
+    throw std::runtime_error("Required parameter '" + name + "' has not been declared");
   }
 
-  return parameter.get_value<bool>();
+  return ret;
 }
 
 }  // namespace ublox_node

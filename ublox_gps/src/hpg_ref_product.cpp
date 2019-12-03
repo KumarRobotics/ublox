@@ -28,6 +28,28 @@ HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_
     node_->create_publisher<ublox_msgs::msg::NavSVIN>("navsvin", 1);
 }
 
+/**
+ * @brief Get a int (size 8 or 16) vector from the parameter server.
+ * @throws std::runtime_error if the parameter is out of bounds.
+ * @return true if found, false if not found.
+ */
+template <typename I>
+bool getRosInt(rclcpp::Node* node, const std::string& key, std::vector<I> &i) {
+  std::vector<long int> param;
+  if (!node->get_parameter(key, param)) {
+    return false;
+  }
+
+  // Check the bounds
+  I min = std::numeric_limits<I>::lowest();
+  I max = std::numeric_limits<I>::max();
+  checkRange(param, min, max, key);
+
+  // set the output
+  i.insert(i.begin(), param.begin(), param.end());
+  return true;
+}
+
 void HpgRefProduct::getRosParams() {
   if (getRosBoolean(node_, "config_on_startup")) {
     if (nav_rate_ * meas_rate_ != 1000) {
@@ -40,15 +62,15 @@ void HpgRefProduct::getRosParams() {
 
     if (tmode3_ == ublox_msgs::msg::CfgTMODE3::FLAGS_MODE_FIXED) {
       if (!node_->get_parameter("arp.position", arp_position_)) {
-        throw std::runtime_error(std::string("Invalid settings: arp/position ")
+        throw std::runtime_error(std::string("Invalid settings: arp.position ")
                                 + "must be set if TMODE3 is fixed");
       }
       if (!getRosInt(node_, "arp.position_hp", arp_position_hp_)) {
-        throw std::runtime_error(std::string("Invalid settings: arp/position_hp ")
+        throw std::runtime_error(std::string("Invalid settings: arp.position_hp ")
                                 + "must be set if TMODE3 is fixed");
       }
       if (!node_->get_parameter("arp.acc", fixed_pos_acc_)) {
-        throw std::runtime_error(std::string("Invalid settings: arp/acc ")
+        throw std::runtime_error(std::string("Invalid settings: arp.acc ")
                                 + "must be set if TMODE3 is fixed");
       }
       if (!node_->get_parameter("arp.lla_flag", lla_flag_)) {
