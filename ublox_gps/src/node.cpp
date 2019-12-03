@@ -703,7 +703,7 @@ bool UbloxNode::configureUblox() {
         RCLCPP_ERROR(this->get_logger(), "u-blox unable to save configuration to non-volatile memory");
       }
     }
-  } catch (std::exception& e) {
+  } catch (const std::exception& e) {
     RCLCPP_FATAL(this->get_logger(), "Error configuring u-blox: %s", e.what());
     return false;
   }

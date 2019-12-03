@@ -51,7 +51,9 @@ Gps::Gps(int debug) : configured_(false), config_on_startup_flag_(true), debug_(
   subscribeAcks();
 }
 
-Gps::~Gps() { close(); }
+Gps::~Gps() {
+  close();
+}
 
 void Gps::setWorker(const std::shared_ptr<Worker>& worker) {
   if (worker_) {
@@ -59,20 +61,23 @@ void Gps::setWorker(const std::shared_ptr<Worker>& worker) {
   }
   worker_ = worker;
   worker_->setCallback(std::bind(&CallbackHandlers::readCallback,
-                                   &callbacks_, std::placeholders::_1, std::placeholders::_2));
+                                 &callbacks_, std::placeholders::_1,
+                                 std::placeholders::_2));
   configured_ = static_cast<bool>(worker);
 }
 
 void Gps::subscribeAcks() {
   // Set NACK handler
-  subscribeId<ublox_msgs::msg::Ack>(std::bind(&Gps::processNack, this, std::placeholders::_1),
-                               ublox_msgs::Message::ACK::NACK);
+  subscribeId<ublox_msgs::msg::Ack>(std::bind(&Gps::processNack, this,
+                                              std::placeholders::_1),
+                                    ublox_msgs::Message::ACK::NACK);
   // Set ACK handler
-  subscribeId<ublox_msgs::msg::Ack>(std::bind(&Gps::processAck, this, std::placeholders::_1),
-                               ublox_msgs::Message::ACK::ACK);
+  subscribeId<ublox_msgs::msg::Ack>(std::bind(&Gps::processAck, this,
+                                              std::placeholders::_1),
+                                    ublox_msgs::Message::ACK::ACK);
   // Set UPD-SOS-ACK handler
-  subscribe<ublox_msgs::msg::UpdSOSAck>(
-      std::bind(&Gps::processUpdSosAck, this, std::placeholders::_1));
+  subscribe<ublox_msgs::msg::UpdSOSAck>(std::bind(&Gps::processUpdSosAck, this,
+                                                  std::placeholders::_1));
 }
 
 void Gps::processAck(const ublox_msgs::msg::Ack &m) {
@@ -123,7 +128,7 @@ void Gps::initializeSerial(const std::string & port, unsigned int baudrate,
   // open serial port
   try {
     serial->open(port);
-  } catch (std::runtime_error& e) {
+  } catch (const std::runtime_error& e) {
     throw std::runtime_error("U-Blox: Could not open serial port :"
                              + port + " " + e.what());
   }
@@ -148,7 +153,7 @@ void Gps::initializeSerial(const std::string & port, unsigned int baudrate,
   asio::serial_port_base::baud_rate current_baudrate;
   serial->get_option(current_baudrate);
   // Incrementally increase the baudrate to the desired value
-  for (size_t i = 0; i < sizeof(kBaudrates)/sizeof(kBaudrates[0]); i++) {
+  for (size_t i = 0; i < sizeof(kBaudrates) / sizeof(kBaudrates[0]); i++) {
     if (current_baudrate.value() == baudrate) {
       break;
     }
@@ -156,8 +161,7 @@ void Gps::initializeSerial(const std::string & port, unsigned int baudrate,
     if (current_baudrate.value() > kBaudrates[i] && baudrate > kBaudrates[i]) {
       continue;
     }
-    serial->set_option(
-        asio::serial_port_base::baud_rate(kBaudrates[i]));
+    serial->set_option(asio::serial_port_base::baud_rate(kBaudrates[i]));
     std::this_thread::sleep_for(
         std::chrono::milliseconds(kSetBaudrateSleepMs));
     serial->get_option(current_baudrate);
@@ -180,7 +184,7 @@ void Gps::resetSerial(const std::string & port) {
   // open serial port
   try {
     serial->open(port);
-  } catch (std::runtime_error& e) {
+  } catch (const std::runtime_error& e) {
     throw std::runtime_error("U-Blox: Could not open serial port :"
                              + port + " " + e.what());
   }
@@ -223,7 +227,7 @@ void Gps::initializeTcp(const std::string & host, const std::string & port) {
     asio::ip::tcp::resolver resolver(*io_service);
     endpoint =
         resolver.resolve(asio::ip::tcp::resolver::query(host, port));
-  } catch (std::runtime_error& e) {
+  } catch (const std::runtime_error& e) {
     throw std::runtime_error("U-Blox: Could not resolve" + host + " " +
                              port + " " + e.what());
   }
@@ -232,7 +236,7 @@ void Gps::initializeTcp(const std::string & host, const std::string & port) {
 
   try {
     socket->connect(*endpoint);
-  } catch (std::runtime_error& e) {
+  } catch (const std::runtime_error& e) {
     throw std::runtime_error("U-Blox: Could not connect to " +
                              endpoint->host_name() + ":" +
                              endpoint->service_name() + ": " + e.what());

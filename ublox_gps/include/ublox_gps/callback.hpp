@@ -100,7 +100,7 @@ class CallbackHandler_ final : public CallbackHandler {
         condition_.notify_all();
         return;
       }
-    } catch (std::runtime_error& e) {
+    } catch (const std::runtime_error& e) {
       // RCLCPP_DEBUG_COND(debug_ >= 2,
       //                "U-Blox Decoder error for 0x%02x / 0x%02x (%d bytes)",
       //                static_cast<unsigned int>(reader.classId()),
