@@ -225,8 +225,8 @@ void UbloxNode::addProductInterface(const std::string & product_category,
     components_.push_back(std::make_shared<FtsProduct>());
   } else if (product_category.compare("SPG") != 0) {
     RCLCPP_WARN(this->get_logger(), "Product category %s %s from MonVER message not recognized %s",
-             product_category.c_str(), ref_rov.c_str(),
-             "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, SPG");
+                product_category.c_str(), ref_rov.c_str(),
+                "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, SPG");
   }
 }
 
@@ -241,11 +241,11 @@ void UbloxNode::getRosParams() {
   save_.device_mask = declareRosIntParameter<uint8_t>(this, "save.device", 0);
 
   // UART 1 params
-  getRosUint(this, "uart1.baudrate", baudrate_, 9600);
-  getRosUint(this, "uart1.in", uart_in_, ublox_msgs::msg::CfgPRT::PROTO_UBX
-                                    | ublox_msgs::msg::CfgPRT::PROTO_NMEA
-                                    | ublox_msgs::msg::CfgPRT::PROTO_RTCM);
-  getRosUint(this, "uart1.out", uart_out_, ublox_msgs::msg::CfgPRT::PROTO_UBX);
+  baudrate_ = declareRosIntParameter<uint32_t>(this, "uart1.baudrate", 9600);
+  uart_in_ = declareRosIntParameter<uint16_t>(this, "uart1.in", ublox_msgs::msg::CfgPRT::PROTO_UBX
+                                              | ublox_msgs::msg::CfgPRT::PROTO_NMEA
+                                              | ublox_msgs::msg::CfgPRT::PROTO_RTCM);
+  uart_out_ = declareRosIntParameter<uint16_t>(this, "uart1.out", ublox_msgs::msg::CfgPRT::PROTO_UBX);
   // USB params
   set_usb_ = false;
   if (this->has_parameter("usb.in") || this->has_parameter("usb.out")) {
@@ -262,7 +262,7 @@ void UbloxNode::getRosParams() {
   }
   // Measurement rate params
   rate_ = this->declare_parameter("rate", 4.0);  // in Hz
-  nav_rate_ = this->declare_parameter("nav_rate", 1);  // # of measurement rate cycles
+  nav_rate_ = declareRosIntParameter<uint16_t>(this, "nav_rate", 1);  // # of measurement rate cycles
   // RTCM params
   std::vector<uint8_t> rtcm_ids;
   std::vector<uint8_t> rtcm_rates;
@@ -278,11 +278,11 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("gnss.galileo", false);
   this->declare_parameter("gnss.beidou", false);
   this->declare_parameter("gnss.imes", false);
-  getRosUint(this, "sbas.max", max_sbas_, 0); // Maximum number of SBAS channels
-  getRosUint(this, "sbas.usage", sbas_usage_, 0);
+  max_sbas_ = declareRosIntParameter<uint8_t>(this, "sbas.max", 0); // Maximum number of SBAS channels
+  sbas_usage_ = declareRosIntParameter<uint8_t>(this, "sbas.usage", 0);
   dynamic_model_ = this->declare_parameter("dynamic_model", std::string("portable"));
   fix_mode_ = this->declare_parameter("fix_mode", std::string("auto"));
-  getRosUint(this, "dr_limit", dr_limit_, 0); // Dead reckoning limit
+  dr_limit_ = declareRosIntParameter<uint8_t>(this, "dr_limit", 0); // Dead reckoning limit
 
   if (getRosBoolean(this, "enable_ppp")) {
     RCLCPP_WARN(this->get_logger(), "Warning: PPP is enabled - this is an expert setting.");
