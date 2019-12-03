@@ -23,8 +23,8 @@ namespace ublox_node {
  */
 class RawDataProduct final : public virtual ComponentInterface {
  public:
-  double kRtcmFreqTol = 0.15;
-  int kRtcmFreqWindow = 25;
+  const double kRtcmFreqTol = 0.15;
+  const int kRtcmFreqWindow = 25;
 
   explicit RawDataProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node);
 

@@ -86,13 +86,13 @@ class UbloxNode final : public rclcpp::Node {
   constexpr static double kPollDuration = 1.0;
   // Constants used for diagnostic frequency updater
   //! [s] 5Hz diagnostic period
-  float kDiagnosticPeriod = 0.2;
+  const float kDiagnosticPeriod = 0.2;
   //! Tolerance for Fix topic frequency as percentage of target frequency
-  double kFixFreqTol = 0.15;
+  const double kFixFreqTol = 0.15;
   //! Window [num messages] for Fix Frequency Diagnostic
-  double kFixFreqWindow = 10;
+  const double kFixFreqWindow = 10;
   //! Minimum Time Stamp Status for fix frequency diagnostic
-  double kTimeStampStatusMin = 0;
+  const double kTimeStampStatusMin = 0;
 
   /**
    * @brief Initialize and run the u-blox node.
