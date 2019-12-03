@@ -235,10 +235,10 @@ void UbloxNode::getRosParams() {
   frame_id_ = this->declare_parameter("frame_id", std::string("gps"));
 
   // Save configuration parameters
-  getRosUint(this, "load.mask", load_.load_mask, 0);
-  getRosUint(this, "load.device", load_.device_mask, 0);
-  getRosUint(this, "save.mask", save_.save_mask, 0);
-  getRosUint(this, "save.device", save_.device_mask, 0);
+  load_.load_mask = declareRosIntParameter<uint32_t>(this, "load.mask", 0);
+  load_.device_mask = declareRosIntParameter<uint8_t>(this, "load.device", 0);
+  save_.save_mask = declareRosIntParameter<uint32_t>(this, "save.mask", 0);
+  save_.device_mask = declareRosIntParameter<uint8_t>(this, "save.device", 0);
 
   // UART 1 params
   getRosUint(this, "uart1.baudrate", baudrate_, 9600);
@@ -262,7 +262,7 @@ void UbloxNode::getRosParams() {
   }
   // Measurement rate params
   rate_ = this->declare_parameter("rate", 4.0);  // in Hz
-  getRosUint(this, "nav_rate", nav_rate_, 1);  // # of measurement rate cycles
+  nav_rate_ = this->declare_parameter("nav_rate", 1);  // # of measurement rate cycles
   // RTCM params
   std::vector<uint8_t> rtcm_ids;
   std::vector<uint8_t> rtcm_rates;
@@ -556,16 +556,18 @@ void UbloxNode::processMonVer() {
     throw std::runtime_error("Failed to poll MonVER & set relevant settings");
   }
 
-  // RCLCPP_DEBUG(this->get_logger(), "%s, HW VER: %s", monVer.sw_version.array(),
-  //              monVer.hw_version.array());
+  RCLCPP_INFO(this->get_logger(), "%s, HW VER: %s",
+              std::string(monVer.sw_version.begin(), monVer.sw_version.end()).c_str(),
+              std::string(monVer.hw_version.begin(), monVer.hw_version.end()).c_str());
   // Convert extension to vector of strings
   std::vector<std::string> extension;
   extension.reserve(monVer.extension.size());
   for (std::size_t i = 0; i < monVer.extension.size(); ++i) {
-    // RCLCPP_DEBUG(this->get_logger(), "%s", monVer.extension[i].field.array());
+    RCLCPP_DEBUG(this->get_logger(), "%s",
+                 std::string(monVer.extension[i].field.begin(), monVer.extension[i].field.end()).c_str());
     // Find the end of the string (null character)
     unsigned char* end = std::find(monVer.extension[i].field.begin(),
-          monVer.extension[i].field.end(), '\0');
+                                   monVer.extension[i].field.end(), '\0');
     extension.push_back(std::string(monVer.extension[i].field.begin(), end));
   }
 
@@ -580,7 +582,7 @@ void UbloxNode::processMonVer() {
   }
   if (protocol_version_ == 0) {
     RCLCPP_WARN(this->get_logger(), "Failed to parse MonVER and determine protocol version. %s",
-             "Defaulting to firmware version 6.");
+                "Defaulting to firmware version 6.");
   }
   addFirmwareInterface();
 

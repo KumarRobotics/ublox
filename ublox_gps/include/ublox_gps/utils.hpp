@@ -9,6 +9,7 @@
 
 #include <time.h>
 
+#include <rcl_interfaces/msg/parameter_descriptor.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <ublox_gps/mkgmtime.h>
@@ -154,6 +155,20 @@ static inline bool getRosBoolean(rclcpp::Node* node, const std::string &name)
   }
 
   return ret;
+}
+
+template <typename T>
+T declareRosIntParameter(rclcpp::Node* node, const std::string& name, long int default_value)
+{
+  rcl_interfaces::msg::ParameterDescriptor param_desc;
+  param_desc.name = name;
+  param_desc.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+  param_desc.description = name;
+  rcl_interfaces::msg::IntegerRange range;
+  range.from_value = std::numeric_limits<T>::lowest();
+  range.to_value = std::numeric_limits<T>::max();
+  param_desc.integer_range.push_back(range);
+  return node->declare_parameter(name, default_value, param_desc);
 }
 
 }  // namespace ublox_node
