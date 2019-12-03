@@ -180,10 +180,6 @@ UbloxNode::UbloxNode() : rclcpp::Node("ublox_gps_node") {
   updater_ = std::make_shared<diagnostic_updater::Updater>(this);
   updater_->setHardwareID("ublox");
 
-  // configure diagnostic updater for frequency
-  freq_diag_ = std::make_shared<FixDiagnostic>(std::string("fix"), kFixFreqTol,
-                                               kFixFreqWindow, kTimeStampStatusMin, nav_rate_, meas_rate_, updater_);
-
   initialize();
 }
 
@@ -775,6 +771,12 @@ void UbloxNode::initializeIo() {
 void UbloxNode::initialize() {
   // Params must be set before initializing IO
   getRosParams();
+
+  // configure diagnostic updater for frequency
+  freq_diag_ = std::make_shared<FixDiagnostic>(std::string("fix"), kFixFreqTol,
+                                               kFixFreqWindow, kTimeStampStatusMin, nav_rate_, meas_rate_, updater_);
+
+
   initializeIo();
   // Must process Mon VER before setting firmware/hardware params
   processMonVer();

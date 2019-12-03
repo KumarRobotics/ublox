@@ -127,7 +127,7 @@ class HpgRefProduct: public virtual ComponentInterface {
     DISABLED, //!< Time mode disabled
     SURVEY_IN, //!< Survey-In mode
     TIME //!< Time mode, after survey-in or after configuring fixed mode
-  } mode_;
+  } mode_{INIT};
 
   rclcpp::Publisher<ublox_msgs::msg::NavSVIN>::SharedPtr navsvin_pub_;
 

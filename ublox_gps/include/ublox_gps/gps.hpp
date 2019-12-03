@@ -473,7 +473,7 @@ class Gps final {
   //! The default timeout for ACK messages
   static const std::chrono::milliseconds default_timeout_;
   //! Stores last received ACK accessed by multiple threads
-  mutable std::atomic<Ack> ack_;
+  std::atomic<Ack> ack_{};
 
   int debug_;
 
@@ -532,6 +532,8 @@ bool Gps::configure(const ConfigT& message, bool wait) {
   // Reset ack
   Ack ack;
   ack.type = WAIT;
+  ack.class_id = 0;
+  ack.msg_id = 0;
   ack_.store(ack, std::memory_order_seq_cst);
 
   // Encode the message
