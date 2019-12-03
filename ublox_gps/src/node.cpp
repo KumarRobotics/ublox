@@ -269,15 +269,15 @@ void UbloxNode::getRosParams() {
   getRosUint(this, "rtcm.ids", rtcm_ids);  // RTCM output message IDs
   getRosUint(this, "rtcm.rates", rtcm_rates);  // RTCM output message rates
   // PPP: Advanced Setting
-  declareRosBoolean(this, "enable_ppp", false);
+  this->declare_parameter("enable_ppp", false);
   // SBAS params, only for some devices
-  declareRosBoolean(this, "gnss.sbas", false);
-  declareRosBoolean(this, "gnss.gps", true);
-  declareRosBoolean(this, "gnss.glonass", false);
-  declareRosBoolean(this, "gnss.qzss", false);
-  declareRosBoolean(this, "gnss.galileo", false);
-  declareRosBoolean(this, "gnss.beidou", false);
-  declareRosBoolean(this, "gnss.imes", false);
+  this->declare_parameter("gnss.sbas", false);
+  this->declare_parameter("gnss.gps", true);
+  this->declare_parameter("gnss.glonass", false);
+  this->declare_parameter("gnss.qzss", false);
+  this->declare_parameter("gnss.galileo", false);
+  this->declare_parameter("gnss.beidou", false);
+  this->declare_parameter("gnss.imes", false);
   getRosUint(this, "sbas.max", max_sbas_, 0); // Maximum number of SBAS channels
   getRosUint(this, "sbas.usage", sbas_usage_, 0);
   dynamic_model_ = this->declare_parameter("dynamic_model", std::string("portable"));
@@ -304,7 +304,7 @@ void UbloxNode::getRosParams() {
   dmodel_ = modelFromString(dynamic_model_);
   fmode_ = fixModeFromString(fix_mode_);
 
-  declareRosBoolean(this, "dat.set", false);
+  this->declare_parameter("dat.set", false);
   if (getRosBoolean(this, "dat.set")) {
     std::vector<double> shift, rot;
     if (!this->get_parameter("dat.majA", cfg_dat_.maj_a)
@@ -339,13 +339,13 @@ void UbloxNode::getRosParams() {
   meas_rate_ = 1000 / rate_;
 
   // activate/deactivate any config
-  declareRosBoolean(this, "config_on_startup", true);
-  declareRosBoolean(this, "raw_data", false);
-  declareRosBoolean(this, "clear_bbr", false);
-  declareRosBoolean(this, "save_on_shutdown", false);
-  declareRosBoolean(this, "use_adr", true);
+  this->declare_parameter("config_on_startup", true);
+  this->declare_parameter("raw_data", false);
+  this->declare_parameter("clear_bbr", false);
+  this->declare_parameter("save_on_shutdown", false);
+  this->declare_parameter("use_adr", true);
 
-  declareRosBoolean(this, "sv_in.reset", true);
+  this->declare_parameter("sv_in.reset", true);
   this->declare_parameter("sv_in.min_dur", 0);
   this->declare_parameter("sv_in.acc_lim", 0.0);
 
@@ -355,76 +355,76 @@ void UbloxNode::getRosParams() {
   rawDataStreamPa_.getRosParams();
 
   // NMEA parameters
-  declareRosBoolean(this, "nmea.set", false);
-  declareRosBoolean(this, "nmea.compat", false);
-  declareRosBoolean(this, "nmea.consider", false);
-  declareRosBoolean(this, "nmea.limit82", false);
-  declareRosBoolean(this, "nmea.high_prec", false);
-  declareRosBoolean(this, "nmea.filter.pos", false);
-  declareRosBoolean(this, "nmea.filter.msk_pos", false);
-  declareRosBoolean(this, "nmea.filter.time", false);
-  declareRosBoolean(this, "nmea.filter.date", false);
-  declareRosBoolean(this, "nmea.filter.sbas", false);
-  declareRosBoolean(this, "nmea.filter.track", false);
-  declareRosBoolean(this, "nmea.filter.gps_only", false);
-  declareRosBoolean(this, "nmea.gnssToFilter.gps", false);
-  declareRosBoolean(this, "nmea.gnssToFilter.sbas", false);
-  declareRosBoolean(this, "nmea.gnssToFilter.qzss", false);
-  declareRosBoolean(this, "nmea.gnssToFilter.glonass", false);
-  declareRosBoolean(this, "nmea.gnssToFilter.beidou", false);
+  this->declare_parameter("nmea.set", false);
+  this->declare_parameter("nmea.compat", false);
+  this->declare_parameter("nmea.consider", false);
+  this->declare_parameter("nmea.limit82", false);
+  this->declare_parameter("nmea.high_prec", false);
+  this->declare_parameter("nmea.filter.pos", false);
+  this->declare_parameter("nmea.filter.msk_pos", false);
+  this->declare_parameter("nmea.filter.time", false);
+  this->declare_parameter("nmea.filter.date", false);
+  this->declare_parameter("nmea.filter.sbas", false);
+  this->declare_parameter("nmea.filter.track", false);
+  this->declare_parameter("nmea.filter.gps_only", false);
+  this->declare_parameter("nmea.gnssToFilter.gps", false);
+  this->declare_parameter("nmea.gnssToFilter.sbas", false);
+  this->declare_parameter("nmea.gnssToFilter.qzss", false);
+  this->declare_parameter("nmea.gnssToFilter.glonass", false);
+  this->declare_parameter("nmea.gnssToFilter.beidou", false);
 
   // Publish parameters
-  declareRosBoolean(this, "publish.all", false);
+  this->declare_parameter("publish.all", false);
 
-  declareRosBoolean(this, "publish.nav.all", getRosBoolean(this, "publish.all"));
-  declareRosBoolean(this, "publish.nav.att", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.clock", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.heading", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.posecef", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.posllh", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.pvt", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.relposned", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.sat", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.sol", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.svin", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.svinfo", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.status", getRosBoolean(this, "publish.nav.all"));
-  declareRosBoolean(this, "publish.nav.velned", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.all", getRosBoolean(this, "publish.all"));
+  this->declare_parameter("publish.nav.att", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.clock", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.heading", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.posecef", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.posllh", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.pvt", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.relposned", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.sat", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.sol", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.svin", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.svinfo", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.status", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.velned", getRosBoolean(this, "publish.nav.all"));
 
-  declareRosBoolean(this, "publish.rxm.all", getRosBoolean(this, "publish.all"));
-  declareRosBoolean(this, "publish.rxm.almRaw", getRosBoolean(this, "publish.rxm.all"));
-  declareRosBoolean(this, "publish.rxm.eph", getRosBoolean(this, "publish.rxm.all"));
-  declareRosBoolean(this, "publish.rxm.rtcm", getRosBoolean(this, "publish.rxm.all"));
-  declareRosBoolean(this, "publish.rxm.raw", getRosBoolean(this, "publish.rxm.all"));
-  declareRosBoolean(this, "publish.rxm.sfrb", getRosBoolean(this, "publish.rxm.all"));
+  this->declare_parameter("publish.rxm.all", getRosBoolean(this, "publish.all"));
+  this->declare_parameter("publish.rxm.almRaw", getRosBoolean(this, "publish.rxm.all"));
+  this->declare_parameter("publish.rxm.eph", getRosBoolean(this, "publish.rxm.all"));
+  this->declare_parameter("publish.rxm.rtcm", getRosBoolean(this, "publish.rxm.all"));
+  this->declare_parameter("publish.rxm.raw", getRosBoolean(this, "publish.rxm.all"));
+  this->declare_parameter("publish.rxm.sfrb", getRosBoolean(this, "publish.rxm.all"));
 
-  declareRosBoolean(this, "publish.aid.all", getRosBoolean(this, "publish.all"));
-  declareRosBoolean(this, "publish.aid.alm", getRosBoolean(this, "publish.aid.all"));
-  declareRosBoolean(this, "publish.aid.eph", getRosBoolean(this, "publish.aid.all"));
-  declareRosBoolean(this, "publish.aid.hui", getRosBoolean(this, "publish.aid.all"));
+  this->declare_parameter("publish.aid.all", getRosBoolean(this, "publish.all"));
+  this->declare_parameter("publish.aid.alm", getRosBoolean(this, "publish.aid.all"));
+  this->declare_parameter("publish.aid.eph", getRosBoolean(this, "publish.aid.all"));
+  this->declare_parameter("publish.aid.hui", getRosBoolean(this, "publish.aid.all"));
 
-  declareRosBoolean(this, "publish.mon.all", getRosBoolean(this, "publish.all"));
-  declareRosBoolean(this, "publish.mon.hw", getRosBoolean(this, "publish.mon.all"));
+  this->declare_parameter("publish.mon.all", getRosBoolean(this, "publish.all"));
+  this->declare_parameter("publish.mon.hw", getRosBoolean(this, "publish.mon.all"));
 
-  declareRosBoolean(this, "publish.tim.tm2", false);
+  this->declare_parameter("publish.tim.tm2", false);
 
   // INF parameters
-  declareRosBoolean(this, "inf.all", true);
-  declareRosBoolean(this, "inf.debug", false);
-  declareRosBoolean(this, "inf.error", getRosBoolean(this, "inf.all"));
-  declareRosBoolean(this, "inf.notice", getRosBoolean(this, "inf.all"));
-  declareRosBoolean(this, "inf.test", getRosBoolean(this, "inf.all"));
-  declareRosBoolean(this, "inf.warning", getRosBoolean(this, "inf.all"));
+  this->declare_parameter("inf.all", true);
+  this->declare_parameter("inf.debug", false);
+  this->declare_parameter("inf.error", getRosBoolean(this, "inf.all"));
+  this->declare_parameter("inf.notice", getRosBoolean(this, "inf.all"));
+  this->declare_parameter("inf.test", getRosBoolean(this, "inf.all"));
+  this->declare_parameter("inf.warning", getRosBoolean(this, "inf.all"));
 
   // ESF parameters
-  declareRosBoolean(this, "publish.esf.all", true);
-  declareRosBoolean(this, "publish.esf.ins", getRosBoolean(this, "publish.esf.all"));
-  declareRosBoolean(this, "publish.esf.meas", getRosBoolean(this, "publish.esf.all"));
-  declareRosBoolean(this, "publish.esf.raw", getRosBoolean(this, "publish.esf.all"));
-  declareRosBoolean(this, "publish.esf.status", getRosBoolean(this, "publish.esf.all"));
+  this->declare_parameter("publish.esf.all", true);
+  this->declare_parameter("publish.esf.ins", getRosBoolean(this, "publish.esf.all"));
+  this->declare_parameter("publish.esf.meas", getRosBoolean(this, "publish.esf.all"));
+  this->declare_parameter("publish.esf.raw", getRosBoolean(this, "publish.esf.all"));
+  this->declare_parameter("publish.esf.status", getRosBoolean(this, "publish.esf.all"));
 
   // HNR parameters
-  declareRosBoolean(this, "publish.hnr.pvt", true);
+  this->declare_parameter("publish.hnr.pvt", true);
 
   this->declare_parameter("tmode3", ublox_msgs::msg::CfgTMODE3::FLAGS_MODE_DISABLED);
   std::vector<double> empty_double;
@@ -433,6 +433,8 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("arp.position_hp", empty_int);
   this->declare_parameter("arp.acc", 0.0);
   this->declare_parameter("arp.lla_flag", false);
+
+  this->declare_parameter("diagnostic_period", kDiagnosticPeriod);
 }
 
 void UbloxNode::pollMessages() {
@@ -543,8 +545,6 @@ void UbloxNode::subscribe() {
 }
 
 void UbloxNode::initializeRosDiagnostics() {
-  declareRosBoolean(this, "diagnostic_period", kDiagnosticPeriod);
-
   for (size_t i = 0; i < components_.size(); i++) {
     components_[i]->initializeRosDiagnostics();
   }

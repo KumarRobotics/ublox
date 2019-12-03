@@ -206,11 +206,6 @@ bool getRosInt(rclcpp::Node* node, const std::string& key, std::vector<I> &i) {
   return true;
 }
 
-static inline void declareRosBoolean(rclcpp::Node* node, const std::string &name, bool default_value)
-{
-  node->declare_parameter(name, default_value);
-}
-
 static inline bool getRosBoolean(rclcpp::Node* node, const std::string &name)
 {
   rclcpp::Parameter parameter;
