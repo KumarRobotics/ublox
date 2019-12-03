@@ -161,10 +161,9 @@ std::vector<std::string> stringSplit(const std::string &str,
 UbloxNode::UbloxNode() : rclcpp::Node("ublox_gps_node") {
   int debug = this->declare_parameter("debug", 1);
   if (debug) {
-    // if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
-    //                                    ros::console::levels::Debug)) {
-    //   ros::console::notifyLoggerLevelsChanged();
-    // }
+    if (rcutils_logging_set_logger_level("ublox_gps_node", RCUTILS_LOG_SEVERITY_DEBUG) != RCUTILS_RET_OK) {
+      RCLCPP_WARN(this->get_logger(), "Failed to set the debugging level");
+    }
   }
 
   gps_ = std::make_shared<ublox_gps::Gps>(debug);
@@ -271,28 +270,10 @@ void UbloxNode::getRosParams() {
   // RTCM params
   std::vector<uint8_t> rtcm_ids;
   std::vector<uint8_t> rtcm_rates;
+  this->declare_parameter("rtcm.ids");
+  this->declare_parameter("rtcm.rates");
   getRosUint(this, "rtcm.ids", rtcm_ids);  // RTCM output message IDs
   getRosUint(this, "rtcm.rates", rtcm_rates);  // RTCM output message rates
-  // PPP: Advanced Setting
-  this->declare_parameter("enable_ppp", false);
-  // SBAS params, only for some devices
-  this->declare_parameter("gnss.sbas", false);
-  this->declare_parameter("gnss.gps", true);
-  this->declare_parameter("gnss.glonass", false);
-  this->declare_parameter("gnss.qzss", false);
-  this->declare_parameter("gnss.galileo", false);
-  this->declare_parameter("gnss.beidou", false);
-  this->declare_parameter("gnss.imes", false);
-  max_sbas_ = declareRosIntParameter<uint8_t>(this, "sbas.max", 0); // Maximum number of SBAS channels
-  sbas_usage_ = declareRosIntParameter<uint8_t>(this, "sbas.usage", 0);
-  dynamic_model_ = this->declare_parameter("dynamic_model", std::string("portable"));
-  fix_mode_ = this->declare_parameter("fix_mode", std::string("auto"));
-  dr_limit_ = declareRosIntParameter<uint8_t>(this, "dr_limit", 0); // Dead reckoning limit
-
-  if (getRosBoolean(this, "enable_ppp")) {
-    RCLCPP_WARN(this->get_logger(), "Warning: PPP is enabled - this is an expert setting.");
-  }
-
   if (rtcm_ids.size() != rtcm_rates.size()) {
     throw std::runtime_error(std::string("Invalid settings: size of rtcm_ids") +
                              " must match size of rtcm_rates");
@@ -304,18 +285,42 @@ void UbloxNode::getRosParams() {
     rtcms_[i].rate = rtcm_rates[i];
   }
 
+  // PPP: Advanced Setting
+  this->declare_parameter("enable_ppp", false);
+  if (getRosBoolean(this, "enable_ppp")) {
+    RCLCPP_WARN(this->get_logger(), "Warning: PPP is enabled - this is an expert setting.");
+  }
+
+  // SBAS params, only for some devices
+  this->declare_parameter("gnss.sbas", false);
+  this->declare_parameter("gnss.gps", true);
+  this->declare_parameter("gnss.glonass", false);
+  this->declare_parameter("gnss.qzss", false);
+  this->declare_parameter("gnss.galileo", false);
+  this->declare_parameter("gnss.beidou", false);
+  this->declare_parameter("gnss.imes", false);
+  max_sbas_ = declareRosIntParameter<uint8_t>(this, "sbas.max", 0); // Maximum number of SBAS channels
+  sbas_usage_ = declareRosIntParameter<uint8_t>(this, "sbas.usage", 0);
+  dynamic_model_ = this->declare_parameter("dynamic_model", std::string("portable"));
   dmodel_ = modelFromString(dynamic_model_);
+  fix_mode_ = this->declare_parameter("fix_mode", std::string("auto"));
   fmode_ = fixModeFromString(fix_mode_);
+  dr_limit_ = declareRosIntParameter<uint8_t>(this, "dr_limit", 0); // Dead reckoning limit
+
 
   this->declare_parameter("dat.set", false);
   this->declare_parameter("dat.majA");
+  this->declare_parameter("dat.flat");
+  this->declare_parameter("dat.shift");
+  this->declare_parameter("dat.rot");
+  this->declare_parameter("dat.scale");
   if (getRosBoolean(this, "dat.set")) {
     std::vector<double> shift, rot;
     if (!this->get_parameter("dat.majA", cfg_dat_.maj_a)
-        || this->get_parameter("dat.flat", cfg_dat_.flat)
-        || this->get_parameter("dat.shift", shift)
-        || this->get_parameter("dat.rot", rot)
-        || this->get_parameter("dat.scale", cfg_dat_.scale)) {
+        || !this->get_parameter("dat.flat", cfg_dat_.flat)
+        || !this->get_parameter("dat.shift", shift)
+        || !this->get_parameter("dat.rot", rot)
+        || !this->get_parameter("dat.scale", cfg_dat_.scale)) {
       throw std::runtime_error(std::string("dat.set is true, therefore ") +
          "dat.majA, dat.flat, dat.shift, dat.rot, & dat.scale must be set");
     }
