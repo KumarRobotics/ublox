@@ -166,7 +166,7 @@ UbloxNode::UbloxNode() : rclcpp::Node("ublox_gps_node") {
     }
   }
 
-  gps_ = std::make_shared<ublox_gps::Gps>(debug);
+  gps_ = std::make_shared<ublox_gps::Gps>(debug, this->get_logger());
 
   gnss_ = std::make_shared<Gnss>();
 

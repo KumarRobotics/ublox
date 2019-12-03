@@ -36,6 +36,9 @@
 #include <map>
 #include <stdexcept>
 #include <vector>
+
+#include <rclcpp/rclcpp.hpp>
+
 // Other u-blox packages
 #include <ublox_msgs/serialization.hpp>
 // u-blox gps
@@ -70,7 +73,7 @@ class Gps final {
   //! Size of write buffer for output messages
   constexpr static int kWriterSize = 2056;
 
-  explicit Gps(int debug);
+  explicit Gps(int debug, const rclcpp::Logger & logger);
   ~Gps();
 
   /**
@@ -478,6 +481,8 @@ class Gps final {
   CallbackHandlers callbacks_;
 
   std::string host_, port_;
+
+  rclcpp::Logger logger_;
 };
 
 template <typename T>
@@ -533,8 +538,8 @@ bool Gps::configure(const ConfigT& message, bool wait) {
   std::vector<unsigned char> out(kWriterSize);
   ublox::Writer writer(out.data(), out.size());
   if (!writer.write(message)) {
-    // RCLCPP_ERROR("Failed to encode config message 0x%02x / 0x%02x",
-    //           message.CLASS_ID, message.MESSAGE_ID);
+    RCLCPP_ERROR(logger_, "Failed to encode config message 0x%02x / 0x%02x",
+                 message.CLASS_ID, message.MESSAGE_ID);
     return false;
   }
   // Send the message to the device
