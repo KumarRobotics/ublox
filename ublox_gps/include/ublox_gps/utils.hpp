@@ -171,6 +171,13 @@ T declareRosIntParameter(rclcpp::Node* node, const std::string& name, long int d
   return node->declare_parameter(name, default_value, param_desc);
 }
 
+static inline bool isRosParameterSet(rclcpp::Node* node, const std::string& name)
+{
+  rclcpp::Parameter param;
+  node->get_parameter(name, param);
+  return param.get_type() != rcl_interfaces::msg::ParameterType::PARAMETER_NOT_SET;
+}
+
 }  // namespace ublox_node
 
 #endif  // UBLOX_GPS_UTILS_HPP

@@ -248,21 +248,26 @@ void UbloxNode::getRosParams() {
   uart_out_ = declareRosIntParameter<uint16_t>(this, "uart1.out", ublox_msgs::msg::CfgPRT::PROTO_UBX);
   // USB params
   set_usb_ = false;
-  if (this->has_parameter("usb.in") || this->has_parameter("usb.out")) {
+  this->declare_parameter("usb.in");
+  this->declare_parameter("usb.out");
+  usb_tx_ = declareRosIntParameter<uint16_t>(this, "usb.tx_ready", 0);
+  if (isRosParameterSet(this, "usb.in") || isRosParameterSet(this, "usb.out")) {
     set_usb_ = true;
     if (!getRosUint(this, "usb.in", usb_in_)) {
       throw std::runtime_error(std::string("usb.out is set, therefore ") +
-        "usb.in must be set");
+                               "usb.in must be set");
     }
     if (!getRosUint(this, "usb.out", usb_out_)) {
       throw std::runtime_error(std::string("usb.in is set, therefore ") +
-        "usb.out must be set");
+                               "usb.out must be set");
     }
-    getRosUint(this, "usb.tx_ready", usb_tx_, 0);
   }
   // Measurement rate params
   rate_ = this->declare_parameter("rate", 4.0);  // in Hz
+  checkMin(rate_, 0.0, "rate");
+
   nav_rate_ = declareRosIntParameter<uint16_t>(this, "nav_rate", 1);  // # of measurement rate cycles
+
   // RTCM params
   std::vector<uint8_t> rtcm_ids;
   std::vector<uint8_t> rtcm_rates;
@@ -288,8 +293,6 @@ void UbloxNode::getRosParams() {
     RCLCPP_WARN(this->get_logger(), "Warning: PPP is enabled - this is an expert setting.");
   }
 
-  checkMin(rate_, 0, "rate");
-
   if (rtcm_ids.size() != rtcm_rates.size()) {
     throw std::runtime_error(std::string("Invalid settings: size of rtcm_ids") +
                              " must match size of rtcm_rates");
@@ -305,6 +308,7 @@ void UbloxNode::getRosParams() {
   fmode_ = fixModeFromString(fix_mode_);
 
   this->declare_parameter("dat.set", false);
+  this->declare_parameter("dat.majA");
   if (getRosBoolean(this, "dat.set")) {
     std::vector<double> shift, rot;
     if (!this->get_parameter("dat.majA", cfg_dat_.maj_a)
@@ -349,7 +353,7 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("sv_in.min_dur", 0);
   this->declare_parameter("sv_in.acc_lim", 0.0);
 
-  this->declare_parameter("dgnss_mode", ublox_msgs::msg::CfgDGNSS::DGNSS_MODE_RTK_FLOAT);
+  this->declare_parameter("dgnss_mode");
 
   // raw data stream logging
   rawDataStreamPa_.getRosParams();
@@ -426,11 +430,9 @@ void UbloxNode::getRosParams() {
   // HNR parameters
   this->declare_parameter("publish.hnr.pvt", true);
 
-  this->declare_parameter("tmode3", ublox_msgs::msg::CfgTMODE3::FLAGS_MODE_DISABLED);
-  std::vector<double> empty_double;
-  std::vector<long int> empty_int;
-  this->declare_parameter("arp.position", empty_double);
-  this->declare_parameter("arp.position_hp", empty_int);
+  this->declare_parameter("tmode3");
+  this->declare_parameter("arp.position");
+  this->declare_parameter("arp.position_hp");
   this->declare_parameter("arp.acc", 0.0);
   this->declare_parameter("arp.lla_flag", false);
 
