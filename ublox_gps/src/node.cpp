@@ -58,6 +58,8 @@ uint8_t ublox_node::modelFromString(const std::string& model) {
     return ublox_msgs::CfgNAV5::DYN_MODEL_AIRBORNE_4G;
   } else if(lower == "wristwatch") {
     return ublox_msgs::CfgNAV5::DYN_MODEL_WRIST_WATCH;
+  } else if(lower == "bike") {
+    return ublox_msgs::CfgNAV5::DYN_MODEL_BIKE;
   }
 
   throw std::runtime_error("Invalid settings: " + lower +
