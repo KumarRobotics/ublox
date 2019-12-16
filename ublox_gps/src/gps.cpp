@@ -147,7 +147,7 @@ void Gps::initializeSerial(const std::string & port, unsigned int baudrate,
   if (worker_) {
     return;
   }
-  setWorker(std::make_shared<AsyncWorker<asio::serial_port>>(serial, io_service, 8192, debug_));
+  setWorker(std::make_shared<AsyncWorker<asio::serial_port>>(serial, io_service, 8192, debug_, logger_));
 
   configured_ = false;
 
@@ -197,7 +197,7 @@ void Gps::resetSerial(const std::string & port) {
   if (worker_) {
     return;
   }
-  setWorker(std::make_shared<AsyncWorker<asio::serial_port>>(serial, io_service, 8192, debug_));
+  setWorker(std::make_shared<AsyncWorker<asio::serial_port>>(serial, io_service, 8192, debug_, logger_));
   configured_ = false;
 
   // Poll UART PRT Config
@@ -250,8 +250,7 @@ void Gps::initializeTcp(const std::string & host, const std::string & port) {
   if (worker_) {
     return;
   }
-  setWorker(std::make_shared<AsyncWorker<asio::ip::tcp::socket>>(socket,
-                                                                 io_service, 8192, debug_));
+  setWorker(std::make_shared<AsyncWorker<asio::ip::tcp::socket>>(socket, io_service, 8192, debug_, logger_));
 }
 
 void Gps::close() {
