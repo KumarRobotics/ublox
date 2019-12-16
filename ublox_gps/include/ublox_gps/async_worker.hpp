@@ -70,13 +70,13 @@ class AsyncWorker final : public Worker {
    * @brief Set the callback function which handles input messages.
    * @param callback the read callback which handles received messages
    */
-  void setCallback(const Callback& callback) override { read_callback_ = callback; }
+  void setCallback(const WorkerCallback& callback) override { read_callback_ = callback; }
 
   /**
    * @brief Set the callback function which handles raw data.
    * @param callback the write callback which handles raw data
    */
-  void setRawDataCallback(const Callback& callback) override { write_callback_ = callback; }
+  void setRawDataCallback(const WorkerRawCallback& callback) override { raw_callback_ = callback; }
 
   /**
    * @brief Send the data bytes via the I/O stream.
@@ -208,35 +208,45 @@ void AsyncWorker<StreamT>::doWrite() {
 template <typename StreamT>
 void AsyncWorker<StreamT>::doRead() {
   std::lock_guard<std::mutex> lock(read_mutex_);
+  if (in_.size() - in_buffer_size_ == 0) {
+    // In some circumstances, it is possible that there is no room left in the
+    // buffer.  This can happen, for instance, if one of the UBlox messages
+    // has a value in the Length field that is much larger than this buffer
+    // can accomodate.  We definitely don't want to ask for a 0-byte read (as
+    // we will get into an endless loop of asking for, and then receiving,
+    // 0 bytes), so we just throw away all of the data in the buffer.
+    in_buffer_size_ = 0;
+  }
+
   stream_->async_read_some(
       asio::buffer(in_.data() + in_buffer_size_,
                    in_.size() - in_buffer_size_),
-                   std::bind(&AsyncWorker<StreamT>::readEnd, this,
-                             std::placeholders::_1, std::placeholders::_2));
+      std::bind(&AsyncWorker<StreamT>::readEnd, this,
+                std::placeholders::_1, std::placeholders::_2));
 }
 
 template <typename StreamT>
 void AsyncWorker<StreamT>::readEnd(const asio::error_code& error,
-                                   std::size_t bytes_transfered) {
+                                   std::size_t bytes_transferred) {
   std::lock_guard<std::mutex> lock(read_mutex_);
   if (error) {
-    // RCLCPP_ERROR("U-Blox ASIO input buffer read error: %s, %li",
-    //           error.message().c_str(),
-    //           bytes_transfered);
-  } else if (bytes_transfered > 0) {
-    in_buffer_size_ += bytes_transfered;
+    RCLCPP_ERROR(logger_, "U-Blox ASIO input buffer read error: %s, %li",
+                 error.message().c_str(),
+                 bytes_transferred);
+  } else if (bytes_transferred > 0) {
+    in_buffer_size_ += bytes_transferred;
 
-    unsigned char *pRawDataStart = &(*(in_.begin() + (in_buffer_size_ - bytes_transfered)));
-    std::size_t raw_data_stream_size = bytes_transfered;
+    unsigned char *pRawDataStart = &(*(in_.begin() + (in_buffer_size_ - bytes_transferred)));
+    std::size_t raw_data_stream_size = bytes_transferred;
 
-    if (write_callback_) {
-      write_callback_(pRawDataStart, raw_data_stream_size);
+    if (raw_callback_) {
+      raw_callback_(pRawDataStart, raw_data_stream_size);
     }
 
     if (debug_ >= 4) {
       std::ostringstream oss;
       for (std::vector<unsigned char>::iterator it =
-               in_.begin() + in_buffer_size_ - bytes_transfered;
+               in_.begin() + in_buffer_size_ - bytes_transferred;
            it != in_.begin() + in_buffer_size_; ++it) {
         oss << std::hex << static_cast<unsigned int>(*it) << " ";
       }
@@ -245,7 +255,7 @@ void AsyncWorker<StreamT>::readEnd(const asio::error_code& error,
     }
 
     if (read_callback_) {
-      read_callback_(in_.data(), in_buffer_size_);
+      in_buffer_size_ -= read_callback_(in_.data(), in_buffer_size_);
     }
 
     read_condition_.notify_all();

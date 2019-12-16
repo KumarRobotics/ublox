@@ -39,20 +39,21 @@ namespace ublox_gps {
  */
 class Worker {
  public:
-  typedef std::function<void(unsigned char*, std::size_t&)> Callback;
+  typedef std::function<size_t(unsigned char*, std::size_t)> WorkerCallback;
+  typedef std::function<void(unsigned char*, std::size_t)> WorkerRawCallback;
   virtual ~Worker() {}
 
   /**
    * @brief Set the callback function for received messages.
    * @param callback the callback function which process messages in the buffer
    */
-  virtual void setCallback(const Callback& callback) = 0;
+  virtual void setCallback(const WorkerCallback& callback) = 0;
 
   /**
    * @brief Set the callback function which handles raw data.
    * @param callback the write callback which handles raw data
    */
-  virtual void setRawDataCallback(const Callback& callback) = 0;
+  virtual void setRawDataCallback(const WorkerRawCallback& callback) = 0;
 
   /**
    * @brief Send the data in the buffer.

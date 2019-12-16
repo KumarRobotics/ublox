@@ -402,7 +402,7 @@ class Gps final {
    * @brief Set the callback function which handles raw data.
    * @param callback the write callback which handles raw data
    */
-  void setRawDataCallback(const Worker::Callback& callback);
+  void setRawDataCallback(const Worker::WorkerRawCallback& callback);
 
  private:
   //! Types for ACK/NACK messages, WAIT is used when waiting for an ACK

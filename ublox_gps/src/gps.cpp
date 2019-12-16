@@ -581,7 +581,7 @@ bool Gps::waitForAcknowledge(const std::chrono::milliseconds& timeout,
   return result;
 }
 
-void Gps::setRawDataCallback(const Worker::Callback& callback) {
+void Gps::setRawDataCallback(const Worker::WorkerRawCallback& callback) {
   if (!worker_) {
     return;
   }
