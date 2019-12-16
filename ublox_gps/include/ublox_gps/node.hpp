@@ -238,7 +238,7 @@ class UbloxNode final : public rclcpp::Node {
   uint8_t tim_rate_;
 
   //! raw data stream logging
-  RawDataStreamPa rawDataStreamPa_;
+  RawDataStreamPa raw_data_stream_pa_;
 
   rclcpp::Publisher<ublox_msgs::msg::NavSTATUS>::SharedPtr nav_status_pub_;
   rclcpp::Publisher<ublox_msgs::msg::NavPOSECEF>::SharedPtr nav_posecef_pub_;

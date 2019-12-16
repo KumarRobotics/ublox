@@ -98,13 +98,13 @@ void RawDataStreamPa::initialize() {
 
   if (!file_dir_.empty()) {
     struct stat stat_info;
-    if (::stat(file_dir_.c_str(), &stat_info ) != 0) {
+    if (::stat(file_dir_.c_str(), &stat_info) != 0) {
       RCLCPP_ERROR(this->get_logger(), "Can't log raw data to file. "
-          "Directory \"%s\" does not exist.", file_dir_.c_str());
+                   "Directory \"%s\" does not exist.", file_dir_.c_str());
 
     } else if ((stat_info.st_mode & S_IFDIR) != S_IFDIR) {
       RCLCPP_ERROR(this->get_logger(), "Can't log raw data to file. "
-         "\"%s\" exists, but is not a directory.", file_dir_.c_str());
+                   "\"%s\" exists, but is not a directory.", file_dir_.c_str());
 
     } else {
       if (file_dir_.back() != '/') {
@@ -137,14 +137,14 @@ void RawDataStreamPa::initialize() {
                     file_name_.c_str());
       } catch (const std::exception& e) {
         RCLCPP_ERROR(this->get_logger(), "Can't log raw data to file. "
-                  "Can't create file \"%s\".", file_name_.c_str());
+                     "Can't create file \"%s\".", file_name_.c_str());
       }
     }
   }
 }
 
 void RawDataStreamPa::ubloxCallback(const unsigned char* data,
-  const std::size_t size) {
+  std::size_t size) {
 
   std::string str((const char*) data, size);
 

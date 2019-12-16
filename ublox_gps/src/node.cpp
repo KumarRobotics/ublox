@@ -357,7 +357,7 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("dgnss_mode");
 
   // raw data stream logging
-  rawDataStreamPa_.getRosParams();
+  raw_data_stream_pa_.getRosParams();
 
   // NMEA parameters
   this->declare_parameter("nmea.set", false);
@@ -761,10 +761,10 @@ void UbloxNode::initializeIo() {
   }
 
   // raw data stream logging
-  if (rawDataStreamPa_.isEnabled()) {
+  if (raw_data_stream_pa_.isEnabled()) {
     gps_->setRawDataCallback(
-      std::bind(&RawDataStreamPa::ubloxCallback, &rawDataStreamPa_, std::placeholders::_1, std::placeholders::_2));
-    rawDataStreamPa_.initialize();
+      std::bind(&RawDataStreamPa::ubloxCallback, &raw_data_stream_pa_, std::placeholders::_1, std::placeholders::_2));
+    raw_data_stream_pa_.initialize();
   }
 }
 

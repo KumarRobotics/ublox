@@ -59,7 +59,6 @@ namespace ublox_node {
 class RawDataStreamPa final : public rclcpp::Node {
  public:
 
-
   /**
    * @brief Constructor.
    * Initialises variables and the nodehandle.
@@ -91,7 +90,7 @@ class RawDataStreamPa final : public rclcpp::Node {
    * @param size the size of the buffer
    */
   void ubloxCallback(const unsigned char* data,
-     const std::size_t size);
+                     std::size_t size);
 
  private:
   /**
@@ -117,7 +116,7 @@ class RawDataStreamPa final : public rclcpp::Node {
    */
   void saveToFile(const std::string & str);
 
-  //! Directoy name for storing raw data
+  //! Directory name for storing raw data
   std::string file_dir_;
   //! Filename for storing raw data
   std::string file_name_;
