@@ -134,8 +134,8 @@ void RawDataStreamPa::initialize() {
       try {
         file_handle_.open(file_name_);
         RCLCPP_INFO(this->get_logger(), "Logging raw data to file \"%s\"",
-                 file_name_.c_str());
-      } catch(const std::exception& e) {
+                    file_name_.c_str());
+      } catch (const std::exception& e) {
         RCLCPP_ERROR(this->get_logger(), "Can't log raw data to file. "
                   "Can't create file \"%s\".", file_name_.c_str());
       }
@@ -191,7 +191,7 @@ void RawDataStreamPa::saveToFile(const std::string & str) {
     try {
       file_handle_ << str;
       // file_handle_.flush();
-    } catch(const std::exception& e) {
+    } catch (const std::exception& e) {
       RCLCPP_WARN(this->get_logger(), "Error writing to file \"%s\"", file_name_.c_str());
     }
   }
