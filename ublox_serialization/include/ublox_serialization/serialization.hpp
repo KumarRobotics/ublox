@@ -490,11 +490,18 @@ class Reader {
       return false;
     }
 
-    uint16_t chk;
+    uint16_t chk{0};
     if (calculateChecksum(data_ + 2, length() + 4, chk) != this->checksum()) {
       // checksum error
-      // ROS_DEBUG("U-Blox read checksum error: 0x%02x / 0x%02x", classId(),
-      //           messageId());
+      // Note that it is possible (and even likely) that we get here without
+      // having the entire packet available.  This happens when there are both
+      // NMEA and UBlox messages configured on the serial wire, and the packet is
+      // laid out like:
+      //
+      // <NMEA_message><UBlox_message_missing_two_bytes>
+      //
+      // Therefore, we do not print errors in this case and instead just don't
+      // do any additional work.
       return false;
     }
 
