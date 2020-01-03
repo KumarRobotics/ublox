@@ -67,7 +67,7 @@ uint32 accD                       # Accuracy of relative position Down component
 uint32 accLength                  # Accuracy of length of the relative position
                                   # vector [0.1 mm]
 uint32 accHeading                 # Accuracy of heading of the relative position
-                                  # vector [0.1 mm]
+                                  # vector [1e-5 deg]
 
 uint8[4] reserved3                # Reserved
 
