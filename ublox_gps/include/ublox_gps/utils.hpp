@@ -1,13 +1,12 @@
 #ifndef UBLOX_GPS_UTILS_HPP
 #define UBLOX_GPS_UTILS_HPP
 
+#include <ctime>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-
-#include <time.h>
 
 #include <rcl_interfaces/msg/parameter_descriptor.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -20,7 +19,7 @@ namespace ublox_node {
  * @brief Convert date/time to UTC time in seconds.
  */
 template<typename NavPVT>
-long toUtcSeconds(const NavPVT& msg) {
+time_t toUtcSeconds(const NavPVT& msg) {
   // Create TM struct for mkgmtime
   struct tm time{};
   time.tm_year = msg.year - 1900;
@@ -131,7 +130,7 @@ void getRosUint(rclcpp::Node* node, const std::string& key, U &u, V default_val)
  */
 template <typename U>
 bool getRosUint(rclcpp::Node* node, const std::string& key, std::vector<U> &u) {
-  std::vector<long int> param;
+  std::vector<U> param;
   if (!node->get_parameter(key, param)) {
     return false;
   }
@@ -158,7 +157,7 @@ static inline bool getRosBoolean(rclcpp::Node* node, const std::string &name)
 }
 
 template <typename T>
-T declareRosIntParameter(rclcpp::Node* node, const std::string& name, long int default_value)
+T declareRosIntParameter(rclcpp::Node* node, const std::string& name, int64_t default_value)
 {
   rcl_interfaces::msg::ParameterDescriptor param_desc;
   param_desc.name = name;

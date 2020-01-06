@@ -10,12 +10,8 @@
 namespace ublox_node {
 
 //! Topic diagnostics for fix / fix_velocity messages
-struct FixDiagnostic {
-  FixDiagnostic() {}
-
-  // Must not copy this struct (would confuse FrequencyStatusParam pointers)
-  FixDiagnostic(const FixDiagnostic&) = delete;
-
+class FixDiagnostic {
+public:
   /**
    * @brief Add a topic diagnostic to the diagnostic updater for fix topics.
    *
@@ -29,7 +25,6 @@ struct FixDiagnostic {
                          double stamp_min, uint16_t nav_rate, uint16_t meas_rate,
                          std::shared_ptr<diagnostic_updater::Updater> updater) {
     const double target_freq = 1.0 / (meas_rate * 1e-3 * nav_rate); // Hz
-    //const double target_freq = 1.0;
     min_freq = target_freq;
     max_freq = target_freq;
     diagnostic_updater::FrequencyStatusParam freq_param(&min_freq, &max_freq,
@@ -42,14 +37,24 @@ struct FixDiagnostic {
                                                                        time_param);
   }
 
+  // Must not copy this struct (would confuse FrequencyStatusParam pointers)
+  FixDiagnostic(FixDiagnostic &&c) = delete;
+  FixDiagnostic &operator=(FixDiagnostic &&c) = delete;
+  FixDiagnostic(const FixDiagnostic &c) = delete;
+  FixDiagnostic &operator=(const FixDiagnostic &c) = delete;
+
+  ~FixDiagnostic() = default;
+
   //! Topic frequency diagnostic updater
   std::shared_ptr<diagnostic_updater::TopicDiagnostic> diagnostic;
+
+private:
   //! Minimum allow frequency of topic
   double min_freq;
   //! Maximum allow frequency of topic
   double max_freq;
 };
 
-}
+}  // namespace ublox_node
 
 #endif

@@ -12,10 +12,15 @@ namespace ublox_node {
 
 //! Topic diagnostics for u-blox messages
 struct UbloxTopicDiagnostic {
-  UbloxTopicDiagnostic() {}
+  UbloxTopicDiagnostic() = default;
 
   // Must not copy this struct (would confuse FrequencyStatusParam pointers)
-  UbloxTopicDiagnostic(const UbloxTopicDiagnostic&) = delete;
+  UbloxTopicDiagnostic(UbloxTopicDiagnostic &&c) = delete;
+  UbloxTopicDiagnostic &operator=(UbloxTopicDiagnostic &&c) = delete;
+  UbloxTopicDiagnostic(const UbloxTopicDiagnostic &c) = delete;
+  UbloxTopicDiagnostic &operator=(const UbloxTopicDiagnostic &c) = delete;
+
+  ~UbloxTopicDiagnostic() = default;
 
   /**
    * @brief Add a topic diagnostic to the diagnostic updater for
@@ -61,9 +66,9 @@ struct UbloxTopicDiagnostic {
   //! Topic frequency diagnostic updater
   std::shared_ptr<diagnostic_updater::HeaderlessTopicDiagnostic> diagnostic;
   //! Minimum allow frequency of topic
-  double min_freq;
+  double min_freq{0.0};
   //! Maximum allow frequency of topic
-  double max_freq;
+  double max_freq{0.0};
 };
 
 }  // namespace ublox_node

@@ -87,20 +87,20 @@ void UbloxFirmware7::getRosParams() {
     }
 
     // set flags
-    cfg_nmea_.flags = compat ? cfg_nmea_.FLAGS_COMPAT : 0;
-    cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
+    cfg_nmea_.flags = compat ? ublox_msgs::msg::CfgNMEA7::FLAGS_COMPAT : 0;
+    cfg_nmea_.flags |= consider ? ublox_msgs::msg::CfgNMEA7::FLAGS_CONSIDER : 0;
     // set filter
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.pos") ? cfg_nmea_.FILTER_POS : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.msk_pos") ? cfg_nmea_.FILTER_MSK_POS : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.time") ? cfg_nmea_.FILTER_TIME : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.date") ? cfg_nmea_.FILTER_DATE : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.gps_only") ? cfg_nmea_.FILTER_GPS_ONLY : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.track") ? cfg_nmea_.FILTER_TRACK : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.pos") ? ublox_msgs::msg::CfgNMEA7::FILTER_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.msk_pos") ? ublox_msgs::msg::CfgNMEA7::FILTER_MSK_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.time") ? ublox_msgs::msg::CfgNMEA7::FILTER_TIME : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.date") ? ublox_msgs::msg::CfgNMEA7::FILTER_DATE : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.gps_only") ? ublox_msgs::msg::CfgNMEA7::FILTER_GPS_ONLY : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.track") ? ublox_msgs::msg::CfgNMEA7::FILTER_TRACK : 0;
     // set gnssToFilter
-    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.gps") ? cfg_nmea_.GNSS_TO_FILTER_GPS : 0;
-    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.sbas") ? cfg_nmea_.GNSS_TO_FILTER_SBAS : 0;
-    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.qzss") ? cfg_nmea_.GNSS_TO_FILTER_QZSS : 0;
-    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.glonass") ? cfg_nmea_.GNSS_TO_FILTER_GLONASS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.gps") ? ublox_msgs::msg::CfgNMEA7::GNSS_TO_FILTER_GPS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.sbas") ? ublox_msgs::msg::CfgNMEA7::GNSS_TO_FILTER_SBAS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.qzss") ? ublox_msgs::msg::CfgNMEA7::GNSS_TO_FILTER_QZSS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.glonass") ? ublox_msgs::msg::CfgNMEA7::GNSS_TO_FILTER_GLONASS : 0;
 
     getRosUint(node_, "nmea.main_talker_id", cfg_nmea_.main_talker_id);
     getRosUint(node_, "nmea.gsv_talker_id", cfg_nmea_.gsv_talker_id);
@@ -127,10 +127,10 @@ bool UbloxFirmware7::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
   // configure GLONASS
   if (gnss_->isSupported("GLO")) {
     ublox_msgs::msg::CfgGNSSBlock block;
-    block.gnss_id = block.GNSS_ID_GLONASS;
-    block.res_trk_ch = block.RES_TRK_CH_GLONASS;
-    block.max_trk_ch = block.MAX_TRK_CH_GLONASS;
-    block.flags = enable_glonass_ ? block.SIG_CFG_GLONASS_L1OF : 0;
+    block.gnss_id = ublox_msgs::msg::CfgGNSSBlock::GNSS_ID_GLONASS;
+    block.res_trk_ch = ublox_msgs::msg::CfgGNSSBlock::RES_TRK_CH_GLONASS;
+    block.max_trk_ch = ublox_msgs::msg::CfgGNSSBlock::MAX_TRK_CH_GLONASS;
+    block.flags = enable_glonass_ ? ublox_msgs::msg::CfgGNSSBlock::SIG_CFG_GLONASS_L1OF : 0;
     cfgGNSSWrite.blocks.push_back(block);
     if (!gps->configure(cfgGNSSWrite)) {
       throw std::runtime_error(std::string("Failed to ") +
@@ -142,9 +142,9 @@ bool UbloxFirmware7::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
   if (gnss_->isSupported("QZSS")) {
     // configure QZSS
     ublox_msgs::msg::CfgGNSSBlock block;
-    block.gnss_id = block.GNSS_ID_QZSS;
-    block.res_trk_ch = block.RES_TRK_CH_QZSS;
-    block.max_trk_ch = block.MAX_TRK_CH_QZSS;
+    block.gnss_id = ublox_msgs::msg::CfgGNSSBlock::GNSS_ID_QZSS;
+    block.res_trk_ch = ublox_msgs::msg::CfgGNSSBlock::RES_TRK_CH_QZSS;
+    block.max_trk_ch = ublox_msgs::msg::CfgGNSSBlock::MAX_TRK_CH_QZSS;
     block.flags = enable_qzss_ ? qzss_sig_cfg_ : 0;
     cfgGNSSWrite.blocks[0] = block;
     if (!gps->configure(cfgGNSSWrite)) {
@@ -157,10 +157,10 @@ bool UbloxFirmware7::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
   if (gnss_->isSupported("SBAS")) {
     // configure SBAS
     ublox_msgs::msg::CfgGNSSBlock block;
-    block.gnss_id = block.GNSS_ID_SBAS;
-    block.res_trk_ch = block.RES_TRK_CH_SBAS;
-    block.max_trk_ch = block.MAX_TRK_CH_SBAS;
-    block.flags = getRosBoolean(node_, "gnss.sbas") ? block.SIG_CFG_SBAS_L1CA : 0;
+    block.gnss_id = ublox_msgs::msg::CfgGNSSBlock::GNSS_ID_SBAS;
+    block.res_trk_ch = ublox_msgs::msg::CfgGNSSBlock::RES_TRK_CH_SBAS;
+    block.max_trk_ch = ublox_msgs::msg::CfgGNSSBlock::MAX_TRK_CH_SBAS;
+    block.flags = getRosBoolean(node_, "gnss.sbas") ? ublox_msgs::msg::CfgGNSSBlock::SIG_CFG_SBAS_L1CA : 0;
     cfgGNSSWrite.blocks[0] = block;
     if (!gps->configure(cfgGNSSWrite)) {
       throw std::runtime_error(std::string("Failed to ") +

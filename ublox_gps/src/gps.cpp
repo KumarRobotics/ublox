@@ -49,7 +49,7 @@ const std::chrono::milliseconds Gps::default_timeout_ =
     std::chrono::milliseconds(
         static_cast<int>(Gps::kDefaultAckTimeout * 1000));
 
-Gps::Gps(int debug, const rclcpp::Logger& logger) : configured_(false), config_on_startup_flag_(true), debug_(debug), callbacks_(debug), logger_(logger) {
+Gps::Gps(int debug, const rclcpp::Logger& logger) : configured_(false), save_on_shutdown_(false), config_on_startup_flag_(true), debug_(debug), callbacks_(debug), logger_(logger) {
   subscribeAcks();
 }
 
@@ -84,7 +84,7 @@ void Gps::subscribeAcks() {
 
 void Gps::processAck(const ublox_msgs::msg::Ack &m) {
   // Process ACK/NACK messages
-  Ack ack;
+  Ack ack{};
   ack.type = ACK;
   ack.class_id = m.cls_id;
   ack.msg_id = m.msg_id;
@@ -96,7 +96,7 @@ void Gps::processAck(const ublox_msgs::msg::Ack &m) {
 
 void Gps::processNack(const ublox_msgs::msg::Ack &m) {
   // Process ACK/NACK messages
-  Ack ack;
+  Ack ack{};
   ack.type = NACK;
   ack.class_id = m.cls_id;
   ack.msg_id = m.msg_id;
@@ -107,10 +107,10 @@ void Gps::processNack(const ublox_msgs::msg::Ack &m) {
 
 void Gps::processUpdSosAck(const ublox_msgs::msg::UpdSOSAck &m) {
   if (m.cmd == ublox_msgs::msg::UpdSOSAck::CMD_BACKUP_CREATE_ACK) {
-    Ack ack;
-    ack.type = (m.response == m.BACKUP_CREATE_ACK) ? ACK : NACK;
-    ack.class_id = m.CLASS_ID;
-    ack.msg_id = m.MESSAGE_ID;
+    Ack ack{};
+    ack.type = (m.response == ublox_msgs::msg::UpdSOSAck::BACKUP_CREATE_ACK) ? ACK : NACK;
+    ack.class_id = ublox_msgs::msg::UpdSOSAck::CLASS_ID;
+    ack.msg_id = ublox_msgs::msg::UpdSOSAck::MESSAGE_ID;
     // store the ack atomically
     ack_.store(ack, std::memory_order_seq_cst);
     RCLCPP_DEBUG_EXPRESSION(logger_, ack.type == ACK && debug_ >= 2,
@@ -138,7 +138,7 @@ void Gps::initializeSerial(const std::string & port, unsigned int baudrate,
   RCLCPP_INFO(logger_, "U-Blox: Opened serial port %s", port.c_str());
 
   int fd = serial->native_handle();
-  termios tio;
+  termios tio{};
   tcgetattr(fd, &tio);
   cfmakeraw(&tio);
   tcsetattr(fd, TCSANOW, &tio);
@@ -155,15 +155,15 @@ void Gps::initializeSerial(const std::string & port, unsigned int baudrate,
   asio::serial_port_base::baud_rate current_baudrate;
   serial->get_option(current_baudrate);
   // Incrementally increase the baudrate to the desired value
-  for (size_t i = 0; i < sizeof(kBaudrates) / sizeof(kBaudrates[0]); i++) {
+  for (unsigned int fixed_baudrate : kBaudrates) {
     if (current_baudrate.value() == baudrate) {
       break;
     }
     // Don't step down, unless the desired baudrate is lower
-    if (current_baudrate.value() > kBaudrates[i] && baudrate > kBaudrates[i]) {
+    if (current_baudrate.value() > fixed_baudrate && baudrate > fixed_baudrate) {
       continue;
     }
-    serial->set_option(asio::serial_port_base::baud_rate(kBaudrates[i]));
+    serial->set_option(asio::serial_port_base::baud_rate(fixed_baudrate));
     std::this_thread::sleep_for(
         std::chrono::milliseconds(kSetBaudrateSleepMs));
     serial->get_option(current_baudrate);
@@ -286,10 +286,7 @@ bool Gps::configReset(uint16_t nav_bbr_mask, uint16_t reset_mode) {
   rst.reset_mode = reset_mode;
 
   // Don't wait for ACK, return if it fails
-  if (!configure(rst, false)) {
-    return false;
-  }
-  return true;
+  return configure(rst, false);
 }
 
 bool Gps::configGnss(ublox_msgs::msg::CfgGNSS gnss,
@@ -313,8 +310,8 @@ bool Gps::configGnss(ublox_msgs::msg::CfgGNSS gnss,
 bool Gps::saveOnShutdown() {
   // Command the receiver to stop
   ublox_msgs::msg::CfgRST rst;
-  rst.nav_bbr_mask = rst.NAV_BBR_HOT_START;
-  rst.reset_mode = rst.RESET_MODE_GNSS_STOP;
+  rst.nav_bbr_mask = ublox_msgs::msg::CfgRST::NAV_BBR_HOT_START;
+  rst.reset_mode = ublox_msgs::msg::CfgRST::RESET_MODE_GNSS_STOP;
   if (!configure(rst)) {
     return false;
   }
@@ -328,7 +325,7 @@ bool Gps::clearBbr() {
   // Command saving the contents of BBR to flash memory
   // And wait for UBX-UPD-SOS-ACK
   ublox_msgs::msg::UpdSOS sos;
-  sos.cmd = sos.CMD_FLASH_BACKUP_CLEAR;
+  sos.cmd = ublox_msgs::msg::UpdSOS::CMD_FLASH_BACKUP_CLEAR;
   return configure(sos);
 }
 
@@ -407,10 +404,10 @@ bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
 }
 
 bool Gps::configRtcm(const std::vector<Rtcm> & rtcms) {
-  for (size_t i = 0; i < rtcms.size(); ++i) {
-    RCLCPP_DEBUG(logger_, "Setting RTCM %d Rate %u", rtcms[i].id, rtcms[i].rate);
-    if (!setRate(ublox_msgs::Class::RTCM, rtcms[i].id, rtcms[i].rate)) {
-      RCLCPP_ERROR(logger_, "Could not set RTCM %d to rate %u", rtcms[i].id, rtcms[i].rate);
+  for (const Rtcm & rtcm : rtcms) {
+    RCLCPP_DEBUG(logger_, "Setting RTCM %d Rate %u", rtcm.id, rtcm.rate);
+    if (!setRate(ublox_msgs::Class::RTCM, rtcm.id, rtcm.rate)) {
+      RCLCPP_ERROR(logger_, "Could not set RTCM %d to rate %u", rtcm.id, rtcm.rate);
       return false;
     }
   }
@@ -440,26 +437,26 @@ bool Gps::configTmode3Fixed(bool lla_flag,
   RCLCPP_DEBUG(logger_, "Configuring TMODE3 to Fixed");
 
   ublox_msgs::msg::CfgTMODE3 tmode3;
-  tmode3.flags = tmode3.FLAGS_MODE_FIXED & tmode3.FLAGS_MODE_MASK;
-  tmode3.flags |= lla_flag ? tmode3.FLAGS_LLA : 0;
+  tmode3.flags = ublox_msgs::msg::CfgTMODE3::FLAGS_MODE_FIXED & ublox_msgs::msg::CfgTMODE3::FLAGS_MODE_MASK;
+  tmode3.flags |= lla_flag ? ublox_msgs::msg::CfgTMODE3::FLAGS_LLA : 0;
 
   // Set position
   if (lla_flag) {
     // Convert from [deg] to [deg * 1e-7]
-    tmode3.ecef_x_or_lat = (int)round(arp_position[0] * 1e7);
-    tmode3.ecef_y_or_lon = (int)round(arp_position[1] * 1e7);
-    tmode3.ecef_z_or_alt = (int)round(arp_position[2] * 1e7);
+    tmode3.ecef_x_or_lat = static_cast<int>(round(arp_position[0] * 1e7));
+    tmode3.ecef_y_or_lon = static_cast<int>(round(arp_position[1] * 1e7));
+    tmode3.ecef_z_or_alt = static_cast<int>(round(arp_position[2] * 1e7));
   } else {
     // Convert from m to cm
-    tmode3.ecef_x_or_lat = (int)round(arp_position[0] * 1e2);
-    tmode3.ecef_y_or_lon = (int)round(arp_position[1] * 1e2);
-    tmode3.ecef_z_or_alt = (int)round(arp_position[2] * 1e2);
+    tmode3.ecef_x_or_lat = static_cast<int>(round(arp_position[0] * 1e2));
+    tmode3.ecef_y_or_lon = static_cast<int>(round(arp_position[1] * 1e2));
+    tmode3.ecef_z_or_alt = static_cast<int>(round(arp_position[2] * 1e2));
   }
   tmode3.ecef_x_or_lat_hp = arp_position_hp[0];
   tmode3.ecef_y_or_lon_hp = arp_position_hp[1];
   tmode3.ecef_z_or_alt_hp = arp_position_hp[2];
   // Convert from m to [0.1 mm]
-  tmode3.fixed_pos_acc = (uint32_t)round(fixed_pos_acc * 1e4);
+  tmode3.fixed_pos_acc = static_cast<uint32_t>(round(fixed_pos_acc * 1e4));
   return configure(tmode3);
 }
 
@@ -467,10 +464,10 @@ bool Gps::configTmode3SurveyIn(unsigned int svin_min_dur,
                                float svin_acc_limit) {
   ublox_msgs::msg::CfgTMODE3 tmode3;
   RCLCPP_DEBUG(logger_, "Setting TMODE3 to Survey In");
-  tmode3.flags = tmode3.FLAGS_MODE_SURVEY_IN & tmode3.FLAGS_MODE_MASK;
+  tmode3.flags = ublox_msgs::msg::CfgTMODE3::FLAGS_MODE_SURVEY_IN & ublox_msgs::msg::CfgTMODE3::FLAGS_MODE_MASK;
   tmode3.svin_min_dur = svin_min_dur;
   // Convert from m to [0.1 mm]
-  tmode3.svin_acc_limit = (int)round(svin_acc_limit * 1e4);
+  tmode3.svin_acc_limit = static_cast<int>(round(svin_acc_limit * 1e4));
   return configure(tmode3);
 }
 
@@ -478,7 +475,7 @@ bool Gps::disableTmode3() {
   RCLCPP_DEBUG(logger_, "Disabling TMODE3");
 
   ublox_msgs::msg::CfgTMODE3 tmode3;
-  tmode3.flags = tmode3.FLAGS_MODE_DISABLED & tmode3.FLAGS_MODE_MASK;
+  tmode3.flags = ublox_msgs::msg::CfgTMODE3::FLAGS_MODE_DISABLED & ublox_msgs::msg::CfgTMODE3::FLAGS_MODE_MASK;
   return configure(tmode3);
 }
 

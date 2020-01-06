@@ -37,11 +37,18 @@ namespace ublox_gps {
 /**
  * @brief Handles I/O reading and writing.
  */
-class Worker {
+// clang-tidy insists that we follow rule-of-5 for this abstract base class.
+// Generally we'd define the copy and move constructors as delete, but once
+// we do that we also have to explicitly define a default constructor (otherwise
+// it fails to compile).  That all works, but harms the readability of this
+// completely abstract base class (basically an interface), so we just disable
+// the checks for this class.
+class Worker {  // NOLINT(hicpp-special-member-functions, cppcoreguidelines-special-member-functions)
  public:
-  typedef std::function<size_t(unsigned char*, std::size_t)> WorkerCallback;
-  typedef std::function<void(unsigned char*, std::size_t)> WorkerRawCallback;
-  virtual ~Worker() {}
+  using WorkerCallback = std::function<size_t(unsigned char*, std::size_t)>;
+  using WorkerRawCallback = std::function<void(unsigned char*, std::size_t)>;
+
+  virtual ~Worker() = default;
 
   /**
    * @brief Set the callback function for received messages.

@@ -58,16 +58,16 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::msg::NavPVT> {
  private:
   // Set from ROS parameters
   //! Whether or not to enable the Galileo GNSS
-  bool enable_galileo_;
+  bool enable_galileo_{false};
   //! Whether or not to enable the BeiDuo GNSS
-  bool enable_beidou_;
+  bool enable_beidou_{false};
   //! Whether or not to enable the IMES GNSS
-  bool enable_imes_;
+  bool enable_imes_{false};
   //! Desired NMEA configuration.
   ublox_msgs::msg::CfgNMEA cfg_nmea_;
   //! Whether to clear the flash memory during configuration
-  bool clear_bbr_;
-  bool save_on_shutdown_;
+  bool clear_bbr_{false};
+  bool save_on_shutdown_{false};
 
   rclcpp::Publisher<ublox_msgs::msg::NavSAT>::SharedPtr nav_sat_pub_;
   rclcpp::Publisher<ublox_msgs::msg::MonHW>::SharedPtr mon_hw_pub_;

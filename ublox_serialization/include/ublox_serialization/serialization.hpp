@@ -113,7 +113,8 @@ struct UbloxSerializer<T, typename std::enable_if<std::is_same<T, uint8_t>::valu
     v = *reinterpret_cast<T*>(stream.advance(sizeof(v)));
   }
 
-  inline static uint32_t serializedLength(const T&) {
+  inline static uint32_t serializedLength(const T& v) {
+    (void)v;
     return sizeof(T);
   }
 };
@@ -164,23 +165,20 @@ struct StdArrayUbloxSerializer<T, N, typename std::enable_if<std::is_same<T, uin
                                                              std::is_same<T, float>::value ||
                                                              std::is_same<T, double>::value>::type>
 {
-  typedef std::array<T, N> ArrayType;
-  typedef typename ArrayType::iterator IteratorType;
-  typedef typename ArrayType::const_iterator ConstIteratorType;
-
   template<typename Stream>
-  inline static void write(Stream& stream, const ArrayType& v) {
+  inline static void write(Stream& stream, const std::array<T, N>& v) {
     const uint32_t data_len = N * sizeof(T);
     std::memcpy(stream.advance(data_len), &v.front(), data_len);
   }
 
   template<typename Stream>
-  inline static void read(Stream& stream, ArrayType& v) {
+  inline static void read(Stream& stream, std::array<T, N>& v) {
     const uint32_t data_len = N * sizeof(T);
     std::memcpy(&v.front(), stream.advance(data_len), data_len);
   }
 
-  inline static uint32_t serializedLength(const ArrayType& v) {
+  inline static uint32_t serializedLength(const std::array<T, N>& v) {
+    (void)v;
     return N * sizeof(T);
   }
 };
@@ -315,7 +313,7 @@ class Message {
    * @param message_id the message ID of the u-blox message
    */
   static void addKey(uint8_t class_id, uint8_t message_id) {
-    keys_.push_back(std::make_pair(class_id, message_id));
+    keys_.emplace_back(std::make_pair(class_id, message_id));
   }
 
   struct StaticKeyInitializer
@@ -371,7 +369,7 @@ class Reader {
          const Options &options = Options()) :
       data_(data), count_(count), found_(false), options_(options) {}
 
-  typedef const uint8_t *iterator;
+  using iterator = const uint8_t *;
 
   /**
    * @brief Search the buffer for the beginning of the next u-blox message
@@ -550,7 +548,7 @@ class Reader {
  */
 class Writer {
  public:
-  typedef uint8_t *iterator;
+  using iterator = uint8_t *;
 
   /**
    * @brief Construct a Writer with the given buffer.
@@ -581,7 +579,7 @@ class Writer {
     // Encode the message and add it to the buffer
     UbloxSerializer<T>::write(data_ + options_.header_length,
                          size_ - options_.header_length, message);
-    return write(0, length, class_id, message_id);
+    return write(nullptr, length, class_id, message_id);
   }
 
   /**

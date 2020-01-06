@@ -72,11 +72,11 @@ class UbloxFirmware7Plus : public UbloxFirmware {
       //  converted to a positive value
       if (m.nano < 0) {
         fix.header.stamp.sec = toUtcSeconds(m) - 1;
-        fix.header.stamp.nanosec = (uint32_t)(m.nano + 1e9);
+        fix.header.stamp.nanosec = static_cast<uint32_t>(m.nano + 1e9);
       }
       else {
         fix.header.stamp.sec = toUtcSeconds(m);
-        fix.header.stamp.nanosec = (uint32_t)(m.nano);
+        fix.header.stamp.nanosec = static_cast<uint32_t>(m.nano);
       }
     } else {
       // Use ROS time since NavPVT timestamp is not valid
@@ -89,12 +89,12 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     // Set the Fix status
     bool fixOk = m.flags & m.FLAGS_GNSS_FIX_OK;
     if (fixOk && m.fix_type >= m.FIX_TYPE_2D) {
-      fix.status.status = fix.status.STATUS_FIX;
+      fix.status.status = sensor_msgs::msg::NavSatStatus::STATUS_FIX;
       if (m.flags & m.CARRIER_PHASE_FIXED) {
-        fix.status.status = fix.status.STATUS_GBAS_FIX;
+        fix.status.status = sensor_msgs::msg::NavSatStatus::STATUS_GBAS_FIX;
       }
     } else {
-      fix.status.status = fix.status.STATUS_NO_FIX;
+      fix.status.status = sensor_msgs::msg::NavSatStatus::STATUS_NO_FIX;
     }
     // Set the service based on GNSS configuration
     fix.status.service = fix_status_service_;
@@ -185,20 +185,20 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     stat.add("Height above MSL [m]", last_nav_pvt_.h_msl * 1e-3);
     stat.add("Horizontal Accuracy [m]", last_nav_pvt_.h_acc * 1e-3);
     stat.add("Vertical Accuracy [m]", last_nav_pvt_.v_acc * 1e-3);
-    stat.add("# SVs used", (int)last_nav_pvt_.num_sv);
+    stat.add("# SVs used", static_cast<int>(last_nav_pvt_.num_sv));
   }
 
   //! The last received NavPVT message
   NavPVT last_nav_pvt_;
   // Whether or not to enable the given GNSS
   //! Whether or not to enable GPS
-  bool enable_gps_;
+  bool enable_gps_{false};
   //! Whether or not to enable GLONASS
-  bool enable_glonass_;
+  bool enable_glonass_{false};
   //! Whether or not to enable QZSS
-  bool enable_qzss_;
+  bool enable_qzss_{false};
   //! The QZSS Signal configuration, see CfgGNSS message
-  uint32_t qzss_sig_cfg_;
+  uint32_t qzss_sig_cfg_{0};
 
   typename rclcpp::Publisher<NavPVT>::SharedPtr nav_pvt_pub_;
   rclcpp::Publisher<sensor_msgs::msg::NavSatFix>::SharedPtr fix_pub_;

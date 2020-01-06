@@ -75,6 +75,6 @@ class ComponentInterface {
   virtual void subscribe(std::shared_ptr<ublox_gps::Gps> gps) = 0;
 };
 
-}
+}  // namespace ublox_node
 
 #endif

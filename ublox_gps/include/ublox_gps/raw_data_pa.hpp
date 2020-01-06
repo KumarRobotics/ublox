@@ -63,7 +63,7 @@ class RawDataStreamPa final : public rclcpp::Node {
    * @brief Constructor.
    * Initialises variables and the nodehandle.
    */
-  RawDataStreamPa(bool is_ros_subscriber = false);
+  explicit RawDataStreamPa(bool is_ros_subscriber = false);
 
   /**
    * @brief Get the raw data stream parameters.
@@ -135,6 +135,6 @@ class RawDataStreamPa final : public rclcpp::Node {
   rclcpp::Subscription<std_msgs::msg::UInt8MultiArray>::SharedPtr raw_data_stream_sub_;
 };
 
-}
+}  // namespace ublox_node
 
 #endif

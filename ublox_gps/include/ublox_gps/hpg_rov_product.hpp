@@ -21,13 +21,13 @@ class HpgRovProduct final : public virtual ComponentInterface {
  public:
   // Constants for diagnostic updater
   //! Diagnostic updater: RTCM topic frequency min [Hz]
-  constexpr static double kRtcmFreqMin = 1;
+  const double kRtcmFreqMin = 1;
   //! Diagnostic updater: RTCM topic frequency max [Hz]
-  constexpr static double kRtcmFreqMax = 10;
+  const double kRtcmFreqMax = 10;
   //! Diagnostic updater: RTCM topic frequency tolerance [%]
-  constexpr static double kRtcmFreqTol = 0.1;
+  const double kRtcmFreqTol = 0.1;
   //! Diagnostic updater: RTCM topic frequency window [num messages]
-  constexpr static int kRtcmFreqWindow = 25;
+  const int kRtcmFreqWindow = 25;
 
   explicit HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node);
 
@@ -81,7 +81,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
   uint8_t dgnss_mode_;
 
   //! The RTCM topic frequency diagnostic updater
-  UbloxTopicDiagnostic freq_rtcm_;
+  std::unique_ptr<UbloxTopicDiagnostic> freq_rtcm_;
 
   rclcpp::Publisher<ublox_msgs::msg::NavRELPOSNED>::SharedPtr nav_rel_pos_ned_pub_;
 

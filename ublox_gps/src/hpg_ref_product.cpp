@@ -22,27 +22,26 @@ namespace ublox_node {
 //
 
 HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, rclcpp::Node* node)
-  : nav_rate_(nav_rate), meas_rate_(meas_rate), updater_(updater), rtcms_(rtcms), node_(node)
+  : tmode3_(0), lla_flag_(false), fixed_pos_acc_(0.0), svin_reset_(false), sv_in_min_dur_(0), sv_in_acc_lim_(0.0), nav_rate_(nav_rate), meas_rate_(meas_rate), updater_(updater), rtcms_(rtcms), node_(node)
 {
   navsvin_pub_ =
     node_->create_publisher<ublox_msgs::msg::NavSVIN>("navsvin", 1);
 }
 
 /**
- * @brief Get a int (size 8 or 16) vector from the parameter server.
+ * @brief Get a int (size 8) vector from the parameter server.
  * @throws std::runtime_error if the parameter is out of bounds.
  * @return true if found, false if not found.
  */
-template <typename I>
-bool getRosInt(rclcpp::Node* node, const std::string& key, std::vector<I> &i) {
-  std::vector<long int> param;
+bool getRosInt(rclcpp::Node* node, const std::string& key, std::vector<int8_t> &i) {
+  std::vector<int64_t> param;
   if (!node->get_parameter(key, param)) {
     return false;
   }
 
   // Check the bounds
-  I min = std::numeric_limits<I>::lowest();
-  I max = std::numeric_limits<I>::max();
+  int8_t min = std::numeric_limits<int8_t>::lowest();
+  int8_t max = std::numeric_limits<int8_t>::max();
   checkRange(param, min, max, key);
 
   // set the output
@@ -134,8 +133,8 @@ bool HpgRefProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
                                  " configuring survey-in");
       }
       // Don't reset survey in if in time mode with a good fix
-      if (nav_pvt.fix_type == nav_pvt.FIX_TYPE_TIME_ONLY
-          && nav_pvt.flags & nav_pvt.FLAGS_GNSS_FIX_OK) {
+      if (nav_pvt.fix_type == ublox_msgs::msg::NavPVT::FIX_TYPE_TIME_ONLY
+          && nav_pvt.flags & ublox_msgs::msg::NavPVT::FLAGS_GNSS_FIX_OK) {
         setTimeMode(gps);
         return true;
       }
@@ -148,7 +147,7 @@ bool HpgRefProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
       meas_rate_temp = kDefaultMeasPeriod;
     }
     // Set nav rate to 1 Hz during survey in
-    if (!gps->configRate(meas_rate_temp, (int) 1000 / meas_rate_temp)) {
+    if (!gps->configRate(meas_rate_temp, 1000 / meas_rate_temp)) {
       throw std::runtime_error(std::string("Failed to set nav rate to 1 Hz") +
                                "before setting TMODE3 to survey-in.");
     }

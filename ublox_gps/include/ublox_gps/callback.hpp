@@ -32,8 +32,11 @@
 #include <chrono>
 #include <condition_variable>
 #include <functional>
+#include <ios>
+#include <map>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <stdexcept>
 #include <utility>
 
@@ -71,7 +74,7 @@ class CallbackHandler {
 template <typename T>
 class CallbackHandler_ final : public CallbackHandler {
  public:
-  typedef std::function<void(const T&)> Callback; //!< A callback function
+  using Callback = std::function<void(const T&)>;
 
   /**
    * @brief Initialize the Callback Handler with a callback function
@@ -236,8 +239,8 @@ class CallbackHandlers final {
   }
 
  private:
-  typedef std::multimap<std::pair<uint8_t, uint8_t>,
-                        std::shared_ptr<CallbackHandler> > Callbacks;
+  using Callbacks = std::multimap<std::pair<uint8_t, uint8_t>,
+                                  std::shared_ptr<CallbackHandler>>;
 
   // Call back handlers for u-blox messages
   Callbacks callbacks_;

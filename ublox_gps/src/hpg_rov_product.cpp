@@ -21,14 +21,14 @@ namespace ublox_node {
 // U-Blox High Precision GNSS Rover
 //
 HpgRovProduct::HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node)
-  : nav_rate_(nav_rate), updater_(updater), node_(node)
+  : dgnss_mode_(ublox_msgs::msg::CfgDGNSS::DGNSS_MODE_RTK_FIXED), nav_rate_(nav_rate), updater_(updater), node_(node)
 {
   nav_rel_pos_ned_pub_ =
     node_->create_publisher<ublox_msgs::msg::NavRELPOSNED>("navrelposned", 1);
 }
 
 void HpgRovProduct::getRosParams() {
-  // default to float, see CfgDGNSS message for details
+  // default to fixed, see CfgDGNSS message for details
   getRosUint(node_, "dgnss_mode", dgnss_mode_,
              ublox_msgs::msg::CfgDGNSS::DGNSS_MODE_RTK_FIXED);
 }
@@ -48,9 +48,9 @@ void HpgRovProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void HpgRovProduct::initializeRosDiagnostics() {
-  freq_rtcm_ = UbloxTopicDiagnostic(std::string("rxmrtcm"),
-                                    kRtcmFreqMin, kRtcmFreqMax,
-                                    kRtcmFreqTol, kRtcmFreqWindow, updater_);
+  freq_rtcm_ = std::make_unique<UbloxTopicDiagnostic>(std::string("rxmrtcm"),
+                                                      kRtcmFreqMin, kRtcmFreqMax,
+                                                      kRtcmFreqTol, kRtcmFreqWindow, updater_);
   updater_->add("Carrier Phase Solution", this,
                 &HpgRovProduct::carrierPhaseDiagnostics);
   updater_->force_update();
@@ -58,18 +58,18 @@ void HpgRovProduct::initializeRosDiagnostics() {
 
 void HpgRovProduct::carrierPhaseDiagnostics(
     diagnostic_updater::DiagnosticStatusWrapper& stat) {
-  uint32_t carr_soln = last_rel_pos_.flags & last_rel_pos_.FLAGS_CARR_SOLN_MASK;
+  uint32_t carr_soln = last_rel_pos_.flags & ublox_msgs::msg::NavRELPOSNED::FLAGS_CARR_SOLN_MASK;
   stat.add("iTow", last_rel_pos_.i_tow);
-  if (carr_soln & last_rel_pos_.FLAGS_CARR_SOLN_NONE ||
-      !(last_rel_pos_.flags & last_rel_pos_.FLAGS_DIFF_SOLN &&
-        last_rel_pos_.flags & last_rel_pos_.FLAGS_REL_POS_VALID)) {
+  if (carr_soln & ublox_msgs::msg::NavRELPOSNED::FLAGS_CARR_SOLN_NONE ||
+      !(last_rel_pos_.flags & ublox_msgs::msg::NavRELPOSNED::FLAGS_DIFF_SOLN &&
+        last_rel_pos_.flags & ublox_msgs::msg::NavRELPOSNED::FLAGS_REL_POS_VALID)) {
     stat.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
     stat.message = "None";
   } else {
-    if (carr_soln & last_rel_pos_.FLAGS_CARR_SOLN_FLOAT) {
+    if (carr_soln & ublox_msgs::msg::NavRELPOSNED::FLAGS_CARR_SOLN_FLOAT) {
       stat.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
       stat.message = "Float";
-    } else if (carr_soln & last_rel_pos_.FLAGS_CARR_SOLN_FIXED) {
+    } else if (carr_soln & ublox_msgs::msg::NavRELPOSNED::FLAGS_CARR_SOLN_FIXED) {
       stat.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
       stat.message = "Fixed";
     }

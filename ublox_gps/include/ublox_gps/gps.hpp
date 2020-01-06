@@ -53,14 +53,14 @@
  */
 namespace ublox_gps {
 //! Possible baudrates for u-blox devices
-constexpr static unsigned int kBaudrates[] = { 4800,
-                                               9600,
-                                               19200,
-                                               38400,
-                                               57600,
-                                               115200,
-                                               230400,
-                                               460800 };
+const std::vector<unsigned int> kBaudrates{ 4800,
+                                            9600,
+                                            19200,
+                                            38400,
+                                            57600,
+                                            115200,
+                                            230400,
+                                            460800 };
 /**
  * @brief Handles communication with and configuration of the u-blox device
  */
@@ -76,6 +76,11 @@ class Gps final {
   explicit Gps(int debug, const rclcpp::Logger & logger);
   ~Gps();
 
+  Gps(Gps &&c) = delete;
+  Gps &operator=(Gps &&c) = delete;
+  Gps(const Gps &c) = delete;
+  Gps &operator=(const Gps &c) = delete;
+
   /**
    * @brief If called, when the node shuts down, it will send a command to
    * save the flash memory.
@@ -88,7 +93,7 @@ class Gps final {
    * @brief Set the internal flag for enabling or disabling the initial configurations.
    * @param config_on_startup boolean flag
    */
-  void setConfigOnStartup(const bool config_on_startup) { config_on_startup_flag_ = config_on_startup; }
+  void setConfigOnStartup(bool config_on_startup) { config_on_startup_flag_ = config_on_startup; }
 
   /**
    * @brief Initialize TCP I/O.
@@ -170,7 +175,7 @@ class Gps final {
    * configuration parameters
    * @return true on ACK, false on other conditions.
    */
-  bool disableUart1(ublox_msgs::msg::CfgPRT& prev_cfg);
+  bool disableUart1(ublox_msgs::msg::CfgPRT& prev_config);
 
   /**
    * @brief Configure the USB Port.
@@ -352,7 +357,7 @@ class Gps final {
   bool read(T& message,
             const std::chrono::milliseconds& timeout = default_timeout_);
 
-  bool isInitialized() const { return worker_ != 0; }
+  bool isInitialized() const { return worker_ != nullptr; }
   bool isConfigured() const { return isInitialized() && configured_; }
   bool isOpen() const { return worker_->isOpen(); }
 
@@ -530,7 +535,7 @@ bool Gps::configure(const ConfigT& message, bool wait) {
   }
 
   // Reset ack
-  Ack ack;
+  Ack ack{};
   ack.type = WAIT;
   ack.class_id = 0;
   ack.msg_id = 0;

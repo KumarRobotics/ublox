@@ -26,7 +26,7 @@ namespace ublox_node {
 // u-blox ADR devices, partially implemented
 //
 AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node)
-  : nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id), updater_(updater), node_(node)
+  : use_adr_(false), nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id), updater_(updater), node_(node)
 {
   imu_pub_ =
     node_->create_publisher<sensor_msgs::msg::Imu>("imu_meas", 1);
@@ -43,7 +43,7 @@ AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::s
 void AdrUdrProduct::getRosParams() {
   use_adr_ = getRosBoolean(node_, "use_adr");
   // Check the nav rate
-  float nav_rate_hz = 1000 / (meas_rate_ * nav_rate_);
+  float nav_rate_hz = 1000.0 / (meas_rate_ * nav_rate_);
   if (nav_rate_hz != 1) {
     RCLCPP_WARN(node_->get_logger(), "Nav Rate recommended to be 1 Hz");
   }
@@ -107,10 +107,10 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m) {
     float m_per_sec_sq = ::pow(2, -10);
 
     std::vector<unsigned int> imu_data = m.data;
-    for (size_t i = 0; i < imu_data.size(); i++){
-      unsigned int data_type = imu_data[i] >> 24; //grab the last six bits of data
-      double data_sign = (imu_data[i] & (1 << 23)); //grab the sign (+/-) of the rest of the data
-      unsigned int data_value = imu_data[i] & 0x7FFFFF; //grab the rest of the data...should be 23 bits
+    for (unsigned int datapoint : imu_data) {
+      unsigned int data_type = datapoint >> 24; //grab the last six bits of data
+      double data_sign = (datapoint & (1 << 23)); //grab the sign (+/-) of the rest of the data
+      unsigned int data_value = datapoint & 0x7FFFFF; //grab the rest of the data...should be 23 bits
 
       if (data_sign == 0) {
         data_sign = -1;

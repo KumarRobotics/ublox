@@ -99,7 +99,12 @@ class UbloxNode final : public rclcpp::Node {
    */
   UbloxNode();
 
-  ~UbloxNode();
+  ~UbloxNode() override;
+
+  UbloxNode(UbloxNode &&c) = delete;
+  UbloxNode &operator=(UbloxNode &&c) = delete;
+  UbloxNode(const UbloxNode &c) = delete;
+  UbloxNode &operator=(const UbloxNode &c) = delete;
 
   /**
    * @brief Get the node parameters from the ROS Parameter Server.
@@ -193,7 +198,7 @@ class UbloxNode final : public rclcpp::Node {
   std::vector<std::shared_ptr<ComponentInterface> > components_;
 
   //! Determined From Mon VER
-  float protocol_version_ = 0;
+  float protocol_version_ = 0.0;
   // Variables set from parameter server
   //! Device port
   std::string device_;
@@ -202,40 +207,40 @@ class UbloxNode final : public rclcpp::Node {
   //! Fix mode type
   std::string fix_mode_;
   //! Set from dynamic model string
-  uint8_t dmodel_;
+  uint8_t dmodel_{0};
   //! Set from fix mode string
-  uint8_t fmode_;
+  uint8_t fmode_{0};
   //! UART1 baudrate
-  uint32_t baudrate_;
+  uint32_t baudrate_{0};
   //! UART in protocol (see CfgPRT message for constants)
-  uint16_t uart_in_;
+  uint16_t uart_in_{0};
   //! UART out protocol (see CfgPRT message for constants)
-  uint16_t uart_out_;
+  uint16_t uart_out_{0};
   //! USB TX Ready Pin configuration (see CfgPRT message for constants)
-  uint16_t usb_tx_;
+  uint16_t usb_tx_{0};
   //! Whether to configure the USB port
   /*! Set to true if usb_in & usb_out parameters are set */
-  bool set_usb_;
+  bool set_usb_{false};
   //! USB in protocol (see CfgPRT message for constants)
-  uint16_t usb_in_;
+  uint16_t usb_in_{0};
   //! USB out protocol (see CfgPRT message for constants)
-  uint16_t usb_out_ ;
+  uint16_t usb_out_{0};
   //! The measurement rate in Hz
-  double rate_;
+  double rate_{0.0};
   //! User-defined Datum
   ublox_msgs::msg::CfgDAT cfg_dat_;
   //! SBAS Usage parameter (see CfgSBAS message)
-  uint8_t sbas_usage_;
+  uint8_t sbas_usage_{0};
   //! Max SBAS parameter (see CfgSBAS message)
-  uint8_t max_sbas_;
+  uint8_t max_sbas_{0};
   //! Dead reckoning limit parameter
-  uint8_t dr_limit_;
+  uint8_t dr_limit_{0};
   //! Parameters to load from non-volatile memory during configuration
   ublox_msgs::msg::CfgCFG load_;
   //! Parameters to save to non-volatile memory after configuration
   ublox_msgs::msg::CfgCFG save_;
   //! rate for TIM-TM2
-  uint8_t tim_rate_;
+  uint8_t tim_rate_{0};
 
   //! raw data stream logging
   RawDataStreamPa raw_data_stream_pa_;
@@ -248,10 +253,10 @@ class UbloxNode final : public rclcpp::Node {
   rclcpp::Publisher<ublox_msgs::msg::AidHUI>::SharedPtr aid_hui_pub_;
 
   //! Navigation rate in measurement cycles, see CfgRate.msg
-  uint16_t nav_rate_;
+  uint16_t nav_rate_{0};
 
   //! The measurement [ms], see CfgRate.msg
-  uint16_t meas_rate_;
+  uint16_t meas_rate_{0};
 
   //! The ROS frame ID of this device
   std::string frame_id_;
@@ -273,6 +278,6 @@ class UbloxNode final : public rclcpp::Node {
   rclcpp::TimerBase::SharedPtr poller_;
 };
 
-}
+}  // namespace ublox_node
 
 #endif  // UBLOX_GPS_NODE_HPP

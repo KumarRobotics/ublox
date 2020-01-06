@@ -76,7 +76,7 @@ void UbloxFirmware8::getRosParams() {
   //
   if (getRosBoolean(node_, "nmea.set")) {
     bool compat, consider;
-    cfg_nmea_.version = cfg_nmea_.VERSION; // message version
+    cfg_nmea_.version = ublox_msgs::msg::CfgNMEA::VERSION; // message version
 
     // Verify that parameters are set
     if (!getRosUint(node_, "nmea.version", cfg_nmea_.nmea_version)) {
@@ -101,23 +101,23 @@ void UbloxFirmware8::getRosParams() {
     }
 
     // set flags
-    cfg_nmea_.flags = compat ? cfg_nmea_.FLAGS_COMPAT : 0;
-    cfg_nmea_.flags |= consider ? cfg_nmea_.FLAGS_CONSIDER : 0;
-    cfg_nmea_.flags |= getRosBoolean(node_, "nmea.limit82") ? cfg_nmea_.FLAGS_LIMIT82 : 0;
-    cfg_nmea_.flags |= getRosBoolean(node_, "nmea.high_prec") ? cfg_nmea_.FLAGS_HIGH_PREC : 0;
+    cfg_nmea_.flags = compat ? ublox_msgs::msg::CfgNMEA::FLAGS_COMPAT : 0;
+    cfg_nmea_.flags |= consider ? ublox_msgs::msg::CfgNMEA::FLAGS_CONSIDER : 0;
+    cfg_nmea_.flags |= getRosBoolean(node_, "nmea.limit82") ? ublox_msgs::msg::CfgNMEA::FLAGS_LIMIT82 : 0;
+    cfg_nmea_.flags |= getRosBoolean(node_, "nmea.high_prec") ? ublox_msgs::msg::CfgNMEA::FLAGS_HIGH_PREC : 0;
     // set filter
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.pos") ? cfg_nmea_.FILTER_POS : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.msk_pos") ? cfg_nmea_.FILTER_MSK_POS : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.time") ? cfg_nmea_.FILTER_TIME : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.date") ? cfg_nmea_.FILTER_DATE : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.gps_only") ? cfg_nmea_.FILTER_GPS_ONLY : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.track") ? cfg_nmea_.FILTER_TRACK : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.pos") ? ublox_msgs::msg::CfgNMEA::FILTER_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.msk_pos") ? ublox_msgs::msg::CfgNMEA::FILTER_MSK_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.time") ? ublox_msgs::msg::CfgNMEA::FILTER_TIME : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.date") ? ublox_msgs::msg::CfgNMEA::FILTER_DATE : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.gps_only") ? ublox_msgs::msg::CfgNMEA::FILTER_GPS_ONLY : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.track") ? ublox_msgs::msg::CfgNMEA::FILTER_TRACK : 0;
     // set gnssToFilter
-    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.gps") ? cfg_nmea_.GNSS_TO_FILTER_GPS : 0;
-    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.sbas") ? cfg_nmea_.GNSS_TO_FILTER_SBAS : 0;
-    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.qzss") ? cfg_nmea_.GNSS_TO_FILTER_QZSS : 0;
-    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.glonass") ? cfg_nmea_.GNSS_TO_FILTER_GLONASS : 0;
-    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.beidou") ? cfg_nmea_.GNSS_TO_FILTER_BEIDOU : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.gps") ? ublox_msgs::msg::CfgNMEA::GNSS_TO_FILTER_GPS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.sbas") ? ublox_msgs::msg::CfgNMEA::GNSS_TO_FILTER_SBAS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.qzss") ? ublox_msgs::msg::CfgNMEA::GNSS_TO_FILTER_QZSS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.glonass") ? ublox_msgs::msg::CfgNMEA::GNSS_TO_FILTER_GLONASS : 0;
+    cfg_nmea_.gnss_to_filter |= getRosBoolean(node_, "nmea.gnssToFilter.beidou") ? ublox_msgs::msg::CfgNMEA::GNSS_TO_FILTER_BEIDOU : 0;
 
     getRosUint(node_, "nmea.main_talker_id", cfg_nmea_.main_talker_id);
     getRosUint(node_, "nmea.gsv_talker_id", cfg_nmea_.gsv_talker_id);
@@ -154,58 +154,58 @@ bool UbloxFirmware8::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
 
   // Then, check the configuration for each GNSS. If it is different, change it.
   bool correct = true;
-  for (size_t i = 0; i < cfg_gnss.blocks.size(); i++) {
+  for (size_t i = 0; i < cfg_gnss.blocks.size(); i++) {  // NOLINT(modernize-loop-convert)
     ublox_msgs::msg::CfgGNSSBlock block = cfg_gnss.blocks[i];
-    if (block.gnss_id == block.GNSS_ID_GPS
-        && enable_gps_ != (block.flags & block.FLAGS_ENABLE)) {
+    if (block.gnss_id == ublox_msgs::msg::CfgGNSSBlock::GNSS_ID_GPS
+        && enable_gps_ != (block.flags & ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE)) {
       correct = false;
       cfg_gnss.blocks[i].flags =
-          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_gps_;
+          (cfg_gnss.blocks[i].flags & ~ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE) | enable_gps_;
       RCLCPP_DEBUG(node_->get_logger(), "GPS Configuration is different");
-    } else if (block.gnss_id == block.GNSS_ID_SBAS
-               && getRosBoolean(node_, "gnss.sbas") != (block.flags & block.FLAGS_ENABLE)) {
+    } else if (block.gnss_id == ublox_msgs::msg::CfgGNSSBlock::GNSS_ID_SBAS
+               && getRosBoolean(node_, "gnss.sbas") != (block.flags & ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE)) {
       correct = false;
       cfg_gnss.blocks[i].flags =
-          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | getRosBoolean(node_, "gnss.sbas");
+          (cfg_gnss.blocks[i].flags & ~ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE) | getRosBoolean(node_, "gnss.sbas");
       RCLCPP_DEBUG(node_->get_logger(), "SBAS Configuration is different");
-    } else if (block.gnss_id == block.GNSS_ID_GALILEO
-               && enable_galileo_ != (block.flags & block.FLAGS_ENABLE)) {
+    } else if (block.gnss_id == ublox_msgs::msg::CfgGNSSBlock::GNSS_ID_GALILEO
+               && enable_galileo_ != (block.flags & ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE)) {
       correct = false;
       cfg_gnss.blocks[i].flags =
-          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_galileo_;
+          (cfg_gnss.blocks[i].flags & ~ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE) | enable_galileo_;
       RCLCPP_DEBUG(node_->get_logger(), "Galileo GNSS Configuration is different");
-    } else if (block.gnss_id == block.GNSS_ID_BEIDOU
-               && enable_beidou_ != (block.flags & block.FLAGS_ENABLE)) {
+    } else if (block.gnss_id == ublox_msgs::msg::CfgGNSSBlock::GNSS_ID_BEIDOU
+               && enable_beidou_ != (block.flags & ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE)) {
       correct = false;
       cfg_gnss.blocks[i].flags =
-          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_beidou_;
+          (cfg_gnss.blocks[i].flags & ~ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE) | enable_beidou_;
       RCLCPP_DEBUG(node_->get_logger(), "BeiDou Configuration is different");
-    } else if (block.gnss_id == block.GNSS_ID_IMES
-               && enable_imes_ != (block.flags & block.FLAGS_ENABLE)) {
+    } else if (block.gnss_id == ublox_msgs::msg::CfgGNSSBlock::GNSS_ID_IMES
+               && enable_imes_ != (block.flags & ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE)) {
       correct = false;
       cfg_gnss.blocks[i].flags =
-          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_imes_;
-    } else if (block.gnss_id == block.GNSS_ID_QZSS
-               && (enable_qzss_ != (block.flags & block.FLAGS_ENABLE)
+          (cfg_gnss.blocks[i].flags & ~ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE) | enable_imes_;
+    } else if (block.gnss_id == ublox_msgs::msg::CfgGNSSBlock::GNSS_ID_QZSS
+               && (enable_qzss_ != (block.flags & ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE)
                || (enable_qzss_
-               && qzss_sig_cfg_ != (block.flags & block.FLAGS_SIG_CFG_MASK)))) {
+               && qzss_sig_cfg_ != (block.flags & ublox_msgs::msg::CfgGNSSBlock::FLAGS_SIG_CFG_MASK)))) {
       RCLCPP_DEBUG(node_->get_logger(), "QZSS Configuration is different %u, %u",
-                block.flags & block.FLAGS_ENABLE,
+                block.flags & ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE,
                 enable_qzss_);
       correct = false;
       RCLCPP_DEBUG(node_->get_logger(), "QZSS Configuration: %u", block.flags);
       cfg_gnss.blocks[i].flags =
-          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_qzss_;
+          (cfg_gnss.blocks[i].flags & ~ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE) | enable_qzss_;
       RCLCPP_DEBUG(node_->get_logger(), "QZSS Configuration: %u", cfg_gnss.blocks[i].flags);
       if (enable_qzss_) {
         // Only change sig cfg if enabling
         cfg_gnss.blocks[i].flags |= qzss_sig_cfg_;
       }
-    } else if (block.gnss_id == block.GNSS_ID_GLONASS
-               && enable_glonass_ != (block.flags & block.FLAGS_ENABLE)) {
+    } else if (block.gnss_id == ublox_msgs::msg::CfgGNSSBlock::GNSS_ID_GLONASS
+               && enable_glonass_ != (block.flags & ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE)) {
       correct = false;
       cfg_gnss.blocks[i].flags =
-          (cfg_gnss.blocks[i].flags & ~block.FLAGS_ENABLE) | enable_glonass_;
+          (cfg_gnss.blocks[i].flags & ~ublox_msgs::msg::CfgGNSSBlock::FLAGS_ENABLE) | enable_glonass_;
       RCLCPP_DEBUG(node_->get_logger(), "GLONASS Configuration is different");
     }
   }

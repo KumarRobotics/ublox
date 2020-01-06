@@ -4,14 +4,6 @@
 
 namespace ublox_node {
 
-Gnss::Gnss()
-{
-}
-
-Gnss::~Gnss()
-{
-}
-
 void Gnss::add(const std::string & gnss)
 {
   supported_.insert(gnss);

@@ -43,6 +43,8 @@
 #include <asio/placeholders.hpp>
 #include <asio/write.hpp>
 
+#include <rclcpp/rclcpp.hpp>
+
 #include "worker.hpp"
 
 namespace ublox_gps {
@@ -64,7 +66,12 @@ class AsyncWorker final : public Worker {
                        std::size_t buffer_size,
                        int debug,
                        const rclcpp::Logger& logger);
-  ~AsyncWorker();
+  ~AsyncWorker() override;
+
+  AsyncWorker(AsyncWorker &&c) = delete;
+  AsyncWorker &operator=(AsyncWorker &&c) = delete;
+  AsyncWorker(const AsyncWorker &c) = delete;
+  AsyncWorker &operator=(const AsyncWorker &c) = delete;
 
   /**
    * @brief Set the callback function which handles input messages.
@@ -101,9 +108,9 @@ class AsyncWorker final : public Worker {
   /**
    * @brief Process messages read from the input stream.
    * @param error_code an error code for read failures
-   * @param the number of bytes received
+   * @param bytes_received the number of bytes received
    */
-  void readEnd(const asio::error_code&, std::size_t);
+  void readEnd(const asio::error_code& error, std::size_t bytes_transferred);
 
   /**
    * @brief Send all the data in the output buffer.

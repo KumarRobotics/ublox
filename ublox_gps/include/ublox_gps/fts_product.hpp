@@ -75,6 +75,6 @@ class FtsProduct final : public virtual ComponentInterface {
   }
 };
 
-}
+}  // namespace ublox_node
 
 #endif

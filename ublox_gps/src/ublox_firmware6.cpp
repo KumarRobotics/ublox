@@ -67,16 +67,16 @@ void UbloxFirmware6::getRosParams() {
     }
 
     // set flags
-    cfg_nmea_.flags = getRosBoolean(node_, "nmea.compat") ? cfg_nmea_.FLAGS_COMPAT : 0;
-    cfg_nmea_.flags |= getRosBoolean(node_, "nmea.consider") ? cfg_nmea_.FLAGS_CONSIDER : 0;
+    cfg_nmea_.flags = getRosBoolean(node_, "nmea.compat") ? ublox_msgs::msg::CfgNMEA6::FLAGS_COMPAT : 0;
+    cfg_nmea_.flags |= getRosBoolean(node_, "nmea.consider") ? ublox_msgs::msg::CfgNMEA6::FLAGS_CONSIDER : 0;
 
     // set filter
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.pos") ? cfg_nmea_.FILTER_POS : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.msk_pos") ? cfg_nmea_.FILTER_MSK_POS : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.time") ? cfg_nmea_.FILTER_TIME : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.date") ? cfg_nmea_.FILTER_DATE : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.sbas") ? cfg_nmea_.FILTER_SBAS_FILT : 0;
-    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.track") ? cfg_nmea_.FILTER_TRACK : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.pos") ? ublox_msgs::msg::CfgNMEA6::FILTER_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.msk_pos") ? ublox_msgs::msg::CfgNMEA6::FILTER_MSK_POS : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.time") ? ublox_msgs::msg::CfgNMEA6::FILTER_TIME : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.date") ? ublox_msgs::msg::CfgNMEA6::FILTER_DATE : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.sbas") ? ublox_msgs::msg::CfgNMEA6::FILTER_SBAS_FILT : 0;
+    cfg_nmea_.filter |= getRosBoolean(node_, "nmea.filter.track") ? ublox_msgs::msg::CfgNMEA6::FILTER_TRACK : 0;
   }
 }
 
@@ -154,7 +154,7 @@ void UbloxFirmware6::fixDiagnostic(
   stat.add("Height above MSL [m]", last_nav_pos_.h_msl * 1e-3);
   stat.add("Horizontal Accuracy [m]", last_nav_pos_.h_acc * 1e-3);
   stat.add("Vertical Accuracy [m]", last_nav_pos_.v_acc * 1e-3);
-  stat.add("# SVs used", (int)last_nav_sol_.num_sv);
+  stat.add("# SVs used", static_cast<int>(last_nav_sol_.num_sv));
 }
 
 void UbloxFirmware6::callbackNavPosLlh(const ublox_msgs::msg::NavPOSLLH& m) {
@@ -174,10 +174,10 @@ void UbloxFirmware6::callbackNavPosLlh(const ublox_msgs::msg::NavPOSLLH& m) {
   fix_.longitude = m.lon * 1e-7;
   fix_.altitude = m.height * 1e-3;
 
-  if (last_nav_sol_.gps_fix >= last_nav_sol_.GPS_2D_FIX) {
-    fix_.status.status = fix_.status.STATUS_FIX;
+  if (last_nav_sol_.gps_fix >= ublox_msgs::msg::NavSOL::GPS_2D_FIX) {
+    fix_.status.status = sensor_msgs::msg::NavSatStatus::STATUS_FIX;
   } else {
-    fix_.status.status = fix_.status.STATUS_NO_FIX;
+    fix_.status.status = sensor_msgs::msg::NavSatStatus::STATUS_NO_FIX;
   }
 
   // Convert from mm to m
@@ -190,7 +190,7 @@ void UbloxFirmware6::callbackNavPosLlh(const ublox_msgs::msg::NavPOSLLH& m) {
   fix_.position_covariance_type =
       sensor_msgs::msg::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
 
-  fix_.status.service = fix_.status.SERVICE_GPS;
+  fix_.status.service = sensor_msgs::msg::NavSatStatus::SERVICE_GPS;
   fix_pub_->publish(fix_);
   last_nav_pos_ = m;
   //  update diagnostics

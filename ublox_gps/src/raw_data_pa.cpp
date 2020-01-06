@@ -34,12 +34,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <ctime>
 #include <string>
 #include <sstream>
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <time.h>
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -79,9 +79,9 @@ bool RawDataStreamPa::isEnabled() {
 
   if (is_ros_subscriber_) {
     return !file_dir_.empty();
-  } else {
-    return flag_publish_ || (!file_dir_.empty());
   }
+
+  return flag_publish_ || !file_dir_.empty();
 }
 
 void RawDataStreamPa::initialize() {
@@ -97,7 +97,7 @@ void RawDataStreamPa::initialize() {
   }
 
   if (!file_dir_.empty()) {
-    struct stat stat_info;
+    struct stat stat_info{};
     if (::stat(file_dir_.c_str(), &stat_info) != 0) {
       RCLCPP_ERROR(this->get_logger(), "Can't log raw data to file. "
                    "Directory \"%s\" does not exist.", file_dir_.c_str());
@@ -111,7 +111,7 @@ void RawDataStreamPa::initialize() {
         file_dir_ += '/';
       }
 
-      time_t t = time(NULL);
+      time_t t = time(nullptr);
       struct tm time_struct = *localtime(&t);
 
       std::stringstream filename;
@@ -146,7 +146,7 @@ void RawDataStreamPa::initialize() {
 void RawDataStreamPa::ubloxCallback(const unsigned char* data,
   std::size_t size) {
 
-  std::string str((const char*) data, size);
+  std::string str(reinterpret_cast<const char*>(data), size);
 
   if (flag_publish_) {
     publishMsg(str);

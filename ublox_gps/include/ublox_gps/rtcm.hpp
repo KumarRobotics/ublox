@@ -1,6 +1,8 @@
 #ifndef UBLOX_GPS_RTCM_HPP
 #define UBLOX_GPS_RTCM_HPP
 
+#include <cstdint>
+
 namespace ublox_gps {
 
 struct Rtcm {
@@ -10,6 +12,6 @@ struct Rtcm {
   uint8_t rate;
 };
 
-}  // namespace ublox_node
+}  // namespace ublox_gps
 
 #endif

@@ -148,7 +148,7 @@ namespace Class {
   static const uint8_t HNR = 0x28; //!< High Rate Navigation Results Messages:
                                    //!< High rate time, position, speed, heading
   static const uint8_t RTCM = 0xF5; //!< RTCM Configuration Messages
-}
+}  // namespace Class
 
 namespace Message {
   namespace NAV {
@@ -171,7 +171,7 @@ namespace Message {
     static const uint8_t TIMEUTC = ublox_msgs::msg::NavTIMEUTC::MESSAGE_ID;
     static const uint8_t VELECEF = ublox_msgs::msg::NavVELECEF::MESSAGE_ID;
     static const uint8_t VELNED = ublox_msgs::msg::NavVELNED::MESSAGE_ID;
-  }
+  }  // namespace NAV
 
   namespace RXM {
     static const uint8_t ALM = ublox_msgs::msg::RxmALM::MESSAGE_ID;
@@ -182,7 +182,7 @@ namespace Message {
     static const uint8_t SFRB = ublox_msgs::msg::RxmSFRB::MESSAGE_ID;
     static const uint8_t SFRBX = ublox_msgs::msg::RxmSFRBX::MESSAGE_ID;
     static const uint8_t SVSI = ublox_msgs::msg::RxmSVSI::MESSAGE_ID;
-  }
+  }  // namespace RXM
 
   namespace INF {
     static const uint8_t ERROR = 0x00;
@@ -190,18 +190,18 @@ namespace Message {
     static const uint8_t NOTICE = 0x02;
     static const uint8_t TEST = 0x03;
     static const uint8_t DEBUG = 0x04;
-  }
+  }  // namespace INF
 
   namespace ACK {
     static const uint8_t NACK = 0x00;
     static const uint8_t ACK = 0x01;
-  }
+  }  // namespace ACK
 
   namespace AID {
     static const uint8_t ALM = ublox_msgs::msg::AidALM::MESSAGE_ID;
     static const uint8_t EPH = ublox_msgs::msg::AidEPH::MESSAGE_ID;
     static const uint8_t HUI = ublox_msgs::msg::AidHUI::MESSAGE_ID;
-  }
+  }  // namespace AID
 
   namespace CFG {
     static const uint8_t ANT = ublox_msgs::msg::CfgANT::MESSAGE_ID;
@@ -221,39 +221,39 @@ namespace Message {
     static const uint8_t SBAS = ublox_msgs::msg::CfgSBAS::MESSAGE_ID;
     static const uint8_t TMODE3 = ublox_msgs::msg::CfgTMODE3::MESSAGE_ID;
     static const uint8_t USB = ublox_msgs::msg::CfgUSB::MESSAGE_ID;
-  }
+  }  // namespace CFG
 
   namespace UPD {
     //! SOS and SOS_Ack have the same message ID, but different lengths
     static const uint8_t SOS = ublox_msgs::msg::UpdSOS::MESSAGE_ID;
-  }
+  }  // namespace UPD
 
   namespace MON {
     static const uint8_t GNSS = ublox_msgs::msg::MonGNSS::MESSAGE_ID;
     static const uint8_t HW = ublox_msgs::msg::MonHW::MESSAGE_ID;
     static const uint8_t VER = ublox_msgs::msg::MonVER::MESSAGE_ID;
-  }
+  }  // namespace MON
 
   namespace ESF {
     static const uint8_t INS = ublox_msgs::msg::EsfINS::MESSAGE_ID;
     static const uint8_t MEAS = ublox_msgs::msg::EsfMEAS::MESSAGE_ID;
     static const uint8_t RAW = ublox_msgs::msg::EsfRAW::MESSAGE_ID;
     static const uint8_t STATUS = ublox_msgs::msg::EsfSTATUS::MESSAGE_ID;
-  }
+  }  // namespace ESF
 
   namespace MGA {
     static const uint8_t GAL = ublox_msgs::msg::MgaGAL::MESSAGE_ID;
-  }
+  }  // namespace MGA
 
   namespace HNR {
     static const uint8_t PVT = ublox_msgs::msg::HnrPVT::MESSAGE_ID;
-  }
+  }  // namespace HNR
 
   namespace TIM {
     static const uint8_t TM2 = ublox_msgs::msg::TimTM2::MESSAGE_ID;
-  }
-}
+  }  // namespace TIM
+}  // namespace Message
 
-} //!< namespace ublox_msgs
+}  // namespace ublox_msgs
 
 #endif //!< UBLOX_MSGS_UBLOX_MSGS_HPP
