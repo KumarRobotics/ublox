@@ -1736,17 +1736,23 @@ void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
     imu_.linear_acceleration_covariance[0] = -1;
     imu_.angular_velocity_covariance[0] = -1;
 
-    double heading = static_cast<double>(m.relPosHeading) * 1e-5 / 180.0 * M_PI;
+    // Transform angle since ublox is representing heading as NED but ROS uses ENU as convention (REP-103).
+    // Also convert the base-to-rover angle to a robot-to-base angle (consistent with frame_id)
+    double heading = - (static_cast<double>(m.relPosHeading) * 1e-5 / 180.0 * M_PI) - M_PI_2;
     tf::Quaternion orientation;
     orientation.setRPY(0, 0, heading);
     imu_.orientation.x = orientation[0];
     imu_.orientation.y = orientation[1];
     imu_.orientation.z = orientation[2];
     imu_.orientation.w = orientation[3];
-    // Only heading is reported with an accuracy in 0.1mm units
     imu_.orientation_covariance[0] = 1000.0;
     imu_.orientation_covariance[4] = 1000.0;
-    imu_.orientation_covariance[8] = pow(m.accHeading / 10000.0, 2);
+    imu_.orientation_covariance[8] = 1000.0;
+    // When heading is reported to be valid, use accuracy reported in 1e-5 deg units
+    if (m.flags & ublox_msgs::NavRELPOSNED9::FLAGS_REL_POS_HEAD_VALID)
+    {
+      imu_.orientation_covariance[8] = pow(m.accHeading / 10000.0, 2);
+    }
 
     imu_pub.publish(imu_);
   }
