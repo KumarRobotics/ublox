@@ -21,10 +21,10 @@ uint8 CLASS_ID = 6
 uint8 MESSAGE_ID = 8
 
 uint16 meas_rate           # Measurement Rate, GPS measurements are
-                          # taken every measRate milliseconds [ms]
+                           # taken every measRate milliseconds [ms]
 uint16 nav_rate            # Navigation Rate, in number of measurement
-                          # cycles. On u-blox 5 and u-blox 6, this parameter
-                          # cannot be changed, and always equals 1.
+                           # cycles. On u-blox 5 and u-blox 6, this parameter
+                           # cannot be changed, and always equals 1.
 uint16 time_ref            # The time system to which measurements are aligned
 uint16 TIME_REF_UTC = 0
 uint16 TIME_REF_GPS = 1

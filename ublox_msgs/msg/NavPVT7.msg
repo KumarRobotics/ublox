@@ -13,7 +13,7 @@
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 7
 
-uint32 i_tow             # GPS Millisecond time of week [ms]
+uint32 i_tow            # GPS Millisecond time of week [ms]
 uint16 year             # Year (UTC)
 uint8 month             # Month, range 1..12 (UTC)
 uint8 day               # Day of month, range 1..31 (UTC)
@@ -28,7 +28,7 @@ uint8 VALID_FULLY_RESOLVED = 4  # UTC time of day has been fully resolved
                                 # (no seconds uncertainty)
 uint8 VALID_MAG = 8             # Valid Magnetic Declination
 
-uint32 t_acc             # time accuracy estimate [ns] (UTC)
+uint32 t_acc            # time accuracy estimate [ns] (UTC)
 int32 nano              # fraction of a second [ns], range -1e9 .. 1e9 (UTC)
 
 uint8 fix_type           # GNSS fix Type, range 0..5
@@ -52,7 +52,7 @@ uint8 PSM_TRACKING = 12                 # Tracking
 uint8 PSM_POWER_OPTIMIZED_TRACKING = 16 # Power Optimized Tracking
 uint8 PSM_INACTIVE = 20                 # Inactive
 uint8 FLAGS_HEAD_VEH_VALID = 32         # heading of vehicle is valid
-uint8 FLAGS_CARRIER_PHASE_MASK = 192 # Carrier Phase Range Solution Status
+uint8 FLAGS_CARRIER_PHASE_MASK = 192    # Carrier Phase Range Solution Status
 uint8 CARRIER_PHASE_NO_SOLUTION = 0     # no carrier phase range solution
 uint8 CARRIER_PHASE_FLOAT = 64          # carrier phase float solution (no fixed
                                         # integer measurements have been used to
@@ -68,9 +68,9 @@ uint8 FLAGS2_CONFIRMED_DATE = 64        # UTC Date validity could be confirmed
 uint8 FLAGS2_CONFIRMED_TIME = 128       # UTC Time of Day could be confirmed
 
 uint8 num_sv             # Number of SVs used in Nav Solution
-int32 lon               # Longitude [deg / 1e-7]
-int32 lat               # Latitude [deg / 1e-7]
-int32 height            # Height above Ellipsoid [mm]
+int32 lon                # Longitude [deg / 1e-7]
+int32 lat                # Latitude [deg / 1e-7]
+int32 height             # Height above Ellipsoid [mm]
 int32 h_msl              # Height above mean sea level [mm]
 uint32 h_acc             # Horizontal Accuracy Estimate [mm]
 uint32 v_acc             # Vertical Accuracy Estimate [mm]
@@ -79,10 +79,10 @@ int32 vel_n              # NED north velocity [mm/s]
 int32 vel_e              # NED east velocity [mm/s]
 int32 vel_d              # NED down velocity [mm/s]
 int32 g_speed            # Ground Speed (2-D) [mm/s]
-int32 heading           # Heading of motion 2-D [deg / 1e-5]
+int32 heading            # Heading of motion 2-D [deg / 1e-5]
 uint32 s_acc             # Speed Accuracy Estimate [mm/s]
 uint32 head_acc          # Heading Accuracy Estimate (both motion & vehicle)
-                        # [deg / 1e-5]
+                         # [deg / 1e-5]
 
 uint16 p_dop             # Position DOP [1 / 0.01]
-uint8[6] reserved1      # Reserved
+uint8[6] reserved1       # Reserved
