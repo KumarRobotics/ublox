@@ -18,31 +18,31 @@ uint8 MESSAGE_ID = 60
 
 uint8 version                     # Message version (0x00 for this version)
 uint8 reserved0                   # Reserved
-uint16 ref_station_id               # Reference Station ID. Must be in the range
+uint16 ref_station_id             # Reference Station ID. Must be in the range
                                   # 0..4095
-uint32 i_tow                       # GPS time of week of the navigation epoch
+uint32 i_tow                      # GPS time of week of the navigation epoch
                                   # [ms]
 
-int32 rel_pos_n                     # North component of relative position vector
+int32 rel_pos_n                   # North component of relative position vector
                                   # [cm]
-int32 rel_pos_e                     # East component of relative position vector
+int32 rel_pos_e                   # East component of relative position vector
                                   # [cm]
-int32 rel_pos_d                     # Down component of relative position vector
+int32 rel_pos_d                   # Down component of relative position vector
                                   # [cm]
 
-int8 rel_pos_hpn                    # High-precision North component of relative
+int8 rel_pos_hpn                  # High-precision North component of relative
                                   # position vector. [0.1 mm]
                                   # Must be in the range -99 to +99.
                                   # The full North component of the relative
                                   # position vector, in units of cm, is given by
                                   # relPosN + (relPosHPN * 1e-2)
-int8 rel_pos_hpe                    # High-precision East component of relative
+int8 rel_pos_hpe                  # High-precision East component of relative
                                   # position vector. [0.1 mm]
                                   # Must be in the range -99 to +99.
                                   # The full East component of the relative
                                   # position vector, in units of cm, is given by
                                   # relPosE + (relPosHPE * 1e-2)
-int8 rel_pos_hpd                    # High-precision Down component of relative
+int8 rel_pos_hpd                  # High-precision Down component of relative
                                   # position vector. [0.1 mm]
                                   # Must be in the range -99 to +99.
                                   # The full Down component of the relative
@@ -51,11 +51,11 @@ int8 rel_pos_hpd                    # High-precision Down component of relative
 
 uint8 reserved1                   # Reserved
 
-uint32 acc_n                       # Accuracy of relative position North
+uint32 acc_n                      # Accuracy of relative position North
                                   # component [0.1 mm]
-uint32 acc_e                       # Accuracy of relative position East component
+uint32 acc_e                      # Accuracy of relative position East component
                                   # [0.1 mm]
-uint32 acc_d                       # Accuracy of relative position Down component
+uint32 acc_d                      # Accuracy of relative position Down component
                                   # [0.1 mm]
 
 uint32 flags
