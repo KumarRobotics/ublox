@@ -97,7 +97,7 @@ class UbloxNode final : public rclcpp::Node {
   /**
    * @brief Initialize and run the u-blox node.
    */
-  UbloxNode();
+  explicit UbloxNode(const rclcpp::NodeOptions & options);
 
   ~UbloxNode() override;
 

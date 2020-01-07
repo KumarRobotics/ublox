@@ -39,6 +39,9 @@
 #include <string>
 #include <vector>
 
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
+
 #include <ublox_msgs/msg/aid_alm.hpp>
 #include <ublox_msgs/msg/aid_eph.hpp>
 #include <ublox_msgs/msg/aid_hui.hpp>
@@ -169,7 +172,7 @@ std::vector<std::string> stringSplit(const std::string &str,
 //
 // u-blox ROS Node
 //
-UbloxNode::UbloxNode() : rclcpp::Node("ublox_gps_node") {
+UbloxNode::UbloxNode(const rclcpp::NodeOptions & options) : rclcpp::Node("ublox_gps_node", options) {
   int debug = this->declare_parameter("debug", 1);
   if (debug) {
     if (rcutils_logging_set_logger_level("ublox_gps_node", RCUTILS_LOG_SEVERITY_DEBUG) != RCUTILS_RET_OK) {
@@ -834,3 +837,5 @@ UbloxNode::~UbloxNode() {
 }
 
 }  // namespace ublox_node
+
+RCLCPP_COMPONENTS_REGISTER_NODE(ublox_node::UbloxNode)
