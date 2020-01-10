@@ -2,8 +2,8 @@
 Changelog for package ublox_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.3.0 (2020-01-10)
+------------------
 * Fix heading accuracy unit in comments
 * CfgNAV5: add dynamic model bike
 * Contributors: Ferry Schoenmakers, Raphael Riebl

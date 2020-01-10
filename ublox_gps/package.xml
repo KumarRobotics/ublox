@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format='2'>
   <name>ublox_gps</name>
-  <version>1.2.0</version>
+  <version>1.3.0</version>
   <description>
      Driver for u-blox GPS devices.
   </description>
