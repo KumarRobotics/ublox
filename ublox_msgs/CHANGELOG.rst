@@ -2,6 +2,13 @@
 Changelog for package ublox_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix heading output to comply with REP-103
+  When not reporting valid heading, overwrite covariance with big number (0 otherwise) and fix heading accuracy unit in comments
+* CfgNAV5: add dynamic model bike
+* Contributors: Ferry Schoenmakers, Raphael Riebl
+
 1.2.0 (2019-11-19)
 ------------------
 * Add support for ZED-F9P new RELPOSNED message and provide heading output
