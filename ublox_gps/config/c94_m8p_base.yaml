@@ -5,7 +5,7 @@ ublox_gps_node:
 
     save:
       mask: 3103                # Save I/O, Message, INF Message, Nav, Receiver
-                            # Manager, Antenna, and Logging Configuration
+                                # Manager, Antenna, and Logging Configuration
       device: 4                 # Save to EEPROM
 
     device: /dev/ttyACM0
@@ -16,8 +16,8 @@ ublox_gps_node:
     dr_limit: 0
     enable_ppp: false           # Not supported by C94-M8P
 
-    rate: 4                     # Measurement rate in Hz
-    nav_rate: 4                 # in number of measurement cycles
+    rate: 1.0                   # Measurement rate in Hz
+    nav_rate: 1                 # in number of measurement cycles
 
     uart1:
       baudrate: 19200           # C94-M8P specific
@@ -59,7 +59,7 @@ ublox_gps_node:
     gnss:
       glonass: true             # Supported by C94-M8P
       beidou: false             # Supported by C94-M8P
-      qzss: false               # Supported by C94-M8P
+      qzss: true               # Supported by C94-M8P
 
     inf:
       all: true                   # Whether to display all INF messages in console
@@ -71,4 +71,3 @@ ublox_gps_node:
         hui: false
       nav:
         posecef: false
-
