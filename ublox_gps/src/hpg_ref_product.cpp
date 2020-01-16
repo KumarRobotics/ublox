@@ -1,3 +1,4 @@
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <stdexcept>
@@ -128,7 +129,7 @@ bool HpgRefProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
         return true;
       }
       ublox_msgs::msg::NavPVT nav_pvt;
-      if (!gps->poll(nav_pvt)) {
+      if (!gps->poll(nav_pvt, std::vector<uint8_t>(), std::chrono::milliseconds(15000))) {
         throw std::runtime_error(std::string("Failed to poll NavPVT while") +
                                  " configuring survey-in");
       }
@@ -195,8 +196,8 @@ bool HpgRefProduct::setTimeMode(std::shared_ptr<ublox_gps::Gps> gps) {
   // Set the Measurement & nav rate to user config
   // (survey-in sets nav_rate to 1 Hz regardless of user setting)
   if (!gps->configRate(meas_rate_, nav_rate_)) {
-    RCLCPP_ERROR(node_->get_logger(), "Failed to set measurement rate to %d ms %s %d", meas_rate_,
-              "navigation rate to ", nav_rate_);
+    RCLCPP_ERROR(node_->get_logger(), "Failed to set measurement rate to %d ms navigation rate to %d cycles",
+                 meas_rate_, nav_rate_);
   }
   // Enable the RTCM out messages
   if (!gps->configRtcm(rtcms_)) {
