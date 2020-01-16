@@ -278,12 +278,13 @@ void UbloxNode::getRosParams() {
   nav_rate_ = declareRosIntParameter<uint16_t>(this, "nav_rate", 1);  // # of measurement rate cycles
 
   // RTCM params
-  std::vector<uint8_t> rtcm_ids;
-  std::vector<uint8_t> rtcm_rates;
   this->declare_parameter("rtcm.ids");
   this->declare_parameter("rtcm.rates");
-  getRosUint(this, "rtcm.ids", rtcm_ids);  // RTCM output message IDs
-  getRosUint(this, "rtcm.rates", rtcm_rates);  // RTCM output message rates
+  std::vector<int64_t> rtcm_ids;
+  std::vector<int64_t> rtcm_rates;
+  this->get_parameter("rtcm.ids", rtcm_ids);
+  this->get_parameter("rtcm.rates", rtcm_rates);
+
   if (rtcm_ids.size() != rtcm_rates.size()) {
     throw std::runtime_error(std::string("Invalid settings: size of rtcm_ids") +
                              " must match size of rtcm_rates");
@@ -291,6 +292,12 @@ void UbloxNode::getRosParams() {
 
   rtcms_.resize(rtcm_ids.size());
   for (size_t i = 0; i < rtcm_ids.size(); ++i) {
+    if (rtcm_ids[i] < 0 || rtcm_ids[i] > 255) {
+      throw std::runtime_error("RTCM IDs must be between 0 and 255");
+    }
+    if (rtcm_rates[i] < 0 || rtcm_rates[i] > 255) {
+      throw std::runtime_error("RTCM rates must be between 0 and 255");
+    }
     rtcms_[i].id = rtcm_ids[i];
     rtcms_[i].rate = rtcm_rates[i];
   }
