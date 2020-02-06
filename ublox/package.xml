@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>ublox</name>
   <version>1.3.0</version>
   <description>Provides a ublox_gps node for u-blox GPS receivers, messages, and serialization packages for the binary UBX protocol.</description>
@@ -10,9 +10,13 @@
   <buildtool_depend>catkin</buildtool_depend>
   <url>http://wiki.ros.org/ublox</url>
 
+  <exec_depend>ublox_gps</exec_depend>
+  <exec_depend>ublox_msgs</exec_depend>
+  <exec_depend>ublox_serialization</exec_depend>
+
   <!-- The export tag contains other, unspecified, tags -->
   <export>
-      <rosdoc external="http://www.u-blox.com/en/product-resources"/>
+    <rosdoc external="http://www.u-blox.com/en/product-resources"/>
     <!-- You can specify that this package is a metapackage here: -->
     <metapackage />
   </export>
