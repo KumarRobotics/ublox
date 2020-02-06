@@ -16,7 +16,7 @@
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
-      <rosdoc external="http://www.u-blox.com/en/product-resources"/>
+    <rosdoc external="http://www.u-blox.com/en/product-resources"/>
     <!-- You can specify that this package is a metapackage here: -->
     <metapackage />
   </export>
