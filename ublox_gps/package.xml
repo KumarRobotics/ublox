@@ -12,7 +12,7 @@
   <license>BSD</license>
   <url>http://ros.org/wiki/ublox</url>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
   <depend>asio</depend>
   <depend>diagnostic_msgs</depend>
