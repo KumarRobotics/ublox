@@ -2,8 +2,8 @@
 Changelog for package ublox
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.3.1 (2020-03-12)
+------------------
 * Add metapackage dependencies
 * Contributors: Mateusz Sadowski, Tim Clephas
 

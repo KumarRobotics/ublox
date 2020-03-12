@@ -2,8 +2,8 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.3.1 (2020-03-12)
+------------------
 * Fix unit in covariance calculation
 * Contributors: Ferry Schoenmakers
 
