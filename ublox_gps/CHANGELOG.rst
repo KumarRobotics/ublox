@@ -2,6 +2,11 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix unit in covariance calculation
+* Contributors: Ferry Schoenmakers
+
 1.3.0 (2020-01-10)
 ------------------
 * Fix heading output to comply with REP-103
