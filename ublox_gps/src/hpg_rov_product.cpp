@@ -23,8 +23,10 @@ namespace ublox_node {
 HpgRovProduct::HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node)
   : dgnss_mode_(ublox_msgs::msg::CfgDGNSS::DGNSS_MODE_RTK_FIXED), nav_rate_(nav_rate), updater_(updater), node_(node)
 {
-  nav_rel_pos_ned_pub_ =
-    node_->create_publisher<ublox_msgs::msg::NavRELPOSNED>("navrelposned", 1);
+  if (getRosBoolean(node_, "publish.nav.relposned")) {
+    nav_rel_pos_ned_pub_ =
+      node_->create_publisher<ublox_msgs::msg::NavRELPOSNED>("navrelposned", 1);
+  }
 }
 
 void HpgRovProduct::getRosParams() {

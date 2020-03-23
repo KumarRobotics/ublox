@@ -20,10 +20,18 @@ namespace ublox_node {
 //
 RawDataProduct::RawDataProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node)
   : nav_rate_(nav_rate), meas_rate_(meas_rate), updater_(updater), node_(node) {
-  rxm_raw_pub_ = node_->create_publisher<ublox_msgs::msg::RxmRAW>("rxmraw", 1);
-  rxm_sfrb_pub_ = node_->create_publisher<ublox_msgs::msg::RxmSFRB>("rxmsfrb", 1);
-  rxm_eph_pub_ = node_->create_publisher<ublox_msgs::msg::RxmEPH>("rxmeph", 1);
-  rxm_alm_pub_ = node_->create_publisher<ublox_msgs::msg::RxmALM>("rxmalm", 1);
+  if (getRosBoolean(node_, "publish.rxm.raw")) {
+    rxm_raw_pub_ = node_->create_publisher<ublox_msgs::msg::RxmRAW>("rxmraw", 1);
+  }
+  if (getRosBoolean(node_, "publish.rxm.sfrb")) {
+    rxm_sfrb_pub_ = node_->create_publisher<ublox_msgs::msg::RxmSFRB>("rxmsfrb", 1);
+  }
+  if (getRosBoolean(node_, "publish.rxm.eph")) {
+    rxm_eph_pub_ = node_->create_publisher<ublox_msgs::msg::RxmEPH>("rxmeph", 1);
+  }
+  if (getRosBoolean(node_, "publish.rxm.almRaw")) {
+    rxm_alm_pub_ = node_->create_publisher<ublox_msgs::msg::RxmALM>("rxmalm", 1);
+  }
 }
 
 void RawDataProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {

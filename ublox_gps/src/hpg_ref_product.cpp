@@ -25,8 +25,10 @@ namespace ublox_node {
 HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, rclcpp::Node* node)
   : tmode3_(0), lla_flag_(false), fixed_pos_acc_(0.0), svin_reset_(false), sv_in_min_dur_(0), sv_in_acc_lim_(0.0), nav_rate_(nav_rate), meas_rate_(meas_rate), updater_(updater), rtcms_(rtcms), node_(node)
 {
-  navsvin_pub_ =
-    node_->create_publisher<ublox_msgs::msg::NavSVIN>("navsvin", 1);
+  if (getRosBoolean(node_, "publish.nav.svin")) {
+    navsvin_pub_ =
+      node_->create_publisher<ublox_msgs::msg::NavSVIN>("navsvin", 1);
+  }
 }
 
 /**

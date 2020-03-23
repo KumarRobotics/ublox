@@ -184,13 +184,6 @@ UbloxNode::UbloxNode(const rclcpp::NodeOptions & options) : rclcpp::Node("ublox_
 
   gnss_ = std::make_shared<Gnss>();
 
-  nav_status_pub_ = this->create_publisher<ublox_msgs::msg::NavSTATUS>("navstatus", 1);
-  nav_posecef_pub_ = this->create_publisher<ublox_msgs::msg::NavPOSECEF>("navposecef", 1);
-  nav_clock_pub_ = this->create_publisher<ublox_msgs::msg::NavCLOCK>("navclock", 1);
-  aid_alm_pub_ = this->create_publisher<ublox_msgs::msg::AidALM>("aidalm", 1);
-  aid_eph_pub_ = this->create_publisher<ublox_msgs::msg::AidEPH>("aideph", 1);
-  aid_hui_pub_ = this->create_publisher<ublox_msgs::msg::AidHUI>("aidhui", 1);
-
   updater_ = std::make_shared<diagnostic_updater::Updater>(this);
   updater_->setHardwareID("ublox");
 
@@ -378,7 +371,12 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("dgnss_mode");
 
   // raw data stream logging
-  raw_data_stream_pa_.getRosParams();
+  this->declare_parameter("raw_data_stream.enable", false);
+  if (getRosBoolean(this, "raw_data_stream.enable")) {
+    raw_data_stream_pa_ = std::make_shared<ublox_node::RawDataStreamPa>(
+      getRosBoolean(this, "raw_data_stream.enable"));
+    raw_data_stream_pa_->getRosParams();
+  }
 
   // NMEA parameters
   this->declare_parameter("nmea.set", false);
@@ -459,6 +457,29 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("arp.lla_flag", false);
 
   this->declare_parameter("diagnostic_period", kDiagnosticPeriod);
+
+  // Create publishers based on parameters
+  if (getRosBoolean(this, "publish.nav.status")) {
+    nav_status_pub_ = this->create_publisher<ublox_msgs::msg::NavSTATUS>("navstatus", 1);
+  }
+  if (getRosBoolean(this, "publish.nav.posecef")) {
+    nav_posecef_pub_ = this->create_publisher<ublox_msgs::msg::NavPOSECEF>("navposecef", 1);
+  }
+  if (getRosBoolean(this, "publish.nav.clock")) {
+    nav_clock_pub_ = this->create_publisher<ublox_msgs::msg::NavCLOCK>("navclock", 1);
+  }
+  if (getRosBoolean(this, "publish.nav.clock")) {
+    nav_clock_pub_ = this->create_publisher<ublox_msgs::msg::NavCLOCK>("navclock", 1);
+  }
+  if (getRosBoolean(this, "publish.aid.alm")) {
+    aid_alm_pub_ = this->create_publisher<ublox_msgs::msg::AidALM>("aidalm", 1);
+  }
+  if (getRosBoolean(this, "publish.aid.eph")) {
+    aid_eph_pub_ = this->create_publisher<ublox_msgs::msg::AidEPH>("aideph", 1);
+  }
+  if (getRosBoolean(this, "publish.aid.hui")) {
+    aid_hui_pub_ = this->create_publisher<ublox_msgs::msg::AidHUI>("aidhui", 1);
+  }
 }
 
 void UbloxNode::pollMessages() {
@@ -789,10 +810,13 @@ void UbloxNode::initializeIo() {
   }
 
   // raw data stream logging
-  if (raw_data_stream_pa_.isEnabled()) {
-    gps_->setRawDataCallback(
-      std::bind(&RawDataStreamPa::ubloxCallback, &raw_data_stream_pa_, std::placeholders::_1, std::placeholders::_2));
-    raw_data_stream_pa_.initialize();
+  if (getRosBoolean(this, "raw_data_stream.enable")) {
+    if (raw_data_stream_pa_->isEnabled()) {
+      gps_->setRawDataCallback(
+        std::bind(&RawDataStreamPa::ubloxCallback, raw_data_stream_pa_.get(),
+        std::placeholders::_1, std::placeholders::_2));
+      raw_data_stream_pa_->initialize();
+    }
   }
 }
 

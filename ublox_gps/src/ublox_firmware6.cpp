@@ -30,26 +30,35 @@ namespace ublox_node {
 UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node)
   : UbloxFirmware(updater, gnss, node), frame_id_(frame_id), freq_diag_(freq_diag)
 {
-  nav_pos_llh_pub_ =
-    node_->create_publisher<ublox_msgs::msg::NavPOSLLH>("navposllh", 1);
+  if (getRosBoolean(node_, "publish.nav.posllh")) {
+    nav_pos_llh_pub_ =
+      node_->create_publisher<ublox_msgs::msg::NavPOSLLH>("navposllh", 1);
+  }
+
   fix_pub_ =
     node_->create_publisher<sensor_msgs::msg::NavSatFix>("fix", 1);
 
-  nav_vel_ned_pub_ =
-    node_->create_publisher<ublox_msgs::msg::NavVELNED>("navvelned", 1);
+  if (getRosBoolean(node_, "publish.nav.velned")) {
+    nav_vel_ned_pub_ =
+      node_->create_publisher<ublox_msgs::msg::NavVELNED>("navvelned", 1);
+  }
 
   vel_pub_ =
     node_->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("fix_velocity",
                                                              1);
 
-  nav_sol_pub_ =
-    node_->create_publisher<ublox_msgs::msg::NavSOL>("navsol", 1);
-
-  nav_svinfo_pub_ =
-    node_->create_publisher<ublox_msgs::msg::NavSVINFO>("navinfo", 1);
-
-  mon_hw_pub_ =
-    node_->create_publisher<ublox_msgs::msg::MonHW6>("monhw", 1);
+  if (getRosBoolean(node_, "publish.nav.sol")) {
+    nav_sol_pub_ =
+      node_->create_publisher<ublox_msgs::msg::NavSOL>("navsol", 1);
+  }
+  if (getRosBoolean(node_, "publish.nav.svinfo")) {
+    nav_svinfo_pub_ =
+      node_->create_publisher<ublox_msgs::msg::NavSVINFO>("navinfo", 1);
+  }
+  if (getRosBoolean(node_, "publish.mon.hw")) {
+    mon_hw_pub_ =
+      node_->create_publisher<ublox_msgs::msg::MonHW6>("monhw", 1);
+  }
 }
 
 void UbloxFirmware6::getRosParams() {

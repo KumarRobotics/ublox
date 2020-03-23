@@ -25,9 +25,15 @@ class UbloxFirmware8 : public UbloxFirmware7Plus<ublox_msgs::msg::NavPVT> {
  public:
   explicit UbloxFirmware8(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node)
     : UbloxFirmware7Plus<ublox_msgs::msg::NavPVT>(frame_id, updater, freq_diag, gnss, node) {
-    nav_sat_pub_ = node->create_publisher<ublox_msgs::msg::NavSAT>("navstate", 1);
-    mon_hw_pub_ = node->create_publisher<ublox_msgs::msg::MonHW>("monhw", 1);
-    rxm_rtcm_pub_ = node->create_publisher<ublox_msgs::msg::RxmRTCM>("rxmrtcm", 1);
+    if (getRosBoolean(node_, "publish.nav.sat")) {
+      nav_sat_pub_ = node->create_publisher<ublox_msgs::msg::NavSAT>("navstate", 1);
+    }
+    if (getRosBoolean(node_, "publish.mon.hw")) {
+      mon_hw_pub_ = node->create_publisher<ublox_msgs::msg::MonHW>("monhw", 1);
+    }
+    if (getRosBoolean(node_, "publish.rxm.rtcm")) {
+      rxm_rtcm_pub_ = node->create_publisher<ublox_msgs::msg::RxmRTCM>("rxmrtcm", 1);
+    }
   }
 
   /**

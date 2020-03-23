@@ -26,8 +26,13 @@ TimProduct::TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_
     node_->create_publisher<ublox_msgs::msg::TimTM2>("timtm2", 1);
   interrupt_time_pub_ =
     node_->create_publisher<sensor_msgs::msg::TimeReference>("interrupt_time", 1);
-  rxm_sfrb_pub_ = node_->create_publisher<ublox_msgs::msg::RxmSFRBX>("rxmsfrb", 1);
-  rxm_raw_pub_ = node_->create_publisher<ublox_msgs::msg::RxmRAWX>("rxmraw", 1);
+
+  if (getRosBoolean(node_, "publish.rxm.sfrb")) {
+    rxm_sfrb_pub_ = node_->create_publisher<ublox_msgs::msg::RxmSFRBX>("rxmsfrb", 1);
+  }
+  if (getRosBoolean(node_, "publish.rxm.raw")) {
+    rxm_raw_pub_ = node_->create_publisher<ublox_msgs::msg::RxmRAWX>("rxmraw", 1);
+  }
 }
 
 void TimProduct::getRosParams() {
@@ -59,11 +64,11 @@ void TimProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
                                          1);
   }
 
-   // Subscribe to RawX messages
-   if (getRosBoolean(node_, "publish.rxm.raw")) {
-     gps->subscribe<ublox_msgs::msg::RxmRAWX>([this](const ublox_msgs::msg::RxmRAWX &m) { rxm_raw_pub_->publish(m); },
+  // Subscribe to RawX messages
+  if (getRosBoolean(node_, "publish.rxm.raw")) {
+    gps->subscribe<ublox_msgs::msg::RxmRAWX>([this](const ublox_msgs::msg::RxmRAWX &m) { rxm_raw_pub_->publish(m); },
                                          1);
-   }
+  }
 }
 
 void TimProduct::callbackTimTM2(const ublox_msgs::msg::TimTM2 &m) {

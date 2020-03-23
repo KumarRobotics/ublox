@@ -28,16 +28,29 @@ namespace ublox_node {
 AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node)
   : use_adr_(false), nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id), updater_(updater), node_(node)
 {
-  imu_pub_ =
-    node_->create_publisher<sensor_msgs::msg::Imu>("imu_meas", 1);
-  time_ref_pub_ =
-    node_->create_publisher<sensor_msgs::msg::TimeReference>("interrupt_time", 1);
-  nav_att_pub_ = node_->create_publisher<ublox_msgs::msg::NavATT>("navatt", 1);
-  esf_ins_pub_ = node_->create_publisher<ublox_msgs::msg::EsfINS>("esfins", 1);
-  esf_meas_pub_ = node_->create_publisher<ublox_msgs::msg::EsfMEAS>("esfmeas", 1);
-  esf_raw_pub_ = node_->create_publisher<ublox_msgs::msg::EsfRAW>("esfraw", 1);
-  esf_status_pub_ = node_->create_publisher<ublox_msgs::msg::EsfSTATUS>("esfstatus", 1);
-  hnr_pvt_pub_ = node_->create_publisher<ublox_msgs::msg::HnrPVT>("hnrpvt", 1);
+  if (getRosBoolean(node_, "publish.esf.meas")) {
+    imu_pub_ =
+      node_->create_publisher<sensor_msgs::msg::Imu>("imu_meas", 1);
+    time_ref_pub_ =
+      node_->create_publisher<sensor_msgs::msg::TimeReference>("interrupt_time", 1);
+
+    esf_meas_pub_ = node_->create_publisher<ublox_msgs::msg::EsfMEAS>("esfmeas", 1);
+  }
+  if (getRosBoolean(node_, "publish.nav.att")) {
+    nav_att_pub_ = node_->create_publisher<ublox_msgs::msg::NavATT>("navatt", 1);
+  }
+  if (getRosBoolean(node_, "publish.esf.ins")) {
+    esf_ins_pub_ = node_->create_publisher<ublox_msgs::msg::EsfINS>("esfins", 1);
+  }
+  if (getRosBoolean(node_, "publish.esf.raw")) {
+    esf_raw_pub_ = node_->create_publisher<ublox_msgs::msg::EsfRAW>("esfraw", 1);
+  }
+  if (getRosBoolean(node_, "publish.esf.status")) {
+    esf_status_pub_ = node_->create_publisher<ublox_msgs::msg::EsfSTATUS>("esfstatus", 1);
+  }
+  if (getRosBoolean(node_, "publish.hnr.pvt")) {
+    hnr_pvt_pub_ = node_->create_publisher<ublox_msgs::msg::HnrPVT>("hnrpvt", 1);
+  }
 }
 
 void AdrUdrProduct::getRosParams() {
@@ -74,6 +87,7 @@ void AdrUdrProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   if (getRosBoolean(node_, "publish.esf.meas")) {
     gps->subscribe<ublox_msgs::msg::EsfMEAS>([this](const ublox_msgs::msg::EsfMEAS &m) { esf_meas_pub_->publish(m); },
                                         1);
+
     // also publish sensor_msgs::Imu
     gps->subscribe<ublox_msgs::msg::EsfMEAS>(std::bind(
       &AdrUdrProduct::callbackEsfMEAS, this, std::placeholders::_1), 1);

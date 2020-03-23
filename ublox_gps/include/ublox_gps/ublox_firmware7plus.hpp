@@ -34,7 +34,9 @@ class UbloxFirmware7Plus : public UbloxFirmware {
   explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node)
     : UbloxFirmware(updater, gnss, node), frame_id_(frame_id), freq_diag_(freq_diag) {
     // NavPVT publisher
-    nav_pvt_pub_ = node_->create_publisher<NavPVT>("navpvt", 1);
+    if (getRosBoolean(node_, "publish.nav.pvt")) {
+      nav_pvt_pub_ = node_->create_publisher<NavPVT>("navpvt", 1);
+    }
 
     fix_pub_ =
         node_->create_publisher<sensor_msgs::msg::NavSatFix>("fix", 1);
