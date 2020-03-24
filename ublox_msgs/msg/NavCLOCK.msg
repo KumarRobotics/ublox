@@ -5,9 +5,9 @@
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 34
 
-uint32 iTOW             # GPS Millisecond Time of week [ms]
+uint32 i_tow             # GPS Millisecond Time of week [ms]
 
-int32 clkB              # Clock bias in nanoseconds [ns]
-int32 clkD              # Clock drift in nanoseconds per second [ns/s]
-uint32 tAcc             # Time Accuracy Estimate [ns]
-uint32 fAcc             # Frequency Accuracy Estimate [ps/s]
+int32 clk_b              # Clock bias in nanoseconds [ns]
+int32 clk_d              # Clock drift in nanoseconds per second [ns/s]
+uint32 t_acc             # Time Accuracy Estimate [ns]
+uint32 f_acc             # Frequency Accuracy Estimate [ps/s]

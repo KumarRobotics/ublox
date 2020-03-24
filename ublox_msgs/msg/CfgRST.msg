@@ -8,9 +8,9 @@
 #
 
 uint8 CLASS_ID = 6
-uint8 MESSAGE_ID = 4 
+uint8 MESSAGE_ID = 4
 
-uint16 navBbrMask # BBR Sections to clear. 
+uint16 nav_bbr_mask # BBR Sections to clear.
 # The following Special Sets apply:
 uint16 NAV_BBR_HOT_START = 0       # Hot start the device
 uint16 NAV_BBR_WARM_START = 1      # Warm start the device
@@ -26,11 +26,11 @@ uint16 NAV_BBR_UTC = 128     # UTC Correction + GPS Leap Seconds Parameters
 uint16 NAV_BBR_RTC = 256     # RTC
 uint16 NAV_BBR_AOP = 32768   # Autonomous Orbit Parameters
 
-uint8 resetMode              # Reset Type:
+uint8 reset_mode              # Reset Type:
 uint8 RESET_MODE_HW_IMMEDIATE = 0       # Hardware reset (Watchdog) immediately
 uint8 RESET_MODE_SW = 1                 # Controlled Software reset
 uint8 RESET_MODE_GNSS = 2               # Controlled Software reset (GNSS only)
-uint8 RESET_MODE_HW_AFTER_SHUTDOWN = 4  # Hardware reset (Watchdog) after 
+uint8 RESET_MODE_HW_AFTER_SHUTDOWN = 4  # Hardware reset (Watchdog) after
                                         # shutdown
 uint8 RESET_MODE_GNSS_STOP = 8          # Controlled GNSS stop
 uint8 RESET_MODE_GNSS_START = 9         # Controlled GNSS start

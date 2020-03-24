@@ -1,15 +1,15 @@
 # CFG-NMEA (0x06 0x17)
 # NMEA protocol configuration
 #
-# Set/Get the NMEA protocol configuration. See section NMEA Protocol 
-# Configuration for a detailed description of the configuration effects on 
+# Set/Get the NMEA protocol configuration. See section NMEA Protocol
+# Configuration for a detailed description of the configuration effects on
 # NMEA output
 #
 # Supported on u-blox 6 from firmware version 6.00 up to version 7.03.
 #
 
 uint8 CLASS_ID = 6
-uint8 MESSAGE_ID = 23 
+uint8 MESSAGE_ID = 23
 
 uint8 filter                  # filter flags
 uint8 FILTER_POS = 1          # Disable position filtering
@@ -23,7 +23,7 @@ uint8 version             # NMEA version
 uint8 NMEA_VERSION_2_3 = 35     # Version 2.3
 uint8 NMEA_VERSION_2_1 = 33     # Version 2.1
 
-uint8 numSV                   # Maximum Number of SVs to report in NMEA
+uint8 num_sv                   # Maximum Number of SVs to report in NMEA
                               # protocol.
                               # This does not affect the receiver's operation.
                               # It only limits the number of SVs reported in
@@ -33,7 +33,7 @@ uint8 numSV                   # Maximum Number of SVs to report in NMEA
 
 uint8 flags                   # flags
 uint8 FLAGS_COMPAT = 1          # enable compatibility mode.
-                                # This might be needed for certain applications  
-                                # when customer's NMEA parser expects a fixed 
+                                # This might be needed for certain applications
+                                # when customer's NMEA parser expects a fixed
                                 # number of  digits in position coordinates
 uint8 FLAGS_CONSIDER = 2        # enable considering mode

@@ -12,13 +12,22 @@
   <license>BSD</license>
   <url>http://ros.org/wiki/ublox</url>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
-  <depend>ublox_serialization</depend>
-  <depend>ublox_msgs</depend>
-  <depend>roscpp</depend>
-  <depend>roscpp_serialization</depend>
-  <depend>tf</depend>
+  <depend>asio</depend>
+  <depend>diagnostic_msgs</depend>
   <depend>diagnostic_updater</depend>
+  <depend>geometry_msgs</depend>
+  <depend>rcl_interfaces</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2</depend>
+  <depend>ublox_msgs</depend>
+  <depend>ublox_serialization</depend>
 
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>

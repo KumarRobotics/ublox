@@ -8,9 +8,9 @@
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 1
 
-uint32 iTOW             # GPS Millisecond Time of Week [ms]
+uint32 i_tow             # GPS Millisecond Time of Week [ms]
 
-int32 ecefX             # ECEF X coordinate [cm]
-int32 ecefY             # ECEF Y coordinate [cm]
-int32 ecefZ             # ECEF Z coordinate [cm]
-uint32 pAcc             # Position Accuracy Estimate [cm]
+int32 ecef_x             # ECEF X coordinate [cm]
+int32 ecef_y             # ECEF Y coordinate [cm]
+int32 ecef_z             # ECEF Z coordinate [cm]
+uint32 p_acc             # Position Accuracy Estimate [cm]

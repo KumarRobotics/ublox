@@ -5,11 +5,11 @@
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 48
 
-uint32 iTOW             # GPS Millisecond time of week [ms]
+uint32 i_tow             # GPS Millisecond time of week [ms]
 
-uint8 numCh             # Number of channels
+uint8 num_ch             # Number of channels
 
-uint8 globalFlags       # Bitmask
+uint8 global_flags       # Bitmask
 # Chip Hardware generation flags
 uint8 CHIPGEN_ANTARIS = 0   # Antaris, Antaris 4
 uint8 CHIPGEN_UBLOX5 = 1    # u-blox 5
@@ -19,4 +19,4 @@ uint8 CHIPGEN_UBLOX8 = 4    # u-blox 8 / u-blox M8
 
 uint16 reserved2        # Reserved
 
-NavSVINFO_SV[] sv
+NavSVINFOSV[] sv

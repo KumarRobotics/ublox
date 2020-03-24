@@ -9,10 +9,10 @@
 uint8 CLASS_ID = 2
 uint8 MESSAGE_ID = 32
 
-int32 iTOW              # GPS time of week of the navigation epoch [ms]
+int32 i_tow              # GPS time of week of the navigation epoch [ms]
 int16 week              # GPS week number of the navigation epoch [weeks]
 
-uint8 numVis            # Number of visible satellites
-uint8 numSV             # Number of per-SV data blocks following
+uint8 num_vis            # Number of visible satellites
+uint8 num_sv             # Number of per-SV data blocks following
 
-RxmSVSI_SV[] sv
+RxmSVSISV[] sv

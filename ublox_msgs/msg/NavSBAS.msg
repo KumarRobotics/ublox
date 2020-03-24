@@ -7,9 +7,9 @@
 uint8 CLASS_ID = 1
 uint8 MESSAGE_ID = 50
 
-uint32 iTOW             # GPS Millisecond time of week [ms]
+uint32 i_tow             # GPS Millisecond time of week [ms]
 
-uint8 geo               # PRN Number of the GEO where correction and integrity 
+uint8 geo               # PRN Number of the GEO where correction and integrity
                         # data is used from
 
 uint8 mode              # SBAS Mode
@@ -34,4 +34,4 @@ uint8 SERVICE_TESTMODE = 8
 uint8 cnt               # Number of SV data following
 uint8[3] reserved0      # Reserved
 
-NavSBAS_SV[] sv
+NavSBASSV[] sv

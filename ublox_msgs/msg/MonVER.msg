@@ -6,9 +6,9 @@
 uint8 CLASS_ID = 10
 uint8 MESSAGE_ID = 4
 
-char[30] swVersion    # Zero-terminated software version string.
-char[10] hwVersion    # Zero-terminated hardware version string.
+char[30] sw_version    # Zero-terminated software version string.
+char[10] hw_version    # Zero-terminated hardware version string.
 
 # Start of repeated block (N times)
-MonVER_Extension[] extension
+MonVERExtension[] extension
 # End of repeated block
