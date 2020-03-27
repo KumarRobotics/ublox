@@ -610,12 +610,10 @@ class UbloxNode : public virtual ComponentInterface {
   uint8_t dmodel_;
   //! Set from fix mode string
   uint8_t fmode_;
-  //! UART1 baudrate
-  uint32_t baudrate_;
-  //! UART in protocol (see CfgPRT message for constants)
-  uint16_t uart_in_;
-  //! UART out protocol (see CfgPRT message for constants)
-  uint16_t uart_out_;
+  //! Serial(USB) baudrate
+  uint32_t serial_baudrate_;
+  //! UART configuration
+  ublox_msgs::CfgPRT uart1_, uart2_;
   //! USB TX Ready Pin configuration (see CfgPRT message for constants)
   uint16_t usb_tx_;
   //! Whether to configure the USB port

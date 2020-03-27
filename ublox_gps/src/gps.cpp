@@ -102,9 +102,9 @@ void Gps::processUpdSosAck(const ublox_msgs::UpdSOS_Ack &m) {
   }
 }
 
-void Gps::initializeSerial(std::string port, unsigned int baudrate,
-                           uint16_t uart_in, uint16_t uart_out) {
+void Gps::initializeSerial(std::string port, unsigned int baudrate) {
   port_ = port;
+  configured_ = false;
   boost::shared_ptr<boost::asio::io_service> io_service(
       new boost::asio::io_service);
   boost::shared_ptr<boost::asio::serial_port> serial(
@@ -119,7 +119,7 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
   }
 
   ROS_INFO("U-Blox: Opened serial port %s", port.c_str());
-    
+
   if(BOOST_VERSION < 106600)
   {
     // NOTE(Kartik): Set serial port to "raw" mode. This is done in Boost but
@@ -136,8 +136,6 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
   if (worker_) return;
   setWorker(boost::shared_ptr<Worker>(
       new AsyncWorker<boost::asio::serial_port>(serial, io_service)));
-
-  configured_ = false;
 
   // Set the baudrate
   boost::asio::serial_port_base::baud_rate current_baudrate;
@@ -156,14 +154,11 @@ void Gps::initializeSerial(std::string port, unsigned int baudrate,
     serial->get_option(current_baudrate);
     ROS_DEBUG("U-Blox: Set ASIO baudrate to %u", current_baudrate.value());
   }
-  if (config_on_startup_flag_) {
-    configured_ = configUart1(baudrate, uart_in, uart_out);
-    if(!configured_ || current_baudrate.value() != baudrate) {
-      throw std::runtime_error("Could not configure serial baud rate");
-    }
-  } else {
-    configured_ = true;
+
+  if (current_baudrate.value() != baudrate) {
+    throw std::runtime_error("Could not configure serial baud rate");
   }
+  configured_ = true;
 }
 
 void Gps::resetSerial(std::string port) {
@@ -316,40 +311,40 @@ bool Gps::clearBbr() {
   return configure(sos);
 }
 
-bool Gps::configUart1(unsigned int baudrate, uint16_t in_proto_mask,
-                      uint16_t out_proto_mask) {
+bool Gps::configUart(const ublox_msgs::CfgPRT& config) {
   if (!worker_) return true;
 
-  ROS_DEBUG("Configuring UART1 baud rate: %u, In/Out Protocol: %u / %u",
-            baudrate, in_proto_mask, out_proto_mask);
+  ROS_DEBUG("Configuring UART%d baud rate: %u, In/Out Protocol: %u / %u",
+            config.portID, config.baudRate, config.inProtoMask, config.inProtoMask);
 
-  CfgPRT port;
-  port.portID = CfgPRT::PORT_ID_UART1;
-  port.baudRate = baudrate;
+  CfgPRT port = config;
   port.mode = CfgPRT::MODE_RESERVED1 | CfgPRT::MODE_CHAR_LEN_8BIT |
               CfgPRT::MODE_PARITY_NO | CfgPRT::MODE_STOP_BITS_1;
-  port.inProtoMask = in_proto_mask;
-  port.outProtoMask = out_proto_mask;
-  return configure(port);
+
+  bool configured = configure(port);
+  if(!configured) {
+    throw std::runtime_error("Could not configure UART" + std::to_string(port.portID));
+  }
+  return configured;
 }
 
-bool Gps::disableUart1(CfgPRT& prev_config) {
-  ROS_DEBUG("Disabling UART1");
+bool Gps::disableUart(CfgPRT& prev_config) {
+  ROS_DEBUG("Disabling UART%d", prev_config.portID);
 
   // Poll UART PRT Config
   std::vector<uint8_t> payload;
-  payload.push_back(CfgPRT::PORT_ID_UART1);
+  payload.push_back(prev_config.portID);
   if (!poll(CfgPRT::CLASS_ID, CfgPRT::MESSAGE_ID, payload)) {
-    ROS_ERROR("disableUart: Could not poll UART1 CfgPRT");
+    ROS_ERROR("disableUart: Could not poll UART%d CfgPRT", prev_config.portID);
     return false;
   }
   if(!read(prev_config, default_timeout_)) {
-    ROS_ERROR("disableUart: Could not read polled UART1 CfgPRT message");
+    ROS_ERROR("disableUart: Could not read polled UART%d CfgPRT message", prev_config.portID);
     return false;
   }
   // Keep original settings, but disable in/out
   CfgPRT port;
-  port.portID = CfgPRT::PORT_ID_UART1;
+  port.portID = prev_config.portID;
   port.mode = prev_config.mode;
   port.baudRate = prev_config.baudRate;
   port.inProtoMask = 0;
@@ -532,6 +527,7 @@ bool Gps::poll(uint8_t class_id, uint8_t message_id,
   ublox::Writer writer(out.data(), out.size());
   if (!writer.write(payload.data(), payload.size(), class_id, message_id))
     return false;
+
   worker_->send(out.data(), writer.end() - out.data());
 
   return true;
@@ -576,7 +572,7 @@ bool Gps::setTimtm2(uint8_t rate) {
   ublox_msgs::CfgMSG msg;
   msg.msgClass = ublox_msgs::TimTM2::CLASS_ID;
   msg.msgID = ublox_msgs::TimTM2::MESSAGE_ID;
-  msg.rate  = rate; 
+  msg.rate  = rate;
   return configure(msg);
 }
 }  // namespace ublox_gps

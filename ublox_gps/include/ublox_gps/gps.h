@@ -102,11 +102,8 @@ class Gps {
    * @brief Initialize the Serial I/O port.
    * @param port the device port address
    * @param baudrate the desired baud rate of the port
-   * @param uart_in the UART In protocol, see CfgPRT for options
-   * @param uart_out the UART Out protocol, see CfgPRT for options
    */
-  void initializeSerial(std::string port, unsigned int baudrate,
-                        uint16_t uart_in, uint16_t uart_out);
+  void initializeSerial(std::string port, unsigned int baudrate);
 
   /**
    * @brief Reset the Serial I/O port after u-blox reset.
@@ -155,14 +152,11 @@ class Gps {
   bool clearBbr();
 
   /**
-   * @brief Configure the UART1 Port.
-   * @param baudrate the baudrate of the port
-   * @param in_proto_mask the in protocol mask, see CfgPRT message
-   * @param out_proto_mask the out protocol mask, see CfgPRT message
+   * @brief Configure the UART Ports.
+   * @param config CfgPRT message containing port settings
    * @return true on ACK, false on other conditions.
    */
-  bool configUart1(unsigned int baudrate, uint16_t in_proto_mask,
-                   uint16_t out_proto_mask);
+  bool configUart(const ublox_msgs::CfgPRT& config);
 
   /**
    * @brief Disable the UART Port. Sets in/out protocol masks to 0. Does not
@@ -171,7 +165,7 @@ class Gps {
    * configuration parameters
    * @return true on ACK, false on other conditions.
    */
-  bool disableUart1(ublox_msgs::CfgPRT& prev_cfg);
+  bool disableUart(ublox_msgs::CfgPRT& prev_cfg);
 
   /**
    * @brief Configure the USB Port.
