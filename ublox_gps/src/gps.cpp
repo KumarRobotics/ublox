@@ -270,7 +270,7 @@ void Gps::reset(const std::chrono::milliseconds& wait) {
   configured_ = false;
   // sleep because of undefined behavior after I/O reset
   std::this_thread::sleep_for(wait);
-  if (host_ == "") {
+  if (host_.empty()) {
     resetSerial(port_);
   } else {
     initializeTcp(host_, port_);
@@ -392,7 +392,7 @@ bool Gps::configUsb(uint16_t tx_ready,
   return configure(port);
 }
 
-bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
+bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate, bool wait) {
   RCLCPP_DEBUG(logger_, "Configuring measurement rate to %u ms and nav rate to %u cycles",
                meas_rate, nav_rate);
 
@@ -400,13 +400,13 @@ bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate) {
   rate.meas_rate = meas_rate;
   rate.nav_rate = nav_rate;  //  must be fixed at 1 for ublox 5 and 6
   rate.time_ref = ublox_msgs::msg::CfgRATE::TIME_REF_GPS;
-  return configure(rate);
+  return configure(rate, wait);
 }
 
-bool Gps::configRtcm(const std::vector<Rtcm> & rtcms) {
+bool Gps::configRtcm(const std::vector<Rtcm> & rtcms, bool wait) {
   for (const Rtcm & rtcm : rtcms) {
     RCLCPP_DEBUG(logger_, "Setting RTCM %d Rate %u", rtcm.id, rtcm.rate);
-    if (!setRate(ublox_msgs::Class::RTCM, rtcm.id, rtcm.rate)) {
+    if (!setRate(ublox_msgs::Class::RTCM, rtcm.id, rtcm.rate, wait)) {
       RCLCPP_ERROR(logger_, "Could not set RTCM %d to rate %u", rtcm.id, rtcm.rate);
       return false;
     }
@@ -479,14 +479,14 @@ bool Gps::disableTmode3() {
   return configure(tmode3);
 }
 
-bool Gps::setRate(uint8_t class_id, uint8_t message_id, uint8_t rate) {
+bool Gps::setRate(uint8_t class_id, uint8_t message_id, uint8_t rate, bool wait) {
   RCLCPP_DEBUG_EXPRESSION(logger_, debug_ >= 2, "Setting rate 0x%02x, 0x%02x, %u", class_id,
                           message_id, rate);
   ublox_msgs::msg::CfgMSG msg;
   msg.msg_class = class_id;
   msg.msg_id = message_id;
   msg.rate = rate;
-  return configure(msg);
+  return configure(msg, wait);
 }
 
 bool Gps::setDynamicModel(uint8_t model) {

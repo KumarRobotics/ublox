@@ -109,7 +109,7 @@ bool HpgRefProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
                                fixed_pos_acc_)) {
       throw std::runtime_error("Failed to set TMODE3 to fixed.");
     }
-    if (!gps->configRtcm(rtcms_)) {
+    if (!gps->configRtcm(rtcms_, true)) {
       throw std::runtime_error("Failed to set RTCM rates");
     }
     mode_ = FIXED;
@@ -150,7 +150,7 @@ bool HpgRefProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
       meas_rate_temp = kDefaultMeasPeriod;
     }
     // Set nav rate to 1 Hz during survey in
-    if (!gps->configRate(meas_rate_temp, 1000 / meas_rate_temp)) {
+    if (!gps->configRate(meas_rate_temp, 1000 / meas_rate_temp, true)) {
       throw std::runtime_error(std::string("Failed to set nav rate to 1 Hz") +
                                "before setting TMODE3 to survey-in.");
     }
@@ -197,12 +197,19 @@ bool HpgRefProduct::setTimeMode(std::shared_ptr<ublox_gps::Gps> gps) {
 
   // Set the Measurement & nav rate to user config
   // (survey-in sets nav_rate to 1 Hz regardless of user setting)
-  if (!gps->configRate(meas_rate_, nav_rate_)) {
+
+  // setTimeMode is called during a GPS read callback.  Because of that,
+  // we *cannot* wait for acknowledgement down in the GPS layer; it would
+  // result in deadlock.  Instead we set the rate without waiting and hope
+  // for the best.
+  if (!gps->configRate(meas_rate_, nav_rate_, false)) {
     RCLCPP_ERROR(node_->get_logger(), "Failed to set measurement rate to %d ms navigation rate to %d cycles",
                  meas_rate_, nav_rate_);
   }
   // Enable the RTCM out messages
-  if (!gps->configRtcm(rtcms_)) {
+  // We cannot wait for acknowledgement that this completed for the same reason
+  // as above.
+  if (!gps->configRtcm(rtcms_, false)) {
     RCLCPP_ERROR(node_->get_logger(), "Failed to configure RTCM IDs");
     return false;
   }

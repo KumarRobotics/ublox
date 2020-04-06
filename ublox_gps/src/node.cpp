@@ -701,7 +701,7 @@ bool UbloxNode::configureUblox() {
       if (set_usb_) {
         gps_->configUsb(usb_tx_, usb_in_, usb_out_);
       }
-      if (!gps_->configRate(meas_rate_, nav_rate_)) {
+      if (!gps_->configRate(meas_rate_, nav_rate_, true)) {
         std::stringstream ss;
         ss << "Failed to set measurement rate to " << meas_rate_
           << "ms and navigation rate to " << nav_rate_;
