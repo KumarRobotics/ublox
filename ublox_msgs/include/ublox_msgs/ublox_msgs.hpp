@@ -73,6 +73,7 @@
 #include <ublox_msgs/msg/cfg_inf.hpp>
 #include <ublox_msgs/msg/cfg_inf_block.hpp>
 #include <ublox_msgs/msg/cfg_msg.hpp>
+#include <ublox_msgs/msg/cfg_msgs.hpp>
 #include <ublox_msgs/msg/cfg_nav5.hpp>
 #include <ublox_msgs/msg/cfg_navx5.hpp>
 #include <ublox_msgs/msg/cfg_nmea.hpp>

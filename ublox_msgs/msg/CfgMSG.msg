@@ -1,5 +1,5 @@
 # CFG-MSG (0x06 0x01)
-# Message Rate(s)
+# Message Rate
 #
 # Set message rate for the current port
 

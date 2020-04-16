@@ -459,6 +459,40 @@ struct UbloxSerializer<ublox_msgs::msg::CfgMSG_<ContainerAllocator> > {
 };
 
 template <typename ContainerAllocator>
+struct UbloxSerializer<ublox_msgs::msg::CfgMSGS_<ContainerAllocator> > {
+  inline static void read(const uint8_t *data, uint32_t count,
+                          ublox_msgs::msg::CfgMSGS_<ContainerAllocator> &m) {
+    UbloxIStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.msg_class);
+    stream.next(m.msg_id);
+    stream.next(m.rates[0]);
+    stream.next(m.rates[1]);
+    stream.next(m.rates[2]);
+    stream.next(m.rates[3]);
+    stream.next(m.rates[4]);
+    stream.next(m.rates[5]);
+  }
+
+  inline static uint32_t serializedLength(const ublox_msgs::msg::CfgMSGS_<ContainerAllocator> &m) {
+    (void)m;
+    return 8;
+  }
+
+  inline static void write(uint8_t *data, uint32_t size,
+                           const ublox_msgs::msg::CfgMSGS_<ContainerAllocator> &m) {
+    UbloxOStream stream(data, size);
+    stream.next(m.msg_class);
+    stream.next(m.msg_id);
+    stream.next(m.rates[0]);
+    stream.next(m.rates[1]);
+    stream.next(m.rates[2]);
+    stream.next(m.rates[3]);
+    stream.next(m.rates[4]);
+    stream.next(m.rates[5]);
+  }
+};
+
+template <typename ContainerAllocator>
 struct UbloxSerializer<ublox_msgs::msg::CfgNAV5_<ContainerAllocator> > {
   inline static void read(const uint8_t *data, uint32_t count,
                           ublox_msgs::msg::CfgNAV5_<ContainerAllocator> &m) {
