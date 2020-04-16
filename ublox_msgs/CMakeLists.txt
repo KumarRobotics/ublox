@@ -31,6 +31,7 @@ set(msg_files
   "msg/CfgINFBlock.msg"
   "msg/CfgINF.msg"
   "msg/CfgMSG.msg"
+  "msg/CfgMSGS.msg"
   "msg/CfgNAV5.msg"
   "msg/CfgNAVX5.msg"
   "msg/CfgNMEA6.msg"

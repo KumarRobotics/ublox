@@ -406,7 +406,12 @@ bool Gps::configRate(uint16_t meas_rate, uint16_t nav_rate, bool wait) {
 bool Gps::configRtcm(const std::vector<Rtcm> & rtcms, bool wait) {
   for (const Rtcm & rtcm : rtcms) {
     RCLCPP_DEBUG(logger_, "Setting RTCM %d Rate %u", rtcm.id, rtcm.rate);
-    if (!setRate(ublox_msgs::Class::RTCM, rtcm.id, rtcm.rate, wait)) {
+
+    ublox_msgs::msg::CfgMSGS msgs;
+    msgs.msg_class = ublox_msgs::Class::RTCM;
+    msgs.msg_id = rtcm.id;
+    msgs.rates[ublox_msgs::msg::CfgMSGS::PORT_ID_UART1] = rtcm.rate;
+    if (!configure(msgs, wait)) {
       RCLCPP_ERROR(logger_, "Could not set RTCM %d to rate %u", rtcm.id, rtcm.rate);
       return false;
     }
