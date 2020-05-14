@@ -120,7 +120,7 @@ void UbloxNode::addProductInterface(std::string product_category,
     components_.push_back(ComponentPtr(new TimProduct));
   else if (product_category.compare("ADR") == 0 ||
            product_category.compare("UDR") == 0)
-    components_.push_back(ComponentPtr(new AdrUdrProduct));
+    components_.push_back(ComponentPtr(new AdrUdrProduct(protocol_version_)));
   else if (product_category.compare("FTS") == 0)
     components_.push_back(ComponentPtr(new FtsProduct));
   else if(product_category.compare("SPG") != 0)
@@ -452,7 +452,7 @@ bool UbloxNode::configureUblox() {
                                   " SBAS.");
         }
       }
-      if (!gps.setPpp(enable_ppp_))
+      if (!gps.setPpp(enable_ppp_, protocol_version_))
         throw std::runtime_error(std::string("Failed to ") +
                                 ((enable_ppp_) ? "enable" : "disable")
                                 + " PPP.");
@@ -1275,6 +1275,10 @@ void RawDataProduct::initializeRosDiagnostics() {
       new UbloxTopicDiagnostic("rxmalm", kRtcmFreqTol, kRtcmFreqWindow)));
 }
 
+AdrUdrProduct::AdrUdrProduct(float protocol_version)
+    : protocol_version_(protocol_version)
+{}
+
 //
 // u-blox ADR devices, partially implemented
 //
@@ -1287,7 +1291,7 @@ void AdrUdrProduct::getRosParams() {
 }
 
 bool AdrUdrProduct::configureUblox() {
-  if(!gps.setUseAdr(use_adr_))
+  if(!gps.setUseAdr(use_adr_, protocol_version_))
     throw std::runtime_error(std::string("Failed to ")
                              + (use_adr_ ? "enable" : "disable") + "use_adr");
   return true;

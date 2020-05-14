@@ -282,7 +282,7 @@ class Gps {
    * @note This is part of the expert settings. It is recommended you check
    * the ublox manual first.
    */
-  bool setPpp(bool enable);
+  bool setPpp(bool enable, float protocol_version);
 
   /**
    * @brief Set the DGNSS mode (see CfgDGNSS message for details).
@@ -296,7 +296,7 @@ class Gps {
    * @param enable If true, enable ADR.
    * @return true on ACK, false on other conditions.
    */
-  bool setUseAdr(bool enable);
+  bool setUseAdr(bool enable, float protocol_version);
 
   /**
    * @brief Configure the U-Blox to UTC time 
