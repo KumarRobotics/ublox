@@ -34,6 +34,9 @@ namespace ublox_gps {
 
 using namespace ublox_msgs;
 
+//! Sleep time [ms] after setting the baudrate
+constexpr static int kSetBaudrateSleepMs = 500;
+
 const boost::posix_time::time_duration Gps::default_timeout_ =
     boost::posix_time::milliseconds(
         static_cast<int>(Gps::kDefaultAckTimeout * 1000));

@@ -487,8 +487,6 @@ typedef boost::shared_ptr<ComponentInterface> ComponentPtr;
  */
 class UbloxNode : public virtual ComponentInterface {
  public:
-  //! How long to wait during I/O reset [s]
-  constexpr static int kResetWait = 10;
   //! how often (in seconds) to call poll messages
   constexpr static double kPollDuration = 1.0;
   // Constants used for diagnostic frequency updater
