@@ -67,8 +67,6 @@ constexpr static unsigned int kBaudrates[] = { 4800,
  */
 class Gps {
  public:
-  //! Sleep time [ms] after setting the baudrate
-  constexpr static int kSetBaudrateSleepMs = 500;
   //! Default timeout for ACK messages in seconds
   constexpr static double kDefaultAckTimeout = 1.0;
   //! Size of write buffer for output messages
