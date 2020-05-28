@@ -2,6 +2,13 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Bump CMake minimum version to 3.0.2
+* Move variables from .h to .cpp to solve linking issues
+* added support for protocol version >= 18
+* Contributors: Firat Kasmis, Gonçalo Pereira
+
 1.3.1 (2020-03-12)
 ------------------
 * Fix unit in covariance calculation

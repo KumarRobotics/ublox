@@ -2,6 +2,11 @@
 Changelog for package ublox_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Bump CMake minimum version to 3.0.2
+* Contributors: Gonçalo Pereira
+
 1.3.1 (2020-03-12)
 ------------------
 
