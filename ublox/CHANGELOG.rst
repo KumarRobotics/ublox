@@ -2,6 +2,9 @@
 Changelog for package ublox
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.4.0 (2020-05-28)
 ------------------
 * Bump CMake minimum version to 3.0.2
