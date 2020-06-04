@@ -2,6 +2,11 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.4.1 (2020-06-04)
+------------------
+* fix signs in sensor_msgs::Imu output
+* Contributors: Raphael Riebl
+
 1.4.0 (2020-05-28)
 ------------------
 * Bump CMake minimum version to 3.0.2
