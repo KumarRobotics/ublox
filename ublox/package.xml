@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>ublox</name>
-  <version>1.4.0</version>
+  <version>1.4.1</version>
   <description>Provides a ublox_gps node for u-blox GPS receivers, messages, and serialization packages for the binary UBX protocol.</description>
   <author>Johannes Meyer</author>
   <maintainer email="vmlane@alum.mit.edu">Veronica Lane</maintainer>

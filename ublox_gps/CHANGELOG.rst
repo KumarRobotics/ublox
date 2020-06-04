@@ -2,8 +2,8 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.4.1 (2020-06-04)
+------------------
 * fix signs in sensor_msgs::Imu output
 * Contributors: Raphael Riebl
 
