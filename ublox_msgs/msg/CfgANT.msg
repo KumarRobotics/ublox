@@ -20,6 +20,6 @@ uint16 PIN_SCD_MASK = 992      # PIO-Pin used for detecting a short in the
                                # antenna supply
 uint16 PIN_OCD_MASK = 31744    # PIO-Pin used for detecting open/not connected 
                                # antenna
-uint16 PIN_RECONFIG = 32678    # if set to one, and this command is sent to the 
+uint16 PIN_RECONFIG = 32768    # if set to one, and this command is sent to the 
                                # receiver, the receiver will reconfigure the 
                                # pins as specified.
