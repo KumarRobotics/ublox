@@ -2,8 +2,8 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.0 (2020-10-13)
+------------------
 * Initial ROS 2 port to Dashing
 * Create publishers based on ROS parameters (`#1 <https://github.com/KumarRobotics/ublox/issues/1>`_)
 * Make sure to reset for survey-in mode.
