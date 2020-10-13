@@ -10,7 +10,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_ros REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -104,16 +104,13 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 )
 
 include_directories(include)
-add_library(${PROJECT_NAME}_lib SHARED src/ublox_msgs.cpp)
+add_library(${PROJECT_NAME}_lib src/ublox_msgs.cpp)
+rosidl_target_interfaces(${PROJECT_NAME}_lib ${PROJECT_NAME} "rosidl_typesupport_cpp")
 ament_target_dependencies(${PROJECT_NAME}_lib
   "ublox_serialization"
 )
-rosidl_target_interfaces(${PROJECT_NAME}_lib ${PROJECT_NAME} "rosidl_typesupport_cpp")
-ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME}_lib)
-ament_export_dependencies(rosidl_default_runtime std_msgs sensor_msgs ublox_serialization)
 
-install(TARGETS ${PROJECT_NAME}_lib
+install(TARGETS ${PROJECT_NAME}_lib EXPORT ${PROJECT_NAME}_lib
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -122,5 +119,10 @@ install(TARGETS ${PROJECT_NAME}_lib
 install(DIRECTORY include/
   DESTINATION include
 )
+
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME}_lib)
+ament_export_targets(${PROJECT_NAME}_lib)
+ament_export_dependencies(rosidl_default_runtime sensor_msgs std_msgs ublox_serialization)
 
 ament_package()
