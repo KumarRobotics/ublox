@@ -2,6 +2,21 @@
 Changelog for package ublox_serialization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Initial ROS 2 port to Dashing
+* Fixes pointed out by clang-tidy.
+* Make sure to initialize checksum properly.
+* Port of ublox_serialization to ROS 2.
+* Start ROS 2 port by COLCON_IGNORE everything.
+* Remove unused vector serialization.
+* Move serialization into the ublox_serialization module.
+* Move the directory structure around just a bit.
+* Remove boost from serialization.
+* Remove trailing whitespace in all files.
+* Rename header files to have .hpp extension.
+* Contributors: Chao Qu, Chris Lalancette
+
 1.2.0 (2019-11-19)
 ------------------
 

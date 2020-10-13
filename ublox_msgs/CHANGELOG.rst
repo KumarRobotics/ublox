@@ -2,6 +2,23 @@
 Changelog for package ublox_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fixes to compile on Foxy.
+* Fix heading output to comply with REP-103
+* Fixes pointed out by clang-tidy.
+* Small style fixups.
+* Port ublox_msgs to ROS 2.
+* Start ROS 2 port by COLCON_IGNORE everything.
+* Move serialization into the ublox_serialization module.
+* More rearrangement of header files to make a more sane structure.
+* Move the directory structure around just a bit.
+* Rearrange messages.
+* Remove boost from ublox_msgs.hpp serialization.
+* Remove trailing whitespace in all files.
+* Rename header files to have .hpp extension.
+* Contributors: Chao Qu, Chris Lalancette
+
 1.2.0 (2019-11-19)
 ------------------
 * Add support for ZED-F9P new RELPOSNED message and provide heading output

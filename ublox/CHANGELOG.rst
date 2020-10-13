@@ -2,6 +2,13 @@
 Changelog for package ublox
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Initial ROS 2 port to Dashing
+* Port the ublox package to ROS 2.
+* Start ROS 2 port by COLCON_IGNORE everything.
+* Contributors: Chao Qu, Chris Lalancette
+
 1.2.0 (2019-11-19)
 ------------------
 
