@@ -1,0 +1,5 @@
+device: /dev/ttyACM0
+frame_id: gps
+uart1:
+  baudrate: 38400
+config_on_startup: false
