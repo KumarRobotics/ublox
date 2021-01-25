@@ -53,7 +53,7 @@ def generate_launch_description():
 
                                      launch.actions.RegisterEventHandler(
                                          event_handler=launch.event_handlers.OnProcessExit(
-                                             target_action=velodyne_driver_node,
+                                             target_action=ublox_gps_node,
                                              on_exit=[launch.actions.EmitEvent(
                                                  event=launch.events.Shutdown())],
                                          )),
