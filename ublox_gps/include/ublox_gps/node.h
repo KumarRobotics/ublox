@@ -885,6 +885,17 @@ class UbloxFirmware7Plus : public UbloxFirmware {
       stat.level = diagnostic_msgs::DiagnosticStatus::OK;
       stat.message = "Time only fix";
     }
+    
+    // Check whether differential GNSS available
+    if (last_nav_pvt_.flags & ublox_msgs::NavPVT::FLAGS_DIFF_SOLN) {
+      stat.message += ", DGNSS";
+    } 
+    // If DGNSS, then update the differential solution status
+    if (last_nav_pvt_.flags & ublox_msgs::NavPVT::CARRIER_PHASE_FLOAT) {
+      stat.message += ", FLOAT FIX";
+    } else if (last_nav_pvt_.flags & ublox_msgs::NavPVT::CARRIER_PHASE_FIXED) {
+      stat.message += ", RTK FIX";
+    }
 
     // If fix not ok (w/in DOP & Accuracy Masks), raise the diagnostic level
     if (!(last_nav_pvt_.flags & ublox_msgs::NavPVT::FLAGS_GNSS_FIX_OK)) {
