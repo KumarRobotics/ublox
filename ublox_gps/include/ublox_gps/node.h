@@ -910,8 +910,14 @@ class UbloxFirmware7Plus : public UbloxFirmware {
 
     // append last fix position
     stat.add("iTOW [ms]", last_nav_pvt_.iTOW);
-    stat.add("Latitude [deg]", last_nav_pvt_.lat * 1e-7);
-    stat.add("Longitude [deg]", last_nav_pvt_.lon * 1e-7);
+    std::ostringstream gnss_coor;
+    gnss_coor << std::fixed << std::setprecision(7);
+    gnss_coor << (last_nav_pvt_.lat * 1e-7);
+    stat.add("Latitude [deg]", gnss_coor.str());
+    gnss_coor.str("");
+    gnss_coor.clear();
+    gnss_coor << (last_nav_pvt_.lon * 1e-7);
+    stat.add("Longitude [deg]", gnss_coor.str());
     stat.add("Altitude [m]", last_nav_pvt_.height * 1e-3);
     stat.add("Height above MSL [m]", last_nav_pvt_.hMSL * 1e-3);
     stat.add("Horizontal Accuracy [m]", last_nav_pvt_.hAcc * 1e-3);
