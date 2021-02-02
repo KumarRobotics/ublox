@@ -143,11 +143,24 @@ void UbloxNode::getRosParams() {
   getRosUint("save/device", save_.deviceMask, 0);
 
   // UART 1 params
-  getRosUint("uart1/baudrate", baudrate_, 9600);
-  getRosUint("uart1/in", uart_in_, ublox_msgs::CfgPRT::PROTO_UBX
+  uart1_.portID = 1;
+  getRosUint("uart1/baudrate", uart1_.baudRate, 9600);
+  getRosUint("uart1/in", uart1_.inProtoMask, ublox_msgs::CfgPRT::PROTO_UBX
                                     | ublox_msgs::CfgPRT::PROTO_NMEA
                                     | ublox_msgs::CfgPRT::PROTO_RTCM);
-  getRosUint("uart1/out", uart_out_, ublox_msgs::CfgPRT::PROTO_UBX);
+  getRosUint("uart1/out", uart1_.outProtoMask, ublox_msgs::CfgPRT::PROTO_UBX);
+
+  // UART 2 params
+  uart2_.portID = 2;
+  getRosUint("uart2/baudrate", uart2_.baudRate, 9600);
+  getRosUint("uart2/in", uart2_.inProtoMask, ublox_msgs::CfgPRT::PROTO_UBX
+                                    | ublox_msgs::CfgPRT::PROTO_NMEA
+                                    | ublox_msgs::CfgPRT::PROTO_RTCM);
+  getRosUint("uart2/out", uart2_.outProtoMask, ublox_msgs::CfgPRT::PROTO_UBX);
+
+  // Serial over USB
+  getRosUint("baudrate", serial_baudrate_, 38400);
+
   // USB params
   set_usb_ = false;
   if (nh->hasParam("usb/in") || nh->hasParam("usb/out")) {
@@ -225,7 +238,7 @@ void UbloxNode::getRosParams() {
   // activate/deactivate any config
   nh->param("config_on_startup", config_on_startup_flag_, true);
 
-  // raw data stream logging 
+  // raw data stream logging
   rawDataStreamPa_.getRosParams();
 }
 
@@ -506,7 +519,7 @@ void UbloxNode::configureInf() {
   msg.blocks.push_back(block);
 
   // IF NMEA is enabled
-  if (uart_in_ & ublox_msgs::CfgPRT::PROTO_NMEA) {
+  if (uart1_.inProtoMask & ublox_msgs::CfgPRT::PROTO_NMEA) {
     ublox_msgs::CfgINF_Block block;
     block.protocolID = block.PROTOCOL_ID_NMEA;
     // Enable desired INF messages on each NMEA port
@@ -537,7 +550,12 @@ void UbloxNode::initializeIo() {
       throw std::runtime_error("Protocol '" + proto + "' is unsupported");
     }
   } else {
-    gps.initializeSerial(device_, baudrate_, uart_in_, uart_out_);
+    gps.initializeSerial(device_, serial_baudrate_);
+  }
+
+  if (config_on_startup_flag_) {
+      gps.configUart(uart1_);
+      gps.configUart(uart2_);
   }
 
   // raw data stream logging
