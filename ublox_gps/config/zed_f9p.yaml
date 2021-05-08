@@ -1,0 +1,26 @@
+# Configuration Settings for C94-M8P device
+ublox_gps_node:
+  ros__parameters:
+    debug: 0                    # Range 0-4 (0 means no debug statements will print)
+    device: /dev/ttyACM0
+    frame_id: gps
+    uart1:
+      baudrate: 9600
+    # TMODE3 Config
+    tmode3: 1                   # Survey-In Mode
+    sv_in:
+      reset: True               # True: disables and re-enables survey-in (resets)
+                                # False: Disables survey-in only if TMODE3 is
+                                # disabled
+      min_dur: 300              # Survey-In Minimum Duration [s]
+      acc_lim: 3.0              # Survey-In Accuracy Limit [m]
+
+    inf:
+      all: true                   # Whether to display all INF messages in console
+    
+    publish:
+      all: true
+      aid:
+        hui: false
+      nav:
+        posecef: false
