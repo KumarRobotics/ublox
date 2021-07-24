@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
-    CATKIN_DEPENDS tf roscpp ublox_msgs ublox_serialization)
+    CATKIN_DEPENDS tf roscpp ublox_msgs ublox_serialization rtcm_msgs)
 
 # include boost
 find_package(Boost REQUIRED COMPONENTS system regex thread)
