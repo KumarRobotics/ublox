@@ -20,5 +20,6 @@
   <depend>roscpp_serialization</depend>
   <depend>tf</depend>
   <depend>diagnostic_updater</depend>
+  <depend>rtcm_msgs</depend>
 
 </package>
