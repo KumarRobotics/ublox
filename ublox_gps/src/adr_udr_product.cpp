@@ -202,7 +202,6 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m) {
     }
   }
 
-  updater_->force_update();
 }
 
 }  // namespace ublox_node

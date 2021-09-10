@@ -204,7 +204,6 @@ void UbloxFirmware6::callbackNavPosLlh(const ublox_msgs::msg::NavPOSLLH& m) {
   last_nav_pos_ = m;
   //  update diagnostics
   freq_diag_->diagnostic->tick(fix_.header.stamp);
-  updater_->force_update();
 }
 
 void UbloxFirmware6::callbackNavVelNed(const ublox_msgs::msg::NavVELNED& m) {

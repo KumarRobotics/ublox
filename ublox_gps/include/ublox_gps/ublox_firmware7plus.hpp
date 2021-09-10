@@ -138,7 +138,6 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     //
     last_nav_pvt_ = m;
     freq_diag_->diagnostic->tick(fix.header.stamp);
-    updater_->force_update();
   }
 
  protected:
