@@ -103,6 +103,13 @@ class Gps final {
   void initializeTcp(const std::string & host, const std::string & port);
 
   /**
+   * @brief Initialize UDP I/O.
+   * @param host the UDP host
+   * @param port the UDP port
+   */
+  void initializeUdp(const std::string & host, const std::string & port);
+
+  /**
    * @brief Initialize the Serial I/O port.
    * @param port the device port address
    * @param baudrate the desired baud rate of the port

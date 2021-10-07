@@ -42,6 +42,7 @@
 #include <asio/io_service.hpp>
 #include <asio/placeholders.hpp>
 #include <asio/write.hpp>
+#include <asio/ip/udp.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -211,6 +212,29 @@ void AsyncWorker<StreamT>::doWrite() {
   out_.clear();
   write_condition_.notify_all();
 }
+template <>
+inline void AsyncWorker<asio::ip::udp::socket>::doWrite() {
+  std::lock_guard<std::mutex> lock(write_mutex_);
+  // Do nothing if out buffer is empty
+  if (out_.size() == 0) {
+    return;
+  }
+  // Write all the data in the out buffer
+  stream_->send(asio::buffer(out_.data(), out_.size()));
+
+  if (debug_ >= 2) {
+    // Print the data that was sent
+    std::ostringstream oss;
+    for (std::vector<unsigned char>::iterator it = out_.begin();
+         it != out_.end(); ++it) {
+      oss << std::hex << static_cast<unsigned int>(*it) << " ";
+    }
+    RCLCPP_DEBUG(logger_, "U-Blox sent %li bytes: \n%s", out_.size(), oss.str().c_str());
+  }
+  // Clear the buffer & unlock
+  out_.clear();
+  write_condition_.notify_all();
+}
 
 template <typename StreamT>
 void AsyncWorker<StreamT>::doRead() {
@@ -229,6 +253,25 @@ void AsyncWorker<StreamT>::doRead() {
       asio::buffer(in_.data() + in_buffer_size_,
                    in_.size() - in_buffer_size_),
       std::bind(&AsyncWorker<StreamT>::readEnd, this,
+                std::placeholders::_1, std::placeholders::_2));
+}
+template <>
+inline void AsyncWorker<asio::ip::udp::socket>::doRead() {
+  std::lock_guard<std::mutex> lock(read_mutex_);
+  if (in_.size() - in_buffer_size_ == 0) {
+    // In some circumstances, it is possible that there is no room left in the
+    // buffer.  This can happen, for instance, if one of the UBlox messages
+    // has a value in the Length field that is much larger than this buffer
+    // can accomodate.  We definitely don't want to ask for a 0-byte read (as
+    // we will get into an endless loop of asking for, and then receiving,
+    // 0 bytes), so we just throw away all of the data in the buffer.
+    in_buffer_size_ = 0;
+  }
+
+  stream_->async_receive(
+      asio::buffer(in_.data() + in_buffer_size_,
+                   in_.size() - in_buffer_size_),
+      std::bind(&AsyncWorker<asio::ip::udp::socket>::readEnd, this,
                 std::placeholders::_1, std::placeholders::_2));
 }
 

@@ -82,7 +82,9 @@ class UbloxNode final : public rclcpp::Node {
  public:
   //! How long to wait during I/O reset [s]
   constexpr static int kResetWait = 10;
-  //! how often (in seconds) to call poll messages
+  //! How often (in seconds) to send keep-alive message
+  constexpr static double kKeepAlivePeriod = 10.0;
+  //! How often (in seconds) to call poll messages
   constexpr static double kPollDuration = 1.0;
   // Constants used for diagnostic frequency updater
   //! [s] 5Hz diagnostic period
@@ -180,8 +182,12 @@ class UbloxNode final : public rclcpp::Node {
                            const std::string & ref_rov = "");
 
   /**
+   * @brief Poll version message from the U-Blox device to keep socket active.
+   */
+  void keepAlive();
+
+  /**
    * @brief Poll messages from the U-Blox device.
-   * @param event a timer indicating how often to poll the messages
    */
   void pollMessages();
 
@@ -275,6 +281,7 @@ class UbloxNode final : public rclcpp::Node {
   //! Handles communication with the U-Blox Device
   std::shared_ptr<ublox_gps::Gps> gps_;
 
+  rclcpp::TimerBase::SharedPtr keep_alive_;
   rclcpp::TimerBase::SharedPtr poller_;
 };
 
