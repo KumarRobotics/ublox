@@ -1,5 +1,5 @@
 # ublox
-The `ublox` package provides support for [u-blox](http://www.u-blox.com) GPS receivers. Only the _serial_ configuration of the driver is documented here, but TCP communication is also supported by the driver (untested).
+The `ublox` package provides support for [u-blox](http://www.u-blox.com) GPS receivers. Only the _serial_ configuration of the driver is documented here, but TCP/UDP communication is also supported by the driver (untested).
 
 The driver was originally written by Johannes Meyer. Changes made later are detailed in the version history below.
 

@@ -489,7 +489,9 @@ typedef boost::shared_ptr<ComponentInterface> ComponentPtr;
  */
 class UbloxNode : public virtual ComponentInterface {
  public:
-  //! how often (in seconds) to call poll messages
+  //! How often (in seconds) to send keep-alive message
+  constexpr static double kKeepAlivePeriod = 10.0;
+  //! How often (in seconds) to call poll messages
   constexpr static double kPollDuration = 1.0;
   // Constants used for diagnostic frequency updater
   //! [s] 5Hz diagnostic period
@@ -578,6 +580,12 @@ class UbloxNode : public virtual ComponentInterface {
    */
   void addProductInterface(std::string product_category,
                            std::string ref_rov = "");
+
+  /**
+   * @brief Poll version message from the U-Blox device to keep socket active.
+   * @param event a timer indicating how often to poll
+   */
+  void keepAlive(const ros::TimerEvent& event);
 
   /**
    * @brief Poll messages from the U-Blox device.
