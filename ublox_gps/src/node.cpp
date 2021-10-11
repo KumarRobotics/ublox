@@ -119,6 +119,8 @@ void UbloxNode::addProductInterface(std::string product_category,
     components_.push_back(ComponentPtr(new HpgRovProduct));
   else if (product_category.compare("HPG") == 0)
     components_.push_back(ComponentPtr(new HpPosRecProduct));
+  else if (product_category.compare("HDG") == 0)
+    components_.push_back(ComponentPtr(new HpPosRecProduct));
   else if (product_category.compare("TIM") == 0)
     components_.push_back(ComponentPtr(new TimProduct));
   else if (product_category.compare("ADR") == 0 ||
@@ -129,7 +131,7 @@ void UbloxNode::addProductInterface(std::string product_category,
   else if(product_category.compare("SPG") != 0)
     ROS_WARN("Product category %s %s from MonVER message not recognized %s",
              product_category.c_str(), ref_rov.c_str(),
-             "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, SPG");
+             "options are HPG REF, HPG ROV, HPG #.#, HDG #.#, TIM, ADR, UDR, FTS, SPG");
 }
 
 void UbloxNode::getRosParams() {
