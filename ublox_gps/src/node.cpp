@@ -482,6 +482,11 @@ void UbloxNode::getRosParams() {
   }
 }
 
+void UbloxNode::keepAlive() {
+  // Poll version message to keep UDP socket active
+  gps_->poll(ublox_msgs::Class::MON, ublox_msgs::Message::MON::VER);
+}
+
 void UbloxNode::pollMessages() {
   static std::vector<uint8_t> payload(1, 1);
   if (getRosBoolean(this, "publish.aid.alm")) {
@@ -802,6 +807,12 @@ void UbloxNode::initializeIo() {
       RCLCPP_INFO(this->get_logger(), "Connecting to %s://%s:%s ...", proto.c_str(), host.c_str(),
                port.c_str());
       gps_->initializeTcp(host, port);
+    } else if (proto == "udp") {
+      std::string host(match[2]);
+      std::string port(match[3]);
+      RCLCPP_INFO(this->get_logger(), "Connecting to %s://%s:%s ...", proto.c_str(), host.c_str(),
+               port.c_str());
+      gps_->initializeUdp(host, port);
     } else {
       throw std::runtime_error("Protocol '" + proto + "' is unsupported");
     }
@@ -850,6 +861,12 @@ void UbloxNode::initialize() {
     subscribe();
     // Configure INF messages (needs INF params, call after subscribing)
     configureInf();
+
+    if (device_.substr(0, 6) == "udp://") {
+      // Setup timer to poll version message to keep UDP socket active
+      keep_alive_ = this->create_wall_timer(std::chrono::milliseconds(static_cast<int64_t>(kKeepAlivePeriod * 1000.0)),
+                                            std::bind(&UbloxNode::keepAlive, this));
+    }
 
     poller_ = this->create_wall_timer(std::chrono::milliseconds(static_cast<int64_t>(kPollDuration * 1000.0)),
                                       std::bind(&UbloxNode::pollMessages, this));
