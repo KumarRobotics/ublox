@@ -1342,6 +1342,11 @@ class HpPosRecProduct: public virtual HpgRefProduct {
  protected:
 
   /**
+   * @brief Publish a sensor_msgs/NavSatFix message upon receiving a HPPOSLLH UBX message
+   */
+  void callbackNavHpPosLlh(const ublox_msgs::NavHPPOSLLH& m);
+
+  /**
    * @brief Set the last received message and call rover diagnostic updater
    *
    * @details Publish received NavRELPOSNED messages if enabled

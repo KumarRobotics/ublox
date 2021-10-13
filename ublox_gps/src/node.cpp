@@ -664,8 +664,8 @@ void UbloxFirmware6::subscribe() {
   // Subscribe to Nav POSLLH
   gps.subscribe<ublox_msgs::NavPOSLLH>(boost::bind(
       &UbloxFirmware6::callbackNavPosLlh, this, _1), kSubscribeRate);
-  gps.subscribe<ublox_msgs::NavSOL>(boost::bind(
   // Subscribe to Nav SOL
+  gps.subscribe<ublox_msgs::NavSOL>(boost::bind(
       &UbloxFirmware6::callbackNavSol, this, _1), kSubscribeRate);
   // Subscribe to Nav VELNED
   gps.subscribe<ublox_msgs::NavVELNED>(boost::bind(
@@ -1682,8 +1682,24 @@ void HpgRovProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED &m) {
 //
 // U-Blox High Precision Positioning Receiver
 //
-
 void HpPosRecProduct::subscribe() {
+  // Subscribe to Nav High Precision Position ECEF
+  nh->param("publish/nav/hpposecef", enabled["nav_hpposecef"], enabled["nav"]);
+  if (enabled["nav_hpposecef"])
+    gps.subscribe<ublox_msgs::NavHPPOSECEF>(boost::bind(
+        publish<ublox_msgs::NavHPPOSECEF>, _1, "navhpposecef"), kSubscribeRate);
+
+  // Whether to publish the NavSatFix info from Nav High Precision Position LLH
+  nh->param("publish/nav/hp_fix", enabled["nav_hpfix"], enabled["nav"]);
+
+  // Whether to publish the NavSatFix info from Nav High Precision Position LLH
+  nh->param("publish/nav/hpposllh", enabled["nav_hpposllh"], enabled["nav"]);
+
+  // Subscribe to Nav High Precision Position LLH
+  if (enabled["nav_hpposllh"] || enabled["nav_hpfix"])
+    gps.subscribe<ublox_msgs::NavHPPOSLLH>(boost::bind(
+        &HpPosRecProduct::callbackNavHpPosLlh, this, _1), kSubscribeRate);
+
   // Whether to publish Nav Relative Position NED
   nh->param("publish/nav/relposned", enabled["nav_relposned"], enabled["nav"]);
   // Subscribe to Nav Relative Position NED messages (also updates diagnostics)
@@ -1692,6 +1708,45 @@ void HpPosRecProduct::subscribe() {
 
   // Whether to publish the Heading info from Nav Relative Position NED
   nh->param("publish/nav/heading", enabled["nav_heading"], enabled["nav"]);
+}
+
+void HpPosRecProduct::callbackNavHpPosLlh(const ublox_msgs::NavHPPOSLLH& m) {
+  if (enabled["nav_hpposllh"]) {
+    static ros::Publisher publisher =
+        nh->advertise<ublox_msgs::NavHPPOSLLH>("navhpposllh", kROSQueueSize);
+    publisher.publish(m);
+  }
+
+  if (enabled["nav_hpfix"]) {
+    sensor_msgs::NavSatFix fix_msg;
+    static ros::Publisher fixPublisher =
+        nh->advertise<sensor_msgs::NavSatFix>("hp_fix", kROSQueueSize);
+
+    fix_msg.header.stamp = ros::Time::now();
+    fix_msg.header.frame_id = frame_id;
+    fix_msg.latitude = m.lat * 1e-7 + m.latHp * 1e-9;
+    fix_msg.longitude = m.lon * 1e-7 + m.lonHp * 1e-9;
+    fix_msg.altitude = m.height * 1e-3 + m.heightHp * 1e-4;
+
+    if (m.invalid_llh) {
+      fix_msg.status.status = fix_msg.status.STATUS_NO_FIX;
+    } else {
+      fix_msg.status.status = fix_msg.status.STATUS_FIX;
+    }
+
+    // Convert from mm to m
+    const double varH = pow(m.hAcc / 10000.0, 2);
+    const double varV = pow(m.vAcc / 10000.0, 2);
+
+    fix_msg.position_covariance[0] = varH;
+    fix_msg.position_covariance[4] = varH;
+    fix_msg.position_covariance[8] = varV;
+    fix_msg.position_covariance_type =
+        sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
+
+    fix_msg.status.service = fix_msg.status.SERVICE_GPS;
+    fixPublisher.publish(fix_msg);
+  }
 }
 
 void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
