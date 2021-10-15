@@ -2,8 +2,8 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.5.0 (2021-10-15)
+------------------
 * Add rtcm_msgs dependency
 * Add RTK support via rtcm
 * GPS coordinate precision corrected for high accuracy.

@@ -2,8 +2,8 @@
 Changelog for package ublox_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.5.0 (2021-10-15)
+------------------
 * Fixed reconfig value in UBX_CFG_ANT.
 * Contributors: ito-san
 
