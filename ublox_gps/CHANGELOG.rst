@@ -2,6 +2,16 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add rtcm_msgs dependency
+* Add RTK support via rtcm
+* GPS coordinate precision corrected for high accuracy.
+* Diagonstics for Differential GNSS updated.
+* Add a new parameter to set the search path for the param_file_name. Add a default to the node_name parameter.
+* Add zed-f9p configuration
+* Contributors: Balamurugan Kandan, Chris Iverach-Brereton, Igor
+
 1.4.1 (2020-06-04)
 ------------------
 * fix signs in sensor_msgs::Imu output

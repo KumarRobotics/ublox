@@ -2,6 +2,9 @@
 Changelog for package ublox_serialization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.4.1 (2020-06-04)
 ------------------
 
