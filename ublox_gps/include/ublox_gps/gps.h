@@ -36,6 +36,7 @@
 #include <stdexcept>
 // Boost
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ip/udp.hpp>
 #include <boost/asio/serial_port.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/atomic.hpp>
@@ -95,6 +96,13 @@ class Gps {
    * @param port the TCP port
    */
   void initializeTcp(std::string host, std::string port);
+
+  /**
+   * @brief Initialize UDP I/O.
+   * @param host the UDP host
+   * @param port the UDP port
+   */
+  void initializeUdp(std::string host, std::string port);
 
   /**
    * @brief Initialize the Serial I/O port.

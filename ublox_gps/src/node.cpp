@@ -231,6 +231,11 @@ void UbloxNode::getRosParams() {
   rawDataStreamPa_.getRosParams();
 }
 
+void UbloxNode::keepAlive(const ros::TimerEvent& event) {
+  // Poll version message to keep UDP socket active
+  gps.poll(ublox_msgs::MonVER::CLASS_ID, ublox_msgs::MonVER::MESSAGE_ID);
+}
+
 void UbloxNode::pollMessages(const ros::TimerEvent& event) {
   static std::vector<uint8_t> payload(1, 1);
   if (enabled["aid_alm"])
@@ -535,6 +540,12 @@ void UbloxNode::initializeIo() {
       ROS_INFO("Connecting to %s://%s:%s ...", proto.c_str(), host.c_str(),
                port.c_str());
       gps.initializeTcp(host, port);
+    } else if (proto == "udp") {
+      std::string host(match[2]);
+      std::string port(match[3]);
+      ROS_INFO("Connecting to %s://%s:%s ...", proto.c_str(), host.c_str(),
+               port.c_str());
+      gps.initializeUdp(host, port);
     } else {
       throw std::runtime_error("Protocol '" + proto + "' is unsupported");
     }
@@ -572,6 +583,14 @@ void UbloxNode::initialize() {
     subscribe();
     // Configure INF messages (needs INF params, call after subscribing)
     configureInf();
+
+    ros::Timer keep_alive;
+    if (device_.substr(0, 6) == "udp://") {
+      // Setup timer to poll version message to keep UDP socket active
+      keep_alive = nh->createTimer(ros::Duration(kKeepAlivePeriod),
+                                   &UbloxNode::keepAlive,
+                                   this);
+    }
 
     ros::Timer poller;
     poller = nh->createTimer(ros::Duration(kPollDuration),

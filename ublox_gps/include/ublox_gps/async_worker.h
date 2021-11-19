@@ -199,6 +199,28 @@ void AsyncWorker<StreamT>::doWrite() {
   out_.clear();
   write_condition_.notify_all();
 }
+template <>
+inline void AsyncWorker<boost::asio::ip::udp::socket>::doWrite() {
+  ScopedLock lock(write_mutex_);
+  // Do nothing if out buffer is empty
+  if (out_.size() == 0) {
+    return;
+  }
+  // Write all the data in the out buffer
+  stream_->send(boost::asio::buffer(out_.data(), out_.size()));
+
+  if (debug >= 2) {
+    // Print the data that was sent
+    std::ostringstream oss;
+    for (std::vector<unsigned char>::iterator it = out_.begin();
+         it != out_.end(); ++it)
+      oss << boost::format("%02x") % static_cast<unsigned int>(*it) << " ";
+    ROS_DEBUG("U-Blox sent %li bytes: \n%s", out_.size(), oss.str().c_str());
+  }
+  // Clear the buffer & unlock
+  out_.clear();
+  write_condition_.notify_all();
+}
 
 template <typename StreamT>
 void AsyncWorker<StreamT>::doRead() {
@@ -207,6 +229,16 @@ void AsyncWorker<StreamT>::doRead() {
       boost::asio::buffer(in_.data() + in_buffer_size_,
                           in_.size() - in_buffer_size_),
                           boost::bind(&AsyncWorker<StreamT>::readEnd, this,
+                              boost::asio::placeholders::error,
+                              boost::asio::placeholders::bytes_transferred));
+}
+template <>
+inline void AsyncWorker<boost::asio::ip::udp::socket>::doRead() {
+  ScopedLock lock(read_mutex_);
+  stream_->async_receive(
+      boost::asio::buffer(in_.data() + in_buffer_size_,
+                          in_.size() - in_buffer_size_),
+                          boost::bind(&AsyncWorker<boost::asio::ip::udp::socket>::readEnd, this,
                               boost::asio::placeholders::error,
                               boost::asio::placeholders::bytes_transferred));
 }
