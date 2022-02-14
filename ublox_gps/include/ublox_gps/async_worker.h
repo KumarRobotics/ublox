@@ -276,6 +276,16 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
     read_condition_.notify_all();
   }
 
+  // Check for buffer overflow
+  // The remaining buffer size in_.size() - in_buffer_size_ must be at least
+  // one byte. Otherwise readEnd() and doRead() start to busy-wait without
+  // a chance to recover.
+  if (in_buffer_size_ >= in_.size()) {
+    ROS_ERROR("U-Blox ASIO input buffer overflow, dropping %u bytes",
+	      in_buffer_size_);
+    in_buffer_size_ = 0;
+  }
+
   if (!stopping_)
     io_service_->post(boost::bind(&AsyncWorker<StreamT>::doRead, this));
 }

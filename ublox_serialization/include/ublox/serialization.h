@@ -57,6 +57,8 @@ namespace ublox {
 static const uint8_t DEFAULT_SYNC_A = 0xB5; 
 //! u-blox message Sync B char
 static const uint8_t DEFAULT_SYNC_B = 0x62; 
+//! Maximum payload length
+static const uint32_t kMaxPayloadLength = 8184;  // == (buffer size - header length - checksum length)
 //! Number of bytes in a message header (Sync chars + class ID + message ID)
 static const uint8_t kHeaderLength = 6; 
 //! Number of checksum bytes in the u-blox message
@@ -142,11 +144,14 @@ struct Options {
    * The default options for a u-blox message.
    */
   Options() : sync_a(DEFAULT_SYNC_A), sync_b(DEFAULT_SYNC_B), 
+	      max_payload_length(kMaxPayloadLength),
               header_length(kHeaderLength), checksum_length(kChecksumLength) {}
   //! The sync_a byte value identifying the start of a message
   uint8_t sync_a; 
   //! The sync_b byte value identifying the start of a message
   uint8_t sync_b; 
+  //! The maximum payload length.
+  uint32_t max_payload_length;
   //! The length of the message header in bytes (everything before the payload)
   uint8_t header_length; 
   //! The length of the checksum in bytes
@@ -189,8 +194,17 @@ class Reader {
     // Search for a message header
     for( ; count_ > 0; --count_, ++data_) {
       if (data_[0] == options_.sync_a && 
-          (count_ == 1 || data_[1] == options_.sync_b)) 
+          (count_ == 1 || data_[1] == options_.sync_b)) {
+        // Ignore messages which exceed the maximum payload length
+        if (length() > options_.max_payload_length) {
+          // Message exceeds maximum payload length
+          ROS_ERROR("U-Blox message exceeds maximum payload length %u: "
+	            "0x%02x / 0x%02x", options_.max_payload_length,
+		    classId(), messageId());
+	  continue;
+        }
         break;
+      }
     }
 
     return data_;
@@ -254,7 +268,10 @@ class Reader {
    * Determines the length from the header of the u-blox message.
    * @return the length of the message payload
    */
-  uint32_t length() { return (data_[5] << 8) + data_[4]; }
+  uint32_t length() {
+    if (count_ < 6) return 0u;
+    return (data_[5] << 8) + data_[4];
+  }
   const uint8_t *data() { return data_ + options_.header_length; }
   
   /**
