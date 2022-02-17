@@ -281,7 +281,7 @@ void AsyncWorker<StreamT>::readEnd(const boost::system::error_code& error,
   // one byte. Otherwise readEnd() and doRead() start to busy-wait without
   // a chance to recover.
   if (in_buffer_size_ >= in_.size()) {
-    ROS_ERROR("U-Blox ASIO input buffer overflow, dropping %u bytes",
+    ROS_ERROR("U-Blox ASIO input buffer overflow, dropping %zu bytes",
 	      in_buffer_size_);
     in_buffer_size_ = 0;
   }
