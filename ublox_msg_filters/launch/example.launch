@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Generate and transmit messages -->
+  <node pkg="ublox_msg_filters" type="talker.py" name="talker" output="screen" />
+
+  <!-- Receive and sync messages -->
+  <node pkg="ublox_msg_filters" type="example" name="listener" output="screen" />
+
+</launch>

@@ -167,6 +167,7 @@ To publish a given u-blox message to a ROS topic, set the parameter shown below 
 * `publish/mon/hw`: Topic `~monhw`
 
 ### NAV messages
+* NAV messages are time stamped with `iTOW`, and multiple messages can be synchronized with [ublox_msg_filters](ublox_msg_filters)
 * `publish/nav/all`: This is the default value for the `publish/mon/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
 * `publish/nav/att`: Topic `~navatt`. **ADR/UDR devices only**
 * `publish/nav/clock`: Topic `~navclock`

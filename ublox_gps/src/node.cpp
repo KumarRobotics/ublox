@@ -1656,7 +1656,7 @@ void HpgRovProduct::initializeRosDiagnostics() {
 void HpgRovProduct::carrierPhaseDiagnostics(
     diagnostic_updater::DiagnosticStatusWrapper& stat) {
   uint32_t carr_soln = last_rel_pos_.flags & last_rel_pos_.FLAGS_CARR_SOLN_MASK;
-  stat.add("iTow", last_rel_pos_.iTow);
+  stat.add("iTOW", last_rel_pos_.iTOW);
   if (carr_soln & last_rel_pos_.FLAGS_CARR_SOLN_NONE ||
       !(last_rel_pos_.flags & last_rel_pos_.FLAGS_DIFF_SOLN &&
         last_rel_pos_.flags & last_rel_pos_.FLAGS_REL_POS_VALID)) {

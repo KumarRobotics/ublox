@@ -11,6 +11,7 @@
   <url>http://wiki.ros.org/ublox</url>
 
   <exec_depend>ublox_gps</exec_depend>
+  <exec_depend>ublox_msg_filters</exec_depend>
   <exec_depend>ublox_msgs</exec_depend>
   <exec_depend>ublox_serialization</exec_depend>
 
