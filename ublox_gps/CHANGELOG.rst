@@ -2,8 +2,8 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.0 (2022-04-13)
+------------------
 * Add UDP support (`#140 <https://github.com/KumarRobotics/ublox/issues/140>`_)
 * add Ublox ZED_F9P config (`#131 <https://github.com/KumarRobotics/ublox/issues/131>`_)
 * Fix warnings in launch.

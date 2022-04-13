@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>ublox_serialization</name>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
   <description>
 
      ublox_serialization provides header files for serialization of ROS messages to and from u-blox message format.
