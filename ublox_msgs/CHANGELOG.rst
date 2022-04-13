@@ -2,6 +2,9 @@
 Changelog for package ublox_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.0.0 (2020-10-13)
 ------------------
 * Fixes to compile on Foxy.
