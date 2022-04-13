@@ -2,8 +2,8 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.2.0 (2022-04-13)
+------------------
 * Fix parameter declaration types. (`#146 <https://github.com/KumarRobotics/ublox/issues/146>`_)
 * Add the types to declared parameters. (`#141 <https://github.com/KumarRobotics/ublox/issues/141>`_)
 * Add UDP support (`#140 <https://github.com/KumarRobotics/ublox/issues/140>`_)
