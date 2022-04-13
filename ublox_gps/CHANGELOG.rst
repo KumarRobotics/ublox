@@ -2,6 +2,18 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Revamp the building of the driver for modern ROS 2 practices.
+* Fix parameter declaration types. (`#146 <https://github.com/KumarRobotics/ublox/issues/146>`_)
+* Add the types to declared parameters. (`#141 <https://github.com/KumarRobotics/ublox/issues/141>`_)
+* Add UDP support (`#140 <https://github.com/KumarRobotics/ublox/issues/140>`_)
+* add Ublox ZED_F9P config (`#131 <https://github.com/KumarRobotics/ublox/issues/131>`_)
+* Fix warnings in launch.
+* [FEAT]: add launch and config directories to 'intall' package to avoid wrong launch location (`#125 <https://github.com/KumarRobotics/ublox/issues/125>`_)
+* Fix wrong variable name in launch (`#120 <https://github.com/KumarRobotics/ublox/issues/120>`_)
+* Contributors: CHAIWIT PHONKHEN, Chao Qu, Chris Lalancette, Daisuke Nishimatsu, Davidson Daniel Rojas Cediel, Kevin Hallenbeck
+
 2.0.0 (2020-10-13)
 ------------------
 * Initial ROS 2 port to Dashing

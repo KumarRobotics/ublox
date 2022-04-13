@@ -2,6 +2,11 @@
 Changelog for package ublox_serialization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Revamp the building of the driver for modern ROS 2 practices.
+* Contributors: Chao Qu, Chris Lalancette
+
 2.0.0 (2020-10-13)
 ------------------
 * Initial ROS 2 port to Dashing

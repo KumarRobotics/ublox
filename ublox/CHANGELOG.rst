@@ -2,6 +2,9 @@
 Changelog for package ublox
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.0.0 (2020-10-13)
 ------------------
 * Initial ROS 2 port to Dashing
