@@ -26,8 +26,6 @@ find_package(tf2 REQUIRED)
 find_package(ublox_msgs REQUIRED)
 find_package(ublox_serialization REQUIRED)
 
-include_directories(include)
-
 # build node
 add_library(ublox_gps
   src/adr_udr_product.cpp
@@ -46,43 +44,48 @@ add_library(ublox_gps
   src/ublox_firmware7.cpp
   src/ublox_firmware8.cpp
   src/ublox_firmware9.cpp)
-ament_target_dependencies(ublox_gps
-  "asio"
-  "diagnostic_msgs"
-  "diagnostic_updater"
-  "geometry_msgs"
-  "rcl_interfaces"
-  "rclcpp"
-  "rclcpp_components"
-  "sensor_msgs"
-  "std_msgs"
-  "tf2"
-  "ublox_msgs"
-  "ublox_serialization"
+target_include_directories(ublox_gps PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  ${diagnostic_updater_INCLUDE_DIRS}
+)
+target_link_libraries(ublox_gps PUBLIC
+  ${asio_LIBRARIES}
+  ${diagnostic_updater_LIBRARIES}
+  ${diagnostic_msgs_TARGETS}
+  ${geometry_msgs_TARGETS}
+  ${rcl_interfaces_TARGETS}
+  rclcpp::rclcpp
+  rclcpp_components::component
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  tf2::tf2
+  ${ublox_msgs_TARGETS}
+  ublox_serialization::ublox_serialization
 )
 
-install(TARGETS ublox_gps
+install(TARGETS ublox_gps EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
 add_executable(ublox_gps_node src/node_main.cpp)
-ament_target_dependencies(ublox_gps_node
-  "rclcpp"
+target_link_libraries(ublox_gps_node PRIVATE
+  rclcpp::rclcpp
+  ublox_gps
 )
-target_link_libraries(ublox_gps_node ublox_gps)
 
 # build logger node
-add_executable(ublox_logger_node src/logger_node_pa.cpp src/raw_data_pa.cpp)
-set_target_properties(ublox_logger_node PROPERTIES OUTPUT_NAME ublox_logger)
-ament_target_dependencies(ublox_logger_node
-  "rclcpp"
-  "std_msgs"
+add_executable(ublox_logger src/logger_node_pa.cpp src/raw_data_pa.cpp)
+target_link_libraries(ublox_logger PRIVATE
+  rclcpp::rclcpp
+  ${std_msgs_TARGETS}
+  ublox_gps
 )
 
 install(TARGETS
-  ublox_gps_node ublox_logger_node
+  ublox_gps_node ublox_logger
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -90,12 +93,15 @@ rclcpp_components_register_nodes(ublox_gps
   "ublox_node::UbloxNode")
 
 install(DIRECTORY include/
-  DESTINATION include
+  DESTINATION include/${PROJECT_NAME}
 )
 
 install(
   DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME}
 )
+
+ament_export_include_directories("include/${PROJECT_NAME}")
+ament_export_targets(export_${PROJECT_NAME})
 
 ament_package()
