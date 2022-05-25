@@ -50,6 +50,7 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/TimeReference.h>
 #include <sensor_msgs/Imu.h>
+#include <nmea_msgs/Sentence.h>
 // Other U-Blox package includes
 #include <ublox_msgs/ublox_msgs.h>
 // Ublox GPS includes
@@ -424,6 +425,16 @@ template <typename MessageT>
 void publish(const MessageT& m, const std::string& topic) {
   static ros::Publisher publisher = nh->advertise<MessageT>(topic,
                                                             kROSQueueSize);
+  publisher.publish(m);
+}
+
+void publish_nmea(const std::string& sentence, const std::string& topic) {
+  static ros::Publisher publisher = nh->advertise<nmea_msgs::Sentence>(topic,
+                                                            kROSQueueSize);
+  nmea_msgs::Sentence m;
+  m.header.stamp = ros::Time::now();
+  m.header.frame_id = frame_id;
+  m.sentence = sentence;
   publisher.publish(m);
 }
 
