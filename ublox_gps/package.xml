@@ -16,6 +16,7 @@
 
   <depend>ublox_serialization</depend>
   <depend>ublox_msgs</depend>
+  <depend>nmea_msgs</depend>
   <depend>roscpp</depend>
   <depend>roscpp_serialization</depend>
   <depend>tf</depend>

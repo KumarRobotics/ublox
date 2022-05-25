@@ -288,6 +288,10 @@ void UbloxNode::subscribe() {
     gps.subscribe<ublox_msgs::NavCLOCK>(boost::bind(
         publish<ublox_msgs::NavCLOCK>, _1, "navclock"), kSubscribeRate);
 
+  nh->param("publish/nmea", enabled["nmea"], false);
+  if (enabled["nmea"])
+    gps.subscribe_nmea(boost::bind(publish_nmea, _1, "nmea"));
+
   // INF messages
   nh->param("inf/debug", enabled["inf_debug"], false);
   if (enabled["inf_debug"])
@@ -1127,8 +1131,11 @@ void UbloxFirmware8::getRosParams() {
 
     std::vector<uint8_t> bdsTalkerId;
     getRosUint("nmea/bds_talker_id", bdsTalkerId);
-    cfg_nmea_.bdsTalkerId[0] = bdsTalkerId[0];
-    cfg_nmea_.bdsTalkerId[1] = bdsTalkerId[1];
+    if(bdsTalkerId.size() >= 2) {
+      cfg_nmea_.bdsTalkerId[0] = bdsTalkerId[0];
+      cfg_nmea_.bdsTalkerId[1] = bdsTalkerId[1];
+    }
+
   }
 }
 
