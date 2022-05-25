@@ -339,7 +339,7 @@ class Reader {
  private:
   //! The buffer of message bytes
   const uint8_t *data_;
-  //! Unused data from the read buffer, contains nema messages.
+  //! Unused data from the read buffer, contains nmea messages.
   std::string unused_data_;
   //! the number of bytes in the buffer, //! decrement as the buffer is read
   uint32_t count_; 
