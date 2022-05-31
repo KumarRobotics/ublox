@@ -1793,8 +1793,7 @@ void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::NavRELPOSNED9 &m) {
     imu_.angular_velocity_covariance[0] = -1;
 
     // Transform angle since ublox is representing heading as NED but ROS uses ENU as convention (REP-103).
-    // Also convert the base-to-rover angle to a robot-to-base angle (consistent with frame_id)
-    double heading = - (static_cast<double>(m.relPosHeading) * 1e-5 / 180.0 * M_PI) - M_PI_2;
+    double heading = M_PI_2 - (static_cast<double>(m.relPosHeading) * 1e-5 / 180.0 * M_PI);
     tf::Quaternion orientation;
     orientation.setRPY(0, 0, heading);
     imu_.orientation.x = orientation[0];
