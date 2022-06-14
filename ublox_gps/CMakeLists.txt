@@ -51,6 +51,7 @@ target_include_directories(ublox_gps PUBLIC
 )
 target_link_libraries(ublox_gps PUBLIC
   ${asio_LIBRARIES}
+  atomic
   ${diagnostic_updater_LIBRARIES}
   ${diagnostic_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
