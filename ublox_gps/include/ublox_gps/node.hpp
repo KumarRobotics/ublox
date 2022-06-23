@@ -41,6 +41,7 @@
 #include <ublox_msgs/msg/cfg_cfg.hpp>
 #include <ublox_msgs/msg/cfg_dat.hpp>
 #include <ublox_msgs/msg/inf.h>
+#include <rtcm_msgs/msg/message.hpp>
 // Ublox GPS includes
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/fix_diagnostic.hpp>
@@ -135,6 +136,16 @@ class UbloxNode final : public rclcpp::Node {
   void printInf(const ublox_msgs::msg::Inf &m, uint8_t id);
 
  private:
+
+  /**
+   * @brief Callback for '/ntrip_client/rtcm' subscription to handle RTCM correction data
+   */
+  void rtcmCallback(const rtcm_msgs::msg::Message::SharedPtr msg);
+
+  /**
+   * @brief Subscription handler for RTCM data
+   */
+  rclcpp::Subscription<rtcm_msgs::msg::Message>::SharedPtr subscription_;
 
   /**
    * @brief Initialize the I/O handling.
