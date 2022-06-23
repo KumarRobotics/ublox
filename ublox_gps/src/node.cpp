@@ -190,6 +190,10 @@ UbloxNode::UbloxNode(const rclcpp::NodeOptions & options) : rclcpp::Node("ublox_
   initialize();
 }
 
+void UbloxNode::rtcmCallback(const rtcm_msgs::msg::Message::SharedPtr msg) {
+  gps_->sendRtcm(msg->message);
+}
+
 void UbloxNode::addFirmwareInterface() {
   int ublox_version;
   if (protocol_version_ < 14.0) {
@@ -483,6 +487,9 @@ void UbloxNode::getRosParams() {
   if (getRosBoolean(this, "publish.aid.hui")) {
     aid_hui_pub_ = this->create_publisher<ublox_msgs::msg::AidHUI>("aidhui", 1);
   }
+
+  // Create subscriber for RTCM correction data to enable RTK
+  this->subscription_ = this->create_subscription<rtcm_msgs::msg::Message>("/rtcm", 10, std::bind(&UbloxNode::rtcmCallback, this, std::placeholders::_1));
 }
 
 void UbloxNode::keepAlive() {
