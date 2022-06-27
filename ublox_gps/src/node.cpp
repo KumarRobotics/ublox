@@ -486,7 +486,7 @@ void UbloxNode::getRosParams() {
   }
 
   // Create subscriber for RTCM correction data to enable RTK
-  this->create_subscription<mavros_msgs::msg::RTCM>("/rtcm", rclcpp::QoS(100), std::bind(&UbloxNode::rtcmCallback, this, std::placeholders::_1));
+  this->subscription_ = this->create_subscription<mavros_msgs::msg::RTCM>("/ntrip_client/rtcm", 10, std::bind(&UbloxNode::rtcmCallback, this, std::placeholders::_1));
 }
 
 void UbloxNode::keepAlive() {

@@ -138,9 +138,14 @@ class UbloxNode final : public rclcpp::Node {
  private:
 
   /**
-   * @brief Callback for '/rtcm' subscription to handle RTCM correction data
+   * @brief Callback for '/ntrip_client/rtcm' subscription to handle RTCM correction data
    */
   void rtcmCallback(const mavros_msgs::msg::RTCM::SharedPtr msg);
+
+  /**
+   * @brief Subscription handler for RTCM data
+   */
+  rclcpp::Subscription<mavros_msgs::msg::RTCM>::SharedPtr subscription_;
 
   /**
    * @brief Initialize the I/O handling.
