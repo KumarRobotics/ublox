@@ -124,14 +124,15 @@ void UbloxNode::addProductInterface(std::string product_category,
   else if (product_category.compare("TIM") == 0)
     components_.push_back(ComponentPtr(new TimProduct));
   else if (product_category.compare("ADR") == 0 ||
-           product_category.compare("UDR") == 0)
+           product_category.compare("UDR") == 0 ||
+           product_category.compare("LAP") == 0)
     components_.push_back(ComponentPtr(new AdrUdrProduct(protocol_version_)));
   else if (product_category.compare("FTS") == 0)
     components_.push_back(ComponentPtr(new FtsProduct));
   else if(product_category.compare("SPG") != 0)
     ROS_WARN("Product category %s %s from MonVER message not recognized %s",
              product_category.c_str(), ref_rov.c_str(),
-             "options are HPG REF, HPG ROV, HPG #.#, HDG #.#, TIM, ADR, UDR, FTS, SPG");
+             "options are HPG REF, HPG ROV, HPG #.#, HDG #.#, TIM, ADR, UDR, LAP, FTS, SPG");
 }
 
 void UbloxNode::getRosParams() {
@@ -1410,8 +1411,8 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
       } else if (data_type == 12) {
         //ROS_INFO("Temperature in celsius: %f", data_value * deg_c); 
       } else {
-        ROS_INFO("data_type: %u", data_type);
-        ROS_INFO("data_value: %u", data_value);
+        // ROS_INFO("data_type: %u", data_type);
+        // ROS_INFO("data_value: %u", data_value);
       }
 
       // create time ref message and put in the data
