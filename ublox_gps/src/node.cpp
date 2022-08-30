@@ -1381,7 +1381,7 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
     imu_.header.stamp = ros::Time::now();
     imu_.header.frame_id = frame_id;
     
-    static const float deg_per_sec = pow(2, -12);
+    static const float rad_per_sec = pow(2, -12) * M_PI / 180.0F;
     static const float m_per_sec_sq = pow(2, -10);
     static const float deg_c = 1e-2;
      
@@ -1396,15 +1396,15 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::EsfMEAS &m) {
       imu_.angular_velocity_covariance[0] = -1;
 
       if (data_type == 14) {
-          imu_.angular_velocity.x = data_value * deg_per_sec;
+          imu_.angular_velocity.x = data_value * rad_per_sec;
       } else if (data_type == 16) {
           imu_.linear_acceleration.x = data_value * m_per_sec_sq;
       } else if (data_type == 13) {
-          imu_.angular_velocity.y = data_value * deg_per_sec;
+          imu_.angular_velocity.y = data_value * rad_per_sec;
       } else if (data_type == 17) {
           imu_.linear_acceleration.y = data_value * m_per_sec_sq;
       } else if (data_type == 5) {
-          imu_.angular_velocity.z = data_value * deg_per_sec;
+          imu_.angular_velocity.z = data_value * rad_per_sec;
       } else if (data_type == 18) {
           imu_.linear_acceleration.z = data_value * m_per_sec_sq;
       } else if (data_type == 12) {
