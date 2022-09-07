@@ -225,6 +225,9 @@ void UbloxNode::addProductInterface(const std::string & product_category,
     components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_, this));
   } else if (product_category == "FTS") {
     components_.push_back(std::make_shared<FtsProduct>());
+  } else if (product_category == "HPS") {
+    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_, this));
+    components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_, this));
   } else {
     RCLCPP_WARN(this->get_logger(), "Product category %s %s from MonVER message not recognized %s",
                 product_category.c_str(), ref_rov.c_str(),
