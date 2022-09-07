@@ -225,10 +225,10 @@ void UbloxNode::addProductInterface(const std::string & product_category,
     components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_, this));
   } else if (product_category == "FTS") {
     components_.push_back(std::make_shared<FtsProduct>());
-  } else if (product_category == "SPG") {
+  } else {
     RCLCPP_WARN(this->get_logger(), "Product category %s %s from MonVER message not recognized %s",
                 product_category.c_str(), ref_rov.c_str(),
-                "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, SPG");
+                "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS");
   }
 }
 
