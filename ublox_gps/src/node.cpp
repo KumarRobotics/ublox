@@ -231,7 +231,7 @@ void UbloxNode::addProductInterface(const std::string & product_category,
   } else {
     RCLCPP_WARN(this->get_logger(), "Product category %s %s from MonVER message not recognized %s",
                 product_category.c_str(), ref_rov.c_str(),
-                "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS");
+                "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, HPS");
   }
 }
 
