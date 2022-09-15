@@ -60,7 +60,7 @@ ament_target_dependencies(ublox_gps
   "tf2"
   "ublox_msgs"
   "ublox_serialization"
-  "mavros_msgs"
+  "rtcm_msgs"
 )
 
 install(TARGETS ublox_gps

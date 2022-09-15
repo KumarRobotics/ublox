@@ -41,7 +41,7 @@
 #include <ublox_msgs/msg/cfg_cfg.hpp>
 #include <ublox_msgs/msg/cfg_dat.hpp>
 #include <ublox_msgs/msg/inf.h>
-#include <rtcm_msgs/msg/Message.hpp>
+#include <rtcm_msgs/msg/message.hpp>
 // Ublox GPS includes
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/fix_diagnostic.hpp>
