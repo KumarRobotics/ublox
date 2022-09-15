@@ -26,7 +26,7 @@
   <depend>tf2</depend>
   <depend>ublox_msgs</depend>
   <depend>ublox_serialization</depend>
-  <depend>mavros_msgs</depend>
+  <depend>rtcm_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
