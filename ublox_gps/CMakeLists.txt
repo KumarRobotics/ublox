@@ -25,6 +25,7 @@ find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(ublox_msgs REQUIRED)
 find_package(ublox_serialization REQUIRED)
+find_package(rtcm_msgs REQUIRED)
 
 # build node
 add_library(ublox_gps
@@ -57,6 +58,7 @@ target_link_libraries(ublox_gps PUBLIC
   ${rcl_interfaces_TARGETS}
   rclcpp::rclcpp
   rclcpp_components::component
+  ${rtcm_msgs_TARGETS}
   ${sensor_msgs_TARGETS}
   ${std_msgs_TARGETS}
   tf2::tf2
