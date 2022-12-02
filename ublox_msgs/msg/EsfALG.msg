@@ -24,7 +24,7 @@ uint8 ERROR_ANGLE_ERROR = 4
 uint32 iTOW
 uint8 version
 uint8 flags            
-uint8 error            
+uint8 errors            
 uint8 reserved0               
 uint32 yaw # IMU-mount yaw angle [0, 360]
 int16 pitch # IMU-mount pitch angle [-90, 90]
