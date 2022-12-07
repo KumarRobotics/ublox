@@ -1338,6 +1338,12 @@ void AdrUdrProduct::subscribe() {
     gps.subscribe<ublox_msgs::NavATT>(boost::bind(
         publish<ublox_msgs::NavATT>, _1, "navatt"), kSubscribeRate);
 
+  // Subscribe to ESF ALG messages
+  nh->param("publish/esf/alg", enabled["esf_alg"], enabled["esf"]);
+  if (enabled["esf_alg"])
+    gps.subscribe<ublox_msgs::EsfALG>(boost::bind(
+        publish<ublox_msgs::EsfALG>, _1, "esfalg"), kSubscribeRate);
+
   // Subscribe to ESF INS messages
   nh->param("publish/esf/ins", enabled["esf_ins"], enabled["esf"]);
   if (enabled["esf_ins"])
