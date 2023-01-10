@@ -31,7 +31,7 @@
 
 #include <ublox_msgs/msg/nav_att.hpp>
 #include <ublox_msgs/msg/nav_clock.hpp>
-#include <ublox_msgs/msg/NavCOV.msg>
+#include <ublox_msgs/msg/nav_cov.hpp>
 #include <ublox_msgs/msg/nav_dgps.hpp>
 #include <ublox_msgs/msg/nav_dop.hpp>
 #include <ublox_msgs/msg/nav_posecef.hpp>
