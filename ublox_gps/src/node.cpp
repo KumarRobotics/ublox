@@ -52,6 +52,7 @@
 #include <ublox_msgs/msg/inf.hpp>
 #include <ublox_msgs/msg/mon_ver.hpp>
 #include <ublox_msgs/msg/nav_clock.hpp>
+#include <ublox_msgs/msg/nav_cov.hpp>
 #include <ublox_msgs/msg/nav_posecef.hpp>
 #include <ublox_msgs/msg/nav_status.hpp>
 
@@ -410,6 +411,7 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("publish.nav.all", getRosBoolean(this, "publish.all"));
   this->declare_parameter("publish.nav.att", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.clock", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.cov", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.heading", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.posecef", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.posllh", getRosBoolean(this, "publish.nav.all"));
@@ -472,8 +474,8 @@ void UbloxNode::getRosParams() {
   if (getRosBoolean(this, "publish.nav.posecef")) {
     nav_posecef_pub_ = this->create_publisher<ublox_msgs::msg::NavPOSECEF>("navposecef", 1);
   }
-  if (getRosBoolean(this, "publish.nav.clock")) {
-    nav_clock_pub_ = this->create_publisher<ublox_msgs::msg::NavCLOCK>("navclock", 1);
+  if (getRosBoolean(this, "publish.nav.cov")) {
+    nav_cov_pub_ = this->create_publisher<ublox_msgs::msg::NavCOV>("navcov", 1);
   }
   if (getRosBoolean(this, "publish.nav.clock")) {
     nav_clock_pub_ = this->create_publisher<ublox_msgs::msg::NavCLOCK>("navclock", 1);
@@ -544,6 +546,11 @@ void UbloxNode::subscribe() {
 
   if (getRosBoolean(this, "publish.nav.clock")) {
     gps_->subscribe<ublox_msgs::msg::NavCLOCK>([this](const ublox_msgs::msg::NavCLOCK &m) { nav_clock_pub_->publish(m); },
+                                          1);
+  }
+
+  if (getRosBoolean(this, "publish.nav.cov")) {
+    gps_->subscribe<ublox_msgs::msg::NavCOV>([this](const ublox_msgs::msg::NavCOV &m) { nav_cov_pub_->publish(m); },
                                           1);
   }
 

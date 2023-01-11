@@ -31,6 +31,7 @@
 
 #include <ublox_msgs/msg/nav_att.hpp>
 #include <ublox_msgs/msg/nav_clock.hpp>
+#include <ublox_msgs/msg/nav_cov.hpp>
 #include <ublox_msgs/msg/nav_dgps.hpp>
 #include <ublox_msgs/msg/nav_dop.hpp>
 #include <ublox_msgs/msg/nav_posecef.hpp>
@@ -154,6 +155,7 @@ namespace Message {
   namespace NAV {
     static const uint8_t ATT = ublox_msgs::msg::NavATT::MESSAGE_ID;
     static const uint8_t CLOCK = ublox_msgs::msg::NavCLOCK::MESSAGE_ID;
+    static const uint8_t COV = ublox_msgs::msg::NavCOV::MESSAGE_ID;
     static const uint8_t DGPS = ublox_msgs::msg::NavDGPS::MESSAGE_ID;
     static const uint8_t DOP = ublox_msgs::msg::NavDOP::MESSAGE_ID;
     static const uint8_t POSECEF = ublox_msgs::msg::NavPOSECEF::MESSAGE_ID;

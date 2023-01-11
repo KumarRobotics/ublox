@@ -38,6 +38,8 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::ATT,
                       ublox_msgs, NavATT)
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::CLOCK,
                       ublox_msgs, NavCLOCK)
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::COV,
+                      ublox_msgs, NavCOV)                      
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::DGPS,
                       ublox_msgs, NavDGPS)
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::DOP,

@@ -58,6 +58,7 @@ set(msg_files
   "msg/MonVER.msg"
   "msg/NavATT.msg"
   "msg/NavCLOCK.msg"
+  "msg/NavCOV.msg"
   "msg/NavDGPS.msg"
   "msg/NavDGPSSV.msg"
   "msg/NavDOP.msg"
