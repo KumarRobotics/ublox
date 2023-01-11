@@ -549,6 +549,11 @@ void UbloxNode::subscribe() {
                                           1);
   }
 
+  if (getRosBoolean(this, "publish.nav.cov")) {
+    gps_->subscribe<ublox_msgs::msg::NavCOV>([this](const ublox_msgs::msg::NavCOV &m) { nav_cov_pub_->publish(m); },
+                                          1);
+  }
+
   // INF messages
   if (getRosBoolean(this, "inf.debug")) {
     gps_->subscribeId<ublox_msgs::msg::Inf>(
