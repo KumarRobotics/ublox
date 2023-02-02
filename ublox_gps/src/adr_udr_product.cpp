@@ -117,7 +117,7 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m) {
     imu_.header.stamp = node_->now();
     imu_.header.frame_id = frame_id_;
 
-    float deg_per_sec = ::pow(2, -12);
+    float rad_per_sec = ::pow(2, -12) * M_PI / 180.0F;
     float m_per_sec_sq = ::pow(2, -10);
 
     std::vector<unsigned int> imu_data = m.data;
@@ -140,9 +140,9 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m) {
 
       if (data_type == 14) {
         if (data_sign == 1) {
-	  imu_.angular_velocity.x = 2048 - data_value * deg_per_sec;
+	  imu_.angular_velocity.x = 2048 - data_value * rad_per_sec;
         } else {
-          imu_.angular_velocity.x = data_sign * data_value * deg_per_sec;
+          imu_.angular_velocity.x = data_sign * data_value * rad_per_sec;
         }
       } else if (data_type == 16) {
         //RCLCPP_INFO(node_->get_logger(), "data_sign: %f", data_sign);
@@ -154,9 +154,9 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m) {
         }
       } else if (data_type == 13) {
         if (data_sign == 1) {
-	  imu_.angular_velocity.y = 2048 - data_value * deg_per_sec;
+	  imu_.angular_velocity.y = 2048 - data_value * rad_per_sec;
         } else {
-          imu_.angular_velocity.y = data_sign * data_value * deg_per_sec;
+          imu_.angular_velocity.y = data_sign * data_value * rad_per_sec;
         }
       } else if (data_type == 17) {
         if (data_sign == 1) {
@@ -166,9 +166,9 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m) {
         }
       } else if (data_type == 5) {
         if (data_sign == 1) {
-	  imu_.angular_velocity.z = 2048 - data_value * deg_per_sec;
+	  imu_.angular_velocity.z = 2048 - data_value * rad_per_sec;
         } else {
-          imu_.angular_velocity.z = data_sign * data_value * deg_per_sec;
+          imu_.angular_velocity.z = data_sign * data_value * rad_per_sec;
         }
       } else if (data_type == 18) {
         if (data_sign == 1) {
