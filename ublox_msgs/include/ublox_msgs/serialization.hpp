@@ -2366,6 +2366,36 @@ struct UbloxSerializer<ublox_msgs::msg::NavVELNED_<ContainerAllocator> > {
   }
 };
 
+template <typename ContainerAllocator>
+struct UbloxSerializer<ublox_msgs::msg::NavTIMEGPS_<ContainerAllocator> > {
+  inline static void read(const uint8_t *data, uint32_t count,
+                          ublox_msgs::msg::NavTIMEGPS_<ContainerAllocator> & m) {
+    UbloxIStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.i_tow);
+    stream.next(m.f_tow);
+    stream.next(m.week);
+    stream.next(m.leap_s);
+    stream.next(m.valid);
+    stream.next(m.t_acc);
+  }
+
+  inline static uint32_t serializedLength(const ublox_msgs::msg::NavTIMEGPS_<ContainerAllocator> & m) {
+    (void)m;
+    return 16;
+  }
+
+  inline static void write(uint8_t *data, uint32_t size,
+                           const ublox_msgs::msg::NavTIMEGPS_<ContainerAllocator> & m) {
+    UbloxOStream stream(data, size);
+    stream.next(m.i_tow);
+    stream.next(m.f_tow);
+    stream.next(m.week);
+    stream.next(m.leap_s);
+    stream.next(m.valid);
+    stream.next(m.t_acc);
+  }
+};
+  
 ///
 /// @brief Serializes the RxmALM message which has a repeated block.
 ///
