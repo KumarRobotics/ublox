@@ -28,6 +28,8 @@ uint8 DYN_MODEL_AIRBORNE_2G = 7     # Airborne with <2g Acceleration
 uint8 DYN_MODEL_AIRBORNE_4G = 8     # Airborne with <4g Acceleration
 uint8 DYN_MODEL_WRIST_WATCH = 9     # Wrist watch, protocol >= 18
 uint8 DYN_MODEL_BIKE = 10           # Bike, protocol >= 19.2
+uint8 DYN_MODEL_MOWER = 11          # Robotic lawn mower (RLM), protocol >= 33.21
+uint8 DYN_MODEL_ESCOOTER = 12       # E-scooter, protocol >= 33.21
 
 uint8 fixMode           # Position Fixing Mode.
 uint8 FIX_MODE_2D_ONLY = 1          # 2D only
