@@ -26,6 +26,7 @@ find_package(tf2 REQUIRED)
 find_package(ublox_msgs REQUIRED)
 find_package(ublox_serialization REQUIRED)
 find_package(rtcm_msgs REQUIRED)
+find_package(nmea_msgs REQUIRED)
 
 include_directories(include)
 
@@ -61,6 +62,7 @@ ament_target_dependencies(ublox_gps
   "ublox_msgs"
   "ublox_serialization"
   "rtcm_msgs"
+  "nmea_msgs"
 )
 
 install(TARGETS ublox_gps

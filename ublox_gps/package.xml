@@ -27,6 +27,7 @@
   <depend>ublox_msgs</depend>
   <depend>ublox_serialization</depend>
   <depend>rtcm_msgs</depend>
+  <depend>nmea_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -351,6 +351,12 @@ class Gps final {
   void subscribe(typename CallbackHandler_<T>::Callback callback);
 
   /**
+   * @brief Subscribe to the given Ublox message.
+   * @param callback the callback handler for the message
+  */
+  void subscribe_nmea(std::function<void(const std::string &)> callback) { callbacks_.set_nmea_callback(callback); }
+
+  /**
    * @brief Subscribe to the message with the given ID. This is used for
    * messages which have the same format but different message IDs,
    * e.g. INF messages.
