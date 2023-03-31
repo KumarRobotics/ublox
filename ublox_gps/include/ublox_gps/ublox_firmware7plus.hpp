@@ -35,13 +35,13 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     : UbloxFirmware(updater, gnss, node), frame_id_(frame_id), freq_diag_(freq_diag) {
     // NavPVT publisher
     if (getRosBoolean(node_, "publish.nav.pvt")) {
-      nav_pvt_pub_ = node_->create_publisher<NavPVT>("navpvt", 1);
+      nav_pvt_pub_ = node_->create_publisher<NavPVT>("~/navpvt", 1);
     }
 
     fix_pub_ =
-        node_->create_publisher<sensor_msgs::msg::NavSatFix>("fix", 1);
+        node_->create_publisher<sensor_msgs::msg::NavSatFix>("~/fix", 1);
     vel_pub_ =
-        node_->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("fix_velocity",
+        node_->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("~/fix_velocity",
                                                                    1);
   }
 
@@ -138,7 +138,6 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     //
     last_nav_pvt_ = m;
     freq_diag_->diagnostic->tick(fix.header.stamp);
-    updater_->force_update();
   }
 
  protected:

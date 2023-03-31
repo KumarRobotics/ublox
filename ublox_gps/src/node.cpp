@@ -52,6 +52,7 @@
 #include <ublox_msgs/msg/inf.hpp>
 #include <ublox_msgs/msg/mon_ver.hpp>
 #include <ublox_msgs/msg/nav_clock.hpp>
+#include <ublox_msgs/msg/nav_cov.hpp>
 #include <ublox_msgs/msg/nav_posecef.hpp>
 #include <ublox_msgs/msg/nav_status.hpp>
 #include <nmea_msgs/msg/sentence.hpp>
@@ -230,10 +231,13 @@ void UbloxNode::addProductInterface(const std::string & product_category,
     components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_, this));
   } else if (product_category == "FTS") {
     components_.push_back(std::make_shared<FtsProduct>());
-  } else if (product_category == "SPG") {
+  } else if (product_category == "HPS") {
+    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_, this));
+    components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_, this));
+  } else {
     RCLCPP_WARN(this->get_logger(), "Product category %s %s from MonVER message not recognized %s",
                 product_category.c_str(), ref_rov.c_str(),
-                "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, SPG");
+                "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, HPS");
   }
 }
 
@@ -255,8 +259,8 @@ void UbloxNode::getRosParams() {
   uart_out_ = declareRosIntParameter<uint16_t>(this, "uart1.out", ublox_msgs::msg::CfgPRT::PROTO_UBX);
   // USB params
   set_usb_ = false;
-  this->declare_parameter("usb.in");
-  this->declare_parameter("usb.out");
+  this->declare_parameter("usb.in", rclcpp::PARAMETER_INTEGER);
+  this->declare_parameter("usb.out", rclcpp::PARAMETER_INTEGER);
   usb_tx_ = declareRosIntParameter<uint16_t>(this, "usb.tx_ready", 0);
   if (isRosParameterSet(this, "usb.in") || isRosParameterSet(this, "usb.out")) {
     set_usb_ = true;
@@ -276,8 +280,8 @@ void UbloxNode::getRosParams() {
   nav_rate_ = declareRosIntParameter<uint16_t>(this, "nav_rate", 1);  // # of measurement rate cycles
 
   // RTCM params
-  this->declare_parameter("rtcm.ids");
-  this->declare_parameter("rtcm.rates");
+  this->declare_parameter("rtcm.ids", rclcpp::PARAMETER_INTEGER_ARRAY);
+  this->declare_parameter("rtcm.rates", rclcpp::PARAMETER_INTEGER_ARRAY);
   std::vector<int64_t> rtcm_ids;
   std::vector<int64_t> rtcm_rates;
   this->get_parameter("rtcm.ids", rtcm_ids);
@@ -324,11 +328,11 @@ void UbloxNode::getRosParams() {
 
 
   this->declare_parameter("dat.set", false);
-  this->declare_parameter("dat.majA");
-  this->declare_parameter("dat.flat");
-  this->declare_parameter("dat.shift");
-  this->declare_parameter("dat.rot");
-  this->declare_parameter("dat.scale");
+  this->declare_parameter("dat.majA", rclcpp::PARAMETER_DOUBLE);
+  this->declare_parameter("dat.flat", rclcpp::PARAMETER_DOUBLE);
+  this->declare_parameter("dat.shift", rclcpp::PARAMETER_DOUBLE_ARRAY);
+  this->declare_parameter("dat.rot", rclcpp::PARAMETER_DOUBLE_ARRAY);
+  this->declare_parameter("dat.scale", rclcpp::PARAMETER_DOUBLE);
   if (getRosBoolean(this, "dat.set")) {
     std::vector<double> shift, rot;
     if (!this->get_parameter("dat.majA", cfg_dat_.maj_a)
@@ -373,7 +377,7 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("sv_in.min_dur", 0);
   this->declare_parameter("sv_in.acc_lim", 0.0);
 
-  this->declare_parameter("dgnss_mode");
+  this->declare_parameter("dgnss_mode", rclcpp::PARAMETER_INTEGER);
 
   // raw data stream logging
   this->declare_parameter("raw_data_stream.enable", false);
@@ -408,6 +412,7 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("publish.nav.all", getRosBoolean(this, "publish.all"));
   this->declare_parameter("publish.nav.att", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.clock", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.cov", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.heading", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.posecef", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.posllh", getRosBoolean(this, "publish.nav.all"));
@@ -457,9 +462,9 @@ void UbloxNode::getRosParams() {
   // HNR parameters
   this->declare_parameter("publish.hnr.pvt", true);
 
-  this->declare_parameter("tmode3");
-  this->declare_parameter("arp.position");
-  this->declare_parameter("arp.position_hp");
+  this->declare_parameter("tmode3", rclcpp::PARAMETER_INTEGER);
+  this->declare_parameter("arp.position", rclcpp::PARAMETER_DOUBLE_ARRAY);
+  this->declare_parameter("arp.position_hp", rclcpp::PARAMETER_INTEGER_ARRAY);
   this->declare_parameter("arp.acc", 0.0);
   this->declare_parameter("arp.lla_flag", false);
 
@@ -472,8 +477,8 @@ void UbloxNode::getRosParams() {
   if (getRosBoolean(this, "publish.nav.posecef")) {
     nav_posecef_pub_ = this->create_publisher<ublox_msgs::msg::NavPOSECEF>("navposecef", 1);
   }
-  if (getRosBoolean(this, "publish.nav.clock")) {
-    nav_clock_pub_ = this->create_publisher<ublox_msgs::msg::NavCLOCK>("navclock", 1);
+  if (getRosBoolean(this, "publish.nav.cov")) {
+    nav_cov_pub_ = this->create_publisher<ublox_msgs::msg::NavCOV>("navcov", 1);
   }
   if (getRosBoolean(this, "publish.nav.clock")) {
     nav_clock_pub_ = this->create_publisher<ublox_msgs::msg::NavCLOCK>("navclock", 1);
@@ -547,6 +552,11 @@ void UbloxNode::subscribe() {
 
   if (getRosBoolean(this, "publish.nav.clock")) {
     gps_->subscribe<ublox_msgs::msg::NavCLOCK>([this](const ublox_msgs::msg::NavCLOCK &m) { nav_clock_pub_->publish(m); },
+                                          1);
+  }
+
+  if (getRosBoolean(this, "publish.nav.cov")) {
+    gps_->subscribe<ublox_msgs::msg::NavCOV>([this](const ublox_msgs::msg::NavCOV &m) { nav_cov_pub_->publish(m); },
                                           1);
   }
 

@@ -74,7 +74,6 @@ void HpPosRecProduct::callbackNavRelPosNed(const ublox_msgs::msg::NavRELPOSNED9 
   }
 
   last_rel_pos_ = m;
-  updater_->force_update();
 }
 
 }  // namespace ublox_node

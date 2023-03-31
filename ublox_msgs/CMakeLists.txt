@@ -58,6 +58,7 @@ set(msg_files
   "msg/MonVER.msg"
   "msg/NavATT.msg"
   "msg/NavCLOCK.msg"
+  "msg/NavCOV.msg"
   "msg/NavDGPS.msg"
   "msg/NavDGPSSV.msg"
   "msg/NavDOP.msg"
@@ -103,26 +104,32 @@ rosidl_generate_interfaces(${PROJECT_NAME}
     std_msgs
 )
 
-include_directories(include)
-add_library(${PROJECT_NAME}_lib src/ublox_msgs.cpp)
-rosidl_target_interfaces(${PROJECT_NAME}_lib ${PROJECT_NAME} "rosidl_typesupport_cpp")
-ament_target_dependencies(${PROJECT_NAME}_lib
-  "ublox_serialization"
-)
+rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
+if(cpp_typesupport_target)
+  add_library(${PROJECT_NAME}_lib src/ublox_msgs.cpp)
+  target_include_directories(${PROJECT_NAME}_lib PRIVATE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  target_link_libraries(${PROJECT_NAME}_lib
+    ${cpp_typesupport_target}
+    ublox_serialization::ublox_serialization
+  )
 
-install(TARGETS ${PROJECT_NAME}_lib EXPORT ${PROJECT_NAME}_lib
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
+  install(TARGETS ${PROJECT_NAME}_lib EXPORT ${PROJECT_NAME}_lib
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+  )
 
-install(DIRECTORY include/
-  DESTINATION include
-)
+  install(DIRECTORY include/
+    DESTINATION "include/${PROJECT_NAME}"
+  )
 
-ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME}_lib)
-ament_export_targets(${PROJECT_NAME}_lib)
+  ament_export_include_directories("include/${PROJECT_NAME}")
+  ament_export_libraries(${PROJECT_NAME}_lib)
+  ament_export_targets(${PROJECT_NAME}_lib)
+endif()
+
 ament_export_dependencies(rosidl_default_runtime sensor_msgs std_msgs ublox_serialization)
 
 ament_package()
