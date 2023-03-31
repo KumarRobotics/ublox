@@ -488,7 +488,7 @@ void UbloxNode::getRosParams() {
     aid_hui_pub_ = this->create_publisher<ublox_msgs::msg::AidHUI>("aidhui", 1);
   }
   if (getRosBoolean(this, "publish.nmea")) {
-    nmea_pub_ = this->create_publisher<nmea_msgs::msg::Sentence>("nmea", 1);
+    nmea_pub_ = this->create_publisher<nmea_msgs::msg::Sentence>("nmea", 20);
   }
 
   // Create subscriber for RTCM correction data to enable RTK
