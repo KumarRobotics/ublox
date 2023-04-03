@@ -36,6 +36,7 @@
 #include <map>
 #include <stdexcept>
 #include <vector>
+#include <string>
 
 #include <rclcpp/rclcpp.hpp>
 
