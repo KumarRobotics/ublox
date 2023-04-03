@@ -389,8 +389,7 @@ class Reader {
       if (data_[0] == options_.sync_a &&
           (count_ == 1 || data_[1] == options_.sync_b)) {
         break;
-      }
-      else {
+      } else {
         unused_data_.push_back(data_[0]);
       }
     }

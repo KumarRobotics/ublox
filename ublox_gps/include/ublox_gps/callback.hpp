@@ -166,7 +166,7 @@ class CallbackHandlers final {
   /**
    * @brief Add a callback handler for nmea messages
    * @param callback the callback handler for the message
-  */
+   */
   void set_nmea_callback(std::function<void(const std::string&)> callback) {
     std::lock_guard<std::mutex> lock(callback_mutex_);
     callback_nmea_ = callback;
@@ -190,7 +190,7 @@ class CallbackHandlers final {
   /**
    * @brief Calls the callback handler for the nmea messages in the reader.
    * @param reader a reader containing an nmea message
-  */
+   */
   void handle_nmea(ublox::Reader& reader) {
     std::lock_guard<std::mutex> lock(callback_mutex_);
     if (callback_nmea_ == nullptr) {
@@ -280,7 +280,7 @@ class CallbackHandlers final {
   int debug_;
 
   //! Callback handler for nmea messages
-  std::function<void(const std::string &)> callback_nmea_;
+  std::function<void(const std::string &)> callback_nmea_{nullptr};
 };
 
 }  // namespace ublox_gps
