@@ -32,8 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef MESSAGE_FILTERS__SYNC_EXACT_TIME_H_
-#define MESSAGE_FILTERS__SYNC_EXACT_TIME_H_
+#ifndef UBLOX_MSG_FILTERS__EXACT_TIME_HPP_
+#define UBLOX_MSG_FILTERS__EXACT_TIME_HPP_
 
 #include <deque>
 #include <string>
@@ -47,10 +47,32 @@
 #include "message_filters/signal9.h"
 #include "message_filters/synchronizer.h"
 
-namespace message_filters
+namespace ublox_msg_filters
 {
 namespace sync_policies
 {
+
+using NullType = message_filters::NullType;
+using Connection = message_filters::Connection;
+
+template<typename M0, typename M1, typename M2, typename M3, typename M4,
+         typename M5, typename M6, typename M7, typename M8>
+using PolicyBase = message_filters::PolicyBase<M0, M1, M2, M3, M4, M5, M6, M7, M8>;
+
+template<class Policy>
+using Synchronizer = message_filters::Synchronizer<Policy>;
+
+template<typename M>
+struct iTOW
+{
+  static u_int32_t value(const M& m) { return m.i_tow; }
+};
+
+template<>
+struct iTOW<NullType>
+{
+  static u_int32_t value(const NullType&) { return 0; }
+};
 
 template<typename M0, typename M1, typename M2 = NullType, typename M3 = NullType, typename M4 = NullType,
          typename M5 = NullType, typename M6 = NullType, typename M7 = NullType, typename M8 = NullType>
@@ -76,6 +98,7 @@ struct ExactTime : public PolicyBase<M0, M1, M2, M3, M4, M5, M6, M7, M8>
   ExactTime(uint32_t queue_size)
   : parent_(0)
   , queue_size_(queue_size)
+  , last_signal_time_(0)
   {
   }
 
@@ -108,7 +131,7 @@ struct ExactTime : public PolicyBase<M0, M1, M2, M3, M4, M5, M6, M7, M8>
 
     std::lock_guard<std::mutex> lock(mutex_);
 
-    Tuple& t = tuples_[mt::TimeStamp<typename std::tuple_element<i, Messages>::type>::value(*evt.getMessage())];
+    Tuple& t = tuples_[iTOW<typename std::tuple_element<i, Messages>::type>::value(*evt.getMessage())];
     std::get<i>(t) = evt;
 
     checkTuple(t);
@@ -162,7 +185,7 @@ private:
                        std::get<3>(t), std::get<4>(t), std::get<5>(t),
                        std::get<6>(t), std::get<7>(t), std::get<8>(t));
 
-      last_signal_time_ = mt::TimeStamp<M0>::value(*std::get<0>(t).getMessage());
+      last_signal_time_ = iTOW<M0>::value(*std::get<0>(t).getMessage());
 
       tuples_.erase(last_signal_time_);
 
@@ -212,9 +235,9 @@ private:
   Sync* parent_;
 
   uint32_t queue_size_;
-  typedef std::map<rclcpp::Time, Tuple> M_TimeToTuple;
+  typedef std::map<uint32_t, Tuple> M_TimeToTuple;
   M_TimeToTuple tuples_;
-  rclcpp::Time last_signal_time_;
+  uint32_t last_signal_time_;
 
   Signal drop_signal_;
 
@@ -222,7 +245,7 @@ private:
 };
 
 }  // namespace sync_policies
-}  // namespace message_filters
+}  // namespace ublox_msg_filters
 
-#endif  // MESSAGE_FILTERS__SYNC_EXACT_TIME_H_
+#endif  // UBLOX_MSG_FILTERS__EXACT_TIME_HPP_
 

@@ -12,6 +12,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <exec_depend>ublox_serialization</exec_depend>
   <exec_depend>ublox_msgs</exec_depend>
+  <exec_depend>ublox_msg_filters</exec_depend>
   <exec_depend>ublox_gps</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->

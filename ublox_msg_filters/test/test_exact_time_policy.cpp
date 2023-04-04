@@ -36,39 +36,17 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include "message_filters/synchronizer.h"
-#include "message_filters/sync_policies/exact_time.h"
+#include "ublox_msg_filters/exact_time.h"
 
-using namespace message_filters;
-using namespace message_filters::sync_policies;
-
-struct Header
-{
-  rclcpp::Time stamp;
-};
-
+using namespace ublox_msg_filters::sync_policies;
 
 struct Msg
 {
-  Header header;
+  uint32_t i_tow;
   int data;
 };
 typedef std::shared_ptr<Msg> MsgPtr;
 typedef std::shared_ptr<Msg const> MsgConstPtr;
-
-namespace message_filters
-{
-namespace message_traits
-{
-template<>
-struct TimeStamp<Msg>
-{
-  static rclcpp::Time value(const Msg& m)
-  {
-    return m.header.stamp;
-  }
-};
-}
-}
 
 class Helper
 {
@@ -107,13 +85,13 @@ TEST(ExactTime, multipleTimes)
   Helper h;
   sync.registerCallback(std::bind(&Helper::cb, &h));
   MsgPtr m(std::make_shared<Msg>());
-  m->header.stamp = rclcpp::Time();
+  m->i_tow = 0;
 
   sync.add<0>(m);
   ASSERT_EQ(h.count_, 0);
 
   m = std::make_shared<Msg>();
-  m->header.stamp = rclcpp::Time(100000000);
+  m->i_tow = 100000000;
   sync.add<1>(m);
   ASSERT_EQ(h.count_, 0);
   sync.add<0>(m);
@@ -128,7 +106,7 @@ TEST(ExactTime, queueSize)
   Helper h;
   sync.registerCallback(std::bind(&Helper::cb, &h));
   MsgPtr m(std::make_shared<Msg>());
-  m->header.stamp = rclcpp::Time();
+  m->i_tow = 0;
 
   sync.add<0>(m);
   ASSERT_EQ(h.count_, 0);
@@ -136,12 +114,12 @@ TEST(ExactTime, queueSize)
   ASSERT_EQ(h.count_, 0);
 
   m = std::make_shared<Msg>();
-  m->header.stamp = rclcpp::Time(100000000);
+  m->i_tow = 100000000;
   sync.add<1>(m);
   ASSERT_EQ(h.count_, 0);
 
   m = std::make_shared<Msg>();
-  m->header.stamp = rclcpp::Time();
+  m->i_tow = 0;
   sync.add<1>(m);
   ASSERT_EQ(h.count_, 0);
   sync.add<2>(m);
@@ -155,42 +133,14 @@ TEST(ExactTime, dropCallback)
   sync.registerCallback(std::bind(&Helper::cb, &h));
   sync.getPolicy()->registerDropCallback(std::bind(&Helper::dropcb, &h));
   MsgPtr m(std::make_shared<Msg>());
-  m->header.stamp = rclcpp::Time();
+  m->i_tow = 0;
 
   sync.add<0>(m);
   ASSERT_EQ(h.drop_count_, 0);
-  m->header.stamp = rclcpp::Time(100000000);
+  m->i_tow = 100000000;
   sync.add<0>(m);
 
   ASSERT_EQ(h.drop_count_, 1);
-}
-
-struct EventHelper
-{
-  void callback(const MessageEvent<Msg const>& e1, const MessageEvent<Msg const>& e2)
-  {
-    e1_ = e1;
-    e2_ = e2;
-  }
-
-  MessageEvent<Msg const> e1_;
-  MessageEvent<Msg const> e2_;
-};
-
-TEST(ExactTime, eventInEventOut)
-{
-  Sync2 sync(2);
-  EventHelper h;
-  sync.registerCallback(&EventHelper::callback, &h);
-  MessageEvent<Msg const> evt(std::make_shared<Msg>(), rclcpp::Time(4, 0));
-
-  sync.add<0>(evt);
-  sync.add<1>(evt);
-
-  ASSERT_TRUE(h.e1_.getMessage());
-  ASSERT_TRUE(h.e2_.getMessage());
-  ASSERT_EQ(h.e1_.getReceiptTime(), evt.getReceiptTime());
-  ASSERT_EQ(h.e2_.getReceiptTime(), evt.getReceiptTime());
 }
 
 int main(int argc, char **argv){
