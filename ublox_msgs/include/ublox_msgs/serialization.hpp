@@ -1512,9 +1512,18 @@ struct UbloxSerializer<ublox_msgs::msg::NavCOV_<ContainerAllocator> > {
                           ublox_msgs::msg::NavCOV_<ContainerAllocator> & m) {
     UbloxIStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.i_tow);
+    stream.next(m.version);
     stream.next(m.pos_cov_valid);
     stream.next(m.vel_cov_valid);
-    stream.next(m.reserved_0);
+    stream.next(m.reserved_0[0]);
+    stream.next(m.reserved_0[1]);
+    stream.next(m.reserved_0[2]);
+    stream.next(m.reserved_0[3]);
+    stream.next(m.reserved_0[4]);
+    stream.next(m.reserved_0[5]);
+    stream.next(m.reserved_0[6]);
+    stream.next(m.reserved_0[7]);
+    stream.next(m.reserved_0[8]);
     stream.next(m.pos_cov_nn);
     stream.next(m.pos_cov_ne);
     stream.next(m.pos_cov_nd);
@@ -1538,9 +1547,18 @@ struct UbloxSerializer<ublox_msgs::msg::NavCOV_<ContainerAllocator> > {
                            const ublox_msgs::msg::NavCOV_<ContainerAllocator> & m) {
     UbloxOStream stream(data, size);
     stream.next(m.i_tow);
+    stream.next(m.version);
     stream.next(m.pos_cov_valid);
     stream.next(m.vel_cov_valid);
-    stream.next(m.reserved_0);
+    stream.next(m.reserved_0[0]);
+    stream.next(m.reserved_0[1]);
+    stream.next(m.reserved_0[2]);
+    stream.next(m.reserved_0[3]);
+    stream.next(m.reserved_0[4]);
+    stream.next(m.reserved_0[5]);
+    stream.next(m.reserved_0[6]);
+    stream.next(m.reserved_0[7]);
+    stream.next(m.reserved_0[8]);
     stream.next(m.pos_cov_nn);
     stream.next(m.pos_cov_ne);
     stream.next(m.pos_cov_nd);
