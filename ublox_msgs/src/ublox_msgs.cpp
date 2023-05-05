@@ -160,6 +160,12 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::TMODE3,
                       ublox_msgs, CfgTMODE3)
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::USB,
                       ublox_msgs, CfgUSB)
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::VALDEL,
+                      ublox_msgs, CfgVALDEL);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::VALGET,
+                      ublox_msgs, CfgVALGET);
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::CFG, ublox_msgs::Message::CFG::VALSET,
+                      ublox_msgs, CfgVALSET);
 
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::UPD, ublox_msgs::Message::UPD::SOS,
                       ublox_msgs, UpdSOS)

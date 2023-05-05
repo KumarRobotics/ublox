@@ -85,6 +85,10 @@
 #include <ublox_msgs/msg/cfg_sbas.hpp>
 #include <ublox_msgs/msg/cfg_tmode3.hpp>
 #include <ublox_msgs/msg/cfg_usb.hpp>
+#include <ublox_msgs/msg/cfg_valdel.hpp>
+#include <ublox_msgs/msg/cfg_valget.hpp>
+#include <ublox_msgs/msg/cfg_valset.hpp>
+#include <ublox_msgs/msg/cfg_valset_cfgdata.hpp>
 
 #include <ublox_msgs/msg/upd_sos.hpp>
 #include <ublox_msgs/msg/upd_sos_ack.hpp>
