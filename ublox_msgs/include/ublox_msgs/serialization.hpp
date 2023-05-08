@@ -900,7 +900,7 @@ struct UbloxSerializer<ublox_msgs::msg::CfgTMODE3_<ContainerAllocator> > {
 template <typename ContainerAllocator>
 struct UbloxSerializer<ublox_msgs::msg::CfgVALDEL_<ContainerAllocator> > {
   inline static void read(const uint8_t *data, uint32_t count,
-                   ublox_msgs::msg::CfgVALDEL_<ContainerAllocator> &m) {
+                          ublox_msgs::msg::CfgVALDEL_<ContainerAllocator> &m) {
     UbloxIStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.version);
     stream.next(m.layers);
@@ -911,12 +911,12 @@ struct UbloxSerializer<ublox_msgs::msg::CfgVALDEL_<ContainerAllocator> > {
     }
   }
 
-  inline static uint32_t serializedLength (const ublox_msgs::msg::CfgVALDEL_<ContainerAllocator> &m) {
+  inline static uint32_t serializedLength(const ublox_msgs::msg::CfgVALDEL_<ContainerAllocator> &m) {
     return 4 + 4 * m.keys.size();
   }
 
   inline static void write(const uint8_t *data, uint32_t count,
-                    const ublox_msgs::msg::CfgVALDEL_<ContainerAllocator> &m) {
+                           const ublox_msgs::msg::CfgVALDEL_<ContainerAllocator> &m) {
     UbloxOStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.version);
     stream.next(m.layers);
@@ -934,7 +934,7 @@ struct UbloxSerializer<ublox_msgs::msg::CfgVALDEL_<ContainerAllocator> > {
 template <typename ContainerAllocator>
 struct UbloxSerializer<ublox_msgs::msg::CfgVALGET_<ContainerAllocator> > {
   inline static void read(const uint8_t *data, uint32_t count,
-                   ublox_msgs::msg::CfgVALGET_<ContainerAllocator> &m) {
+                          ublox_msgs::msg::CfgVALGET_<ContainerAllocator> &m) {
     UbloxIStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.version);
     stream.next(m.layers);
@@ -947,12 +947,12 @@ struct UbloxSerializer<ublox_msgs::msg::CfgVALGET_<ContainerAllocator> > {
     }
   }
 
-  inline static uint32_t serializedLength (const ublox_msgs::msg::CfgVALGET_<ContainerAllocator> &m) {
+  inline static uint32_t serializedLength(const ublox_msgs::msg::CfgVALGET_<ContainerAllocator> &m) {
     return 4 + 4 * m.keys.size();
   }
 
   inline static void write(const uint8_t *data, uint32_t count,
-                    const ublox_msgs::msg::CfgVALGET_<ContainerAllocator> &m) {
+                           const ublox_msgs::msg::CfgVALGET_<ContainerAllocator> &m) {
     UbloxOStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.version);
     stream.next(m.layers);
@@ -969,7 +969,7 @@ struct UbloxSerializer<ublox_msgs::msg::CfgVALGET_<ContainerAllocator> > {
 template <typename ContainerAllocator>
 struct UbloxSerializer<ublox_msgs::msg::CfgVALSET_<ContainerAllocator> > {
   inline static void read(const uint8_t *data, uint32_t count,
-                   ublox_msgs::msg::CfgVALSET_<ContainerAllocator> &m) {
+                          ublox_msgs::msg::CfgVALSET_<ContainerAllocator> &m) {
     UbloxIStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.version);
     stream.next(m.layers);
@@ -983,7 +983,7 @@ struct UbloxSerializer<ublox_msgs::msg::CfgVALSET_<ContainerAllocator> > {
     }
   }
 
-  inline static uint32_t serializedLength (const ublox_msgs::msg::CfgVALSET_<ContainerAllocator> &m) {
+  inline static uint32_t serializedLength(const ublox_msgs::msg::CfgVALSET_<ContainerAllocator> &m) {
     int data_size = 0;
     for (std::size_t i = 0; i < m.cfgdata.size(); ++i) {
       data_size += m.cfgdata[i].data.size();
@@ -993,7 +993,7 @@ struct UbloxSerializer<ublox_msgs::msg::CfgVALSET_<ContainerAllocator> > {
   }
 
   inline static void write(const uint8_t *data, uint32_t count,
-                    const ublox_msgs::msg::CfgVALSET_<ContainerAllocator> &m) {
+                           const ublox_msgs::msg::CfgVALSET_<ContainerAllocator> &m) {
     UbloxOStream stream(const_cast<uint8_t *>(data), count);
     stream.next(m.version);
     stream.next(m.layers);
