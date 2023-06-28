@@ -59,8 +59,8 @@ target_link_libraries(ublox_gps PUBLIC
   ${rcl_interfaces_TARGETS}
   rclcpp::rclcpp
   rclcpp_components::component
-  ${rtcm_msgs_TARGETS}
   ${nmea_msgs_TARGETS}
+  ${rtcm_msgs_TARGETS}
   ${sensor_msgs_TARGETS}
   ${std_msgs_TARGETS}
   tf2::tf2
