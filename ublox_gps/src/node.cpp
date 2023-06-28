@@ -493,6 +493,7 @@ void UbloxNode::getRosParams() {
     aid_hui_pub_ = this->create_publisher<ublox_msgs::msg::AidHUI>("aidhui", 1);
   }
   if (getRosBoolean(this, "publish.nmea")) {
+    // Larger queue depth to handle all NMEA strings being published consecutively
     nmea_pub_ = this->create_publisher<nmea_msgs::msg::Sentence>("nmea", 20);
   }
 

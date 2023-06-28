@@ -198,7 +198,7 @@ class CallbackHandlers final {
       return;
     }
 
-    const std::string buffer = reader.getUnusedData();
+    const std::string buffer = reader.getExtraData();
     size_t nmea_start = buffer.find('$', 0);
     size_t nmea_end = buffer.find('\n', nmea_start);
     while(nmea_start != std::string::npos && nmea_end != std::string::npos) {

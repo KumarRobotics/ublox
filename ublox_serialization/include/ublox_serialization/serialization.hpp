@@ -369,7 +369,7 @@ class Reader {
          const Options &options = Options()) :
       data_(data), count_(count), found_(false), options_(options)
   {
-    unused_data_.reserve(1024);
+    extra_data_.reserve(1024);
   }
 
   using iterator = const uint8_t *;
@@ -390,7 +390,7 @@ class Reader {
           (count_ == 1 || data_[1] == options_.sync_b)) {
         break;
       } else {
-        unused_data_.push_back(data_[0]);
+        extra_data_.push_back(data_[0]);
       }
     }
 
@@ -537,13 +537,13 @@ class Reader {
     return (classId() == class_id && messageId() == message_id);
   }
 
-  const std::string &getUnusedData() const { return unused_data_; }
+  const std::string &getExtraData() const { return extra_data_; }
 
 private:
   //! The buffer of message bytes
   const uint8_t *data_;
   //! Unused data from the read buffer, contains nmea messages.
-  std::string unused_data_;
+  std::string extra_data_;
   //! the number of bytes in the buffer, //! decrement as the buffer is read
   uint32_t count_;
   //! Whether or not a message has been found
