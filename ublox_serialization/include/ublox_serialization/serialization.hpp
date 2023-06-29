@@ -33,6 +33,7 @@
 #include <array>
 #include <cstdint>
 #include <cstring>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -537,7 +538,11 @@ class Reader {
     return (classId() == class_id && messageId() == message_id);
   }
 
-  const std::string &getExtraData() const { return extra_data_; }
+  const std::string &getExtraData() const {
+    const std::string buffer = extra_data_;
+    extra_data_.clear()
+    return buffer;
+  }
 
 private:
   //! The buffer of message bytes
