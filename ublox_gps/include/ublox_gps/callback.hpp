@@ -38,8 +38,8 @@
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
-#include <utility>
 #include <string>
+#include <utility>
 
 #include <ublox_msgs/serialization.hpp>
 
