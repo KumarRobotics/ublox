@@ -539,9 +539,7 @@ class Reader {
   }
 
   const std::string &getExtraData() const {
-    const std::string buffer = extra_data_;
-    extra_data_.clear()
-    return buffer;
+    return extra_data_;
   }
 
 private:
