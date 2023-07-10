@@ -35,6 +35,7 @@
 #include <locale>
 #include <map>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
@@ -349,6 +350,12 @@ class Gps final {
    */
   template <typename T>
   void subscribe(typename CallbackHandler_<T>::Callback callback);
+
+  /**
+   * @brief Subscribe to the given Ublox message.
+   * @param callback the callback handler for the message
+   */
+  void subscribe_nmea(std::function<void(const std::string &)> callback);
 
   /**
    * @brief Subscribe to the message with the given ID. This is used for

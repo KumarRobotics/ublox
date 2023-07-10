@@ -56,6 +56,8 @@
 #include <ublox_msgs/msg/nav_posecef.hpp>
 #include <ublox_msgs/msg/nav_status.hpp>
 
+#include <nmea_msgs/msg/sentence.hpp>
+
 #include <ublox_gps/adr_udr_product.hpp>
 #include <ublox_gps/fix_diagnostic.hpp>
 #include <ublox_gps/fts_product.hpp>
@@ -217,11 +219,11 @@ void UbloxNode::addFirmwareInterface() {
 
 void UbloxNode::addProductInterface(const std::string & product_category,
                                     const std::string & ref_rov) {
-  if (product_category == "HPG" && ref_rov == "REF") {
+  if ((product_category == "HPG" || product_category == "HPS") && ref_rov == "REF") {
     components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, updater_, rtcms_, this));
-  } else if (product_category == "HPG" && ref_rov == "ROV") {
+  } else if ((product_category == "HPG" || product_category == "HPS") && ref_rov == "ROV") {
     components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_, this));
-  } else if (product_category == "HPG") {
+  } else if (product_category == "HPG" || product_category == "HPS") {
     components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, frame_id_, updater_, rtcms_, this));
   } else if (product_category == "TIM") {
     components_.push_back(std::make_shared<TimProduct>(frame_id_, updater_, this));
@@ -441,6 +443,8 @@ void UbloxNode::getRosParams() {
 
   this->declare_parameter("publish.tim.tm2", false);
 
+  this->declare_parameter("publish.nmea", true);
+
   // INF parameters
   this->declare_parameter("inf.all", true);
   this->declare_parameter("inf.debug", false);
@@ -488,6 +492,10 @@ void UbloxNode::getRosParams() {
   }
   if (getRosBoolean(this, "publish.aid.hui")) {
     aid_hui_pub_ = this->create_publisher<ublox_msgs::msg::AidHUI>("aidhui", 1);
+  }
+  if (getRosBoolean(this, "publish.nmea")) {
+    // Larger queue depth to handle all NMEA strings being published consecutively
+    nmea_pub_ = this->create_publisher<nmea_msgs::msg::Sentence>("nmea", 20);
   }
 
   // Create subscriber for RTCM correction data to enable RTK
@@ -604,6 +612,16 @@ void UbloxNode::subscribe() {
   if (getRosBoolean(this, "publish.aid.hui")) {
     gps_->subscribe<ublox_msgs::msg::AidHUI>([this](const ublox_msgs::msg::AidHUI &m) { aid_hui_pub_->publish(m); },
                                         1);
+  }
+
+  if (getRosBoolean(this, "publish.nmea")) {
+    gps_->subscribe_nmea([this](const std::string &sentence) {
+      nmea_msgs::msg::Sentence m;
+      m.header.stamp = this->now();
+      m.header.frame_id = frame_id_;
+      m.sentence = sentence;
+      nmea_pub_->publish(m);
+    });
   }
 
   for (const std::shared_ptr<ComponentInterface> & component : components_) {
