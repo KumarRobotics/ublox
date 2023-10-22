@@ -701,6 +701,21 @@ void UbloxNode::processMonVer() {
             }
             continue;
           }
+
+          // u-blox F9 modules support additional positioning signals
+          if(strs[0] == "MOD"){
+            std::vector<std::string> moduleField;
+            moduleField = stringSplit(strs[1], "-");
+            if(moduleField.size() > 1){
+              if(moduleField[1].substr(0,2) == "F9"){
+                gnss_->add("GPS_L2C");
+                gnss_->add("GAL_E5B");
+                gnss_->add("BDS_B2");
+                gnss_->add("QZSS_L2C");
+                gnss_->add("GLO_L2");
+              }
+            }
+          }
         }
       }
       // Last 1-2 lines contain supported GNSS
