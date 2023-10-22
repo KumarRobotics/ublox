@@ -18,17 +18,17 @@ namespace ublox_node {
 
 /**
  *  @brief Implements functions for firmware version 9.
- *  For now it simply re-uses the firmware version 8 class
- *  but allows for future expansion of functionality
  */
 class UbloxFirmware9 final : public UbloxFirmware8 {
 public:
   explicit UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node);
 
   /**
-    * @brief Configure settings specific to firmware 8 based on ROS parameters.
+    * @brief Configure settings specific to firmware 9 based on ROS parameters.
     *
-    * @details Configure GNSS, if it is different from current settings.
+    * @details Configure GNSS.  The hardware has internal logic for
+    * detecting differences between the new and active GNSS
+    * confifuration and will internally trigger a reset if necessary.
     * Configure the NMEA if desired by the user. It also may clear the
     * flash memory based on the ROS parameters.
     */
