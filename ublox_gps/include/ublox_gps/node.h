@@ -896,7 +896,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
       .tm_year=m.year - 1900,
     };
 
-    time_t sample_time  = mktime(&sample_date);
+    time_t sample_time  = mktime(&sample_date) - timezone;
     uint sample_time_ms =  m.iTOW%1000;
     time_ref.time_ref = ros::Time(sample_time, sample_time_ms*1e6);
     time_ref_pub.publish(time_ref);
