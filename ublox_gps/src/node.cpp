@@ -706,8 +706,10 @@ void UbloxNode::processMonVer() {
           if(strs[0] == "MOD"){
             std::vector<std::string> moduleField;
             moduleField = stringSplit(strs[1], "-");
-            if(moduleField.size() > 1){
-              if(moduleField[1].substr(0,2) == "F9"){
+            if (moduleField.size() > 1)
+            {
+              if (moduleField[1].substr(0,2) == "F9")
+              {
                 gnss_->add("GPS_L2C");
                 gnss_->add("GAL_E5B");
                 gnss_->add("BDS_B2");

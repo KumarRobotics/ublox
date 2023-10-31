@@ -33,13 +33,14 @@ public:
     * flash memory based on the ROS parameters.
     */
   bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) override;
+
 private:
   /**
     * @brief Populate the CfgVALSETCfgData data type
     *
     * @details A helper function used to generate a configuration for a singal signal. 
     */
-  ublox_msgs::msg::CfgVALSETCfgdata generateSignalConfig_(uint32_t signalID, bool enable);
+  ublox_msgs::msg::CfgVALSETCfgdata generateSignalConfig(uint32_t signalID, bool enable);
 };
 
 }  // namespace ublox_node

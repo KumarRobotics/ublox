@@ -75,7 +75,7 @@ protected:
   bool clear_bbr_{false};
   bool save_on_shutdown_{false};
 
- private:
+private:
   rclcpp::Publisher<ublox_msgs::msg::NavSAT>::SharedPtr nav_sat_pub_;
   rclcpp::Publisher<ublox_msgs::msg::MonHW>::SharedPtr mon_hw_pub_;
   rclcpp::Publisher<ublox_msgs::msg::RxmRTCM>::SharedPtr rxm_rtcm_pub_;
