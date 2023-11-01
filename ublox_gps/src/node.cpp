@@ -701,9 +701,9 @@ void UbloxNode::processMonVer() {
             }
             continue;
           }
-
           // u-blox F9 modules support additional positioning signals
-          if(strs[0] == "MOD"){
+          else if (strs[0] == "MOD")
+          {
             std::vector<std::string> moduleField;
             moduleField = stringSplit(strs[1], "-");
             if (moduleField.size() > 1)
