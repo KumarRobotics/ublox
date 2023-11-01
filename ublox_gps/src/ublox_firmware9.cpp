@@ -50,56 +50,49 @@ bool UbloxFirmware9::configureUblox(std::shared_ptr<ublox_gps::Gps> gps)
   cfg_signal.layers = ublox_msgs::msg::CfgVALSET::LAYER_RAM;
 
   using signal = ublox_msgs::msg::CfgVALSETCfgdata;
-  std::vector<signal> signalCfgData{};
 
   // Configure GPS Signals
-  signalCfgData.push_back(generateSignalConfig_(signal::GPS_ENABLE, enable_gps_));
-  signalCfgData.push_back(generateSignalConfig_(signal::GPS_L1CA_ENABLE, enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GPS_ENABLE, enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GPS_L1CA_ENABLE, enable_gps_));
   if (gnss_->isSupported("GPS_L2C"))
   {
-    signalCfgData.push_back(generateSignalConfig_(signal::GPS_L2C_ENABLE, enable_gps_));
+    cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GPS_L2C_ENABLE, enable_gps_));
   }
 
   // Configure SBAS Signals
-  signalCfgData.push_back(generateSignalConfig_(signal::SBAS_ENABLE, enable_gps_));
-  signalCfgData.push_back(generateSignalConfig_(signal::SBAS_L1CA_ENABLE, enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::SBAS_ENABLE, enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::SBAS_L1CA_ENABLE, enable_gps_));
 
   // Configure Galileo Signals
-  signalCfgData.push_back(generateSignalConfig_(signal::GAL_ENABLE, enable_galileo_));
-  signalCfgData.push_back(generateSignalConfig_(signal::GAL_E1_ENABLE, enable_galileo_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GAL_ENABLE, enable_galileo_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GAL_E1_ENABLE, enable_galileo_));
   if (gnss_->isSupported("GAL_E5B"))
   {
-    signalCfgData.push_back(generateSignalConfig_(signal::GAL_E5B_ENABLE, enable_galileo_));
+    cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GAL_E5B_ENABLE, enable_galileo_));
   }
 
   // Configure Beidou Signals
-  signalCfgData.push_back(generateSignalConfig_(signal::BDS_ENABLE, enable_beidou_));
-  signalCfgData.push_back(generateSignalConfig_(signal::BDS_B1_ENABLE, enable_beidou_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::BDS_ENABLE, enable_beidou_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::BDS_B1_ENABLE, enable_beidou_));
   if (gnss_->isSupported("BDS_B2"))
   {
-    signalCfgData.push_back(generateSignalConfig_(signal::BDS_B2_ENABLE, enable_beidou_));
+    cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::BDS_B2_ENABLE, enable_beidou_));
   }
 
   // Configure QZSS Signals
-  signalCfgData.push_back(generateSignalConfig_(signal::QZSS_ENABLE, enable_qzss_ && enable_gps_));
-  signalCfgData.push_back(generateSignalConfig_(signal::QZSS_L1CA_ENABLE, enable_qzss_ && enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::QZSS_ENABLE, enable_qzss_ && enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::QZSS_L1CA_ENABLE, enable_qzss_ && enable_gps_));
   if (gnss_->isSupported("QZSS_L2C"))
   {
-    signalCfgData.push_back(generateSignalConfig_(signal::QZSS_L2C_ENABLE, enable_qzss_ && enable_gps_));
+    cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::QZSS_L2C_ENABLE, enable_qzss_ && enable_gps_));
   }
 
   // Configure GLONASS Signals
-  signalCfgData.push_back(generateSignalConfig_(signal::GLO_ENABLE, enable_glonass_));
-  signalCfgData.push_back(generateSignalConfig_(signal::GLO_L1_ENABLE, enable_glonass_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GLO_ENABLE, enable_glonass_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GLO_L1_ENABLE, enable_glonass_));
   if (gnss_->isSupported("GLO_L2"))
   {
-    signalCfgData.push_back(generateSignalConfig_(signal::GLO_L2_ENABLE, enable_glonass_));
-  }
-
-  cfg_signal.cfgdata.resize(signalCfgData.size());
-  for (size_t i = 0; i < signalCfgData.size(); ++i)
-  {
-    cfg_signal.cfgdata[i] = signalCfgData[i];
+    cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GLO_L2_ENABLE, enable_glonass_));
   }
 
   RCLCPP_DEBUG(node_->get_logger(), "Ready to configure");
