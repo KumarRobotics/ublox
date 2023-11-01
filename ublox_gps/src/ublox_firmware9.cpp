@@ -52,47 +52,47 @@ bool UbloxFirmware9::configureUblox(std::shared_ptr<ublox_gps::Gps> gps)
   using signal = ublox_msgs::msg::CfgVALSETCfgdata;
 
   // Configure GPS Signals
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GPS_ENABLE, enable_gps_));
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GPS_L1CA_ENABLE, enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::GPS_ENABLE, enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::GPS_L1CA_ENABLE, enable_gps_));
   if (gnss_->isSupported("GPS_L2C"))
   {
-    cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GPS_L2C_ENABLE, enable_gps_));
+    cfg_signal.cfgdata.push_back(generateSignalConfig(signal::GPS_L2C_ENABLE, enable_gps_));
   }
 
   // Configure SBAS Signals
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::SBAS_ENABLE, enable_gps_));
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::SBAS_L1CA_ENABLE, enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::SBAS_ENABLE, enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::SBAS_L1CA_ENABLE, enable_gps_));
 
   // Configure Galileo Signals
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GAL_ENABLE, enable_galileo_));
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GAL_E1_ENABLE, enable_galileo_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::GAL_ENABLE, enable_galileo_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::GAL_E1_ENABLE, enable_galileo_));
   if (gnss_->isSupported("GAL_E5B"))
   {
-    cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GAL_E5B_ENABLE, enable_galileo_));
+    cfg_signal.cfgdata.push_back(generateSignalConfig(signal::GAL_E5B_ENABLE, enable_galileo_));
   }
 
   // Configure Beidou Signals
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::BDS_ENABLE, enable_beidou_));
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::BDS_B1_ENABLE, enable_beidou_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::BDS_ENABLE, enable_beidou_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::BDS_B1_ENABLE, enable_beidou_));
   if (gnss_->isSupported("BDS_B2"))
   {
-    cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::BDS_B2_ENABLE, enable_beidou_));
+    cfg_signal.cfgdata.push_back(generateSignalConfig(signal::BDS_B2_ENABLE, enable_beidou_));
   }
 
   // Configure QZSS Signals
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::QZSS_ENABLE, enable_qzss_ && enable_gps_));
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::QZSS_L1CA_ENABLE, enable_qzss_ && enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::QZSS_ENABLE, enable_qzss_ && enable_gps_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::QZSS_L1CA_ENABLE, enable_qzss_ && enable_gps_));
   if (gnss_->isSupported("QZSS_L2C"))
   {
-    cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::QZSS_L2C_ENABLE, enable_qzss_ && enable_gps_));
+    cfg_signal.cfgdata.push_back(generateSignalConfig(signal::QZSS_L2C_ENABLE, enable_qzss_ && enable_gps_));
   }
 
   // Configure GLONASS Signals
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GLO_ENABLE, enable_glonass_));
-  cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GLO_L1_ENABLE, enable_glonass_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::GLO_ENABLE, enable_glonass_));
+  cfg_signal.cfgdata.push_back(generateSignalConfig(signal::GLO_L1_ENABLE, enable_glonass_));
   if (gnss_->isSupported("GLO_L2"))
   {
-    cfg_signal.cfgdata.push_back(generateSignalConfig_(signal::GLO_L2_ENABLE, enable_glonass_));
+    cfg_signal.cfgdata.push_back(generateSignalConfig(signal::GLO_L2_ENABLE, enable_glonass_));
   }
 
   RCLCPP_DEBUG(node_->get_logger(), "Ready to configure");
@@ -109,7 +109,7 @@ bool UbloxFirmware9::configureUblox(std::shared_ptr<ublox_gps::Gps> gps)
   return true;
 }
 
-ublox_msgs::msg::CfgVALSETCfgdata UbloxFirmware9::generateSignalConfig_(uint32_t signalID, bool enable)
+ublox_msgs::msg::CfgVALSETCfgdata UbloxFirmware9::generateSignalConfig(uint32_t signalID, bool enable)
 {
   ublox_msgs::msg::CfgVALSETCfgdata signalConfig;
   signalConfig.key = signalID;
