@@ -1,0 +1,15 @@
+# Configuration Settings for C94-M8P as a timing device
+
+debug: 1                    # Range 0-4 (0 means no debug statements will print)
+
+device: /dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_GNSS_receiver-if00
+frame_id: gps
+extensions: ["FWVER=TIM"]
+
+inf: 
+  all: true                   # Whether to display all INF messages in console
+
+publish:
+  all: false
+  tim:
+    tm2: true

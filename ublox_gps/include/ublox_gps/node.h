@@ -33,6 +33,7 @@
 // STL
 #include <vector>
 #include <set>
+#include <ctime>
 // Boost
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -878,6 +879,27 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     last_nav_pvt_ = m;
     freq_diag->diagnostic->tick(fix.header.stamp);
     updater->update();
+
+    static ros::Publisher time_ref_pub =
+        nh->advertise<sensor_msgs::TimeReference>("time_gps", kROSQueueSize);
+    sensor_msgs::TimeReference time_ref;
+    time_ref.header.stamp = fix.header.stamp;
+    time_ref.header.frame_id = frame_id;
+    time_ref.time_ref = fix.header.stamp;
+
+    struct tm sample_date = {
+      .tm_sec=m.sec,
+      .tm_min=m.min,
+      .tm_hour=m.hour,
+      .tm_mday=m.day,
+      .tm_mon=m.month - 1,
+      .tm_year=m.year - 1900,
+    };
+
+    time_t sample_time  = mktime(&sample_date) - timezone;
+    uint sample_time_ms =  m.iTOW%1000;
+    time_ref.time_ref = ros::Time(sample_time, sample_time_ms*1e6);
+    time_ref_pub.publish(time_ref);
   }
 
  protected:

@@ -373,6 +373,11 @@ void UbloxNode::processMonVer() {
                monVer.hwVersion.c_array());
   // Convert extension to vector of strings
   std::vector<std::string> extension;
+  // Inject any extensions from the parameter server
+  nh->getParam("extensions", extension);
+  for(std::size_t i = 0; i < extension.size(); ++i) {
+    ROS_DEBUG("Injected extension %s", extension[i].c_str());
+  }
   extension.reserve(monVer.extension.size());
   for(std::size_t i = 0; i < monVer.extension.size(); ++i) {
     ROS_DEBUG("%s", monVer.extension[i].field.c_array());
