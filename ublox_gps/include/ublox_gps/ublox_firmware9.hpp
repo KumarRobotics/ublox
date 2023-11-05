@@ -28,7 +28,7 @@ public:
     *
     * @details Configure GNSS.  The hardware has internal logic for
     * detecting differences between the new and active GNSS
-    * confifuration and will internally trigger a reset if necessary.
+    * configuration and will internally trigger a reset if necessary.
     * Configure the NMEA if desired by the user. It also may clear the
     * flash memory based on the ROS parameters.
     */
@@ -38,7 +38,7 @@ private:
   /**
     * @brief Populate the CfgVALSETCfgData data type
     *
-    * @details A helper function used to generate a configuration for a singal signal. 
+    * @details A helper function used to generate a configuration for a single signal. 
     */
   ublox_msgs::msg::CfgVALSETCfgdata generateSignalConfig(uint32_t signalID, bool enable);
 };
