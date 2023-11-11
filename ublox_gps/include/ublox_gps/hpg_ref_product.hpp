@@ -83,7 +83,7 @@ class HpgRefProduct: public virtual ComponentInterface {
    *
    * @details Configure the RTCM messages and measurement and navigation rate.
    */
-  bool setTimeMode(std::shared_ptr<ublox_gps::Gps> gps);
+  virtual bool setTimeMode(std::shared_ptr<ublox_gps::Gps> gps);
 
   //! The last received Nav SVIN message
   ublox_msgs::msg::NavSVIN last_nav_svin_;
