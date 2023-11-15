@@ -64,6 +64,7 @@
 #include <ublox_gps/gnss.hpp>
 #include <ublox_gps/hp_pos_rec_product.hpp>
 #include <ublox_gps/hpg_ref_product.hpp>
+#include <ublox_gps/hpg_ref_product_firmware9.hpp>
 #include <ublox_gps/hpg_rov_product.hpp>
 #include <ublox_gps/node.hpp>
 #include <ublox_gps/raw_data_product.hpp>
@@ -235,6 +236,8 @@ void UbloxNode::addProductInterface(const std::string & product_category,
   } else if (product_category == "HPS") {
     components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_, this));
     components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_, this));
+   } else if (product_category == "REFv9") {
+    components_.push_back(std::make_shared<HpgRefProductFirmware9>(nav_rate_, meas_rate_, updater_, rtcms_, this));
   } else {
     RCLCPP_WARN(this->get_logger(), "Product category %s %s from MonVER message not recognized %s",
                 product_category.c_str(), ref_rov.c_str(),
@@ -701,14 +704,15 @@ void UbloxNode::processMonVer() {
             }
             continue;
           }
-          // u-blox F9 modules support additional positioning signals
           else if (strs[0] == "MOD")
           {
-            std::vector<std::string> moduleField;
-            moduleField = stringSplit(strs[1], "-");
-            if (moduleField.size() > 1)
+            std::string moduleName = strs[1];
+            std::vector<std::string> moduleFields;
+            moduleFields = stringSplit(moduleName, "-");
+            if (moduleFields.size() > 1)
             {
-              if (moduleField[1].substr(0,2) == "F9")
+              // u-blox F9 modules support additional positioning signals
+              if (moduleFields[1].substr(0,2) == "F9")
               {
                 gnss_->add("GPS_L2C");
                 gnss_->add("GAL_E5B");
@@ -716,6 +720,9 @@ void UbloxNode::processMonVer() {
                 gnss_->add("QZSS_L2C");
                 gnss_->add("GLO_L2");
               }
+            }
+            if(moduleName == "ZED-F9P" || moduleName == "NEO-F9P" || moduleName == "ZED-F9T"){
+              addProductInterface("REFv9");
             }
           }
         }
