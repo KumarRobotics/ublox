@@ -300,7 +300,8 @@ bool HpgRefProductFirmware9::configTmode3SurveyIn(uint32_t sv_in_min_dur_, uint3
   // Set Survey-in Accuracy Limit
   cfgSurveyIn.cfgdata[2].key = ublox_msgs::msg::CfgVALSETCfgdata::TMODE_SVIN_ACC_LIM;
   cfgSurveyIn.cfgdata[2].data.resize(4);
-  std::memcpy(&(cfgSurveyIn.cfgdata[2].data[0]), &sv_in_acc_lim_, 4);
+  uint32_t accuracy_tenth_of_mm = sv_in_acc_lim_ * 1e4;
+  std::memcpy(&(cfgSurveyIn.cfgdata[2].data[0]), &(accuracy_tenth_of_mm), 4);
 
   return gps_->configure(cfgSurveyIn);
 }
