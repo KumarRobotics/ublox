@@ -51,6 +51,8 @@ target_include_directories(ublox_gps PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
   ${diagnostic_updater_INCLUDE_DIRS}
+  ${ublox_msgs_INCLUDE_DIRS}
+  ${ublox_serialization_INCLUDE_DIRS}
 )
 target_link_libraries(ublox_gps PUBLIC
   ${asio_LIBRARIES}

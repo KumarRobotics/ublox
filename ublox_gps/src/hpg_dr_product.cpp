@@ -60,7 +60,7 @@ HpgDrProduct::HpgDrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::str
   esf_ins_ros_pub_ = node_->create_publisher<sensor_msgs::msg::Imu>("~/veh_kinematics", 1);
   imu_raw_pub_ = node_->create_publisher<sensor_msgs::msg::Imu>("~/imu_raw", 1);
   fix_hp_pub_ = node_->create_publisher<sensor_msgs::msg::NavSatFix>("~/fix_highprecision", 1);
-  esf_diag_pub_ = node_->create_publisher<diagnostic_msgs::msg::DiagnosticStatus>("~/fusion_status", 1);
+  nav_diag_pub_ = node_->create_publisher<diagnostic_msgs::msg::DiagnosticStatus>("~/fusion_status", 1);
 
   // Perform any message metadata value setting we can do only once, including default values
   // This only improves performance a little, but removes duplcate code
@@ -129,32 +129,36 @@ bool HpgDrProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
 }
 
 void HpgDrProduct::callbackNavATT(const ublox_msgs::msg::NavATT &m) {
+  ublox_msgs::msg::NavATT temp_att = last_nav_att_;
+  if (temp_att.i_tow == m.i_tow) {
+    esf_ins_ros_.header.stamp.sec = last_itow_time_.second.sec;
+    esf_ins_ros_.header.stamp.nanosec = last_itow_time_.second.nanosec;
     imu_att_.header.stamp = node_->now();
+  }
+  if (getRosBoolean(node_, "publish.nav.att")) {
+    nav_att_pub_->publish(m);
+  }
 
-    if (getRosBoolean(node_, "publish.nav.att")) {
-      nav_att_pub_->publish(m);
-    }
+  constexpr double kNavAttScaleAndRadianConversion{1e-5 * M_PI / 180.0};
 
-    constexpr double kNavAttScaleAndRadianConversion{1e-5 * M_PI / 180.0};
+  // Transform U-Blox Euler angles to Quaternion and populate covariances
+  const double roll = M_PI_2 - (static_cast<double>(m.roll) * kNavAttScaleAndRadianConversion);
+  const double pitch = M_PI_2 - (static_cast<double>(m.pitch) * kNavAttScaleAndRadianConversion);
+  const double heading = M_PI_2 - (static_cast<double>(m.heading) * kNavAttScaleAndRadianConversion);
+  tf2::Quaternion orientation;
+  orientation.setRPY(roll, pitch, heading);
 
-    // Transform U-Blox Euler angles to Quaternion and populate covariances
-    const double roll = M_PI_2 - (static_cast<double>(m.roll) * kNavAttScaleAndRadianConversion);
-    const double pitch = M_PI_2 - (static_cast<double>(m.pitch) * kNavAttScaleAndRadianConversion);
-    const double heading = M_PI_2 - (static_cast<double>(m.heading) * kNavAttScaleAndRadianConversion);
-    tf2::Quaternion orientation;
-    orientation.setRPY(roll, pitch, heading);
+  imu_att_.orientation.x = orientation[0];
+  imu_att_.orientation.y = orientation[1];
+  imu_att_.orientation.z = orientation[2];
+  imu_att_.orientation.w = orientation[3];
 
-    imu_att_.orientation.x = orientation[0];
-    imu_att_.orientation.y = orientation[1];
-    imu_att_.orientation.z = orientation[2];
-    imu_att_.orientation.w = orientation[3];
+  imu_att_.orientation_covariance[0] = std::pow(m.acc_roll * kNavAttScaleAndRadianConversion, 2);
+  imu_att_.orientation_covariance[4] = std::pow(m.acc_pitch * kNavAttScaleAndRadianConversion, 2);
+  imu_att_.orientation_covariance[8] = std::pow(m.acc_heading * kNavAttScaleAndRadianConversion, 2);
 
-    imu_att_.orientation_covariance[0] = std::pow(m.acc_roll * kNavAttScaleAndRadianConversion, 2);
-    imu_att_.orientation_covariance[4] = std::pow(m.acc_pitch * kNavAttScaleAndRadianConversion, 2);
-    imu_att_.orientation_covariance[8] = std::pow(m.acc_heading * kNavAttScaleAndRadianConversion, 2);
-
-    imu_att_pub_->publish(imu_att_);
-    last_nav_att_ = m;
+  imu_att_pub_->publish(imu_att_);
+  last_nav_att_ = m;
 }
 
 void HpgDrProduct::callbackEsfIns(const ublox_msgs::msg::EsfINS &m) {
@@ -164,13 +168,10 @@ void HpgDrProduct::callbackEsfIns(const ublox_msgs::msg::EsfINS &m) {
     esf_ins_pub_->publish(m);
   }
 
-  // To avoid mutexing, let's just grab a copy of the last NavATT frame to match for data frame ID
+  // To avoid long mutexing, let's just grab a copy of the last NavATT frame to match for data frame ID
   ublox_msgs::msg::NavATT temp_att = last_nav_att_;
   // If the last NavATT (orientation) message's data frame ID matches that of EsfINS, include the orientation from NavATT
   if (temp_att.i_tow == m.i_tow) {
-    esf_ins_ros_.header.stamp.sec = last_itow_time_.second.sec;
-    esf_ins_ros_.header.stamp.nanosec = last_itow_time_.second.nanosec;
-
     constexpr double kNavAttScaleAndRadianConversion{1e-5 * M_PI / 180.0};
 
     const double roll = M_PI_2 - (static_cast<double>(temp_att.roll) * kNavAttScaleAndRadianConversion);
@@ -206,24 +207,53 @@ void HpgDrProduct::callbackEsfIns(const ublox_msgs::msg::EsfINS &m) {
   esf_ins_ros_pub_->publish(esf_ins_ros_);
 }
 
-void HpgDrProduct::callbackEsfStatus(const ublox_msgs::msg::EsfSTATUS &m) {
-  std::uint8_t wheel_tick_status = m.reserved1[0] & 0xb00000011;
-  std::uint8_t imu_align_status =  m.reserved1[0] & 0xb00011100;
-  std::uint8_t ins_init_status =   m.reserved1[0] & 0xb01100000;
-  std::uint8_t imu_init_status =   m.reserved1[1] & 0xb00000011;
 
+const char* wt_status_str(std::uint8_t bitfield) {
+  std::uint8_t wt_status = bitfield & 0xb00000011;
+  if (wt_status == 2) return "calibrated";
+  if (wt_status == 1) return "initializing";
+  if (wt_status == 0) return "off";
+  return "deserialization error";
+}
+
+const char* imu_alg_str(std::uint8_t bitfield) {
+  std::uint8_t alg_status = bitfield & 0xb00011100;
+  if (alg_status == 2) return "calibrated";
+  if (alg_status == 1) return "initializing";
+  if (alg_status == 0) return "off";
+  return "deserialization error";
+}
+
+const char* ins_init_str(std::uint8_t bitfield) {
+  std::uint8_t ins_status = bitfield & 0xb01100000;
+  if (ins_status == 2) return "calibrated";
+  if (ins_status == 1) return "initializing";
+  if (ins_status == 0) return "off";
+  return "deserialization error";
+}
+
+const char* imu_init_str(std::uint8_t bitfield) {
+  std::uint8_t imu_status = bitfield & 0xb00000011;
+  if (imu_status == 2) return "calibrated";
+  if (imu_status == 1) return "initializing";
+  if (imu_status == 0) return "off";
+  return "deserialization error";
+}
+
+
+void HpgDrProduct::callbackEsfStatus(const ublox_msgs::msg::EsfSTATUS &m) {
   diagnostic_msgs::msg::KeyValue wt_status;
   wt_status.key = "wheel_tick_status";
-  wt_status.value = wheel_tick_status == 2 ? "initialized" : (wheel_tick_status == 1 ? "initializing" : "off");
+  wt_status.value = wt_status_str(m.reserved1[0]);
   diagnostic_msgs::msg::KeyValue imu_alg;
   imu_alg.key = "IMU_alignment_status";
-  imu_alg.value = imu_align_status > 1 ? "initialized" : (imu_align_status == 1 ? "initializing" : "off");
+  imu_alg.value = imu_alg_str(m.reserved1[0]);
   diagnostic_msgs::msg::KeyValue ins_ini;
   ins_ini.key = "INS_init_status";
-  ins_ini.value = ins_init_status == 2 ? "initialized" : (ins_init_status == 1 ? "initializing" : "off");
+  ins_ini.value = ins_init_str(m.reserved1[0]);
   diagnostic_msgs::msg::KeyValue imu_ini;
   imu_ini.key = "IMU_init_status";
-  imu_ini.value = imu_init_status == 2 ? "initialized" : (ins_init_status == 1 ? "initializing" : "off");
+  imu_ini.value = imu_init_str(m.reserved1[1]);
   diagnostic_msgs::msg::KeyValue fusion_mode;
   fusion_mode.key = "fusion_mode";
   fusion_mode.value = m.fusion_mode == 3 ? "disabled_fault" : (m.fusion_mode == 2 ? "suspended" : (m.fusion_mode == 1 ? "online" : "initializing"));
@@ -282,16 +312,22 @@ void HpgDrProduct::callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m) {
       case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_TEMPERATURE:
         break;  // Do nothing, just catch
       case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_FRONT_LEFT:
+        RCLCPP_INFO(node_->get_logger(), "WHEEL_TICK_FL %d\n", data_value);
         break;  // Do nothing, just catch
       case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_FRONT_RIGHT:
+        RCLCPP_INFO(node_->get_logger(), "WHEEL_TICK_FR %d\n", data_value);
         break;  // Do nothing, just catch
       case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_REAR_LEFT:
+        RCLCPP_INFO(node_->get_logger(), "WHEEL_TICK_RL %d\n", data_value);
         break;  // Do nothing, just catch
       case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_REAR_RIGHT:
+        RCLCPP_INFO(node_->get_logger(), "WHEEL_TICK_RR %d\n", data_value);
         break;  // Do nothing, just catch
       case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_SINGLE_TICK:
+        RCLCPP_INFO(node_->get_logger(), "WHEEL_TICK_SINGLE %d\n", data_value);
         break;  // Do nothing, just catch
       case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_SPEED:
+        RCLCPP_INFO(node_->get_logger(), "WHEEL_TICK_SPEED %d\n", data_value);
         break;  // Do nothing, just catch
       default:
         RCLCPP_INFO(node_->get_logger(), "Unknown IMU measurement, data_type: %u , data_value: %d", data_type, data_value);
@@ -360,6 +396,11 @@ void HpgDrProduct::callbackNavHpPosLlh(const ublox_msgs::msg::NavHPPOSLLH& m) {
   if (m.flags != 0) {
     return;
   }
+
+  if (getRosBoolean(node_, "publish.nav.hpposllh")) {
+      nav_hpposllh_pub_->publish(m);
+  }
+
   fix_hp_.header.stamp = node_->now();  // Ideally, we should get a timestamp from the device
 
   if (last_nav_pvt_.fix_type >= ublox_msgs::msg::NavPVT::FIX_TYPE_2D) {
@@ -392,6 +433,7 @@ void HpgDrProduct::callbackNavPvt(const ublox_msgs::msg::NavPVT& m) {
   if (getRosBoolean(node_, "publish.nav.pvt")) {
     nav_pvt_pub_->publish(m);
   }
+  last_nav_pvt_ = m;
 
   // update the iTow timestamp
   uint8_t valid_time = m.VALID_DATE | m.VALID_TIME | m.VALID_FULLY_RESOLVED;

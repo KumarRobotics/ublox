@@ -93,6 +93,7 @@ class HpgDrProduct final : public virtual ComponentInterface {
 
   // ROS2 republishers for U-Blox messages
   rclcpp::Publisher<ublox_msgs::msg::NavATT>::SharedPtr nav_att_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::NavHPPOSLLH>::SharedPtr nav_hpposllh_pub_;
   rclcpp::Publisher<ublox_msgs::msg::NavPVT>::SharedPtr nav_pvt_pub_;
   rclcpp::Publisher<ublox_msgs::msg::EsfINS>::SharedPtr esf_ins_pub_;
   rclcpp::Publisher<ublox_msgs::msg::EsfMEAS>::SharedPtr esf_meas_pub_;
