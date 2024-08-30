@@ -85,6 +85,7 @@ set(msg_files
   "msg/NavTIMEUTC.msg"
   "msg/NavVELECEF.msg"
   "msg/NavVELNED.msg"
+  "msg/NavPL.msg"
   "msg/RxmALM.msg"
   "msg/RxmEPH.msg"
   "msg/RxmRAW.msg"

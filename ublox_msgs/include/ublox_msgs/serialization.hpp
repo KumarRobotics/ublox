@@ -2501,6 +2501,68 @@ struct UbloxSerializer<ublox_msgs::msg::NavVELNED_<ContainerAllocator> > {
 };
 
 template <typename ContainerAllocator>
+struct UbloxSerializer<ublox_msgs::msg::NavPL_<ContainerAllocator>>
+{
+  inline static void read(const uint8_t *data, uint32_t count,
+                          ublox_msgs::msg::NavPL_<ContainerAllocator> &m)
+  {
+    UbloxIStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.msg_version);
+    stream.next(m.tmir);
+    stream.next(m.tmir_exp);
+    stream.next(m.pl_pos_valid);
+    stream.next(m.pl_pos_frame);
+    stream.next(m.pl_vel_valid);
+    stream.next(m.pl_vel_frame);
+    stream.next(m.pl_time_valid);
+    stream.next(m.reserved0);
+    stream.next(m.i_tow);
+    stream.next(m.pl_pos1);
+    stream.next(m.pl_pos2);
+    stream.next(m.pl_pos3);
+    stream.next(m.pl_vel1);
+    stream.next(m.pl_vel2);
+    stream.next(m.pl_vel3);
+    stream.next(m.pl_pos_horiz_orientation);
+    stream.next(m.pl_vel_horiz_orientation);
+    stream.next(m.pl_time);
+    stream.next(m.reserved1);
+  }
+
+  inline static uint32_t serializedLength(const ublox_msgs::msg::NavPL_<ContainerAllocator> &m)
+  {
+    (void)m;
+    return 52;
+  }
+
+  inline static void write(uint8_t *data, uint32_t size,
+                           const ublox_msgs::msg::NavPL_<ContainerAllocator> &m)
+  {
+    UbloxOStream stream(data, size);
+    stream.next(m.msg_version);
+    stream.next(m.tmir);
+    stream.next(m.tmir_exp);
+    stream.next(m.pl_pos_valid);
+    stream.next(m.pl_pos_frame);
+    stream.next(m.pl_vel_valid);
+    stream.next(m.pl_vel_frame);
+    stream.next(m.pl_time_valid);
+    stream.next(m.reserved0);
+    stream.next(m.i_tow);
+    stream.next(m.pl_pos1);
+    stream.next(m.pl_pos2);
+    stream.next(m.pl_pos3);
+    stream.next(m.pl_vel1);
+    stream.next(m.pl_vel2);
+    stream.next(m.pl_vel3);
+    stream.next(m.pl_pos_horiz_orientation);
+    stream.next(m.pl_vel_horiz_orientation);
+    stream.next(m.pl_time);
+    stream.next(m.reserved1);
+  }
+};
+
+template <typename ContainerAllocator>
 struct UbloxSerializer<ublox_msgs::msg::NavTIMEGPS_<ContainerAllocator> > {
   inline static void read(const uint8_t *data, uint32_t count,
                           ublox_msgs::msg::NavTIMEGPS_<ContainerAllocator> & m) {
@@ -2567,7 +2629,7 @@ struct UbloxSerializer<ublox_msgs::msg::NavTIMEUTC_<ContainerAllocator> > {
     stream.next(m.valid);
   }
 };
-  
+
 ///
 /// @brief Serializes the RxmALM message which has a repeated block.
 ///
