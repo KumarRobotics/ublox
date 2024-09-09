@@ -41,6 +41,7 @@
 #include <ublox_msgs/msg/cfg_cfg.hpp>
 #include <ublox_msgs/msg/cfg_dat.hpp>
 #include <ublox_msgs/msg/inf.h>
+#include <ublox_msgs/msg/versions.hpp>
 #include <rtcm_msgs/msg/message.hpp>
 #include <nmea_msgs/msg/sentence.hpp>
 // Ublox GPS includes
@@ -217,6 +218,10 @@ class UbloxNode final : public rclcpp::Node {
 
   //! Determined From Mon VER
   float protocol_version_ = 0.0;
+  std::string hardware_version_ = "";
+  std::string software_version_ = "";
+  //! Determined From FWVER
+  std::string firmware_version_ = "";
   // Variables set from parameter server
   //! Device port
   std::string device_;
@@ -271,8 +276,11 @@ class UbloxNode final : public rclcpp::Node {
   rclcpp::Publisher<ublox_msgs::msg::AidEPH>::SharedPtr aid_eph_pub_;
   rclcpp::Publisher<ublox_msgs::msg::AidHUI>::SharedPtr aid_hui_pub_;
   rclcpp::Publisher<nmea_msgs::msg::Sentence>::SharedPtr nmea_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::Versions>::SharedPtr versions_pub_;
 
   void publish_nmea(const std::string & sentence, const std::string & topic);
+
+  void publishVersions();
 
   //! Navigation rate in measurement cycles, see CfgRate.msg
   uint16_t nav_rate_{0};

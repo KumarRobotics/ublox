@@ -1,0 +1,4 @@
+string software_version
+string hardware_version
+string firmware_version
+string protocol_version
