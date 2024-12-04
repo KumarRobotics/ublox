@@ -11,7 +11,7 @@ ublox_gps_node:
 
     device: /dev/ttyACM0
     frame_id: m8u
-    rate: 4                     # in Hz
+    rate: 4.0                     # in Hz
     nav_rate: 4                 # [# of measurement cycles], recommended 1 Hz, may
                                 # be either 5 Hz (Dual constellation) or
                                 # 8 Hz (GPS only)
@@ -19,7 +19,7 @@ ublox_gps_node:
                                 # Max Alt: 50km
                                 # Max Horizontal Velocity: 250 m/s,
                                 # Max Vertical Velocity: 100 m/s
-    fix_mode: 3
+    fix_mode: 3d
     enable_ppp: true
     dr_limit: 1
 

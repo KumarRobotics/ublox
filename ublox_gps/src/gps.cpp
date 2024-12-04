@@ -555,11 +555,14 @@ bool Gps::setDeadReckonLimit(uint8_t limit) {
   return configure(msg);
 }
 
-bool Gps::setPpp(bool enable) {
+bool Gps::setPpp(bool enable, float protocol_version) {
   RCLCPP_DEBUG(logger_,"%s PPP", (enable ? "Enabling" : "Disabling"));
 
   ublox_msgs::msg::CfgNAVX5 msg;
   msg.use_ppp = enable;
+  if(protocol_version >= 18){
+    msg.version = 2;
+  }
   msg.mask1 = ublox_msgs::msg::CfgNAVX5::MASK1_PPP;
   return configure(msg);
 }
@@ -571,11 +574,14 @@ bool Gps::setDgnss(uint8_t mode) {
   return configure(cfg);
 }
 
-bool Gps::setUseAdr(bool enable) {
+bool Gps::setUseAdr(bool enable, float protocol_version) {
   RCLCPP_DEBUG(logger_, "%s ADR/UDR", (enable ? "Enabling" : "Disabling"));
 
   ublox_msgs::msg::CfgNAVX5 msg;
   msg.use_adr = enable;
+  if(protocol_version >= 18){
+    msg.version = 2;
+  }
   msg.mask2 = ublox_msgs::msg::CfgNAVX5::MASK2_ADR;
   return configure(msg);
 }

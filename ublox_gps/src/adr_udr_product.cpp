@@ -25,8 +25,8 @@ namespace ublox_node {
 //
 // u-blox ADR devices, partially implemented
 //
-AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node)
-  : use_adr_(false), nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id), updater_(updater), node_(node)
+AdrUdrProduct::AdrUdrProduct(float protocol_version, uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node)
+  : protocol_version_(protocol_version) ,use_adr_(false), nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id), updater_(updater), node_(node)
 {
   if (getRosBoolean(node_, "publish.esf.meas")) {
     imu_pub_ =
@@ -63,7 +63,7 @@ void AdrUdrProduct::getRosParams() {
 }
 
 bool AdrUdrProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
-  if (!gps->setUseAdr(use_adr_)) {
+  if (!gps->setUseAdr(use_adr_, protocol_version_)) {
     throw std::runtime_error(std::string("Failed to ")
                              + (use_adr_ ? "enable" : "disable") + "use_adr");
   }
