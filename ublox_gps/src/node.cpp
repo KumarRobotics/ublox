@@ -440,6 +440,7 @@ void UbloxNode::getRosParams() {
 
   this->declare_parameter("publish.mon.all", getRosBoolean(this, "publish.all"));
   this->declare_parameter("publish.mon.hw", getRosBoolean(this, "publish.mon.all"));
+  this->declare_parameter("publish.mon.sys", getRosBoolean(this, "publish.mon.all"));
 
   this->declare_parameter("publish.tim.tm2", false);
 

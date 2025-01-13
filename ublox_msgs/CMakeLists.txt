@@ -58,6 +58,7 @@ set(msg_files
   "msg/MonGNSS.msg"
   "msg/MonHW6.msg"
   "msg/MonHW.msg"
+  "msg/MonSYS.msg"
   "msg/MonVERExtension.msg"
   "msg/MonVER.msg"
   "msg/NavATT.msg"

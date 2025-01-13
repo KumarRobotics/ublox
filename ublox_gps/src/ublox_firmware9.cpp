@@ -15,6 +15,11 @@ namespace ublox_node {
 UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node)
   : UbloxFirmware8(frame_id, updater, freq_diag, gnss, node)
 {
+  if (getRosBoolean(node_, "publish.mon.sys"))
+  {
+    mon_sys_pub_ =
+      node_->create_publisher<ublox_msgs::msg::MonSYS>("monsys", 1);
+  }
 }
 
 bool UbloxFirmware9::configureUblox(std::shared_ptr<ublox_gps::Gps> gps)
@@ -118,5 +123,15 @@ ublox_msgs::msg::CfgVALSETCfgdata UbloxFirmware9::generateSignalConfig(uint32_t 
   return signalConfig;
 }
 
+void UbloxFirmware9::subscribe(std::shared_ptr<ublox_gps::Gps> gps)
+{ 
+  UbloxFirmware8::subscribe(gps);
+
+  // Subscribe to Mon SYS messages
+  if (getRosBoolean(node_, "publish.mon.sys")) {
+    gps->subscribe<ublox_msgs::msg::MonSYS>([this](const ublox_msgs::msg::MonSYS &m) {
+      mon_sys_pub_->publish(m); }, 1);
+  }
+}
 
 }  // namespace ublox_node

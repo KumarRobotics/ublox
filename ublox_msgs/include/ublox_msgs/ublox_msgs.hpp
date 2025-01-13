@@ -96,6 +96,7 @@
 #include <ublox_msgs/msg/mon_gnss.hpp>
 #include <ublox_msgs/msg/mon_hw.hpp>
 #include <ublox_msgs/msg/mon_hw6.hpp>
+#include <ublox_msgs/msg/mon_sys.hpp>
 #include <ublox_msgs/msg/mon_ver.hpp>
 
 #include <ublox_msgs/msg/aid_alm.hpp>
@@ -240,6 +241,7 @@ namespace Message {
   namespace MON {
     static const uint8_t GNSS = ublox_msgs::msg::MonGNSS::MESSAGE_ID;
     static const uint8_t HW = ublox_msgs::msg::MonHW::MESSAGE_ID;
+    static const uint8_t SYS = ublox_msgs::msg::MonSYS::MESSAGE_ID;
     static const uint8_t VER = ublox_msgs::msg::MonVER::MESSAGE_ID;
   }  // namespace MON
 

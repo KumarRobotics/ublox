@@ -1501,6 +1501,60 @@ struct UbloxSerializer<ublox_msgs::msg::MonHW6_<ContainerAllocator> > {
 };
 
 template <typename ContainerAllocator>
+struct UbloxSerializer<ublox_msgs::msg::MonSYS_<ContainerAllocator> > {
+  inline static void read(const uint8_t *data, uint32_t count,
+                          ublox_msgs::msg::MonSYS_<ContainerAllocator> & m) {
+    UbloxIStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.version);
+    stream.next(m.boot_type);
+    stream.next(m.cpu_load);
+    stream.next(m.cpu_load_max);
+    stream.next(m.mem_usage);
+    stream.next(m.mem_usage_max);
+    stream.next(m.io_usage);
+    stream.next(m.io_usage_max);
+    stream.next(m.run_time);
+    stream.next(m.notice_count);
+    stream.next(m.warning_count);
+    stream.next(m.error_count);
+    stream.next(m.temperature);
+    stream.next(m.reserved0[0]);
+    stream.next(m.reserved0[1]);
+    stream.next(m.reserved0[2]);
+    stream.next(m.reserved0[3]);
+    stream.next(m.reserved0[4]);
+  }
+
+  inline static uint32_t serializedLength(const ublox_msgs::msg::MonSYS_<ContainerAllocator> & m) {
+    (void)m;
+    return 24;
+  }
+
+  inline static void write(uint8_t *data, uint32_t size,
+                           const ublox_msgs::msg::MonSYS_<ContainerAllocator> & m) {
+    UbloxOStream stream(data, size);
+    stream.next(m.version);
+    stream.next(m.boot_type);
+    stream.next(m.cpu_load);
+    stream.next(m.cpu_load_max);
+    stream.next(m.mem_usage);
+    stream.next(m.mem_usage_max);
+    stream.next(m.io_usage);
+    stream.next(m.io_usage_max);
+    stream.next(m.run_time);
+    stream.next(m.notice_count);
+    stream.next(m.warning_count);
+    stream.next(m.error_count);
+    stream.next(m.temperature);
+    stream.next(m.reserved0[0]);
+    stream.next(m.reserved0[1]);
+    stream.next(m.reserved0[2]);
+    stream.next(m.reserved0[3]);
+    stream.next(m.reserved0[4]);
+  }
+};
+
+template <typename ContainerAllocator>
 struct UbloxSerializer<ublox_msgs::msg::MonVERExtension_<ContainerAllocator> > {
   inline static void read(UbloxIStream& stream, ublox_msgs::msg::MonVERExtension_<ContainerAllocator> & m) {
     stream.next(m.field);
