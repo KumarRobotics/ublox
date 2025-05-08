@@ -1,0 +1,51 @@
+# Configuration for NEO-F10N L1/L5 GPS receiver
+
+# Device configuration
+device: /dev/ttyUSB0
+frame_id: gps
+baudrate: 38400
+rate: 4                   # Measurement rate in Hz
+nav_rate: 1               # Navigation rate in measurement cycles
+dynamic_model: automotive # Automotive, pedestrian, etc.
+uart1:
+  baudrate: 38400
+  in: 7                   # NMEA + UBX in
+  out: 1                  # UBX out
+
+# u-blox 9 protocol settings
+protocol_version: 40      # Simplified from 40.00 for compatibility
+ublox_version: 9
+# Fix mode (2D, 3D, auto)
+fix_mode: auto
+
+# GNSS Options
+gnss:
+  gps: true
+  glonass: false
+  beidou: true
+  galileo: true
+  navic: true
+  qzss: true
+  sbas: false
+
+# Enable specific message types
+# Enable NMEA messages
+nmea:
+  set: true
+  version: 4.10
+  gga: true
+  gll: true
+  gsa: true
+  gsv: true
+  rmc: true
+  vtg: true
+  gst: true
+
+# Enable UBX messages for position, velocity, etc.
+publish:
+  nav:
+    pvt: true
+    sat: true
+    status: true
+    posecef: true
+    velecef: true

@@ -1,0 +1,67 @@
+# Configuration for NEO-F10N L1/L5 GPS receiver
+
+# Device configuration
+device: /dev/ttyUSB0
+frame_id: gps
+baudrate: 38400
+rate: 4                   # Measurement rate in Hz
+nav_rate: 1               # Navigation rate in measurement cycles
+dynamic_model: automotive # Automotive, pedestrian, etc.
+uart1:
+  baudrate: 38400
+  in: 7                   # NMEA + UBX in
+  out: 1                  # UBX out
+
+# u-blox 9 protocol settings
+ublox_version: 9
+# Set to auto for best compatibility
+fix_mode: auto
+
+# Workaround: Rather than setting individual GNSS constellations
+# which are triggering warnings, we're using a simpler approach
+enable_galileo: false
+enable_beidou: false
+enable_glonass: false
+gnss:
+  gps: false  # Workaround for the "not supported" warning
+  glonass: false
+  beidou: false
+  galileo: false
+  navic: false
+  qzss: false
+  sbas: false
+
+# Set this to true to use the survey-in feature for base stations
+# This is usually not needed for a rover
+use_adr: false
+use_feature_assistance: false
+
+# Fix for NMEA error - add required num_sv parameter
+nmea:
+  set: true
+  version: 4.10
+  num_sv: 8    # Required parameter (number of space vehicles to report)
+  gga: true
+  gll: true
+  gsa: true
+  gsv: true
+  rmc: true
+  vtg: true
+  gst: true
+
+# Enable UBX messages for position, velocity, etc.
+publish:
+  nav:
+    pvt: true
+    sat: true
+    status: true
+    posecef: true
+    velecef: true
+
+# INF messages
+inf:
+  all: true
+
+# Recommended to leave max_sbas at 0 unless needed
+max_sbas: 0
+

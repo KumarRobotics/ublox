@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="node_name" default="ublox_gps"/>
+  <arg name="output" default="screen"/>
+  <arg name="respawn" default="true"/>
+  <arg name="respawn_delay" default="30"/>
+  <arg name="clear_params" default="true"/>
+
+  <node pkg="ublox_gps" type="ublox_gps" name="$(arg node_name)"
+        output="$(arg output)" 
+        respawn="$(arg respawn)" 
+        respawn_delay="$(arg respawn_delay)" 
+        clear_params="$(arg clear_params)">
+
+    <!-- Basic device parameters -->
+    <param name="device" value="/dev/ttyUSB0"/>
+    <param name="frame_id" value="gps"/>
+    <param name="baudrate" value="38400"/>
+    <param name="rate" value="4"/>
+    <param name="nav_rate" value="1"/>
+    <param name="dynamic_model" value="automotive"/>
+    <param name="ublox_version" value="9"/>
+    <param name="fix_mode" value="auto"/>
+    <param name="config_on_startup" value="false" />
+
+    <!-- UART Configuration -->
+    <param name="uart1/baudrate" value="38400"/>
+    <param name="uart1/in" value="7"/>  <!-- NMEA + UBX in -->
+    <param name="uart1/out" value="1"/> <!-- UBX out -->
+
+    <!-- Important: Include the existing NMEA configuration -->
+    <rosparam command="load" file="$(find ublox_gps)/config/nmea.yaml" />
+
+    <!-- Message configuration -->
+    <param name="publish/nav/pvt" value="true"/>
+    <param name="publish/nav/sat" value="true"/>
+    <param name="publish/nav/status" value="true"/>
+    <param name="inf/all" value="true"/>
+
+    <!-- Avoid problematic GNSS settings -->
+    <param name="enable_galileo" value="false"/>
+    <param name="enable_beidou" value="false"/>
+    <param name="enable_glonass" value="false"/>
+    <param name="gnss/gps" value="false"/>
+    <param name="gnss/galileo" value="false"/>
+    <param name="gnss/beidou" value="false"/>
+    <param name="max_sbas" value="0"/>
+  </node>
+</launch>
+

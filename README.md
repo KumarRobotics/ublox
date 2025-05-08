@@ -3,6 +3,12 @@ The `ublox` package provides support for [u-blox](http://www.u-blox.com) GPS rec
 
 The driver was originally written by Johannes Meyer. Changes made later are detailed in the version history below.
 
+
+launch with
+```
+roslaunch ublox_gps neo_f10n.launch
+```
+
 ## Options
 
 Example .yaml configuration files are included in `ublox_gps/config`. Consult the u-blox documentation for your device for the recommended settings.
