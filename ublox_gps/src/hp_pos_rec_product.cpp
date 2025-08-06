@@ -20,7 +20,7 @@ namespace ublox_node {
 //
 // U-Blox High Precision Positioning Receiver
 //
-HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, rclcpp::Node* node)
+HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, rclcpp_lifecycle::LifecycleNode* node)
   : HpgRefProduct(nav_rate, meas_rate, updater, rtcms, node), frame_id_(frame_id)
 {
   if (getRosBoolean(node_, "publish.nav.relposned")) {

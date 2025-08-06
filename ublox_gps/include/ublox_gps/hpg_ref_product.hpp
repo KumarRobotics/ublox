@@ -13,6 +13,9 @@
 #include <ublox_gps/gps.hpp>
 #include <ublox_gps/rtcm.hpp>
 
+// Lifecycle
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
 namespace ublox_node {
 
 /**
@@ -24,7 +27,7 @@ class HpgRefProduct: public virtual ComponentInterface {
   //! Default measurement period for HPG devices
   constexpr static uint16_t kDefaultMeasPeriod = 250;
 
-  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, rclcpp::Node* node);
+  explicit HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, rclcpp_lifecycle::LifecycleNode* node);
 
   /**
    * @brief Get the ROS parameters specific to the Reference Station
@@ -137,7 +140,7 @@ class HpgRefProduct: public virtual ComponentInterface {
 
   std::vector<ublox_gps::Rtcm> rtcms_;
   std::shared_ptr<ublox_gps::Gps> gps_;
-  rclcpp::Node* node_;
+  rclcpp_lifecycle::LifecycleNode* node_;
 };
 
 }  // namespace ublox_node

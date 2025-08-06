@@ -20,7 +20,7 @@ namespace ublox_node {
 //
 // U-Blox High Precision GNSS Rover
 //
-HpgRovProduct::HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node)
+HpgRovProduct::HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp_lifecycle::LifecycleNode* node)
   : dgnss_mode_(ublox_msgs::msg::CfgDGNSS::DGNSS_MODE_RTK_FIXED), nav_rate_(nav_rate), updater_(updater), node_(node)
 {
   if (getRosBoolean(node_, "publish.nav.relposned")) {

@@ -15,11 +15,14 @@
 #include <ublox_gps/hpg_ref_product.hpp>
 #include <ublox_gps/rtcm.hpp>
 
+// Lifecycle
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
 namespace ublox_node {
 
 class HpPosRecProduct final : public virtual HpgRefProduct {
  public:
-  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, rclcpp::Node* node);
+  explicit HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, rclcpp_lifecycle::LifecycleNode* node);
 
   /**
    * @brief Subscribe to Rover messages, such as NavRELPOSNED.

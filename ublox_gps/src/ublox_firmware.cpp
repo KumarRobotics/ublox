@@ -11,7 +11,7 @@ namespace ublox_node {
 //
 // U-Blox Firmware (all versions)
 //
-UbloxFirmware::UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<Gnss> gnss, rclcpp::Node* node) : updater_(updater), gnss_(gnss), node_(node)
+UbloxFirmware::UbloxFirmware(std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<Gnss> gnss, rclcpp_lifecycle::LifecycleNode* node) : updater_(updater), gnss_(gnss), node_(node)
 {
 }
 

@@ -22,7 +22,7 @@ namespace ublox_node {
 // u-blox High Precision GNSS Reference Station
 //
 
-HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, rclcpp::Node* node)
+HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, std::vector<ublox_gps::Rtcm> rtcms, rclcpp_lifecycle::LifecycleNode* node)
   : tmode3_(0), lla_flag_(false), fixed_pos_acc_(0.0), svin_reset_(false), sv_in_min_dur_(0), sv_in_acc_lim_(0.0), nav_rate_(nav_rate), meas_rate_(meas_rate), updater_(updater), rtcms_(rtcms), node_(node)
 {
   if (getRosBoolean(node_, "publish.nav.svin")) {
@@ -36,7 +36,7 @@ HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_
  * @throws std::runtime_error if the parameter is out of bounds.
  * @return true if found, false if not found.
  */
-bool getRosInt(rclcpp::Node* node, const std::string& key, std::vector<int8_t> &i) {
+bool getRosInt(rclcpp_lifecycle::LifecycleNode* node, const std::string& key, std::vector<int8_t> &i) {
   std::vector<int64_t> param;
   if (!node->get_parameter(key, param)) {
     return false;

@@ -20,6 +20,9 @@
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gps.hpp>
 
+// Lifecycle
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
 namespace ublox_node {
 
 /**
@@ -28,7 +31,7 @@ namespace ublox_node {
  */
 class AdrUdrProduct final : public virtual ComponentInterface {
  public:
-  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node);
+  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp_lifecycle::LifecycleNode* node);
 
   /**
    * @brief Get the ADR/UDR parameters.
@@ -84,7 +87,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
 
   std::string frame_id_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
-  rclcpp::Node* node_;
+  rclcpp_lifecycle::LifecycleNode* node_;
 };
 
 }  // namespace ublox_node

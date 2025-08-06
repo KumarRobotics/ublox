@@ -13,6 +13,9 @@
 
 #include <ublox_gps/mkgmtime.h>
 
+// Lifecycle
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
 namespace ublox_node {
 
 /**
@@ -93,7 +96,7 @@ void checkRange(std::vector<V> val, T min, T max, const std::string & name) {
  * @return true if found, false if not found.
  */
 template <typename U>
-bool getRosUint(rclcpp::Node* node, const std::string& key, U &u) {
+bool getRosUint(rclcpp_lifecycle::LifecycleNode* node, const std::string& key, U &u) {
   rclcpp::Parameter parameter;
   if (!node->get_parameter(key, parameter)) {
     return false;
@@ -117,7 +120,7 @@ bool getRosUint(rclcpp::Node* node, const std::string& key, U &u) {
  * @return true if found, false if not found.
  */
 template <typename U, typename V>
-void getRosUint(rclcpp::Node* node, const std::string& key, U &u, V default_val) {
+void getRosUint(rclcpp_lifecycle::LifecycleNode* node, const std::string& key, U &u, V default_val) {
   if (!getRosUint(node, key, u)) {
     u = default_val;
   }
@@ -129,7 +132,7 @@ void getRosUint(rclcpp::Node* node, const std::string& key, U &u, V default_val)
  * @return true if found, false if not found.
  */
 template <typename U>
-bool getRosUint(rclcpp::Node* node, const std::string& key, std::vector<U> &u) {
+bool getRosUint(rclcpp_lifecycle::LifecycleNode* node, const std::string& key, std::vector<U> &u) {
   std::vector<U> param;
   if (!node->get_parameter(key, param)) {
     return false;
@@ -145,7 +148,7 @@ bool getRosUint(rclcpp::Node* node, const std::string& key, std::vector<U> &u) {
   return true;
 }
 
-static inline bool getRosBoolean(rclcpp::Node* node, const std::string &name)
+static inline bool getRosBoolean(rclcpp_lifecycle::LifecycleNode* node, const std::string &name)
 {
   bool ret;
   if (!node->get_parameter(name, ret)) {
@@ -157,7 +160,7 @@ static inline bool getRosBoolean(rclcpp::Node* node, const std::string &name)
 }
 
 template <typename T>
-T declareRosIntParameter(rclcpp::Node* node, const std::string& name, int64_t default_value)
+T declareRosIntParameter(rclcpp_lifecycle::LifecycleNode* node, const std::string& name, int64_t default_value)
 {
   rcl_interfaces::msg::ParameterDescriptor param_desc;
   param_desc.name = name;
@@ -170,7 +173,7 @@ T declareRosIntParameter(rclcpp::Node* node, const std::string& name, int64_t de
   return node->declare_parameter(name, default_value, param_desc);
 }
 
-static inline bool isRosParameterSet(rclcpp::Node* node, const std::string& name)
+static inline bool isRosParameterSet(rclcpp_lifecycle::LifecycleNode* node, const std::string& name)
 {
   rclcpp::Parameter param;
   node->get_parameter(name, param);

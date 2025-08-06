@@ -31,7 +31,7 @@ namespace ublox_node {
 template<typename NavPVT>
 class UbloxFirmware7Plus : public UbloxFirmware {
  public:
-  explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node)
+  explicit UbloxFirmware7Plus(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp_lifecycle::LifecycleNode* node)
     : UbloxFirmware(updater, gnss, node), frame_id_(frame_id), freq_diag_(freq_diag) {
     // NavPVT publisher
     if (getRosBoolean(node_, "publish.nav.pvt")) {
@@ -41,8 +41,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
     fix_pub_ =
         node_->create_publisher<sensor_msgs::msg::NavSatFix>("~/fix", 1);
     vel_pub_ =
-        node_->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("~/fix_velocity",
-                                                                   1);
+        node_->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("~/fix_velocity", 1);
   }
 
   /**
@@ -111,6 +110,7 @@ class UbloxFirmware7Plus : public UbloxFirmware {
         sensor_msgs::msg::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
 
     fix_pub_->publish(fix);
+    // TODO: reset watchdog
 
     //
     // Twist message

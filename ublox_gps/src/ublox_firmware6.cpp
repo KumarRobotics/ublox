@@ -27,7 +27,7 @@ namespace ublox_node {
 //
 // U-Blox Firmware Version 6
 //
-UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node)
+UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp_lifecycle::LifecycleNode* node)
   : UbloxFirmware(updater, gnss, node), frame_id_(frame_id), freq_diag_(freq_diag)
 {
   if (getRosBoolean(node_, "publish.nav.posllh")) {

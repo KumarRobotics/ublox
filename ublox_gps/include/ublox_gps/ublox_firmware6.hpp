@@ -25,7 +25,7 @@ namespace ublox_node {
  */
 class UbloxFirmware6 final : public UbloxFirmware {
  public:
-  explicit UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node);
+  explicit UbloxFirmware6(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp_lifecycle::LifecycleNode* node);
 
   /**
    * @brief Sets the fix status service type to GPS.

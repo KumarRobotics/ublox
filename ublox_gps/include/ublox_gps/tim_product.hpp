@@ -15,6 +15,9 @@
 #include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gps.hpp>
 
+// Lifecycle
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
 namespace ublox_node {
 
 /**
@@ -23,7 +26,7 @@ namespace ublox_node {
  */
 class TimProduct final : public virtual ComponentInterface {
  public:
-  explicit TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node);
+  explicit TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp_lifecycle::LifecycleNode* node);
 
   /**
    * @brief Get the Time Sync parameters.
@@ -67,7 +70,7 @@ class TimProduct final : public virtual ComponentInterface {
   std::string frame_id_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
 
-  rclcpp::Node* node_;
+  rclcpp_lifecycle::LifecycleNode* node_;
 };
 
 }  // namespace ublox_node

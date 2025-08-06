@@ -16,6 +16,9 @@
 #include <ublox_gps/gps.hpp>
 #include <ublox_gps/ublox_topic_diagnostic.hpp>
 
+// Lifecycle
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
 namespace ublox_node {
 
 /**
@@ -26,7 +29,7 @@ class RawDataProduct final : public virtual ComponentInterface {
   const double kRtcmFreqTol = 0.15;
   const int kRtcmFreqWindow = 25;
 
-  explicit RawDataProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node);
+  explicit RawDataProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp_lifecycle::LifecycleNode* node);
 
   /**
    * @brief Does nothing since there are no Raw Data product specific settings.
@@ -66,7 +69,7 @@ class RawDataProduct final : public virtual ComponentInterface {
   uint16_t nav_rate_;
   uint16_t meas_rate_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
-  rclcpp::Node* node_;
+  rclcpp_lifecycle::LifecycleNode* node_;
 };
 
 }  // namespace ublox_node

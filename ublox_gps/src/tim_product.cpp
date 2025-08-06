@@ -20,7 +20,7 @@ namespace ublox_node {
 //
 // U-Blox Time Sync Products, partially implemented.
 //
-TimProduct::TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node) : frame_id_(frame_id), updater_(updater), node_(node)
+TimProduct::TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp_lifecycle::LifecycleNode* node) : frame_id_(frame_id), updater_(updater), node_(node)
 {
   timtm2_pub_ =
     node_->create_publisher<ublox_msgs::msg::TimTM2>("timtm2", 1);

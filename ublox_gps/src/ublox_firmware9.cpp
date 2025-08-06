@@ -12,7 +12,7 @@
 
 namespace ublox_node {
 
-UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node)
+UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp_lifecycle::LifecycleNode* node)
   : UbloxFirmware8(frame_id, updater, freq_diag, gnss, node)
 {
   if (getRosBoolean(node_, "publish.mon.sys"))

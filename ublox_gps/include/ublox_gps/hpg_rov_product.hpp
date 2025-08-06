@@ -12,6 +12,9 @@
 #include <ublox_gps/gps.hpp>
 #include <ublox_gps/ublox_topic_diagnostic.hpp>
 
+// Lifecycle
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
 namespace ublox_node {
 
 /**
@@ -29,7 +32,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
   //! Diagnostic updater: RTCM topic frequency window [num messages]
   const int kRtcmFreqWindow = 25;
 
-  explicit HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node);
+  explicit HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp_lifecycle::LifecycleNode* node);
 
   /**
    * @brief Get the ROS parameters specific to the Rover configuration.
@@ -87,7 +90,7 @@ class HpgRovProduct final : public virtual ComponentInterface {
 
   uint16_t nav_rate_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
-  rclcpp::Node* node_;
+  rclcpp_lifecycle::LifecycleNode* node_;
 };
 
 }  // namespace ublox_node

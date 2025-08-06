@@ -175,7 +175,9 @@ std::vector<std::string> stringSplit(const std::string &str,
 //
 // u-blox ROS Node
 //
-UbloxNode::UbloxNode(const rclcpp::NodeOptions & options) : rclcpp::Node("ublox_gps_node", options) {
+UbloxNode::UbloxNode(const rclcpp::NodeOptions & options) 
+: rclcpp_lifecycle::LifecycleNode("ublox_gps_node", options) 
+{
   int debug = this->declare_parameter("debug", 1);
   if (debug) {
     if (rcutils_logging_set_logger_level("ublox_gps_node", RCUTILS_LOG_SEVERITY_DEBUG) != RCUTILS_RET_OK) {

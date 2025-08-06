@@ -51,6 +51,16 @@
 #include <ublox_gps/rtcm.hpp>
 #include <ublox_gps/raw_data_pa.hpp>
 
+// ROS 2 lifecycle
+#include "lifecycle_msgs/msg/state.hpp"
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include "lifecycle_msgs/msg/transition_description.hpp"
+
+using LifecycleNodeInterface = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface;
+
+// Watchdog
+#include "ublox_gps/watchdog.hpp"
+
 // This file also declares UbloxNode which is the main class and ros node. It
 // implements functionality which applies to any u-blox device, regardless of
 // the firmware version or product type.  The class is designed in compositional
@@ -80,7 +90,7 @@ namespace ublox_node {
  * The UbloxNode calls the public methods of ComponentInterface for each
  * element in the components vector.
  */
-class UbloxNode final : public rclcpp::Node {
+class UbloxNode final : public rclcpp_lifecycle::LifecycleNode {
  public:
   //! How long to wait during I/O reset [s]
   constexpr static int kResetWait = 10;
@@ -299,6 +309,42 @@ class UbloxNode final : public rclcpp::Node {
 
   rclcpp::TimerBase::SharedPtr keep_alive_;
   rclcpp::TimerBase::SharedPtr poller_;
+
+  /// @brief Watchdog hearthbeat.
+  void heartbeat();
+
+  /// @brief Callback for the Recovery function.
+  void recovery();
+
+protected:
+  /// @brief Callback for the Configure transition.
+  /// @return CallbackReturn indicating the result of the transition.
+  //LifecycleNodeInterface::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+
+  /// @brief Callback for the Activate transition.
+  /// @return CallbackReturn indicating the result of the transition.
+  //LifecycleNodeInterface::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+
+  /// @brief Callback for the Deactivate transition.
+  /// @return CallbackReturn indicating the result of the transition.
+  //LifecycleNodeInterface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+
+  /// @brief Callback for the Cleanup transition.
+  /// @return CallbackReturn indicating the result of the transition.
+  //LifecycleNodeInterface::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+
+  /// @brief Callback for the Shutdown transition.
+  /// @return CallbackReturn indicating the result of the transition.
+  //LifecycleNodeInterface::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+
+  // Variables
+  std::shared_ptr<Watchdog> watchdog_;    // Watchdog 
+  int watchdog_timeout_;                  // Watchdog timeout in milliseconds
+  int watchdog_cycle_time_;               // Watchdog cycle time in milliseconds
+  bool soft_reset_ = false;               // Flag to indicate if a soft reset is needed (deactivation only)
+  bool hard_reset_ = false;               // Flag to indicate if a hard reset is needed (deactivation + cleanup)
+  bool reset_fail_ = false;               // Flag to indicate if both reset failed
+  int recovery_cycle_time_ = 30;          // Recovery cycle time in seconds
 };
 
 }  // namespace ublox_node

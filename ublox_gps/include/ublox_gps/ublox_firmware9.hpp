@@ -22,7 +22,7 @@ namespace ublox_node {
  */
 class UbloxFirmware9 final : public UbloxFirmware8 {
 public:
-  explicit UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node);
+  explicit UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp_lifecycle::LifecycleNode* node);
 
   /**
     * @brief Configure settings specific to firmware 9 based on ROS parameters.
