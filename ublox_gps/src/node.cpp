@@ -542,6 +542,13 @@ void UbloxNode::pollMessages() {
     gps_->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::HUI);
   }
 
+  // Receive NAV data
+  if (gps_->poll(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::ATT))
+  {
+    watchdog_->reset();
+    this->heartbeat();
+  }
+
   payload[0]++;
   if (payload[0] > 32) {
     payload[0] = 1;
@@ -892,6 +899,7 @@ void UbloxNode::initializeIo() {
       throw std::runtime_error("Protocol '" + proto + "' is unsupported");
     }
   } else {
+    // TODO: try to pass here the pointer 
     gps_->initializeSerial(device_, baudrate_, uart_in_, uart_out_);
   }
 
@@ -996,7 +1004,13 @@ UbloxNode::on_activate(const rclcpp_lifecycle::State & state)
             this->get_current_state().id()
         ); 
 
-        // TODO: activate
+        if (keep_alive_)
+          if (keep_alive_->is_canceled())
+            keep_alive_->reset();
+
+        if (poller_)
+          if (poller_->is_canceled()) 
+            poller_->reset();
 
         // Start the watchdog
         watchdog_->start();
@@ -1023,8 +1037,14 @@ UbloxNode::on_deactivate(const rclcpp_lifecycle::State & state)
             this->get_current_state().id()
         ); 
 
-        // TODO: deactivate
-
+        if (keep_alive_)
+          if (!keep_alive_->is_canceled()) 
+            keep_alive_->cancel();
+        
+        if (poller_)
+          if (!poller_->is_canceled()) 
+            poller_->cancel();
+      
         // Stop the watchdog
         watchdog_->stop();
     }
@@ -1049,8 +1069,20 @@ UbloxNode::on_cleanup(const rclcpp_lifecycle::State & state)
             this->get_current_state().label().c_str(),
             this->get_current_state().id()
         ); 
+        
+        if (keep_alive_)
+        {
+        if (!keep_alive_->is_canceled()) 
+          keep_alive_->cancel();
+        keep_alive_.reset();
+        }
 
-        // TODO: cleanup
+        if (poller_)
+        {
+        if (!poller_->is_canceled()) 
+          poller_->cancel();
+        poller_.reset();
+        }
     }
     catch (const std::exception &e)
     {
@@ -1083,6 +1115,79 @@ UbloxNode::on_shutdown(const rclcpp_lifecycle::State & state)
     }
 
     return LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+void UbloxNode::heartbeat()
+{
+    if (this->reset_fail_ || this->hard_reset_ || this->soft_reset_)
+        RCLCPP_INFO(get_logger(), "Data have been received again.");
+
+    if (this->reset_fail_) this->reset_fail_ = false;   // Reset reset_fail flag
+    if (this->hard_reset_) this->hard_reset_ = false;   // Reset hard_reset flag 
+    if (this->soft_reset_) this->soft_reset_ = false;   // Reset soft_reset flag 
+}
+
+void UbloxNode::recovery()
+{
+    try 
+    {
+        RCLCPP_INFO(get_logger(), "Recovery function called. Attempting to recover...");
+
+        // Check if the node is in an active state
+        if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+            RCLCPP_WARN(get_logger(), "Node is not active (current state: %s), cannot recover.", this->get_current_state().label().c_str());
+            return;
+        }
+        
+        // Check if both soft and hard reset have already been performed
+        if (this->hard_reset_ && this->soft_reset_)   
+        {
+            if (!this->reset_fail_) this->reset_fail_ = true; 
+            
+            RCLCPP_WARN(get_logger(), "Both soft and hard resets have already been performed. Waiting for %i seconds before retrying.", this->recovery_cycle_time_);
+            rclcpp::sleep_for(std::chrono::seconds(this->recovery_cycle_time_));
+            
+            // Check if while sleeping data have been received
+            if (!this->reset_fail_) return;
+        }
+
+        if (this->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+        {
+            // If soft reset has not been performed, proceed with it
+            if (!this->soft_reset_ && !this->hard_reset_) 
+            {
+                RCLCPP_INFO(get_logger(), "Proceeding to soft reset.");
+                this->soft_reset_ = true; // Set soft reset flag
+            }
+            // Else proceed with hard reset
+            else if (this->soft_reset_ && !this->hard_reset_) 
+            {
+                RCLCPP_INFO(get_logger(), "Soft reset already performed, proceeding to hard reset.");
+                this->hard_reset_ = true; // Set hard reset flag
+            }        
+
+            // Deactivate the node
+            this->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
+            
+            // Hard reset
+            if (this->hard_reset_) {
+                // Cleanup the node
+                this->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CLEANUP);
+
+                // Configure the node again
+                this->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+            } 
+
+            // Activate the node again
+            this->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+
+            RCLCPP_INFO(get_logger(), "Recovery successful.");
+        }
+    }
+    catch (const std::exception &e)
+    {
+        RCLCPP_ERROR(get_logger(), "Recovery failed: %s", e.what());
+    }
 }
 
 }  // namespace ublox_node

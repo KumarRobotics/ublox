@@ -97,7 +97,7 @@ class UbloxNode final : public rclcpp_lifecycle::LifecycleNode {
   //! How often (in seconds) to send keep-alive message
   constexpr static double kKeepAlivePeriod = 10.0;
   //! How often (in seconds) to call poll messages
-  constexpr static double kPollDuration = 1.0;
+  constexpr static double kPollDuration = 0.1;
   // Constants used for diagnostic frequency updater
   //! [s] 5Hz diagnostic period
   const float kDiagnosticPeriod = 0.2;
@@ -309,11 +309,11 @@ class UbloxNode final : public rclcpp_lifecycle::LifecycleNode {
   rclcpp::TimerBase::SharedPtr keep_alive_;
   rclcpp::TimerBase::SharedPtr poller_;
 
-  /// @brief Watchdog hearthbeat.
-  void heartbeat();
-
   /// @brief Callback for the Recovery function.
   void recovery();
+
+  /// @brief Data hearthbeat.
+  void heartbeat();
 
 protected:
   /// @brief Callback for the Configure transition.
@@ -338,8 +338,8 @@ protected:
 
   // Variables
   std::shared_ptr<Watchdog> watchdog_;    // Watchdog 
-  int watchdog_timeout_;                  // Watchdog timeout in milliseconds
-  int watchdog_cycle_time_;               // Watchdog cycle time in milliseconds
+  int watchdog_timeout_ = 1000;           // Watchdog timeout in milliseconds
+  int watchdog_cycle_time_ = 500;         // Watchdog cycle time in milliseconds
   bool soft_reset_ = false;               // Flag to indicate if a soft reset is needed (deactivation only)
   bool hard_reset_ = false;               // Flag to indicate if a hard reset is needed (deactivation + cleanup)
   bool reset_fail_ = false;               // Flag to indicate if both reset failed

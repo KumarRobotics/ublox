@@ -110,7 +110,6 @@ class UbloxFirmware7Plus : public UbloxFirmware {
         sensor_msgs::msg::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
 
     fix_pub_->publish(fix);
-    // TODO: reset watchdog
 
     //
     // Twist message
