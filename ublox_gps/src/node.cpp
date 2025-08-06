@@ -178,6 +178,10 @@ std::vector<std::string> stringSplit(const std::string &str,
 UbloxNode::UbloxNode(const rclcpp::NodeOptions & options) 
 : rclcpp_lifecycle::LifecycleNode("ublox_gps_node", options) 
 {
+  // Get node name
+  auto node_name = this->get_name();
+  RCLCPP_INFO(get_logger(), "Initializing Node: %s", node_name);
+
   int debug = this->declare_parameter("debug", 1);
   if (debug) {
     if (rcutils_logging_set_logger_level("ublox_gps_node", RCUTILS_LOG_SEVERITY_DEBUG) != RCUTILS_RET_OK) {
@@ -192,7 +196,24 @@ UbloxNode::UbloxNode(const rclcpp::NodeOptions & options)
   updater_ = std::make_shared<diagnostic_updater::Updater>(this);
   updater_->setHardwareID("ublox");
 
-  initialize();
+  // Initialize UBlox 
+  this->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+
+  // Initialize the Watchdog
+  auto timeout = std::chrono::milliseconds(watchdog_timeout_);
+  auto cycle_time = std::chrono::milliseconds(watchdog_cycle_time_); 
+  watchdog_ = std::make_shared<Watchdog>();
+  watchdog_->set_timeout(std::chrono::milliseconds(timeout)); 
+  watchdog_->set_check_interval(std::chrono::milliseconds(cycle_time));
+  watchdog_->set_callback([this]() {
+      RCLCPP_ERROR(this->get_logger(), "Watchdog timeout! No data received from sensor. Resetting...");
+
+      // Call the lifecycle recovery method
+      //this->recovery();
+  });
+
+  // Activate UBlox and start Watchdog
+  this->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
 }
 
 void UbloxNode::rtcmCallback(const rtcm_msgs::msg::Message::SharedPtr msg) {
@@ -217,7 +238,6 @@ void UbloxNode::addFirmwareInterface() {
 
   RCLCPP_INFO(this->get_logger(), "U-Blox Firmware Version: %d", ublox_version);
 }
-
 
 void UbloxNode::addProductInterface(const std::string & product_category,
                                     const std::string & ref_rov) {
@@ -937,6 +957,132 @@ void UbloxNode::shutdown() {
 
 UbloxNode::~UbloxNode() {
   shutdown();
+}
+
+LifecycleNodeInterface::CallbackReturn 
+UbloxNode::on_configure(const rclcpp_lifecycle::State & state)
+{
+    try 
+    {
+        // Print the lifecycle state transition
+        RCLCPP_INFO(get_logger(), "Lifecycle state transition: %s (%i) -> %s (%i)", 
+            state.label().c_str(), 
+            state.id(),
+            this->get_current_state().label().c_str(),
+            this->get_current_state().id()
+        ); 
+
+        initialize();
+    }
+    catch (const std::exception &e)
+    {
+        RCLCPP_ERROR(get_logger(), "Failed to configure: %s", e.what());
+        return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }
+
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+LifecycleNodeInterface::CallbackReturn 
+UbloxNode::on_activate(const rclcpp_lifecycle::State & state)
+{
+    try 
+    {
+        // Print the lifecycle state transition
+        RCLCPP_INFO(get_logger(), "Lifecycle state transition: %s (%i) -> %s (%i)", 
+            state.label().c_str(), 
+            state.id(),
+            this->get_current_state().label().c_str(),
+            this->get_current_state().id()
+        ); 
+
+        // TODO: activate
+
+        // Start the watchdog
+        watchdog_->start();
+    }
+    catch (const std::exception &e)
+    {
+        RCLCPP_ERROR(get_logger(), "Failed to activate: %s", e.what());
+        return LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }   
+
+    return LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+LifecycleNodeInterface::CallbackReturn
+UbloxNode::on_deactivate(const rclcpp_lifecycle::State & state)
+{
+    try 
+    {
+        // Print the lifecycle state transition
+        RCLCPP_INFO(get_logger(), "Lifecycle state transition: %s (%i) -> %s (%i)", 
+            state.label().c_str(), 
+            state.id(),
+            this->get_current_state().label().c_str(),
+            this->get_current_state().id()
+        ); 
+
+        // TODO: deactivate
+
+        // Stop the watchdog
+        watchdog_->stop();
+    }
+    catch (const std::exception &e)
+    {
+        RCLCPP_ERROR(get_logger(), "Failed to deactivate: %s", e.what());
+        return LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }
+
+    return LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+LifecycleNodeInterface::CallbackReturn
+UbloxNode::on_cleanup(const rclcpp_lifecycle::State & state)
+{
+    try 
+    {
+        // Print the lifecycle state transition
+        RCLCPP_INFO(get_logger(), "Lifecycle state transition: %s (%i) -> %s (%i)", 
+            state.label().c_str(), 
+            state.id(),
+            this->get_current_state().label().c_str(),
+            this->get_current_state().id()
+        ); 
+
+        // TODO: cleanup
+    }
+    catch (const std::exception &e)
+    {
+        RCLCPP_ERROR(get_logger(), "Failed to cleanup: %s", e.what());
+        return LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }
+
+    return LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+LifecycleNodeInterface::CallbackReturn
+UbloxNode::on_shutdown(const rclcpp_lifecycle::State & state)
+{      
+    try 
+    {
+        // Print the lifecycle state transition
+        RCLCPP_INFO(get_logger(), "Lifecycle state transition: %s (%i) -> %s (%i)", 
+            state.label().c_str(), 
+            state.id(),
+            this->get_current_state().label().c_str(),
+            this->get_current_state().id()
+        ); 
+
+        shutdown();
+    }
+    catch (const std::exception &e)
+    {
+        RCLCPP_ERROR(get_logger(), "Failed to shutdown: %s", e.what());
+        return LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }
+
+    return LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 }  // namespace ublox_node

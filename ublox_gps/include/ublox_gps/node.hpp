@@ -56,8 +56,6 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include "lifecycle_msgs/msg/transition_description.hpp"
 
-using LifecycleNodeInterface = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface;
-
 // Watchdog
 #include "ublox_gps/watchdog.hpp"
 
@@ -74,6 +72,8 @@ using LifecycleNodeInterface = rclcpp_lifecycle::node_interfaces::LifecycleNodeI
  * ROS parameters, message passing, diagnostics, etc.
  */
 namespace ublox_node {
+
+using LifecycleNodeInterface = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface;
 
 /**
  * @brief This class represents u-blox ROS node for *all* firmware and product
@@ -147,7 +147,6 @@ class UbloxNode final : public rclcpp_lifecycle::LifecycleNode {
   void printInf(const ublox_msgs::msg::Inf &m, uint8_t id);
 
  private:
-
   /**
    * @brief Callback for '/ntrip_client/rtcm' subscription to handle RTCM correction data
    */
@@ -173,7 +172,7 @@ class UbloxNode final : public rclcpp_lifecycle::LifecycleNode {
    * @brief Shutdown the node. Closes the serial port.
    */
   void shutdown();
-
+  void shutdown2();
   /**
    * @brief Send a reset message the u-blox device & re-initialize the I/O.
    * @return true if reset was successful, false otherwise.
@@ -319,23 +318,23 @@ class UbloxNode final : public rclcpp_lifecycle::LifecycleNode {
 protected:
   /// @brief Callback for the Configure transition.
   /// @return CallbackReturn indicating the result of the transition.
-  //LifecycleNodeInterface::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  LifecycleNodeInterface::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
 
   /// @brief Callback for the Activate transition.
   /// @return CallbackReturn indicating the result of the transition.
-  //LifecycleNodeInterface::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  LifecycleNodeInterface::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
 
   /// @brief Callback for the Deactivate transition.
   /// @return CallbackReturn indicating the result of the transition.
-  //LifecycleNodeInterface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  LifecycleNodeInterface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
 
   /// @brief Callback for the Cleanup transition.
   /// @return CallbackReturn indicating the result of the transition.
-  //LifecycleNodeInterface::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  LifecycleNodeInterface::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
   /// @brief Callback for the Shutdown transition.
   /// @return CallbackReturn indicating the result of the transition.
-  //LifecycleNodeInterface::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  LifecycleNodeInterface::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   // Variables
   std::shared_ptr<Watchdog> watchdog_;    // Watchdog 
