@@ -280,7 +280,7 @@ void AsyncWorker<StreamT>::readEnd(const asio::error_code& error,
                                    std::size_t bytes_transferred) {
   std::lock_guard<std::mutex> lock(read_mutex_);
   if (error) {
-    // TODO: investigate how to reset the watchdog here
+    // TODO: Disconnectio error: investigate how to handle the error here
     RCLCPP_ERROR(logger_, "U-Blox ASIO input buffer read error: %s, %li",
                  error.message().c_str(),
                  bytes_transferred);

@@ -182,6 +182,9 @@ UbloxNode::UbloxNode(const rclcpp::NodeOptions & options)
   auto node_name = this->get_name();
   RCLCPP_INFO(get_logger(), "Initializing Node: %s", node_name);
 
+  // Params must be set before initializing IO
+  getRosParams();
+
   int debug = this->declare_parameter("debug", 1);
   if (debug) {
     if (rcutils_logging_set_logger_level("ublox_gps_node", RCUTILS_LOG_SEVERITY_DEBUG) != RCUTILS_RET_OK) {
@@ -209,11 +212,21 @@ UbloxNode::UbloxNode(const rclcpp::NodeOptions & options)
       RCLCPP_ERROR(this->get_logger(), "Watchdog timeout! No data received from sensor. Resetting...");
 
       // Call the lifecycle recovery method
-      //this->recovery();
+      this->recovery();
   });
 
   // Activate UBlox and start Watchdog
   this->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+
+  /* ********* */
+  /* Debugging */
+  /* ********* */
+
+  // Debugging: service to enable/disable gps inputs
+  gps_inputs_service = this->create_service<std_srvs::srv::SetBool>(
+      std::string("/") + node_name + "/disable_gps_inputs",
+      std::bind(&UbloxNode::handle_gps_inputs, this, std::placeholders::_1, std::placeholders::_2)
+  );
 }
 
 void UbloxNode::rtcmCallback(const rtcm_msgs::msg::Message::SharedPtr msg) {
@@ -541,6 +554,9 @@ void UbloxNode::pollMessages() {
   if (getRosBoolean(this, "publish.aid.hui")) {
     gps_->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::HUI);
   }
+
+  // Debugging: return if gps inputs are disabled
+  if (this->disable_gps_inputs_) return;
 
   // Receive NAV data
   if (gps_->poll(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::ATT))
@@ -899,7 +915,7 @@ void UbloxNode::initializeIo() {
       throw std::runtime_error("Protocol '" + proto + "' is unsupported");
     }
   } else {
-    // TODO: try to pass here the pointer 
+    // TODO: Disconnection error: try to pass here the pointer 
     gps_->initializeSerial(device_, baudrate_, uart_in_, uart_out_);
   }
 
@@ -915,9 +931,6 @@ void UbloxNode::initializeIo() {
 }
 
 void UbloxNode::initialize() {
-  // Params must be set before initializing IO
-  getRosParams();
-
   // configure diagnostic updater for frequency
   freq_diag_ = std::make_shared<FixDiagnostic>(std::string("fix"), kFixFreqTol,
                                                kFixFreqWindow, kTimeStampStatusMin, nav_rate_, meas_rate_, updater_);
@@ -1105,6 +1118,8 @@ UbloxNode::on_shutdown(const rclcpp_lifecycle::State & state)
             this->get_current_state().label().c_str(),
             this->get_current_state().id()
         ); 
+        
+        watchdog_->stop();
 
         shutdown();
     }
@@ -1144,6 +1159,10 @@ void UbloxNode::recovery()
         {
             if (!this->reset_fail_) this->reset_fail_ = true; 
             
+            this->set_gpio(chipname_, line_num_, false);
+            rclcpp::sleep_for(std::chrono::seconds(this->gpio_reset_time_));
+            this->set_gpio(chipname_, line_num_, true);
+
             RCLCPP_WARN(get_logger(), "Both soft and hard resets have already been performed. Waiting for %i seconds before retrying.", this->recovery_cycle_time_);
             rclcpp::sleep_for(std::chrono::seconds(this->recovery_cycle_time_));
             
@@ -1188,6 +1207,33 @@ void UbloxNode::recovery()
     {
         RCLCPP_ERROR(get_logger(), "Recovery failed: %s", e.what());
     }
+}
+
+bool UbloxNode::set_gpio(const std::string& chipname, unsigned int line_num, bool high) 
+{
+    try 
+    {
+        // Open the GPIO chip (e.g., "gpiochip0")
+        gpiod::chip chip(chipname);
+
+        // Get the specific GPIO line number (relative to the chip)
+        gpiod::line line = chip.get_line(line_num);
+
+        // Request the line as an output, setting the initial value to HIGH or LOW
+        line.request({"gpio_reset", gpiod::line_request::DIRECTION_OUTPUT, 0}, high);
+        
+        // Set the GPIO line to the desired value (again, HIGH or LOW)
+        line.set_value(high);
+
+        RCLCPP_INFO(get_logger(), "GPIO chip %s line %u (output) set to %s.", chipname.c_str(), line_num, high ? "HIGH" : "LOW");
+    } 
+    catch (const std::exception& e) 
+    {
+        RCLCPP_ERROR(get_logger(),"GPIO (chipname %s, line %u, value %s) error: %s", chipname.c_str(), line_num, high ? "HIGH" : "LOW", e.what());
+        return false;
+    }
+
+  return true;
 }
 
 }  // namespace ublox_node

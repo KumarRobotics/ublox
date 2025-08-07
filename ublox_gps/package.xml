@@ -29,6 +29,8 @@
   <depend>ublox_msgs</depend>
   <depend>ublox_serialization</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>std_srvs</depend>
+  <depend>libgpiod-dev</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

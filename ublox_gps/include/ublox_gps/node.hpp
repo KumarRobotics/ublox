@@ -59,6 +59,12 @@
 // Watchdog
 #include "ublox_gps/watchdog.hpp"
 
+// GPIO
+#include <gpiod.hpp>
+
+// Debugging: service to enable/disable gps inputs
+#include <std_srvs/srv/set_bool.hpp>
+
 // This file also declares UbloxNode which is the main class and ros node. It
 // implements functionality which applies to any u-blox device, regardless of
 // the firmware version or product type.  The class is designed in compositional
@@ -316,25 +322,45 @@ class UbloxNode final : public rclcpp_lifecycle::LifecycleNode {
   void heartbeat();
 
 protected:
-  /// @brief Callback for the Configure transition.
-  /// @return CallbackReturn indicating the result of the transition.
+  /**
+   * @brief Callback for the Configure transition.
+   * @return CallbackReturn indicating the result of the transition.
+   */  
   LifecycleNodeInterface::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
 
-  /// @brief Callback for the Activate transition.
-  /// @return CallbackReturn indicating the result of the transition.
+  /**
+   * @brief Callback for the Activate transition.
+   * @return CallbackReturn indicating the result of the transition.
+   */  
   LifecycleNodeInterface::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
 
-  /// @brief Callback for the Deactivate transition.
-  /// @return CallbackReturn indicating the result of the transition.
+  /**
+   * @brief Callback for the Deactivate transition.
+   * @return CallbackReturn indicating the result of the transition.
+   */  
   LifecycleNodeInterface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
 
-  /// @brief Callback for the Cleanup transition.
-  /// @return CallbackReturn indicating the result of the transition.
+  /**
+   * @brief Callback for the Cleanup transition.
+   * @return CallbackReturn indicating the result of the transition.
+   */  
   LifecycleNodeInterface::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
-  /// @brief Callback for the Shutdown transition.
-  /// @return CallbackReturn indicating the result of the transition.
+  /**
+   * @brief Callback for the Shutdown transition.
+   * @return CallbackReturn indicating the result of the transition.
+   */  
   LifecycleNodeInterface::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  
+  /**
+   * @brief GPIO set HIGH or LOW.
+   * @return True is success, False otherwise.
+   */
+  bool set_gpio(const std::string& chipname, unsigned int line_num, bool high);
+  
+  std::string chipname_ = "gpiochip0";
+  unsigned int line_num_ = 5;
+  int gpio_reset_time_ = 1;
 
   // Variables
   std::shared_ptr<Watchdog> watchdog_;    // Watchdog 
@@ -344,6 +370,25 @@ protected:
   bool hard_reset_ = false;               // Flag to indicate if a hard reset is needed (deactivation + cleanup)
   bool reset_fail_ = false;               // Flag to indicate if both reset failed
   int recovery_cycle_time_ = 30;          // Recovery cycle time in seconds
+
+  /* ********* */
+  /* Debugging */
+  /* ********* */
+  
+  // Debugging: service to enable/disable gps inputs
+  bool disable_gps_inputs_ = false; // Default to disabled
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr gps_inputs_service;
+
+  void handle_gps_inputs(
+      const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+      std::shared_ptr<std_srvs::srv::SetBool::Response> response)
+  {
+      disable_gps_inputs_ = request->data;
+      response->success = true;
+      response->message = disable_gps_inputs_ ? "gps inputs disabled" : "gps inputs enabled";
+
+      RCLCPP_INFO(this->get_logger(), "gps inputs: %s", disable_gps_inputs_ ? "OFF" : "ON");
+  }
 };
 
 }  // namespace ublox_node
