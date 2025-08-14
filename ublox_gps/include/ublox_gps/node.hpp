@@ -359,8 +359,8 @@ protected:
   bool set_gpio(const std::string& chipname, unsigned int line_num, bool high);
   
   std::string chipname_ = "gpiochip0";
-  unsigned int line_num_ = 5;
-  int gpio_reset_time_ = 1;
+  unsigned int line_num_ = 134;
+  int gpio_reset_time_ = 5;
 
   // Variables
   std::shared_ptr<Watchdog> watchdog_;    // Watchdog 
