@@ -221,6 +221,8 @@ void UbloxNode::fixCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
 
 	// Reset the watchdog timer
 	watchdog_->reset();
+
+	// Trigger heartbeat
 	this->heartbeat();
 }
 
@@ -997,11 +999,6 @@ UbloxNode::on_configure(const rclcpp_lifecycle::State & state)
 		// Initialize Ublox
         initialize();
 
-		// Initialize the fix subscriber
-		fix_subscriber_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
-			std::string("/") + this->get_name() + "/fix", rclcpp::SystemDefaultsQoS(),
-			std::bind(&UbloxNode::fixCallback, this, std::placeholders::_1));
-
 		// Open GPIO 
 		this->open_gpio_chipname(chipname_);
 		this->open_gpio_line(line_num_);	
@@ -1048,6 +1045,11 @@ UbloxNode::on_activate(const rclcpp_lifecycle::State & state)
 
         // Start the watchdog
         watchdog_->start();
+
+		// Initialize the fix subscriber
+		fix_subscriber_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
+			std::string("/") + this->get_name() + "/fix", rclcpp::SystemDefaultsQoS(),
+			std::bind(&UbloxNode::fixCallback, this, std::placeholders::_1));
     }
     catch (const std::exception &e)
     {
@@ -1081,6 +1083,9 @@ UbloxNode::on_deactivate(const rclcpp_lifecycle::State & state)
       
         // Stop the watchdog
         watchdog_->stop();
+
+		// Destroy subscriber
+		fix_subscriber_.reset();
     }
     catch (const std::exception &e)
     {
@@ -1118,24 +1123,21 @@ UbloxNode::on_cleanup(const rclcpp_lifecycle::State & state)
           poller_.reset();
         }
 
-		// Set GPS pointer null
-		//gps_->close();
+		// Reset GPS pointer 
 		gps_.reset();
 
-		// Set GNSS pointer null
-		//gnss_->close();
+		// Reset GNSS pointer 
 		gnss_.reset();
 
-		// Set Updater pointer null
-		//updater_->close();
+		// Reset Updater pointer 
 		updater_.reset();		
-
-		// Destroy subscriber
-		fix_subscriber_.reset();
 
 		// Destroy service
 		gps_inputs_service.reset();
-		
+
+		// Close the GPIO
+		this->close_gpio_line();	
+		this->close_gpio_chipname();
     }
     catch (const std::exception &e)
     {
@@ -1216,13 +1218,6 @@ void UbloxNode::recovery()
 				
 				// Wait before retrying recovery
 				rclcpp::sleep_for(std::chrono::seconds(this->recovery_cycle_time_));
-
-				// Reset the GPS device
-				//RCLCPP_INFO(get_logger(), "Resetting GPS");
-				//gps_->reset(std::chrono::milliseconds(1000)); 
-
-				// Check if while sleeping data have been received
-				//if (!this->reset_fail_) return;
 			}        
 
             // Deactivate the node
@@ -1289,6 +1284,19 @@ void UbloxNode::open_gpio_chipname(const std::string &chipname)
     }
 }
 
+void UbloxNode::close_gpio_chipname()
+{
+	try
+	{
+		chip_.reset();
+		RCLCPP_INFO(get_logger(), "GPIO chip %s closed.", chipname_.c_str());
+	} 
+	catch (const std::exception& e) 
+	{
+		RCLCPP_ERROR(get_logger(),"GPIO chip %s closing error: %s", chipname_.c_str(), e.what());
+	}
+}
+
 void UbloxNode::open_gpio_line(unsigned int line_num)
 {
 	try 
@@ -1315,6 +1323,24 @@ void UbloxNode::open_gpio_line(unsigned int line_num)
 	catch (const std::exception& e) 
 	{
 		RCLCPP_ERROR(get_logger(),"GPIO (chipname %s, line %u) initialization error: %s", chipname_.c_str(), line_num_, e.what());
+	}
+}
+
+void UbloxNode::close_gpio_line()
+{
+	try
+	{
+		if (line_.is_requested()) {
+			line_.release();
+			line_.reset();
+			RCLCPP_INFO(get_logger(), "GPIO chip %s line %u released.", chipname_.c_str(), line_num_);
+		} else {
+			RCLCPP_WARN(get_logger(), "GPIO chip %s line %u is not requested.", chipname_.c_str(), line_num_);
+		}
+	} 
+	catch (const std::exception& e) 
+	{
+		RCLCPP_ERROR(get_logger(),"GPIO (chipname %s, line %u) release error: %s", chipname_.c_str(), line_num_, e.what());
 	}
 }
 

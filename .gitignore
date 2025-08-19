@@ -90,3 +90,5 @@ gen/*
 *.out
 *.app
 
+# VS Code
+*.vscode

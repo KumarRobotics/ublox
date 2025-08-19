@@ -316,13 +316,10 @@ class UbloxNode final : public rclcpp_lifecycle::LifecycleNode {
   rclcpp::TimerBase::SharedPtr keep_alive_;
   rclcpp::TimerBase::SharedPtr poller_;
 
-  /// @brief Callback for the Recovery function.
-  void recovery();
+  /* ***********/
+  /* Lifecycle */
+  /* ***********/
 
-  /// @brief Data hearthbeat.
-  void heartbeat();
-
-protected:
   /**
    * @brief Callback for the Configure transition.
    * @return CallbackReturn indicating the result of the transition.
@@ -353,22 +350,44 @@ protected:
    */  
   LifecycleNodeInterface::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
   
-  // Create a subscriber for node /ublox_gps_rover_node/fix of type sensor_msgs/msg/NavSatFix
-  rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr fix_subscriber_;
+  /* ************** */
+  /* Nav Subscriber */
+  /* ************** */
 
+  /**
+   * @brief Callback for the NavSatFix message.
+   * @param msg The NavSatFix message.
+   */
   void fixCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg);
   
+  // Subscriber for node /ublox_gps_rover_node/fix of type sensor_msgs/msg/NavSatFix
+  rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr fix_subscriber_;
+  
+  /* **** */
+  /* GPIO */
+  /* **** */
+
   /**
    * @brief Set the GPIO chipname.
    * @param chipname the GPIO chipname
    */
   void open_gpio_chipname(const std::string& chipname);
+  
+  /**
+   * @brief Close the GPIO chipname.
+   */
+  void close_gpio_chipname();
 
   /**
    * @brief Set the GPIO line number.
    * @param line_num the GPIO line number
    */
   void open_gpio_line(unsigned int line);
+
+  /**
+   * @brief Close the GPIO line.
+   */
+  void close_gpio_line();
   
   /**
    * @brief GPIO set HIGH or LOW.
@@ -376,26 +395,41 @@ protected:
    */
   void set_gpio_toggle(bool high);
   
-  gpiod::chip chip_;
-  gpiod::line line_;
-  std::string chipname_ = "gpiochip0";
-  unsigned int line_num_ = 134;
-  int gpio_reset_time_ = 5;
+  gpiod::chip chip_;                    // GPIO chip
+  gpiod::line line_;                    // GPIO line
+  std::string chipname_ = "gpiochip0";  // Default GPIO chipname
+  unsigned int line_num_ = 134;         // Default GPIO line number
+  int gpio_reset_time_ = 5;             // GPIO reset time in seconds
+  
+  /* ******** */
+  /* Recovery */
+  /* ******** */
 
-  // Variables
-  std::shared_ptr<Watchdog> watchdog_;    // Watchdog 
-  int watchdog_timeout_ = 1000;           // Watchdog timeout in milliseconds
-  int watchdog_cycle_time_ = 500;         // Watchdog cycle time in milliseconds
+  /**
+   * @brief Callback for the Recovery function.
+   */
+  void recovery();
+
+  /** 
+   * @brief Callback for the Heartbeat function.
+   */
+  void heartbeat();
+
   bool soft_reset_ = false;               // Flag to indicate if a soft reset is needed (deactivation only)
   bool hard_reset_ = false;               // Flag to indicate if a hard reset is needed (deactivation + cleanup)
   bool reset_fail_ = false;               // Flag to indicate if both reset failed
   int recovery_cycle_time_ = 10;          // Recovery cycle time in seconds
 
+  // Watchdog
+  std::shared_ptr<Watchdog> watchdog_;    // Watchdog 
+  int watchdog_timeout_ = 1000;           // Watchdog timeout in milliseconds
+  int watchdog_cycle_time_ = 500;         // Watchdog cycle time in milliseconds
+
   /* ********* */
   /* Debugging */
   /* ********* */
   
-  int debug_ = 1;
+  int debug_ = 1; // Debugging level (0: no debug, 1: info, 2: debug)
 
   // Debugging: service to enable/disable gps inputs
   bool disable_gps_inputs_ = false; // Default to disabled
