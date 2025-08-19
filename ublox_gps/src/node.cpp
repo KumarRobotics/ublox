@@ -212,9 +212,6 @@ UbloxNode::UbloxNode(const rclcpp::NodeOptions & options)
 }
 
 void UbloxNode::fixCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
-	// Debugging: return if gps inputs are disabled
-  	if (this->disable_gps_inputs_) return;
-
 	// Process the NavSatFix message
 	RCLCPP_INFO(this->get_logger(), "Received NavSatFix: latitude: %f, longitude: %f, altitude: %f",
 				msg->latitude, msg->longitude, msg->altitude);
@@ -551,14 +548,6 @@ void UbloxNode::pollMessages() {
   if (getRosBoolean(this, "publish.aid.hui")) {
     gps_->poll(ublox_msgs::Class::AID, ublox_msgs::Message::AID::HUI);
   }
-
-  /* Receive NAV data
-  if (gps_->poll(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::ATT))
-  {
-    RCLCPP_INFO(this->get_logger(), "Received NAV ATT message");
-    watchdog_->reset();
-    this->heartbeat();
-  }*/
 
   payload[0]++;
   if (payload[0] > 32) {
@@ -1002,16 +991,6 @@ UbloxNode::on_configure(const rclcpp_lifecycle::State & state)
 		// Open GPIO 
 		this->open_gpio_chipname(chipname_);
 		this->open_gpio_line(line_num_);	
-
-		/* ********* */
-		/* Debugging */
-		/* ********* */
-
-		// Debugging: service to enable/disable gps inputs
-		gps_inputs_service = this->create_service<std_srvs::srv::SetBool>(
-			std::string("/") + this->get_name() + "/disable_gps_inputs",
-			std::bind(&UbloxNode::handle_gps_inputs, this, std::placeholders::_1, std::placeholders::_2)
-		);
     }
     catch (const std::exception &e)
     {
@@ -1131,9 +1110,6 @@ UbloxNode::on_cleanup(const rclcpp_lifecycle::State & state)
 
 		// Reset Updater pointer 
 		updater_.reset();		
-
-		// Destroy service
-		gps_inputs_service.reset();
 
 		// Close the GPIO
 		this->close_gpio_line();	

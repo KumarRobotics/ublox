@@ -399,7 +399,7 @@ class UbloxNode final : public rclcpp_lifecycle::LifecycleNode {
   gpiod::line line_;                    // GPIO line
   std::string chipname_ = "gpiochip0";  // Default GPIO chipname
   unsigned int line_num_ = 134;         // Default GPIO line number
-  int gpio_reset_time_ = 5;             // GPIO reset time in seconds
+  int gpio_reset_time_ = 1;             // GPIO reset time in seconds
   
   /* ******** */
   /* Recovery */
@@ -418,7 +418,7 @@ class UbloxNode final : public rclcpp_lifecycle::LifecycleNode {
   bool soft_reset_ = false;               // Flag to indicate if a soft reset is needed (deactivation only)
   bool hard_reset_ = false;               // Flag to indicate if a hard reset is needed (deactivation + cleanup)
   bool reset_fail_ = false;               // Flag to indicate if both reset failed
-  int recovery_cycle_time_ = 10;          // Recovery cycle time in seconds
+  int recovery_cycle_time_ = 1;           // Recovery cycle time in seconds
 
   // Watchdog
   std::shared_ptr<Watchdog> watchdog_;    // Watchdog 
@@ -430,21 +430,6 @@ class UbloxNode final : public rclcpp_lifecycle::LifecycleNode {
   /* ********* */
   
   int debug_ = 1; // Debugging level (0: no debug, 1: info, 2: debug)
-
-  // Debugging: service to enable/disable gps inputs
-  bool disable_gps_inputs_ = false; // Default to disabled
-  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr gps_inputs_service;
-
-  void handle_gps_inputs(
-      const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
-      std::shared_ptr<std_srvs::srv::SetBool::Response> response)
-  {
-      disable_gps_inputs_ = request->data;
-      response->success = true;
-      response->message = disable_gps_inputs_ ? "gps inputs disabled" : "gps inputs enabled";
-
-      RCLCPP_INFO(this->get_logger(), "gps inputs: %s", disable_gps_inputs_ ? "OFF" : "ON");
-  }
 };
 
 }  // namespace ublox_node

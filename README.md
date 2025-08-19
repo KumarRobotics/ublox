@@ -367,3 +367,26 @@ For debugging messages set the debug parameter to > 0. The range for debug is 0-
 
 # Links
 Consult the [official protocol spec](https://www.u-blox.com/sites/default/files/products/documents/u-blox8-M8_ReceiverDescrProtSpec_(UBX-13003221)_Public.pdf) for details on packets supported by u-blox devices.
+
+# Node Lifecycle Management
+
+The `UbloxNode` class is implemented as a ROS 2 Lifecycle Node, providing robust state management and controlled transitions for the GNSS driver. The lifecycle logic is structured around the standard ROS 2 lifecycle states: unconfigured, inactive, active, and finalized. Key lifecycle transitions (`on_configure`, `on_activate`, `on_deactivate`, `on_cleanup`, and `on_shutdown`) are overridden to manage resource allocation, initialization, activation, and cleanup of the GNSS device and related subsystems.
+
+- **on_configure**: Initializes the GNSS device, diagnostic updater, GNSS and GPS interfaces, and sets up GPIO resources. 
+- **on_activate**: Starts periodic timers for polling and keep-alive, activates the watchdog, and subscribes to the NavSatFix topic for fix updates.
+- **on_deactivate**: Stops timers, disables the watchdog, and cleans up subscriptions.
+- **on_cleanup**: Releases all resources, including timers, publishers, GNSS/GPS objects, and GPIO lines.
+- **on_shutdown**: Ensures all resources are closed and the watchdog is stopped.
+
+This design ensures that the node can be safely reconfigured, restarted, or shut down, with all hardware and software resources managed according to the node's state.
+
+# Recovery System Overview
+
+The node implements an integrated recovery system to handle communication failures or hardware issues. A watchdog timer monitors data reception from the GNSS device. If no data is received within the configured timeout, the watchdog triggers the recovery logic.
+
+The recovery process is state-aware and escalates through several steps:
+1. **Soft Reset**: If the node is active and no prior reset has occurred, a soft reset is performed by deactivating and reactivating the node.
+2. **Hard Reset**: If a soft reset has already been performed, a hard reset is executed by deactivating and cleaning up the node, then reconfiguring and activating it.
+3. **GPIO Reset and Wait**: If both soft and hard resets have been attempted, the system toggles the GPIO line to reset the hardware, waits for a configurable period, and retries recovery.
+
+After each recovery attempt, the node checks its state and, if not active, continues retrying with GPIO resets and delays until successful. 
