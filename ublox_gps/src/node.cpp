@@ -1256,6 +1256,13 @@ void UbloxNode::recovery()
 		else
 		{
 			RCLCPP_ERROR(get_logger(), "Recovery failed, node is not active (current state: %s). Waiting for %i seconds before retrying.", this->get_current_state().label().c_str(), this->recovery_cycle_time_);
+			
+			// Reset GPIO
+			RCLCPP_INFO(get_logger(), "Resetting GPIO and waiting for %i seconds before retrying recovery.", this->gpio_reset_time_);
+			this->set_gpio_toggle(false);
+			rclcpp::sleep_for(std::chrono::seconds(this->gpio_reset_time_));
+			this->set_gpio_toggle(true);
+
 			rclcpp::sleep_for(std::chrono::seconds(this->recovery_cycle_time_));
 			this->recovery();
 		}
