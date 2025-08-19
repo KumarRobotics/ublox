@@ -3,7 +3,7 @@ ublox_gps_rover_node:
   ros__parameters:
     debug: 4                    # Range 0-4 (0 means no debug statements will print)
 
-    device: /dev/ttyACM1
+    device: /dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_GNSS_receiver_F9H-if00
     frame_id: gps_rover
 
     uart1:
