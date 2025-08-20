@@ -38,7 +38,7 @@ public:
                         current_callback = callback_;
                     }
                     else {
-                        continue;
+                        current_callback = nullptr;
                     }
                 }
                 

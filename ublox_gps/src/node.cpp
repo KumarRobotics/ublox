@@ -191,9 +191,6 @@ UbloxNode::UbloxNode(const rclcpp::NodeOptions & options)
 	// Params must be set before initializing IO
 	getRosParams();
 
-	// Initialize UBlox 
-	this->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
-
 	// Initialize the Watchdog
 	auto timeout = std::chrono::milliseconds(watchdog_timeout_);
 	auto cycle_time = std::chrono::milliseconds(watchdog_cycle_time_); 
@@ -206,9 +203,6 @@ UbloxNode::UbloxNode(const rclcpp::NodeOptions & options)
 		// Call the lifecycle recovery method
 		this->recovery();
 	});
-
-	// Activate UBlox and start Watchdog
-	this->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
 }
 
 void UbloxNode::fixCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {

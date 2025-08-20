@@ -56,6 +56,13 @@ int main(int argc, char** argv) {
   // Spin the node to process callbacks
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
+	
+	// Initialize UBlox 
+	node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
+
+	// Activate UBlox and start Watchdog
+	node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
+
   executor.spin();
 
   //rclcpp::shutdown();
