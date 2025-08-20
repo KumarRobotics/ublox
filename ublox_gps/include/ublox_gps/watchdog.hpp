@@ -18,7 +18,6 @@ public:
           last_reset_(std::chrono::steady_clock::now())
     {
         watchdog_thread_ = std::thread([this]() {
-            //pthread_setname_np(pthread_self(), "watchdog_thread");
             while (enable_watchdog_) {
                 std::this_thread::sleep_for(check_interval_);
 
@@ -64,14 +63,13 @@ public:
 
     void stop() noexcept {
         this->run_watchdog_ = false;
-        std::cout << "[Watchdog] Stopped." << std::endl;
+        RCLCPP_INFO(rclcpp::get_logger("Watchdog"), "Stopped.");
     }
 
     void start() {
         last_reset_ = std::chrono::steady_clock::now();
-        //enable_watchdog_ = true;
         this->run_watchdog_ = true;
-        std::cout << "[Watchdog] Started with timeout: " << this->timeout_.count() << " ms" << std::endl;
+        RCLCPP_INFO(rclcpp::get_logger("Watchdog"), "Started with timeout: %ld ms", this->timeout_.count());
     }
 
     void set_timeout(std::chrono::milliseconds timeout){

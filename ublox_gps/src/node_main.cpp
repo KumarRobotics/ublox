@@ -28,7 +28,7 @@ void signal_handler(int signal)
         if (current_state == lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED) {
             auto transitions = node->get_available_transitions();
             for (const rclcpp_lifecycle::Transition & t : transitions) {
-                if (t.id() == 5) {
+                if (t.id() == lifecycle_msgs::msg::Transition::TRANSITION_UNCONFIGURED_SHUTDOWN) {
                     node->trigger_transition(rclcpp_lifecycle::Transition(t.id()));  // shutdown
                     break;
                 }
