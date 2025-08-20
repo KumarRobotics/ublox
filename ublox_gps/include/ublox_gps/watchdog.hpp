@@ -63,13 +63,13 @@ public:
 
     void stop() noexcept {
         this->run_watchdog_ = false;
-        RCLCPP_INFO(rclcpp::get_logger("Watchdog"), "Stopped.");
+        std::cout << "[Watchdog] Stopped." << std::endl;
     }
 
     void start() {
         last_reset_ = std::chrono::steady_clock::now();
         this->run_watchdog_ = true;
-        RCLCPP_INFO(rclcpp::get_logger("Watchdog"), "Started with timeout: %ld ms", this->timeout_.count());
+        std::cout << "[Watchdog] Started with timeout: " << this->timeout_.count() << " ms" << std::endl;
     }
 
     void set_timeout(std::chrono::milliseconds timeout){
