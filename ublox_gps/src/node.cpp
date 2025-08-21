@@ -207,8 +207,8 @@ UbloxNode::UbloxNode(const rclcpp::NodeOptions & options)
 
 void UbloxNode::fixCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
 	// Process the NavSatFix message
-	RCLCPP_INFO(this->get_logger(), "Received NavSatFix: latitude: %f, longitude: %f, altitude: %f",
-				msg->latitude, msg->longitude, msg->altitude);
+	//RCLCPP_INFO(this->get_logger(), "Received NavSatFix: latitude: %f, longitude: %f, altitude: %f",
+	//			msg->latitude, msg->longitude, msg->altitude);
 
 	// Reset the watchdog timer
 	watchdog_->reset();

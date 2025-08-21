@@ -65,7 +65,6 @@ int main(int argc, char** argv) {
 
   executor.spin();
 
-  //rclcpp::shutdown();
   RCLCPP_INFO(node->get_logger(), "UbloxNode has been shut down gracefully.");
 
   return 0;
