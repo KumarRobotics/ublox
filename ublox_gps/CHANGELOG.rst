@@ -2,8 +2,8 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2025-09-26)
+------------------
 * Add NAV-TIMEGPS and NAV-TIMEUTC implementation to Firmvare Ver. 9 (`#251 <https://github.com/KumarRobotics/ublox/issues/251>`_)
 * Add runtime error on config fail (`#263 <https://github.com/KumarRobotics/ublox/issues/263>`_)
 * Merge pull request `#256 <https://github.com/KumarRobotics/ublox/issues/256>`_ from Muhammad540/ros2

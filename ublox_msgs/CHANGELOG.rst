@@ -2,8 +2,8 @@
 Changelog for package ublox_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2025-09-26)
+------------------
 * Add NAV-TIMEGPS and NAV-TIMEUTC implementation to Firmvare Ver. 9 (`#251 <https://github.com/KumarRobotics/ublox/issues/251>`_)
 * Added Firmware v9 GNSS configuration (`#229 <https://github.com/KumarRobotics/ublox/issues/229>`_)
 * Added CfgVALDEL, CfgVALGET & CfgVALSET messages (`#218 <https://github.com/KumarRobotics/ublox/issues/218>`_)

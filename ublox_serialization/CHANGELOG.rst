@@ -2,8 +2,8 @@
 Changelog for package ublox_serialization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2025-09-26)
+------------------
 * Feature: Add support for new HPS firmware and publishing NMEA Sentences (`#209 <https://github.com/KumarRobotics/ublox/issues/209>`_)
 * Contributors: Ryan D. Lewis
 
