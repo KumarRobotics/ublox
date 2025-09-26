@@ -2,6 +2,28 @@
 Changelog for package ublox_gps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add NAV-TIMEGPS and NAV-TIMEUTC implementation to Firmvare Ver. 9 (`#251 <https://github.com/KumarRobotics/ublox/issues/251>`_)
+* Add runtime error on config fail (`#263 <https://github.com/KumarRobotics/ublox/issues/263>`_)
+* Merge pull request `#256 <https://github.com/KumarRobotics/ublox/issues/256>`_ from Muhammad540/ros2
+  fixed CfgNAVX5 message generation for protocol version >= 18
+* fix: neo_m8u_rover.yaml type issues
+* fix: for protocol version >= 18
+* fix: protocol version
+* fix ADR/UDR product detection
+* Added Firmware v9 GNSS configuration (`#229 <https://github.com/KumarRobotics/ublox/issues/229>`_)
+* Updated Heading and Orientation Calculations to be Consistent with ROS 1 branch (`#216 <https://github.com/KumarRobotics/ublox/issues/216>`_)
+* Feature: Add support for new HPS firmware and publishing NMEA Sentences (`#209 <https://github.com/KumarRobotics/ublox/issues/209>`_)
+* Bugfix: IMU gyro unit fix to comply with sensor_msgs definition (`#191 <https://github.com/KumarRobotics/ublox/issues/191>`_)
+* Add position and velocity covariance message (UBX_NAV_COV) (`#196 <https://github.com/KumarRobotics/ublox/issues/196>`_)
+* Add support for forwarding RTCM correction data (`#169 <https://github.com/KumarRobotics/ublox/issues/169>`_)
+* HPS Device Support ( C102-f9r) (`#182 <https://github.com/KumarRobotics/ublox/issues/182>`_)
+* Fix warning for unsupported SPG mode (`#181 <https://github.com/KumarRobotics/ublox/issues/181>`_)
+* Remove periodical force update (`#12 <https://github.com/KumarRobotics/ublox/issues/12>`_) (`#161 <https://github.com/KumarRobotics/ublox/issues/161>`_)
+* Fix topic name (`#9 <https://github.com/KumarRobotics/ublox/issues/9>`_) (`#163 <https://github.com/KumarRobotics/ublox/issues/163>`_)
+* Contributors: Balachandra Bhat, Chris Lalancette, Daisuke Nishimatsu, Jordan Slater, Muhammad540, PhilippPolterauer, Ryan D. Lewis, Veronica, brandonbeggs, kagibson, ndmmdn
+
 2.3.0 (2022-04-13)
 ------------------
 * Revamp the building of the driver for modern ROS 2 practices.

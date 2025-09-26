@@ -2,6 +2,17 @@
 Changelog for package ublox_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add NAV-TIMEGPS and NAV-TIMEUTC implementation to Firmvare Ver. 9 (`#251 <https://github.com/KumarRobotics/ublox/issues/251>`_)
+* Added Firmware v9 GNSS configuration (`#229 <https://github.com/KumarRobotics/ublox/issues/229>`_)
+* Added CfgVALDEL, CfgVALGET & CfgVALSET messages (`#218 <https://github.com/KumarRobotics/ublox/issues/218>`_)
+* Read & write all values from NavCOV message (`#212 <https://github.com/KumarRobotics/ublox/issues/212>`_)
+* Fix EsfStatus serialization (`#208 <https://github.com/KumarRobotics/ublox/issues/208>`_)
+* Add serializer for NavTIMEGPS message. (`#201 <https://github.com/KumarRobotics/ublox/issues/201>`_)
+* Add position and velocity covariance message (UBX_NAV_COV) (`#196 <https://github.com/KumarRobotics/ublox/issues/196>`_)
+* Contributors: Balachandra Bhat, Kieran Penner, brandonbeggs, jakor97, kagibson
+
 2.3.0 (2022-04-13)
 ------------------
 * Revamp the building of the driver for modern ROS 2 practices.
