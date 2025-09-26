@@ -807,7 +807,7 @@ bool UbloxNode::configureUblox() {
     }
   } catch (const std::exception& e) {
     RCLCPP_FATAL(this->get_logger(), "Error configuring u-blox: %s", e.what());
-    return false;
+    throw std::runtime_error("Failed to configure u-blox receiver.");
   }
   return true;
 }
