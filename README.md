@@ -180,6 +180,8 @@ To publish a given u-blox message to a ROS topic, set the parameter shown below 
 * `publish/nav/status`: Topic `~navstatus`
 * `publish/nav/svin`: Topic `~navsvin`. **HPG Reference Station Devices only**
 * `publish/nav/svinfo`: Topic `~navsvinfo`
+* `publish/nav/timegps`: Topic `~navtimegps`
+* `publish/nav/timeutc`: Topic `~navtimeutc`
 * `publish/nav/velned`: Topic `~navvelned`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
 
 ### ESF messages

@@ -9,6 +9,8 @@
 
 #include <ublox_msgs/msg/cfg_valset.hpp>
 #include <ublox_msgs/msg/cfg_valset_cfgdata.hpp>
+#include <ublox_msgs/msg/nav_timegps.hpp>
+#include <ublox_msgs/msg/nav_timeutc.hpp>
 
 #include <ublox_gps/fix_diagnostic.hpp>
 #include <ublox_gps/gnss.hpp>
@@ -34,6 +36,11 @@ public:
     */
   bool configureUblox(std::shared_ptr<ublox_gps::Gps> gps) override;
 
+  /**
+   * @brief Subscribe to NAV-TIMEUTC, NAV-TIMEGPS messages.
+   */
+  void subscribe(std::shared_ptr<ublox_gps::Gps> gps) override;
+
 private:
   /**
     * @brief Populate the CfgVALSETCfgData data type
@@ -41,6 +48,8 @@ private:
     * @details A helper function used to generate a configuration for a single signal. 
     */
   ublox_msgs::msg::CfgVALSETCfgdata generateSignalConfig(uint32_t signalID, bool enable);
+  rclcpp::Publisher<ublox_msgs::msg::NavTIMEGPS>::SharedPtr nav_timegps_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::NavTIMEUTC>::SharedPtr nav_timeutc_pub_;
 };
 
 }  // namespace ublox_node

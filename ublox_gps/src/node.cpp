@@ -424,6 +424,8 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("publish.nav.svin", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.svinfo", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.status", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.timegps", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.timeutc", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.velned", getRosBoolean(this, "publish.nav.all"));
 
   this->declare_parameter("publish.rxm.all", getRosBoolean(this, "publish.all"));

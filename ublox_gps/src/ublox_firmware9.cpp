@@ -15,6 +15,14 @@ namespace ublox_node {
 UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, std::shared_ptr<FixDiagnostic> freq_diag, std::shared_ptr<Gnss> gnss, rclcpp::Node* node)
   : UbloxFirmware8(frame_id, updater, freq_diag, gnss, node)
 {
+  if (getRosBoolean(node_, "publish.nav.timegps"))
+  {
+    nav_timegps_pub_ = node->create_publisher<ublox_msgs::msg::NavTIMEGPS>("navtimegps", 1);
+  }
+  if (getRosBoolean(node_, "publish.nav.timeutc"))
+  {
+    nav_timeutc_pub_ = node->create_publisher<ublox_msgs::msg::NavTIMEUTC>("navtimeutc", 1);
+  }
 }
 
 bool UbloxFirmware9::configureUblox(std::shared_ptr<ublox_gps::Gps> gps)
@@ -116,6 +124,23 @@ ublox_msgs::msg::CfgVALSETCfgdata UbloxFirmware9::generateSignalConfig(uint32_t 
   signalConfig.data.resize(1);
   signalConfig.data[0] = enable;
   return signalConfig;
+}
+
+void UbloxFirmware9::subscribe(std::shared_ptr<ublox_gps::Gps> gps)
+{ 
+  UbloxFirmware8::subscribe(gps);
+
+  // Subscribe to NAV TIMEGPS messages
+  if (getRosBoolean(node_, "publish.nav.timegps")) {
+    gps->subscribe<ublox_msgs::msg::NavTIMEGPS>([this](const ublox_msgs::msg::NavTIMEGPS &m) {
+      nav_timegps_pub_->publish(m); }, 1);
+  }
+
+  // Subscribe to NAV TIMEUTC messages
+  if (getRosBoolean(node_, "publish.nav.timeutc")) {
+    gps->subscribe<ublox_msgs::msg::NavTIMEUTC>([this](const ublox_msgs::msg::NavTIMEUTC &m) {
+      nav_timeutc_pub_->publish(m); }, 1);
+  }
 }
 
 
