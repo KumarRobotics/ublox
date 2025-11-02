@@ -191,7 +191,8 @@ class UbloxNode final : public rclcpp::Node {
    * products this string is empty
    */
   void addProductInterface(const std::string & product_category,
-                           const std::string & ref_rov = "");
+                           const std::string & ref_rov = "",
+                           const std::string & product_model = "");
 
   /**
    * @brief Poll version message from the U-Blox device to keep socket active.
@@ -236,6 +237,8 @@ class UbloxNode final : public rclcpp::Node {
   uint16_t uart_out_{0};
   //! USB TX Ready Pin configuration (see CfgPRT message for constants)
   uint16_t usb_tx_{0};
+  //! Whether to override-configure the U-Blox the device on node startup
+  bool config_on_startup_{true};
   //! Whether to configure the USB port
   /*! Set to true if usb_in & usb_out parameters are set */
   bool set_usb_{false};

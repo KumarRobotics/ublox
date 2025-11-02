@@ -22,6 +22,20 @@
 
 namespace ublox_node {
 
+// Scaling factors for floating point representations of data
+constexpr float kConvertRadPerSec{std::pow(2, -12) * M_PI / 180.0F};
+constexpr float kConvertMps2{std::pow(2, -10)};
+constexpr float kConvertDegCelsius{0.01F};
+
+//
+// Extract U-Blox 24-bit signed integers from a 32-bit data blob
+// and cast into int32_t
+//
+static inline std::int32_t extract_int24(std::uint32_t bitfield) {
+    std::int32_t temp = static_cast<std::int32_t>(bitfield << 8);
+    return temp >> 8;
+}
+
 //
 // u-blox ADR devices, partially implemented
 //
@@ -33,7 +47,6 @@ AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::s
       node_->create_publisher<sensor_msgs::msg::Imu>("imu_meas", 1);
     time_ref_pub_ =
       node_->create_publisher<sensor_msgs::msg::TimeReference>("interrupt_time", 1);
-
     esf_meas_pub_ = node_->create_publisher<ublox_msgs::msg::EsfMEAS>("esfmeas", 1);
   }
   if (getRosBoolean(node_, "publish.nav.att")) {
@@ -44,6 +57,7 @@ AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::s
   }
   if (getRosBoolean(node_, "publish.esf.raw")) {
     esf_raw_pub_ = node_->create_publisher<ublox_msgs::msg::EsfRAW>("esfraw", 1);
+    imu_raw_pub_ = node_->create_publisher<sensor_msgs::msg::Imu>("imu_raw", 1);
   }
   if (getRosBoolean(node_, "publish.esf.status")) {
     esf_status_pub_ = node_->create_publisher<ublox_msgs::msg::EsfSTATUS>("esfstatus", 1);
@@ -87,7 +101,6 @@ void AdrUdrProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   if (getRosBoolean(node_, "publish.esf.meas")) {
     gps->subscribe<ublox_msgs::msg::EsfMEAS>([this](const ublox_msgs::msg::EsfMEAS &m) { esf_meas_pub_->publish(m); },
                                         1);
-
     // also publish sensor_msgs::Imu
     gps->subscribe<ublox_msgs::msg::EsfMEAS>(std::bind(
       &AdrUdrProduct::callbackEsfMEAS, this, std::placeholders::_1), 1);
@@ -97,6 +110,10 @@ void AdrUdrProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
   if (getRosBoolean(node_, "publish.esf.raw")) {
     gps->subscribe<ublox_msgs::msg::EsfRAW>([this](const ublox_msgs::msg::EsfRAW &m) { esf_raw_pub_->publish(m); },
                                        1);
+
+    // also publish sensor_msgs::Imu for the raw data
+    gps->subscribe<ublox_msgs::msg::EsfRAW>(std::bind(
+      &AdrUdrProduct::callbackEsfRAW, this, std::placeholders::_1), 1);
   }
 
   // Subscribe to ESF Status messages
@@ -116,92 +133,128 @@ void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m) {
   if (getRosBoolean(node_, "publish.esf.meas")) {
     imu_.header.stamp = node_->now();
     imu_.header.frame_id = frame_id_;
+    imu_.orientation_covariance[0] = -1;
+    imu_.linear_acceleration_covariance[0] = -1;
+    imu_.angular_velocity_covariance[0] = -1;
 
-    float rad_per_sec = ::pow(2, -12) * M_PI / 180.0F;
-    float m_per_sec_sq = ::pow(2, -10);
-
-    std::vector<unsigned int> imu_data = m.data;
-    for (unsigned int datapoint : imu_data) {
+    const std::vector<unsigned int> imu_data = m.data;
+    for (const std::uint32_t datapoint : imu_data) {
       unsigned int data_type = datapoint >> 24; //grab the last six bits of data
       double data_sign = (datapoint & (1 << 23)); //grab the sign (+/-) of the rest of the data
       unsigned int data_value = datapoint & 0x7FFFFF; //grab the rest of the data...should be 23 bits
 
-      if (data_sign == 0) {
-        data_sign = -1;
-      } else {
-        data_sign = 1;
-      }
+      //grab the last six bits of data as the data type description field
+      const std::uint8_t data_type = datapoint >> 24;
+      // Interpret the first 24 bits as a signed integer
+      const std::int32_t data_value = extract_int24(datapoint);
 
-      // RCLCPP_INFO(node_->get_logger(), "data sign (+/-): %f", data_sign); //either 1 or -1....set by bit 23 in the data bitarray
+      switch (data_type) {
+        case ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_X:
+          imu_.angular_velocity.x = static_cast<double>(data_value) * kConvertRadPerSec;
+          break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_X:
+          imu_.linear_acceleration.x = static_cast<double>(data_value) * kConvertMps2;
+          break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_Y:
+          imu_.angular_velocity.y = static_cast<double>(data_value) * kConvertRadPerSec;
+          break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_Y:
+          imu_.linear_acceleration.y = static_cast<double>(data_value) * kConvertMps2;
+          break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_Z:
+          break;
+          imu_.angular_velocity.z = static_cast<double>(data_value) * kConvertRadPerSec;
+          break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_Z:
+          imu_.linear_acceleration.z = static_cast<double>(data_value) * kConvertMps2;
+          break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_TEMPERATURE:
+          imu_temp_.temperature = static_cast<double>(data_value) * kConvertDegCelsius);
+          break;  // Reserved for future use
+        // The following are not currently used
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_FRONT_LEFT:
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_FRONT_RIGHT:
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_REAR_LEFT:
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_REAR_RIGHT:
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_SINGLE_TICK:
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_SPEED:
+          break;
 
-      imu_.orientation_covariance[0] = -1;
-      imu_.linear_acceleration_covariance[0] = -1;
-      imu_.angular_velocity_covariance[0] = -1;
-
-      if (data_type == 14) {
-        if (data_sign == 1) {
-	  imu_.angular_velocity.x = 2048 - data_value * rad_per_sec;
-        } else {
-          imu_.angular_velocity.x = data_sign * data_value * rad_per_sec;
-        }
-      } else if (data_type == 16) {
-        //RCLCPP_INFO(node_->get_logger(), "data_sign: %f", data_sign);
-        //RCLCPP_INFO(node_->get_logger(), "data_value: %u", data_value * m);
-        if (data_sign == 1) {
-	  imu_.linear_acceleration.x = 8191 - data_value * m_per_sec_sq;
-        } else {
-          imu_.linear_acceleration.x = data_sign * data_value * m_per_sec_sq;
-        }
-      } else if (data_type == 13) {
-        if (data_sign == 1) {
-	  imu_.angular_velocity.y = 2048 - data_value * rad_per_sec;
-        } else {
-          imu_.angular_velocity.y = data_sign * data_value * rad_per_sec;
-        }
-      } else if (data_type == 17) {
-        if (data_sign == 1) {
-	  imu_.linear_acceleration.y = 8191 - data_value * m_per_sec_sq;
-        } else {
-          imu_.linear_acceleration.y = data_sign * data_value * m_per_sec_sq;
-        }
-      } else if (data_type == 5) {
-        if (data_sign == 1) {
-	  imu_.angular_velocity.z = 2048 - data_value * rad_per_sec;
-        } else {
-          imu_.angular_velocity.z = data_sign * data_value * rad_per_sec;
-        }
-      } else if (data_type == 18) {
-        if (data_sign == 1) {
-	  imu_.linear_acceleration.z = 8191 - data_value * m_per_sec_sq;
-        } else {
-          imu_.linear_acceleration.z = data_sign * data_value * m_per_sec_sq;
-        }
-      } else if (data_type == 12) {
-        // RCLCPP_INFO("Temperature in celsius: %f", data_value * deg_c);
-      } else {
-        RCLCPP_INFO(node_->get_logger(), "data_type: %u", data_type);
-        RCLCPP_INFO(node_->get_logger(), "data_value: %u", data_value);
+        default:
+          RCLCPP_INFO(node_->get_logger(), "Unknown IMU measurement, data_type: %u , data_value: %d", data_type, data_value);
       }
 
       // create time ref message and put in the data
-      //t_ref_.header.seq = m.risingEdgeCount;
-      //t_ref_.header.stamp = node_->now();
-      //t_ref_.header.frame_id = frame_id_;
-
-      //t_ref_.time_ref = rclcpp::Time((m.wnR * 604800 + m.towMsR / 1000), (m.towMsR % 1000) * 1000000 + m.towSubMsR);
-
-      //std::ostringstream src;
-      //src << "TIM" << int(m.ch);
-      //t_ref_.source = src.str();
-
-      t_ref_.header.stamp = node_->now(); // create a new timestamp
+      t_ref_.header.seq = m.risingEdgeCount;
+      t_ref_.header.stamp = node_->now();
       t_ref_.header.frame_id = frame_id_;
+
+      // Consider removing the below
+      t_ref_.time_ref = rclcpp::Time((m.wnR * 604800 + m.towMsR / 1000), (m.towMsR % 1000) * 1000000 + m.towSubMsR);
 
       time_ref_pub_->publish(t_ref_);
       imu_pub_->publish(imu_);
+
+      // Consider removing the below
+      //std::ostringstream src;
+      //src << "TIM" << int(m.ch);
+      //t_ref_.source = src.str();
     }
   }
 
 }
 
+void AdrUdrProduct::callbackEsfRAW(const ublox_msgs::msg::EsfRAW &m) {
+  if (getRosBoolean(node_, "publish.esf.raw")) {
+    imu_raw_.header.stamp = node_->now();
+    imu_raw_.header.frame_id = frame_id_;
+    imu_raw_.orientation_covariance[0] = -1;
+    imu_raw_.linear_acceleration_covariance[0] = -1;
+    imu_raw_.angular_velocity_covariance[0] = -1;
+
+    const std::vector<ublox_msgs::msg::EsfRAWBlock> imu_data_blocks = m.blocks;
+    for (const ublox_msgs::msg::EsfRAWBlock &imu_data_entry : imu_data_blocks) {
+      const std::uint32_t datapoint = imu_data_entry.data;
+
+      //grab the last six bits of data as the data type description field
+      const std::uint8_t data_type = datapoint >> 24;
+      // Interpret the first 24 bits as a signed integer, and cast to double
+      const std::int32_t data_value = extract_int24(datapoint);
+
+      switch (data_type) {
+        case ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_X:
+          imu_raw_.angular_velocity.x = static_cast<double>(data_value) * kConvertRadPerSec; break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_X:
+          imu_raw_.linear_acceleration.x = static_cast<double>(data_value) * kConvertMps2; break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_Y:
+          imu_raw_.angular_velocity.y = static_cast<double>(data_value) * kConvertRadPerSec; break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_Y:
+          imu_raw_.linear_acceleration.y = static_cast<double>(data_value) * kConvertMps2; break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_Z:
+          imu_raw_.angular_velocity.z = static_cast<double>(data_value) * kConvertRadPerSec; break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_Z:
+          imu_raw_.linear_acceleration.z = static_cast<double>(data_value) * kConvertMps2; break;
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_TEMPERATURE:
+          break;  // Reserved for future use
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_FRONT_LEFT:
+          break;  // Reserved for future use
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_FRONT_RIGHT:
+          break;  // Reserved for future use
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_REAR_LEFT:
+          break;  // Reserved for future use
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_REAR_RIGHT:
+          break;  // Reserved for future use
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_SINGLE_TICK:
+          break;  // Reserved for future use
+        case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_SPEED:
+          break;  // Reserved for future use
+        default:
+          RCLCPP_INFO(node_->get_logger(), "Unknown IMU measurement, data_type: %u , data_value: %d", data_type, data_value);
+      }
+    }
+    imu_raw_pub_->publish(imu_raw_);
+  }
+}
+
+>>>>>>> 0cb2c06 (Add full product support for ZED-F9R)
 }  // namespace ublox_node

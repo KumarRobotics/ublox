@@ -96,6 +96,7 @@ template <typename U>
 bool getRosUint(rclcpp::Node* node, const std::string& key, U &u) {
   rclcpp::Parameter parameter;
   if (!node->get_parameter(key, parameter)) {
+    RCLCPP_WARN(node->get_logger(), "Failed to get ROS2 node parameter %s", key.c_str());
     return false;
   }
   U param = parameter.get_value<U>();

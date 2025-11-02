@@ -30,7 +30,7 @@ uint32 DATA_FIELD_MASK = 16777215     # data
 uint32 DATA_TYPE_MASK = 1056964608    # type of data (1..63)
 uint32 DATA_TYPE_SHIFT = 24
 uint32 DATA_TYPE_NONE = 0                     # data field contains no data
-uint32 DATA_TYPE_Z_AXIS_GYRO = 5              # z-axis gyroscope angular rate
+uint32 DATA_TYPE_GYRO_ANG_RATE_Z = 5          # z-axis gyroscope angular rate
                                               # [deg/s *2^-12 signed]
 uint32 DATA_TYPE_WHEEL_TICKS_FRONT_LEFT = 6   # front-left wheel ticks
                                               # Bits 0-22: unsigned tick value.

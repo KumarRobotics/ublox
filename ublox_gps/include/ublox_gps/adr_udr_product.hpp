@@ -66,11 +66,14 @@ class AdrUdrProduct final : public virtual ComponentInterface {
   bool use_adr_;
 
   sensor_msgs::msg::Imu imu_;
+  sensor_msgs::msg::Imu imu_raw_;
   sensor_msgs::msg::TimeReference t_ref_;
 
   void callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m);
+  void callbackEsfRAW(const ublox_msgs::msg::EsfRAW &m);
 
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_raw_pub_;
   rclcpp::Publisher<sensor_msgs::msg::TimeReference>::SharedPtr time_ref_pub_;
   rclcpp::Publisher<ublox_msgs::msg::NavATT>::SharedPtr nav_att_pub_;
   rclcpp::Publisher<ublox_msgs::msg::EsfINS>::SharedPtr esf_ins_pub_;

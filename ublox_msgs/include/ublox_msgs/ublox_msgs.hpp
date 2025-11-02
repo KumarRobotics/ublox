@@ -34,6 +34,7 @@
 #include <ublox_msgs/msg/nav_cov.hpp>
 #include <ublox_msgs/msg/nav_dgps.hpp>
 #include <ublox_msgs/msg/nav_dop.hpp>
+#include <ublox_msgs/msg/nav_hpposllh.hpp>
 #include <ublox_msgs/msg/nav_posecef.hpp>
 #include <ublox_msgs/msg/nav_posllh.hpp>
 #include <ublox_msgs/msg/nav_relposned.hpp>
@@ -162,6 +163,7 @@ namespace Message {
     static const uint8_t COV = ublox_msgs::msg::NavCOV::MESSAGE_ID;
     static const uint8_t DGPS = ublox_msgs::msg::NavDGPS::MESSAGE_ID;
     static const uint8_t DOP = ublox_msgs::msg::NavDOP::MESSAGE_ID;
+    static const uint8_t HPPOSLLH = ublox_msgs::msg::NavHPPOSLLH::MESSAGE_ID;
     static const uint8_t POSECEF = ublox_msgs::msg::NavPOSECEF::MESSAGE_ID;
     static const uint8_t POSLLH = ublox_msgs::msg::NavPOSLLH::MESSAGE_ID;
     static const uint8_t RELPOSNED = ublox_msgs::msg::NavRELPOSNED::MESSAGE_ID;

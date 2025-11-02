@@ -1,0 +1,26 @@
+# Configuration Settings for the C102-F9R (ZED-F9R) device
+ublox_gps_node:
+  ros__parameters:
+    config_on_startup: false    # Sufficient device configuration not feasible
+                                # with the current ublox node codebase. Use U-Center instead.
+    uart1:
+      baudrate: 115200
+      in: 1                     # ubx protocol id, see CfgPRT.msg
+      out: 0                    # ubx protocol id, see CfgPRT.msg
+
+    debug: 3                    # Range 0-4 (0 means no debug statements will print)
+    device: /dev/ttyACM0
+    frame_id: zedf9r
+
+    inf:
+      all: false                   # Whether to display all INF messages in console
+
+    publish:
+      all: false
+      esf:
+        raw: true
+        meas: true
+      nav:
+        att: true
+        hpposllh: true
+        pvt: true
