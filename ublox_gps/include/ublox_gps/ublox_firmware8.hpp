@@ -79,10 +79,6 @@ private:
   rclcpp::Publisher<ublox_msgs::msg::NavSAT>::SharedPtr nav_sat_pub_;
   rclcpp::Publisher<ublox_msgs::msg::MonHW>::SharedPtr mon_hw_pub_;
   rclcpp::Publisher<ublox_msgs::msg::RxmRTCM>::SharedPtr rxm_rtcm_pub_;
-<<<<<<< HEAD
-=======
-
->>>>>>> 0cb2c06 (Add full product support for ZED-F9R)
 };
 
 }  // namespace ublox_node

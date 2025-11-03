@@ -12,6 +12,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
+#include <sensor_msgs/msg/temperature.hpp>
 
 #include <ublox_msgs/msg/esf_ins.hpp>
 #include <ublox_msgs/msg/esf_meas.hpp>
@@ -60,8 +61,9 @@ class HpgDrProduct final : public virtual ComponentInterface {
  private:
 
   // Scaling factors for floating point representations of data
-  static constexpr float kConvertRadPerSec = std::pow(2, -12) * M_PI / 180.0F;
-  static constexpr float kConvertMPerSecSq = std::pow(2, -10);
+  //static constexpr float kConvertRadPerSec = std::pow(2, -12) * M_PI / 180.0F;
+  //static constexpr float kConvertMPerSecSq = std::pow(2, -10);
+  //static constexpr float kConvertDegCelsius{0.01F};
 
   // Callbacks relevant to ROS2 message output triggered on U-Blox message events
   void callbackEsfIns(const ublox_msgs::msg::EsfINS &m);
@@ -77,6 +79,8 @@ class HpgDrProduct final : public virtual ComponentInterface {
   sensor_msgs::msg::Imu imu_raw_;
   sensor_msgs::msg::Imu imu_att_;
   sensor_msgs::msg::Imu esf_ins_ros_;
+  sensor_msgs::msg::Temperature imu_temp_;
+
   sensor_msgs::msg::NavSatFix fix_hp_;
   diagnostic_msgs::msg::DiagnosticStatus nav_diag_;
 
@@ -87,6 +91,7 @@ class HpgDrProduct final : public virtual ComponentInterface {
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_meas_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_raw_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_att_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr imu_temp_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr esf_ins_ros_pub_;
   rclcpp::Publisher<sensor_msgs::msg::NavSatFix>::SharedPtr fix_hp_pub_;
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticStatus>::SharedPtr nav_diag_pub_;
@@ -99,7 +104,6 @@ class HpgDrProduct final : public virtual ComponentInterface {
   rclcpp::Publisher<ublox_msgs::msg::EsfMEAS>::SharedPtr esf_meas_pub_;
   rclcpp::Publisher<ublox_msgs::msg::EsfRAW>::SharedPtr esf_raw_pub_;
   rclcpp::Publisher<ublox_msgs::msg::EsfSTATUS>::SharedPtr esf_status_pub_;
-
 
   // Relevant configuration state parameters
   bool use_adr_;

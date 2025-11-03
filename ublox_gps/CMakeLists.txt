@@ -34,7 +34,6 @@ add_library(ublox_gps
   src/gnss.cpp
   src/gps.cpp
   src/hp_pos_rec_product.cpp
-  src/hpg_dr_product.cpp
   src/hpg_ref_product.cpp
   src/hpg_rov_product.cpp
   src/mkgmtime.c
