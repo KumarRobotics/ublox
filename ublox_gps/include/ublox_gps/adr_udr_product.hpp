@@ -12,7 +12,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
-#include <sensor_msgs/msg/time_reference.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
 
 #include <ublox_msgs/msg/esf_ins.hpp>
@@ -41,7 +40,7 @@ constexpr float kConvertDegCelsius{0.01F};
  */
 class AdrUdrProduct final : public virtual ComponentInterface {
  public:
-  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, const std::string & product_model, rclcpp::Node* node);
+  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, const bool use_highprecision, rclcpp::Node* node);
 
   /**
    * @brief Get the ADR/UDR parameters.
@@ -77,16 +76,14 @@ class AdrUdrProduct final : public virtual ComponentInterface {
  private:
   //! Whether or not to enable dead reckoning
   bool use_adr_;
+  float last_imu_temperature_{0.F};
 
   sensor_msgs::msg::Imu imu_;
   sensor_msgs::msg::Imu imu_raw_;
   sensor_msgs::msg::Imu imu_att_;
   sensor_msgs::msg::Imu esf_ins_ros_;
-  sensor_msgs::msg::Temperature imu_temp_;
-  sensor_msgs::msg::TimeReference t_ref_;
   sensor_msgs::msg::NavSatFix fix_hp_;
   diagnostic_msgs::msg::DiagnosticStatus nav_diag_;
-  ublox_msgs::msg::NavHPPOSLLH last_hp_pos_;
 
   // Local cache of U-Blox messages to be fused within a navigation epoch (data frame)
   ublox_msgs::msg::NavATT last_nav_att_;
@@ -99,6 +96,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
   void callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m);
   void callbackEsfStatus(const ublox_msgs::msg::EsfSTATUS &m);
   void callbackNavHpPosLlh(const ublox_msgs::msg::NavHPPOSLLH &m);
+  void callbackNavHpPosEcef(const ublox_msgs::msg::NavHPPOSECEF &m);
   void callbackNavATT(const ublox_msgs::msg::NavATT &m);
   void callbackNavPVT(const ublox_msgs::msg::NavPVT &m);
 
@@ -107,15 +105,15 @@ class AdrUdrProduct final : public virtual ComponentInterface {
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_raw_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_att_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr esf_ins_ros_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr imu_temp_pub_;
   rclcpp::Publisher<sensor_msgs::msg::NavSatFix>::SharedPtr fix_hp_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr imu_temp_pub_;
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticStatus>::SharedPtr nav_diag_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::TimeReference>::SharedPtr time_ref_pub_;
 
   // Republishers for U-Blox messages
   rclcpp::Publisher<ublox_msgs::msg::NavATT>::SharedPtr nav_att_pub_;
   rclcpp::Publisher<ublox_msgs::msg::NavPVT>::SharedPtr nav_pvt_pub_;
   rclcpp::Publisher<ublox_msgs::msg::NavHPPOSLLH>::SharedPtr nav_hpposllh_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::NavHPPOSECEF>::SharedPtr nav_hpposecef_pub_;
   rclcpp::Publisher<ublox_msgs::msg::EsfINS>::SharedPtr esf_ins_pub_;
   rclcpp::Publisher<ublox_msgs::msg::EsfMEAS>::SharedPtr esf_meas_pub_;
   rclcpp::Publisher<ublox_msgs::msg::EsfRAW>::SharedPtr esf_raw_pub_;
@@ -127,7 +125,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
 
   std::string frame_id_;
   std::shared_ptr<diagnostic_updater::Updater> updater_;
-  std::string product_model_;
+  bool use_highprecision_;
   rclcpp::Node* node_;
 };
 
