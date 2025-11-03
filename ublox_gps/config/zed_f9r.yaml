@@ -1,0 +1,30 @@
+# Configuration Settings for the C102-F9R (ZED-F9R) device
+# but should also work for ZED-F9K and ZED-F9L devices.
+ublox_gps_node:
+  ros__parameters:
+    debug: 1                    # Range 0-4 (0 means no debug statements will print)
+    device: /dev/ttyACM0
+    frame_id: "ZED-F9R"
+
+    config_on_startup: false    # Sufficient device configuration not feasible
+                                # with the current ublox node codebase. Use U-Center
+                                # instead to flash a persistent configuration.
+    uart1:
+      baudrate: 115200          # reasonably high output rate required for 50Hz+ outputs
+      in: 1                     # ubx protocol id, see CfgPRT.msg
+      out: 0                    # ubx protocol id, see CfgPRT.msg
+
+    inf:
+      all: false                # Whether to display all INF messages in console
+
+    publish:
+      all: false
+      esf:
+        raw: true               # unprocessed IMU readings
+        meas: true              # postprocessed IMU readings
+        ins: true               # Inertial Navigation System estimate
+      nav:
+        att: true               # vehicle attitude estimate
+        hpposllh: true          # high-precision lat-lon-height
+        hpposecef: true         # high-precision ECEF position
+        pvt: true               # position-velocity-time solution

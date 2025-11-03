@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(ublox_msgs)
 
+set(LEGACY_ROS2_DISTROS "foxy" "galactic" "eloquent" "dashing" "crystal" "bouncy" "ardent" "beta3" "beta2" "beta1")
+
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
@@ -10,7 +12,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
+find_package(rosidl_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -66,6 +70,8 @@ set(msg_files
   "msg/NavDGPS.msg"
   "msg/NavDGPSSV.msg"
   "msg/NavDOP.msg"
+  "msg/NavHPPOSECEF.msg"
+  "msg/NavHPPOSLLH.msg"
   "msg/NavPOSECEF.msg"
   "msg/NavPOSLLH.msg"
   "msg/NavPVT7.msg"
@@ -101,38 +107,51 @@ set(msg_files
   "msg/UpdSOS.msg"
 )
 
+if(NOT "$ENV{ROS_DISTRO}" IN_LIST LEGACY_ROS2_DISTROS)
+    set(USE_LEGACY_ROSIDL_TARGET "OFF")
+else()
+    message(STATUS "Using legacy rosidl cmake target interface")
+    set(USE_LEGACY_ROSIDL_TARGET "ON")
+endif()
+
+add_library(${PROJECT_NAME}_lib src/ublox_msgs.cpp)
+target_include_directories(${PROJECT_NAME}_lib PRIVATE
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}
+  LIBRARY_NAME ${PROJECT_NAME}
   DEPENDENCIES
     sensor_msgs
-    std_msgs
+    std_msgs)
+
+if(USE_LEGACY_ROSIDL_TARGET)
+  rosidl_target_interfaces(${PROJECT_NAME}_lib ${PROJECT_NAME} "rosidl_typesupport_cpp")
+else()
+  rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+endif()
+
+add_dependencies(${PROJECT_NAME}_lib ${PROJECT_NAME})
+
+target_link_libraries(${PROJECT_NAME}_lib
+  ${cpp_typesupport_target}
+  ublox_serialization::ublox_serialization
 )
 
-rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
-if(cpp_typesupport_target)
-  add_library(${PROJECT_NAME}_lib src/ublox_msgs.cpp)
-  target_include_directories(${PROJECT_NAME}_lib PRIVATE
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-  target_link_libraries(${PROJECT_NAME}_lib
-    ${cpp_typesupport_target}
-    ublox_serialization::ublox_serialization
-  )
+install(TARGETS ${PROJECT_NAME}_lib EXPORT ${PROJECT_NAME}_lib
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
 
-  install(TARGETS ${PROJECT_NAME}_lib EXPORT ${PROJECT_NAME}_lib
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
-  )
+install(DIRECTORY include/
+  DESTINATION "include/${PROJECT_NAME}"
+)
 
-  install(DIRECTORY include/
-    DESTINATION "include/${PROJECT_NAME}"
-  )
-
-  ament_export_include_directories("include/${PROJECT_NAME}")
-  ament_export_libraries(${PROJECT_NAME}_lib)
-  ament_export_targets(${PROJECT_NAME}_lib)
-endif()
+ament_export_include_directories("include/${PROJECT_NAME}")
+ament_export_libraries(${PROJECT_NAME}_lib)
+ament_export_targets(${PROJECT_NAME}_lib)
 
 ament_export_dependencies(rosidl_default_runtime sensor_msgs std_msgs ublox_serialization)
 

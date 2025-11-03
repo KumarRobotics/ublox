@@ -1757,6 +1757,92 @@ struct UbloxSerializer<ublox_msgs::msg::NavDGPS_<ContainerAllocator> > {
 };
 
 template <typename ContainerAllocator>
+struct UbloxSerializer<ublox_msgs::msg::NavHPPOSECEF_<ContainerAllocator> > {
+  inline static void read(const uint8_t *data, uint32_t count,
+                          ublox_msgs::msg::NavHPPOSECEF_<ContainerAllocator> & m) {
+    UbloxIStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.version);
+    stream.next(m.reserved0);
+    stream.next(m.i_tow);
+    stream.next(m.ecef_x);
+    stream.next(m.ecef_y);
+    stream.next(m.ecef_z);
+    stream.next(m.ecef_x_hp);
+    stream.next(m.ecef_y_hp);
+    stream.next(m.ecef_z_hp);
+    stream.next(m.flags);
+    stream.next(m.p_acc);
+  }
+
+  inline static uint32_t serializedLength(const ublox_msgs::msg::NavHPPOSECEF_<ContainerAllocator> & m) {
+    (void)m;
+    return 28;
+  }
+
+  inline static void write(uint8_t *data, uint32_t size,
+                           const ublox_msgs::msg::NavHPPOSECEF_<ContainerAllocator> & m) {
+    UbloxOStream stream(data, size);
+    stream.next(m.version);
+    stream.next(m.reserved0);
+    stream.next(m.i_tow);
+    stream.next(m.ecef_x);
+    stream.next(m.ecef_y);
+    stream.next(m.ecef_z);
+    stream.next(m.ecef_x_hp);
+    stream.next(m.ecef_y_hp);
+    stream.next(m.ecef_z_hp);
+    stream.next(m.flags);
+    stream.next(m.p_acc);
+  }
+};
+
+template <typename ContainerAllocator>
+struct UbloxSerializer<ublox_msgs::msg::NavHPPOSLLH_<ContainerAllocator> > {
+  inline static void read(const uint8_t *data, uint32_t count,
+                          ublox_msgs::msg::NavHPPOSLLH_<ContainerAllocator> & m) {
+    UbloxIStream stream(const_cast<uint8_t *>(data), count);
+    stream.next(m.version);
+    stream.next(m.reserved1);
+    stream.next(m.flags);
+    stream.next(m.i_tow);
+    stream.next(m.lon);
+    stream.next(m.lat);
+    stream.next(m.height);
+    stream.next(m.h_msl);
+    stream.next(m.lon_hp);
+    stream.next(m.lat_hp);
+    stream.next(m.height_hp);
+    stream.next(m.h_msl_hp);
+    stream.next(m.h_acc);
+    stream.next(m.v_acc);
+  }
+
+  inline static uint32_t serializedLength(const ublox_msgs::msg::NavHPPOSLLH_<ContainerAllocator> & m) {
+    (void)m;
+    return 36;
+  }
+
+  inline static void write(uint8_t *data, uint32_t size,
+                           const ublox_msgs::msg::NavHPPOSLLH_<ContainerAllocator> & m) {
+    UbloxOStream stream(data, size);
+    stream.next(m.version);
+    stream.next(m.reserved1);
+    stream.next(m.flags);
+    stream.next(m.i_tow);
+    stream.next(m.lon);
+    stream.next(m.lat);
+    stream.next(m.height);
+    stream.next(m.h_msl);
+    stream.next(m.lon_hp);
+    stream.next(m.lat_hp);
+    stream.next(m.height_hp);
+    stream.next(m.h_msl_hp);
+    stream.next(m.h_acc);
+    stream.next(m.v_acc);
+  }
+};
+
+template <typename ContainerAllocator>
 struct UbloxSerializer<ublox_msgs::msg::NavPOSECEF_<ContainerAllocator> > {
   inline static void read(const uint8_t *data, uint32_t count,
                           ublox_msgs::msg::NavPOSECEF_<ContainerAllocator> & m) {

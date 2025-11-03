@@ -218,27 +218,41 @@ void UbloxNode::addFirmwareInterface() {
 
 
 void UbloxNode::addProductInterface(const std::string & product_category,
-                                    const std::string & ref_rov) {
+                                    const std::string & ref_rov,
+                                    const std::string & product_model) {
+  // High-Precision GNSS reference station products
   if ((product_category == "HPG" || product_category == "HPS") && ref_rov == "REF") {
     components_.push_back(std::make_shared<HpgRefProduct>(nav_rate_, meas_rate_, updater_, rtcms_, this));
+    RCLCPP_INFO(this->get_logger(), "Registered product interface for High-Precision GNSS Reference Stations");
+  // High-Precision GNSS rover product, relying on a reference station
   } else if ((product_category == "HPG" || product_category == "HPS") && ref_rov == "ROV") {
     components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_, this));
+    RCLCPP_INFO(this->get_logger(), "Registered product interface for High-Precision GNSS Rovers");
+  // High-Precision GNSS Sensor Fusion products with Dead Reckoning capability
+  } else if ((product_category == "HPS" &&
+    (product_model == "ZED-F9R" || product_model == "ZED-F9K" || product_model == "ZED-F9L"))) {
+    components_.push_back(std::make_shared<AdrUdrProduct>(protocol_version_, nav_rate_, meas_rate_, frame_id_, updater_, true, this));
+    RCLCPP_INFO(this->get_logger(), "Registered product interface for High-Precision Dead Reckoning products.");
+  // Any other High-Precision GNSS product, without sensor fusion
   } else if (product_category == "HPG" || product_category == "HPS") {
     components_.push_back(std::make_shared<HpPosRecProduct>(nav_rate_, meas_rate_, frame_id_, updater_, rtcms_, this));
+    RCLCPP_INFO(this->get_logger(), "Registered product interface for High-Precision GNSS products");
+  // Time Sync products
   } else if (product_category == "TIM") {
     components_.push_back(std::make_shared<TimProduct>(frame_id_, updater_, this));
-  } else if (product_category == "ADR" ||
-             product_category == "UDR") {
-    components_.push_back(std::make_shared<AdrUdrProduct>(protocol_version_, nav_rate_, meas_rate_, frame_id_, updater_, this));
+    RCLCPP_INFO(this->get_logger(), "Registered product interface for Time Sync products");
+  // Automotive Dead Reckoning or Untethered Dead Reckoning products not detected above
+  } else if (product_category == "ADR" || product_category == "UDR") {
+    components_.push_back(std::make_shared<AdrUdrProduct>(protocol_version_, nav_rate_, meas_rate_, frame_id_, updater_, false, this));
+    RCLCPP_INFO(this->get_logger(), "Registered product interface for Automotive/Untethered Dead Reckoning products");
+  // Frequency & other Time Synchronization products
   } else if (product_category == "FTS") {
     components_.push_back(std::make_shared<FtsProduct>());
-  } else if (product_category == "HPS") {
-    components_.push_back(std::make_shared<AdrUdrProduct>(protocol_version_, nav_rate_, meas_rate_, frame_id_, updater_, this));
-    components_.push_back(std::make_shared<HpgRovProduct>(nav_rate_, updater_, this));
+    RCLCPP_INFO(this->get_logger(), "Registered product interface for Frequency & Time Synchronization products");
   } else {
-    RCLCPP_WARN(this->get_logger(), "Product category %s %s from MonVER message not recognized %s",
-                product_category.c_str(), ref_rov.c_str(),
-                "options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, HPS");
+    RCLCPP_WARN(this->get_logger(), "Product category %s %s (model %s) from MonVER message not recognized. %s",
+                product_category.c_str(), ref_rov.c_str(), product_model.c_str(),
+                "Options are HPG REF, HPG ROV, HPG #.#, TIM, ADR, UDR, FTS, HPS");
   }
 }
 
@@ -415,6 +429,7 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("publish.nav.clock", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.cov", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.heading", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.hpposllh", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.posecef", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.posllh", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.pvt", getRosBoolean(this, "publish.nav.all"));
@@ -689,6 +704,9 @@ void UbloxNode::processMonVer() {
       gnss_->add(str);
     }
   } else {
+    std::string product_category{""};  // To be populated
+    std::string rov_ref{""};           // To be populated, if needed
+    std::string product_model{""};
     for (std::size_t i = 0; i < extensions.size(); ++i) {
       std::vector<std::string> strs;
       // Up to 2nd to last line
@@ -696,10 +714,9 @@ void UbloxNode::processMonVer() {
         strs = stringSplit(extensions[i], "=");
         if (strs.size() > 1) {
           if (strs[0] == "FWVER") {
+            product_category = strs[1].substr(0, 3);
             if (strs[1].length() > 8) {
-              addProductInterface(strs[1].substr(0, 3), strs[1].substr(8, 10));
-            } else {
-              addProductInterface(strs[1].substr(0, 3));
+              rov_ref = strs[1].substr(8, 10);
             }
             continue;
           }
@@ -708,6 +725,7 @@ void UbloxNode::processMonVer() {
           {
             std::vector<std::string> moduleField;
             moduleField = stringSplit(strs[1], "-");
+            product_model = strs[1];
             if (moduleField.size() > 1)
             {
               if (moduleField[1].substr(0,2) == "F9")
@@ -730,6 +748,7 @@ void UbloxNode::processMonVer() {
         }
       }
     }
+    addProductInterface(product_category, rov_ref, product_model);
   }
 }
 
@@ -909,8 +928,12 @@ void UbloxNode::initialize() {
   // Do this last
   initializeRosDiagnostics();
 
-  if (configureUblox()) {
-    RCLCPP_INFO(this->get_logger(), "U-Blox configured successfully.");
+  if (!getRosBoolean(this, "config_on_startup") || configureUblox()) {
+    if (getRosBoolean(this, "config_on_startup")) {
+      RCLCPP_INFO(this->get_logger(), "U-Blox device configured successfully.");
+    } else {
+      RCLCPP_INFO(this->get_logger(), "U-Blox device configuration not modified.");
+    }
     // Subscribe to all U-Blox messages
     subscribe();
     // Configure INF messages (needs INF params, call after subscribing)

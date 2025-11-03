@@ -10,6 +10,7 @@ Example .yaml configuration files are included in `ublox_gps/config`. Consult th
 The `ublox_gps` node supports the following parameters for all products and firmware versions:
 * `device`: Path to the device port. Defaults to `/dev/ttyACM0`.
 * `raw_data`: Whether the device is a raw data product. Defaults to false. Firmware <= 7.03 only.
+* `config_on_startup`: Whether the node should configure the device (true) or use the device's configuration (false).
 * `load`: Parameters for loading the configuration to non-volatile memory. See `ublox_msgs/CfgCFG.msg`
     * `load/mask`: uint32_t. Mask of the configurations to load.
     * `load/device`: uint32_t. Mask which selects the devices for the load command.
@@ -127,7 +128,11 @@ The `ublox_gps` node supports the following parameters for all products and firm
 
 `~fix`([sensor_msgs/NavSatFix](http://docs.ros.org/api/sensor_msgs/html/msg/NavSatFix.html))
 
-Navigation Satellite fix.
+Navigation Satellite fix. 
+
+`~fix_highprecision`([sensor_msgs/NavSatFix](http://docs.ros.org/api/sensor_msgs/html/msg/NavSatFix.html))
+
+Navigation Satellite fix. Only for high-precision ADR/UDR devices.
 
 `~fix_velocity`([geometry_msgs/TwistWithCovarianceStamped](http://docs.ros.org/jade/api/geometry_msgs/html/msg/TwistWithCovarianceStamped.html))
 
@@ -170,11 +175,13 @@ To publish a given u-blox message to a ROS topic, set the parameter shown below 
 * `publish/nav/all`: This is the default value for the `publish/mon/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
 * `publish/nav/att`: Topic `~navatt`. **ADR/UDR devices only**
 * `publish/nav/clock`: Topic `~navclock`
+* `publish/nav/heading`: Topic `~navheading`. **Firmware >= 9 HP Position receiver devices only.**
+* `publish/nav/hpposecef`: Topic `~hpposecef` **Firmware >= 8 High-Precision GNSS Devices only**.
+* `publish/nav/hpposllh`: Topic `~hpposllh` **Firmware >= 8 High-Precision GNSS Devices only**.
 * `publish/nav/posecef`: Topic `~navposecef`
 * `publish/nav/posllh`: Topic `~navposllh`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
 * `publish/nav/pvt`: Topic `~navpvt`. **Firmware >= 7 only.**
 * `publish/nav/relposned`: Topic `~navrelposned`. **HPG Rover devices only**
-* `publish/nav/heading`: Topic `~navheading`. **HP Position receiver devices only.** For firmware 9 and above
 * `publish/nav/sat`: Topic `~navsat`
 * `publish/nav/sol`: Topic `~navsol`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
 * `publish/nav/status`: Topic `~navstatus`
@@ -187,9 +194,10 @@ To publish a given u-blox message to a ROS topic, set the parameter shown below 
 ### ESF messages
 * `publish/esf/all`: This is the default value for the `publish/esf/<message>` parameters below. It defaults to `publish/all` for **ADR/UDR devices**. Individual messages can be enabled or disabled by setting the parameters below.
 * `publish/esf/ins`: Topic `~esfins`
-* `publish/esf/meas`: Topic `~esfmeas`
-* `publish/esf/raw`: Topic `~esfraw`
+* `publish/esf/meas`: Topic `~esfmeas` and `~imu`([sensor_msgs/Imu](https://docs.ros2.org/latest/api/sensor_msgs/msg/Imu.html)) derived from EsfMEAS
+* `publish/esf/raw`: Topic `~esfraw` and `~imu_raw`([sensor_msgs/Imu](https://docs.ros2.org/latest/api/sensor_msgs/msg/Imu.html)) derived from EsfRAW
 * `publish/esf/status`: Topic `~esfstatus`
+* Topic `~imu_temperature`([sensor_msgs/Temperature](https://docs.ros2.org/latest/api/sensor_msgs/msg/Temperature.html)) if either EsfMEAS or EsfRAW are used
 
 ### HNR messages
 * `publish/hnr/pvt`: Topic `~hnrpvt`. **ADR/UDR devices only**
