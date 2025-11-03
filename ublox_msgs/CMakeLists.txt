@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(ublox_msgs)
 
-set(LEGACY_ROS_DISTROS "foxy" "galactic" "eloquent" "dashing" "crystal" "bouncy" "ardent" "beta3" "beta2" "beta1")
+set(LEGACY_ROS2_DISTROS "foxy" "galactic" "eloquent" "dashing" "crystal" "bouncy" "ardent" "beta3" "beta2" "beta1")
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -107,7 +107,7 @@ set(msg_files
   "msg/UpdSOS.msg"
 )
 
-if(NOT "$ENV{ROS_DISTRO}" IN_LIST LEGACY_ROS_DISTROS)
+if(NOT "$ENV{ROS_DISTRO}" IN_LIST LEGACY_ROS2_DISTROS)
     set(USE_LEGACY_ROSIDL_TARGET "OFF")
 else()
     message(STATUS "Using legacy rosidl cmake target interface")
