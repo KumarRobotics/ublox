@@ -463,6 +463,7 @@ void AdrUdrProduct::callbackNavHpPosEcef(const ublox_msgs::msg::NavHPPOSECEF& m)
 // Decode the High-Precision Geodetic Position message (HPPOSLLH) into NavSatFix
 //
 void AdrUdrProduct::callbackNavHpPosLlh(const ublox_msgs::msg::NavHPPOSLLH& m) {
+  fix_hp_.header.stamp = node_->now();  // Ideally, we should get a timestamp from the device
   // Do not publish invalid HPPOSLLH data
   if (m.flags != 0) {
     return;
@@ -472,8 +473,6 @@ void AdrUdrProduct::callbackNavHpPosLlh(const ublox_msgs::msg::NavHPPOSLLH& m) {
     nav_hpposllh_pub_->publish(m);
   }
 
-  fix_hp_.header.stamp = node_->now();  // Ideally, we should get a timestamp from the device
-
   if (last_nav_pvt_.fix_type >= ublox_msgs::msg::NavPVT::FIX_TYPE_2D) {
     fix_hp_.status.status = sensor_msgs::msg::NavSatStatus::STATUS_FIX;
   } else {
@@ -481,13 +480,13 @@ void AdrUdrProduct::callbackNavHpPosLlh(const ublox_msgs::msg::NavHPPOSLLH& m) {
   }
 
   // Calculate the high-precision lat, lon, alt values
-  fix_hp_.latitude = 1e-7 *  (static_cast<double>(m.lat) + (static_cast<double>(m.lat_hp) * 1e-2));
-  fix_hp_.longitude = 1e-7 * (static_cast<double>(m.lon) + (static_cast<double>(m.lon_hp) * 1e-2));
+  fix_hp_.latitude = 1e-7 *  (static_cast<double>(m.lat) + (static_cast<double>(m.lat_hp) * 1e-9));
+  fix_hp_.longitude = 1e-7 * (static_cast<double>(m.lon) + (static_cast<double>(m.lon_hp) * 1e-9));
   fix_hp_.altitude = 1e-3 * (static_cast<double>(m.height) + (static_cast<double>(m.height_hp) * 1e-1));
 
   // Populate the covariance data
-  const double var_h = std::pow(m.h_acc / 1000.0, 2);
-  const double var_v = std::pow(m.v_acc / 1000.0, 2);
+  const double var_h = std::pow(static_cast<double>(m.h_acc) * 1e-3, 2.0);
+  const double var_v = std::pow(static_cast<double>(m.v_acc) * 1e-3, 2.0);
   fix_hp_.position_covariance[0] = var_h;
   fix_hp_.position_covariance[4] = var_h;
   fix_hp_.position_covariance[8] = var_v;
