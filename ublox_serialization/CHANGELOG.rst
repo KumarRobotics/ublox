@@ -2,6 +2,11 @@
 Changelog for package ublox_serialization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.0 (2025-09-26)
+------------------
+* Feature: Add support for new HPS firmware and publishing NMEA Sentences (`#209 <https://github.com/KumarRobotics/ublox/issues/209>`_)
+* Contributors: Ryan D. Lewis
+
 2.3.0 (2022-04-13)
 ------------------
 * Revamp the building of the driver for modern ROS 2 practices.

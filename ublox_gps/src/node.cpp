@@ -439,6 +439,8 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("publish.nav.svin", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.svinfo", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.status", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.timegps", getRosBoolean(this, "publish.nav.all"));
+  this->declare_parameter("publish.nav.timeutc", getRosBoolean(this, "publish.nav.all"));
   this->declare_parameter("publish.nav.velned", getRosBoolean(this, "publish.nav.all"));
 
   this->declare_parameter("publish.rxm.all", getRosBoolean(this, "publish.all"));
@@ -791,7 +793,7 @@ bool UbloxNode::configureUblox() {
                                   " SBAS.");
         }
       }
-      if (!gps_->setPpp(getRosBoolean(this, "enable_ppp"))) {
+      if (!gps_->setPpp(getRosBoolean(this, "enable_ppp"), protocol_version_)) {
         throw std::runtime_error(std::string("Failed to ") +
                                 (getRosBoolean(this, "enable_ppp") ? "enable" : "disable")
                                 + " PPP.");
@@ -826,7 +828,7 @@ bool UbloxNode::configureUblox() {
     }
   } catch (const std::exception& e) {
     RCLCPP_FATAL(this->get_logger(), "Error configuring u-blox: %s", e.what());
-    return false;
+    throw std::runtime_error("Failed to configure u-blox receiver.");
   }
   return true;
 }

@@ -230,7 +230,7 @@ void AdrUdrProduct::getRosParams() {
 }
 
 bool AdrUdrProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
-  if (!gps->setUseAdr(use_adr_)) {
+  if (!gps->setUseAdr(use_adr_, protocol_version_)) {
     throw std::runtime_error(std::string("Failed to ")
                              + (use_adr_ ? "enable" : "disable") + "use_adr");
   }
