@@ -120,21 +120,6 @@ AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::s
 
 void AdrUdrProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
 
-  // Subscribe to High-Precision Lat-Lon-Height messages; only in firmware >= 8
-  if (use_highprecision_) {
-    gps->subscribe<ublox_msgs::msg::NavHPPOSLLH>(std::bind(
-      &AdrUdrProduct::callbackNavHpPosLlh, this, std::placeholders::_1), 1);
-    gps->subscribe<ublox_msgs::msg::NavHPPOSECEF>(std::bind(
-      &AdrUdrProduct::callbackNavHpPosEcef, this, std::placeholders::_1), 1);
-  }
-  // Subscribe to the Position-Velocity-Time solution messages.
-  gps->subscribe<ublox_msgs::msg::NavPVT>(std::bind(
-    &AdrUdrProduct::callbackNavPVT, this, std::placeholders::_1), 1);
-
-  // Sensor Fusion status for diagnostics output
-  gps->subscribe<ublox_msgs::msg::EsfSTATUS>(std::bind(
-    &AdrUdrProduct::callbackEsfStatus, this, std::placeholders::_1), 1);
-
   // Subscribe to ADR/UDR Navigation Attitude messages
   if (getRosBoolean(node_, "publish.nav.att")) {
     gps->subscribe<ublox_msgs::msg::NavATT>(std::bind(
@@ -153,7 +138,7 @@ void AdrUdrProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
       &AdrUdrProduct::callbackEsfMEAS, this, std::placeholders::_1), 1);
   }
 
-    // Subscribe to ADR/UDR Raw IMU messages
+  // Subscribe to ADR/UDR Raw IMU messages
   if (getRosBoolean(node_, "publish.esf.raw")) {
     gps->subscribe<ublox_msgs::msg::EsfRAW>(std::bind(
       &AdrUdrProduct::callbackEsfRAW, this, std::placeholders::_1), 1);
@@ -171,8 +156,69 @@ void AdrUdrProduct::subscribe(std::shared_ptr<ublox_gps::Gps> gps) {
       [this](const ublox_msgs::msg::HnrPVT &m) { hnr_pvt_pub_->publish(m); },
       1);
   }
+
+  // Subscribe to High-Precision Lat-Lon-Height messages; only in firmware >= 8
+  if (use_highprecision_) {
+    gps->subscribe<ublox_msgs::msg::NavHPPOSLLH>(std::bind(
+      &AdrUdrProduct::callbackNavHpPosLlh, this, std::placeholders::_1), 1);
+    gps->subscribe<ublox_msgs::msg::NavHPPOSECEF>(std::bind(
+      &AdrUdrProduct::callbackNavHpPosEcef, this, std::placeholders::_1), 1);
+  }
+  // Subscribe to the Position-Velocity-Time solution messages.
+  gps->subscribe<ublox_msgs::msg::NavPVT>(std::bind(
+    &AdrUdrProduct::callbackNavPVT, this, std::placeholders::_1), 1);
+
 }
 
+void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m) {
+  const rclcpp::Time callback_time{node_->now()};
+  // This is time-critical data, so if something is expecting it, republish early
+  if (getRosBoolean(node_, "publish.esf.meas")) {
+    esf_meas_pub_->publish(m);
+  }
+
+  for (const std::uint32_t datapoint : m.data) {
+    //grab the last six bits of data as the data type description field
+    const std::uint8_t data_type = datapoint >> 24;
+    // Interpret the first 24 bits as a signed integer
+    const std::int32_t data_value = extract_int24(datapoint);
+    switch (data_type) {
+      case ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_X:
+        imu_.angular_velocity.x = static_cast<double>(data_value) * kConvertRadPerSec;
+        break;
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_Y:
+        imu_.angular_velocity.y = static_cast<double>(data_value) * kConvertRadPerSec;
+        break;
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_Z:
+        imu_.angular_velocity.z = static_cast<double>(data_value) * kConvertRadPerSec;
+        break;
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_X:
+        imu_.linear_acceleration.x = static_cast<double>(data_value) * kConvertMps2;
+        break;
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_Y:
+        imu_.linear_acceleration.y = static_cast<double>(data_value) * kConvertMps2;
+        break;
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_Z:
+       imu_.linear_acceleration.z = static_cast<double>(data_value) * kConvertMps2;
+        break;
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_TEMPERATURE:
+        last_imu_temperature_ = static_cast<double>(data_value) * kConvertDegCelsius;
+        break;
+      // The following are not currently used
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_FRONT_LEFT:
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_FRONT_RIGHT:
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_REAR_LEFT:
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_REAR_RIGHT:
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_SINGLE_TICK:
+      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_SPEED:
+        break;
+      default:
+          RCLCPP_INFO(node_->get_logger(), "Unknown IMU measurement, data_type: %u , data_value: %d", data_type, data_value);
+    }
+    imu_.header.stamp = callback_time;
+    imu_pub_->publish(imu_);
+  }
+}
 
 void AdrUdrProduct::getRosParams() {
   use_adr_ = getRosBoolean(node_, "use_adr");
@@ -299,56 +345,6 @@ const char* imu_init_str(std::uint8_t bitfield) {
   if (imu_status == 1) return "initializing";
   if (imu_status == 0) return "off";
   return "deserialization error";
-}
-
-void AdrUdrProduct::callbackEsfMEAS(const ublox_msgs::msg::EsfMEAS &m) {
-  const rclcpp::Time callback_time{node_->now()};
-  // This is time-critical data, so if something is expecting it, republish early
-  if (getRosBoolean(node_, "publish.esf.meas")) {
-    esf_meas_pub_->publish(m);
-  }
-
-  for (const std::uint32_t datapoint : m.data) {
-    //grab the last six bits of data as the data type description field
-    const std::uint8_t data_type = datapoint >> 24;
-    // Interpret the first 24 bits as a signed integer
-    const std::int32_t data_value = extract_int24(datapoint);
-    switch (data_type) {
-      case ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_X:
-        imu_.angular_velocity.x = static_cast<double>(data_value) * kConvertRadPerSec;
-        break;
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_Y:
-        imu_.angular_velocity.y = static_cast<double>(data_value) * kConvertRadPerSec;
-        break;
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_ANG_RATE_Z:
-        imu_.angular_velocity.z = static_cast<double>(data_value) * kConvertRadPerSec;
-        break;
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_X:
-        imu_.linear_acceleration.x = static_cast<double>(data_value) * kConvertMps2;
-        break;
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_Y:
-        imu_.linear_acceleration.y = static_cast<double>(data_value) * kConvertMps2;
-        break;
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_ACCELEROMETER_Z:
-       imu_.linear_acceleration.z = static_cast<double>(data_value) * kConvertMps2;
-        break;
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_GYRO_TEMPERATURE:
-        last_imu_temperature_ = static_cast<double>(data_value) * kConvertDegCelsius;
-        break;
-      // The following are not currently used
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_FRONT_LEFT:
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_FRONT_RIGHT:
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_REAR_LEFT:
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_WHEEL_TICKS_REAR_RIGHT:
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_SINGLE_TICK:
-      case  ublox_msgs::msg::EsfMEAS::DATA_TYPE_SPEED:
-        break;
-      default:
-          RCLCPP_INFO(node_->get_logger(), "Unknown IMU measurement, data_type: %u , data_value: %d", data_type, data_value);
-    }
-    imu_.header.stamp = callback_time;
-    imu_pub_->publish(imu_);
-  }
 }
 
 //
