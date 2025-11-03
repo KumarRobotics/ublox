@@ -5,9 +5,6 @@
 #include <string>
 #include <vector>
 
-#include <ublox_gps/component_interface.hpp>
-#include <ublox_gps/gps.hpp>
-
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -21,10 +18,10 @@
 #include <ublox_msgs/msg/hnr_pvt.hpp>
 #include <ublox_msgs/msg/nav_att.hpp>
 #include <ublox_msgs/msg/nav_hpposllh.hpp>
-#include <ublox_msgs/msg/tim_tm2.hpp>
+#include <ublox_msgs/msg/nav_hpposecef.hpp>
 
+#include <ublox_gps/component_interface.hpp>
 #include <ublox_gps/gps.hpp>
-#include <ublox_gps/rtcm.hpp>
 
 namespace ublox_node {
 
@@ -78,12 +75,12 @@ class AdrUdrProduct final : public virtual ComponentInterface {
   bool use_adr_;
   float last_imu_temperature_{0.F};
 
-  sensor_msgs::msg::Imu imu_;
-  sensor_msgs::msg::Imu imu_raw_;
-  sensor_msgs::msg::Imu imu_att_;
-  sensor_msgs::msg::Imu esf_ins_ros_;
-  sensor_msgs::msg::NavSatFix fix_hp_;
-  diagnostic_msgs::msg::DiagnosticStatus nav_diag_;
+  sensor_msgs::msg::Imu imu_{};
+  sensor_msgs::msg::Imu imu_raw_{};
+  sensor_msgs::msg::Imu imu_att_{};
+  sensor_msgs::msg::Imu esf_ins_ros_{};
+  sensor_msgs::msg::NavSatFix fix_hp_{};
+  diagnostic_msgs::msg::DiagnosticStatus nav_diag_{};
 
   // Local cache of U-Blox messages to be fused within a navigation epoch (data frame)
   ublox_msgs::msg::NavATT last_nav_att_;

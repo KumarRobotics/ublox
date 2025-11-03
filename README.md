@@ -195,9 +195,9 @@ To publish a given u-blox message to a ROS topic, set the parameter shown below 
 * `publish/esf/meas`: Topic `~esfmeas`
 * `publish/esf/raw`: Topic `~esfraw`
 * `publish/esf/status`: Topic `~esfstatus`
-* Topic `~imu`([sensor_msgs/Imu](https://docs.ros2.org/latest/api/sensor_msgs/msg/Imu.html))
-* Topic `~imu_raw`([sensor_msgs/Imu](https://docs.ros2.org/latest/api/sensor_msgs/msg/Imu.html))
-
+* Topic `~imu`([sensor_msgs/Imu](https://docs.ros2.org/latest/api/sensor_msgs/msg/Imu.html)) derived from EsfMEAS
+* Topic `~imu_raw`([sensor_msgs/Imu](https://docs.ros2.org/latest/api/sensor_msgs/msg/Imu.html)) derived from EsfRAW
+* Topic ~imu
 ### HNR messages
 * `publish/hnr/pvt`: Topic `~hnrpvt`. **ADR/UDR devices only**
 
