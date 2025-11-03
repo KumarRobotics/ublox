@@ -231,7 +231,7 @@ void UbloxNode::addProductInterface(const std::string & product_category,
   // High-Precision GNSS Sensor Fusion products with Dead Reckoning capability
   } else if ((product_category == "HPS" &&
     (product_model == "ZED-F9R" || product_model == "ZED-F9K" || product_model == "ZED-F9L"))) {
-    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_, true, this));
+    components_.push_back(std::make_shared<AdrUdrProduct>(protocol_version_, nav_rate_, meas_rate_, frame_id_, updater_, true, this));
     RCLCPP_INFO(this->get_logger(), "Registered product interface for High-Precision Dead Reckoning products.");
   // Any other High-Precision GNSS product, without sensor fusion
   } else if (product_category == "HPG" || product_category == "HPS") {
@@ -243,7 +243,7 @@ void UbloxNode::addProductInterface(const std::string & product_category,
     RCLCPP_INFO(this->get_logger(), "Registered product interface for Time Sync products");
   // Automotive Dead Reckoning or Untethered Dead Reckoning products not detected above
   } else if (product_category == "ADR" || product_category == "UDR") {
-    components_.push_back(std::make_shared<AdrUdrProduct>(nav_rate_, meas_rate_, frame_id_, updater_, false, this));
+    components_.push_back(std::make_shared<AdrUdrProduct>(protocol_version_, nav_rate_, meas_rate_, frame_id_, updater_, false, this));
     RCLCPP_INFO(this->get_logger(), "Registered product interface for Automotive/Untethered Dead Reckoning products");
   // Frequency & other Time Synchronization products
   } else if (product_category == "FTS") {

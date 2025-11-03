@@ -37,7 +37,7 @@ constexpr float kConvertDegCelsius{0.01F};
  */
 class AdrUdrProduct final : public virtual ComponentInterface {
  public:
-  explicit AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, const bool use_highprecision, rclcpp::Node* node);
+  explicit AdrUdrProduct(float protocol_version, uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, const bool use_highprecision, rclcpp::Node* node);
 
   /**
    * @brief Get the ADR/UDR parameters.
@@ -73,6 +73,7 @@ class AdrUdrProduct final : public virtual ComponentInterface {
  private:
   //! Whether or not to enable dead reckoning
   bool use_adr_;
+  float protocol_version_{0.F};
   float last_imu_temperature_{0.F};
 
   sensor_msgs::msg::Imu imu_{};

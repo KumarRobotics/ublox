@@ -37,7 +37,7 @@ static inline std::int32_t extract_int24(std::uint32_t bitfield) {
 // High Precision GNSS products have have firmware version >= 8
 //
 AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, const bool use_highprecision, rclcpp::Node* node)
-  : use_adr_(false), nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id), updater_(updater), use_highprecision_(use_highprecision), node_(node)
+  : protocol_version_(protocol_version), use_adr_(false), nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id), updater_(updater), use_highprecision_(use_highprecision), node_(node)
 {
   if (getRosBoolean(node_, "publish.esf.meas")) {
     imu_pub_ =
