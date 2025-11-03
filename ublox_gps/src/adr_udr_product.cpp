@@ -9,7 +9,7 @@
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
-#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Quaternion.hpp>
 
 #include <ublox_msgs/msg/esf_ins.hpp>
 #include <ublox_msgs/msg/esf_meas.hpp>
@@ -36,7 +36,7 @@ static inline std::int32_t extract_int24(std::uint32_t bitfield) {
 // U-Blox Automotive or Untethered Dead Reckoning
 // High Precision GNSS products have have firmware version >= 8
 //
-AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, const bool use_highprecision, rclcpp::Node* node)
+AdrUdrProduct::AdrUdrProduct(float protocol_version, uint16_t nav_rate, uint16_t meas_rate, const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, const bool use_highprecision, rclcpp::Node* node)
   : protocol_version_(protocol_version), use_adr_(false), nav_rate_(nav_rate), meas_rate_(meas_rate), frame_id_(frame_id), updater_(updater), use_highprecision_(use_highprecision), node_(node)
 {
   if (getRosBoolean(node_, "publish.esf.meas")) {
@@ -230,7 +230,7 @@ void AdrUdrProduct::getRosParams() {
 }
 
 bool AdrUdrProduct::configureUblox(std::shared_ptr<ublox_gps::Gps> gps) {
-  if (!gps->setUseAdr(use_adr_, protocol_version_)) {
+  if (!gps->setUseAdr(use_adr_)) {
     throw std::runtime_error(std::string("Failed to ")
                              + (use_adr_ ? "enable" : "disable") + "use_adr");
   }

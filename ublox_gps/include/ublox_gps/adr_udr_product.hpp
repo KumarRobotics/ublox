@@ -72,8 +72,8 @@ class AdrUdrProduct final : public virtual ComponentInterface {
 
  private:
   //! Whether or not to enable dead reckoning
-  bool use_adr_;
   float protocol_version_{0.F};
+  bool use_adr_;
   float last_imu_temperature_{0.F};
 
   sensor_msgs::msg::Imu imu_{};
