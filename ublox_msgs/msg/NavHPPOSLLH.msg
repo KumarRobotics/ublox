@@ -11,7 +11,6 @@
 uint8 CLASS_ID = 0x01
 uint8 MESSAGE_ID = 0x14
 
-
 uint8 version
 uint16 reserved1
 uint8 flags             # bit 0: 1=invalid position, 0 = valid

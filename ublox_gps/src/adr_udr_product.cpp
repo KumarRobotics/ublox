@@ -74,7 +74,7 @@ AdrUdrProduct::AdrUdrProduct(uint16_t nav_rate, uint16_t meas_rate, const std::s
   imu_raw_pub_ = node_->create_publisher<sensor_msgs::msg::Imu>("~/imu_raw", 1);
   imu_temp_pub_ = node_->create_publisher<sensor_msgs::msg::Temperature>("~/imu_temp", 1);
   esf_ins_ros_pub_ = node_->create_publisher<sensor_msgs::msg::Imu>("~/kinematics", 1);
-  fix_hp_pub_ = node_->create_publisher<sensor_msgs::msg::NavSatFix>("~/fix", 1);
+  fix_hp_pub_ = node_->create_publisher<sensor_msgs::msg::NavSatFix>("~/fix_highprecision", 1);
   nav_diag_pub_ = node_->create_publisher<diagnostic_msgs::msg::DiagnosticStatus>("~/fusion_status", 1);
 
   // Perform any message metadata value setting we can do only once, including default values

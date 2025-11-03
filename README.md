@@ -128,7 +128,11 @@ The `ublox_gps` node supports the following parameters for all products and firm
 
 `~fix`([sensor_msgs/NavSatFix](http://docs.ros.org/api/sensor_msgs/html/msg/NavSatFix.html))
 
-Navigation Satellite fix.
+Navigation Satellite fix. 
+
+`~fix_highprecision`([sensor_msgs/NavSatFix](http://docs.ros.org/api/sensor_msgs/html/msg/NavSatFix.html))
+
+Navigation Satellite fix. Only for high-precision ADR/UDR devices.
 
 `~fix_velocity`([geometry_msgs/TwistWithCovarianceStamped](http://docs.ros.org/jade/api/geometry_msgs/html/msg/TwistWithCovarianceStamped.html))
 
@@ -171,12 +175,13 @@ To publish a given u-blox message to a ROS topic, set the parameter shown below 
 * `publish/nav/all`: This is the default value for the `publish/mon/<message>` parameters below. It defaults to `publish/all`. Individual messages can be enabled or disabled by setting the parameters below.
 * `publish/nav/att`: Topic `~navatt`. **ADR/UDR devices only**
 * `publish/nav/clock`: Topic `~navclock`
+* `publish/nav/heading`: Topic `~navheading`. **Firmware >= 9 HP Position receiver devices only.**
+* `publish/nav/hpposecef`: Topic `~hpposecef` **Firmware >= 8 High-Precision GNSS Devices only**.
 * `publish/nav/hpposllh`: Topic `~hpposllh` **Firmware >= 8 High-Precision GNSS Devices only**.
 * `publish/nav/posecef`: Topic `~navposecef`
 * `publish/nav/posllh`: Topic `~navposllh`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
 * `publish/nav/pvt`: Topic `~navpvt`. **Firmware >= 7 only.**
 * `publish/nav/relposned`: Topic `~navrelposned`. **HPG Rover devices only**
-* `publish/nav/heading`: Topic `~navheading`. **HP Position receiver devices only.** For firmware 9 and above
 * `publish/nav/sat`: Topic `~navsat`
 * `publish/nav/sol`: Topic `~navsol`. **Firmware <= 6 only.** For firmware 7 and above, see NavPVT
 * `publish/nav/status`: Topic `~navstatus`
