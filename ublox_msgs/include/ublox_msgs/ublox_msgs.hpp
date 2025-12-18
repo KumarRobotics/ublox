@@ -50,6 +50,7 @@
 #include <ublox_msgs/msg/nav_timeutc.hpp>
 #include <ublox_msgs/msg/nav_velecef.hpp>
 #include <ublox_msgs/msg/nav_velned.hpp>
+#include <ublox_msgs/msg/nav_pl.hpp>
 
 #include <ublox_msgs/msg/rxm_alm.hpp>
 #include <ublox_msgs/msg/rxm_eph.hpp>
@@ -177,6 +178,7 @@ namespace Message {
     static const uint8_t TIMEUTC = ublox_msgs::msg::NavTIMEUTC::MESSAGE_ID;
     static const uint8_t VELECEF = ublox_msgs::msg::NavVELECEF::MESSAGE_ID;
     static const uint8_t VELNED = ublox_msgs::msg::NavVELNED::MESSAGE_ID;
+    static const uint8_t PL = ublox_msgs::msg::NavPL::MESSAGE_ID;
   }  // namespace NAV
 
   namespace RXM {

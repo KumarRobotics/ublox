@@ -11,6 +11,7 @@
 #include <ublox_msgs/msg/cfg_valset_cfgdata.hpp>
 #include <ublox_msgs/msg/nav_timegps.hpp>
 #include <ublox_msgs/msg/nav_timeutc.hpp>
+#include <ublox_msgs/msg/nav_pl.hpp>
 
 #include <ublox_gps/fix_diagnostic.hpp>
 #include <ublox_gps/gnss.hpp>
@@ -45,11 +46,12 @@ private:
   /**
     * @brief Populate the CfgVALSETCfgData data type
     *
-    * @details A helper function used to generate a configuration for a single signal. 
+    * @details A helper function used to generate a configuration for a single signal.
     */
   ublox_msgs::msg::CfgVALSETCfgdata generateSignalConfig(uint32_t signalID, bool enable);
   rclcpp::Publisher<ublox_msgs::msg::NavTIMEGPS>::SharedPtr nav_timegps_pub_;
   rclcpp::Publisher<ublox_msgs::msg::NavTIMEUTC>::SharedPtr nav_timeutc_pub_;
+  rclcpp::Publisher<ublox_msgs::msg::NavPL>::SharedPtr nav_pl_pub_;
 };
 
 }  // namespace ublox_node

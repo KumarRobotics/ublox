@@ -80,6 +80,8 @@ DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::VELECEF,
                       ublox_msgs, NavVELECEF)
 DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::VELNED,
                       ublox_msgs, NavVELNED)
+DECLARE_UBLOX_MESSAGE(ublox_msgs::Class::NAV, ublox_msgs::Message::NAV::PL,
+                      ublox_msgs, NavPL)
 
 // ACK messages are declared differently because they both have the same
 // protocol, so only 1 ROS message is used
