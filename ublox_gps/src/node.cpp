@@ -446,6 +446,7 @@ void UbloxNode::getRosParams() {
   this->declare_parameter("publish.tim.tm2", false);
 
   this->declare_parameter("publish.nmea", true);
+  this->declare_parameter("publish.versions", true);
 
   // INF parameters
   this->declare_parameter("inf.all", true);
@@ -498,6 +499,11 @@ void UbloxNode::getRosParams() {
   if (getRosBoolean(this, "publish.nmea")) {
     // Larger queue depth to handle all NMEA strings being published consecutively
     nmea_pub_ = this->create_publisher<nmea_msgs::msg::Sentence>("nmea", 20);
+  }
+  if (getRosBoolean(this, "publish.versions")) {
+    rclcpp::QoS qos(1);
+    qos.transient_local();
+    versions_pub_ = this->create_publisher<ublox_msgs::msg::Versions>("versions", qos);
   }
 
   // Create subscriber for RTCM correction data to enable RTK
@@ -643,9 +649,11 @@ void UbloxNode::processMonVer() {
     throw std::runtime_error("Failed to poll MonVER & set relevant settings");
   }
 
+  software_version_ = std::string(monVer.sw_version.begin(), monVer.sw_version.end());
+  hardware_version_ = std::string(monVer.hw_version.begin(), monVer.hw_version.end());
   RCLCPP_INFO(this->get_logger(), "%s, HW VER: %s",
-              std::string(monVer.sw_version.begin(), monVer.sw_version.end()).c_str(),
-              std::string(monVer.hw_version.begin(), monVer.hw_version.end()).c_str());
+              software_version_.c_str(),
+              hardware_version_.c_str());
   // Convert extension to vector of strings
   std::vector<std::string> extensions;
   extensions.reserve(monVer.extension.size());
@@ -696,6 +704,8 @@ void UbloxNode::processMonVer() {
         strs = stringSplit(extensions[i], "=");
         if (strs.size() > 1) {
           if (strs[0] == "FWVER") {
+            firmware_version_ = strs[1];
+            RCLCPP_INFO(this->get_logger(), "FWVER: %s", firmware_version_.c_str());
             if (strs[1].length() > 8) {
               addProductInterface(strs[1].substr(0, 3), strs[1].substr(8, 10));
             } else {
@@ -731,6 +741,7 @@ void UbloxNode::processMonVer() {
       }
     }
   }
+  publishVersions();
 }
 
 bool UbloxNode::configureUblox() {
@@ -925,6 +936,15 @@ void UbloxNode::initialize() {
     poller_ = this->create_wall_timer(std::chrono::milliseconds(static_cast<int64_t>(kPollDuration * 1000.0)),
                                       std::bind(&UbloxNode::pollMessages, this));
   }
+}
+
+void UbloxNode::publishVersions() {
+  ublox_msgs::msg::Versions msg;
+  msg.hardware_version = hardware_version_;
+  msg.software_version = software_version_;
+  msg.firmware_version = firmware_version_;
+  msg.protocol_version = std::to_string(protocol_version_);
+  versions_pub_->publish(msg);
 }
 
 void UbloxNode::shutdown() {

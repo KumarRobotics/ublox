@@ -99,6 +99,7 @@ set(msg_files
   "msg/TimTM2.msg"
   "msg/UpdSOSAck.msg"
   "msg/UpdSOS.msg"
+  "msg/Versions.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
