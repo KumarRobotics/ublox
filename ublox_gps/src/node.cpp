@@ -42,6 +42,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 
+
 #include <ublox_msgs/msg/aid_alm.hpp>
 #include <ublox_msgs/msg/aid_eph.hpp>
 #include <ublox_msgs/msg/aid_hui.hpp>
@@ -500,6 +501,21 @@ void UbloxNode::getRosParams() {
 
   // Create subscriber for RTCM correction data to enable RTK
   this->subscription_ = this->create_subscription<rtcm_msgs::msg::Message>("/rtcm", 10, std::bind(&UbloxNode::rtcmCallback, this, std::placeholders::_1));
+
+  shutdown_srv_ = this->create_service<std_srvs::srv::Trigger>(
+      "shutdown",
+      [this](const std::shared_ptr<std_srvs::srv::Trigger::Request>,
+             std::shared_ptr<std_srvs::srv::Trigger::Response> res)
+      {
+        res->success = true;
+        res->message = "Shutdown requested. Exiting...";
+
+        std::thread([](){
+          // 少し待ってレスポンス返却を確実にする
+          std::this_thread::sleep_for(std::chrono::milliseconds(50));
+          rclcpp::shutdown();
+        }).detach();
+      });
 }
 
 void UbloxNode::keepAlive() {
