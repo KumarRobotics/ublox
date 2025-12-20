@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>ublox_msg_filters</name>
+  <version>2.3.0</version>
+  <description>Time synchronize multiple uBlox messages to get a single callback</description>
+  <author>Kevin Hallenbeck</author>
+  <maintainer email="khallenbeck@dataspeedinc.com">Kevin Hallenbeck</maintainer>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/ublox</url>
+
+  <buildtool_depend>ament_cmake_ros</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>message_filters</depend>
+  <depend>ublox_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
