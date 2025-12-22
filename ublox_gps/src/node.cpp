@@ -944,6 +944,7 @@ void UbloxNode::initialize() {
 void UbloxNode::shutdown() {
   if (gps_->isInitialized()) {
     gps_->close();
+
     RCLCPP_INFO(this->get_logger(), "Closed connection to %s.", device_.c_str());
   }
 }
