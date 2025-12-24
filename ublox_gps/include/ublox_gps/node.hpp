@@ -302,6 +302,8 @@ class UbloxNode final : public rclcpp::Node {
   rclcpp::TimerBase::SharedPtr poller_;
 
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr shutdown_srv_;
+  std::atomic_bool shutdown_requested_{false};
+  rclcpp::TimerBase::SharedPtr shutdown_timer_;
 
 };
 
