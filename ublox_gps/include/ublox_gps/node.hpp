@@ -37,6 +37,7 @@
 // ROS includes
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <std_srvs/srv/trigger.hpp>
 // U-Blox msgs nicludes
 #include <ublox_msgs/msg/cfg_cfg.hpp>
 #include <ublox_msgs/msg/cfg_dat.hpp>
@@ -299,6 +300,11 @@ class UbloxNode final : public rclcpp::Node {
 
   rclcpp::TimerBase::SharedPtr keep_alive_;
   rclcpp::TimerBase::SharedPtr poller_;
+
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr shutdown_srv_;
+  std::atomic_bool shutdown_requested_{false};
+  rclcpp::TimerBase::SharedPtr shutdown_timer_;
+
 };
 
 }  // namespace ublox_node

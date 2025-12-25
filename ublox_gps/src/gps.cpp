@@ -300,6 +300,7 @@ void Gps::close() {
       RCLCPP_INFO(logger_, "U-Blox Flash BBR failed to save");
     }
   }
+  hotrestart();
   worker_.reset();
   configured_ = false;
 }
@@ -351,6 +352,7 @@ bool Gps::saveOnShutdown() {
   ublox_msgs::msg::CfgRST rst;
   rst.nav_bbr_mask = ublox_msgs::msg::CfgRST::NAV_BBR_HOT_START;
   rst.reset_mode = ublox_msgs::msg::CfgRST::RESET_MODE_GNSS_STOP;
+  
   if (!configure(rst)) {
     return false;
   }
@@ -358,6 +360,16 @@ bool Gps::saveOnShutdown() {
   // And wait for UBX-UPD-SOS-ACK
   ublox_msgs::msg::UpdSOS backup;
   return configure(backup);
+}
+
+bool Gps::hotrestart() {
+  ublox_msgs::msg::CfgRST rst;
+  // rst.nav_bbr_mask = ublox_msgs::msg::CfgRST::NAV_BBR_COLD_START;
+  // rst.reset_mode = ublox_msgs::msg::CfgRST::RESET_MODE_HW_IMMEDIATE;
+  rst.nav_bbr_mask = ublox_msgs::msg::CfgRST::NAV_BBR_HOT_START;
+  rst.reset_mode = ublox_msgs::msg::CfgRST::RESET_MODE_GNSS;
+  
+  return configure(rst);
 }
 
 bool Gps::clearBbr() {
