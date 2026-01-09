@@ -27,7 +27,7 @@ HpgRefProduct::HpgRefProduct(uint16_t nav_rate, uint16_t meas_rate, std::shared_
 {
   if (getRosBoolean(node_, "publish.nav.svin")) {
     navsvin_pub_ =
-      node_->create_publisher<ublox_msgs::msg::NavSVIN>("navsvin", 1);
+      node_->create_publisher<ublox_msgs::msg::NavSVIN>("~/navsvin", 1);
   }
 }
 

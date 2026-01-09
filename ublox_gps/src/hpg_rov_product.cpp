@@ -25,7 +25,7 @@ HpgRovProduct::HpgRovProduct(uint16_t nav_rate, std::shared_ptr<diagnostic_updat
 {
   if (getRosBoolean(node_, "publish.nav.relposned")) {
     nav_rel_pos_ned_pub_ =
-      node_->create_publisher<ublox_msgs::msg::NavRELPOSNED>("navrelposned", 1);
+      node_->create_publisher<ublox_msgs::msg::NavRELPOSNED>("~/navrelposned", 1);
   }
 }
 

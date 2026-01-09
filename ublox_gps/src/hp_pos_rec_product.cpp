@@ -25,12 +25,12 @@ HpPosRecProduct::HpPosRecProduct(uint16_t nav_rate, uint16_t meas_rate, const st
 {
   if (getRosBoolean(node_, "publish.nav.relposned")) {
     nav_relposned_pub_ =
-      node_->create_publisher<ublox_msgs::msg::NavRELPOSNED9>("navrelposned", 1);
+      node_->create_publisher<ublox_msgs::msg::NavRELPOSNED9>("~/navrelposned", 1);
   }
 
   if (getRosBoolean(node_, "publish.nav.heading")) {
     imu_pub_ =
-      node_->create_publisher<sensor_msgs::msg::Imu>("navheading", 1);
+      node_->create_publisher<sensor_msgs::msg::Imu>("~/navheading", 1);
   }
 }
 

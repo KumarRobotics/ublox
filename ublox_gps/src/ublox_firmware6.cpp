@@ -32,7 +32,7 @@ UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<dia
 {
   if (getRosBoolean(node_, "publish.nav.posllh")) {
     nav_pos_llh_pub_ =
-      node_->create_publisher<ublox_msgs::msg::NavPOSLLH>("navposllh", 1);
+      node_->create_publisher<ublox_msgs::msg::NavPOSLLH>("~/navposllh", 1);
   }
 
   fix_pub_ =
@@ -40,7 +40,7 @@ UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<dia
 
   if (getRosBoolean(node_, "publish.nav.velned")) {
     nav_vel_ned_pub_ =
-      node_->create_publisher<ublox_msgs::msg::NavVELNED>("navvelned", 1);
+      node_->create_publisher<ublox_msgs::msg::NavVELNED>("~/navvelned", 1);
   }
 
   vel_pub_ =
@@ -49,15 +49,15 @@ UbloxFirmware6::UbloxFirmware6(const std::string & frame_id, std::shared_ptr<dia
 
   if (getRosBoolean(node_, "publish.nav.sol")) {
     nav_sol_pub_ =
-      node_->create_publisher<ublox_msgs::msg::NavSOL>("navsol", 1);
+      node_->create_publisher<ublox_msgs::msg::NavSOL>("~/navsol", 1);
   }
   if (getRosBoolean(node_, "publish.nav.svinfo")) {
     nav_svinfo_pub_ =
-      node_->create_publisher<ublox_msgs::msg::NavSVINFO>("navinfo", 1);
+      node_->create_publisher<ublox_msgs::msg::NavSVINFO>("~/navinfo", 1);
   }
   if (getRosBoolean(node_, "publish.mon.hw")) {
     mon_hw_pub_ =
-      node_->create_publisher<ublox_msgs::msg::MonHW6>("monhw", 1);
+      node_->create_publisher<ublox_msgs::msg::MonHW6>("~/monhw", 1);
   }
 }
 

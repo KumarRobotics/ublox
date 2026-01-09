@@ -17,11 +17,11 @@ UbloxFirmware9::UbloxFirmware9(const std::string & frame_id, std::shared_ptr<dia
 {
   if (getRosBoolean(node_, "publish.nav.timegps"))
   {
-    nav_timegps_pub_ = node->create_publisher<ublox_msgs::msg::NavTIMEGPS>("navtimegps", 1);
+    nav_timegps_pub_ = node->create_publisher<ublox_msgs::msg::NavTIMEGPS>("~/navtimegps", 1);
   }
   if (getRosBoolean(node_, "publish.nav.timeutc"))
   {
-    nav_timeutc_pub_ = node->create_publisher<ublox_msgs::msg::NavTIMEUTC>("navtimeutc", 1);
+    nav_timeutc_pub_ = node->create_publisher<ublox_msgs::msg::NavTIMEUTC>("~/navtimeutc", 1);
   }
 }
 
@@ -127,7 +127,7 @@ ublox_msgs::msg::CfgVALSETCfgdata UbloxFirmware9::generateSignalConfig(uint32_t 
 }
 
 void UbloxFirmware9::subscribe(std::shared_ptr<ublox_gps::Gps> gps)
-{ 
+{
   UbloxFirmware8::subscribe(gps);
 
   // Subscribe to NAV TIMEGPS messages
