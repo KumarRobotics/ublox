@@ -58,7 +58,7 @@ RawDataStreamPa::RawDataStreamPa(bool is_ros_subscriber) : rclcpp::Node("raw_dat
   flag_publish_(false),
   is_ros_subscriber_(is_ros_subscriber) {
 
-  raw_pub_ = this->create_publisher<std_msgs::msg::UInt8MultiArray>("raw_data_stream", 100);
+  raw_pub_ = this->create_publisher<std_msgs::msg::UInt8MultiArray>("~/raw_data_stream", 100);
 
   this->declare_parameter("dir", "");
   this->declare_parameter("raw_data_stream.dir", "");
@@ -89,7 +89,7 @@ void RawDataStreamPa::initialize() {
   if (is_ros_subscriber_) {
     RCLCPP_INFO(this->get_logger(), "Subscribing to raw data stream.");
     raw_data_stream_sub_ =
-        this->create_subscription<std_msgs::msg::UInt8MultiArray>("raw_data_stream", rclcpp::QoS(100),
+        this->create_subscription<std_msgs::msg::UInt8MultiArray>("~/raw_data_stream", rclcpp::QoS(100),
           std::bind(&RawDataStreamPa::msgCallback, this, std::placeholders::_1));
   } else if (flag_publish_) {
     RCLCPP_INFO(this->get_logger(), "Publishing raw data stream.");

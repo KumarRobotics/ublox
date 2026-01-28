@@ -23,15 +23,15 @@ namespace ublox_node {
 TimProduct::TimProduct(const std::string & frame_id, std::shared_ptr<diagnostic_updater::Updater> updater, rclcpp::Node* node) : frame_id_(frame_id), updater_(updater), node_(node)
 {
   timtm2_pub_ =
-    node_->create_publisher<ublox_msgs::msg::TimTM2>("timtm2", 1);
+    node_->create_publisher<ublox_msgs::msg::TimTM2>("~/timtm2", 1);
   interrupt_time_pub_ =
-    node_->create_publisher<sensor_msgs::msg::TimeReference>("interrupt_time", 1);
+    node_->create_publisher<sensor_msgs::msg::TimeReference>("~/interrupt_time", 1);
 
   if (getRosBoolean(node_, "publish.rxm.sfrb")) {
-    rxm_sfrb_pub_ = node_->create_publisher<ublox_msgs::msg::RxmSFRBX>("rxmsfrb", 1);
+    rxm_sfrb_pub_ = node_->create_publisher<ublox_msgs::msg::RxmSFRBX>("~/rxmsfrb", 1);
   }
   if (getRosBoolean(node_, "publish.rxm.raw")) {
-    rxm_raw_pub_ = node_->create_publisher<ublox_msgs::msg::RxmRAWX>("rxmraw", 1);
+    rxm_raw_pub_ = node_->create_publisher<ublox_msgs::msg::RxmRAWX>("~/rxmraw", 1);
   }
 }
 
