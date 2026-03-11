@@ -383,8 +383,7 @@ void UbloxNode::getRosParams() {
   // raw data stream logging
   this->declare_parameter("raw_data_stream.enable", false);
   if (getRosBoolean(this, "raw_data_stream.enable")) {
-    raw_data_stream_pa_ = std::make_shared<ublox_node::RawDataStreamPa>(
-      getRosBoolean(this, "raw_data_stream.enable"));
+    raw_data_stream_pa_ = std::make_shared<ublox_node::RawDataStreamPa>(false);
     raw_data_stream_pa_->getRosParams();
   }
 
