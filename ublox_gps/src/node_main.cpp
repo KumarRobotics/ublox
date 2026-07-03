@@ -10,9 +10,15 @@ int main(int argc, char** argv) {
 
   rclcpp::init(argc, argv);
 
-  rclcpp::spin(std::make_shared<ublox_node::UbloxNode>(rclcpp::NodeOptions()));
+  int exit_code = 0;
+  try {
+    rclcpp::spin(std::make_shared<ublox_node::UbloxNode>(rclcpp::NodeOptions()));
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(rclcpp::get_logger("ublox_gps_node"), "Fatal error: %s", e.what());
+    exit_code = 1;
+  }
 
   rclcpp::shutdown();
 
-  return 0;
+  return exit_code;
 }
