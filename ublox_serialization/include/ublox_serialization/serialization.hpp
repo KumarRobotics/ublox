@@ -325,7 +325,7 @@ class Message {
   };
 
  private:
-  static std::vector<std::pair<uint8_t,uint8_t> > keys_;
+  static UBLOX_SERIALIZATION_EXPORT std::vector<std::pair<uint8_t,uint8_t> > keys_;
 };
 
 /**
