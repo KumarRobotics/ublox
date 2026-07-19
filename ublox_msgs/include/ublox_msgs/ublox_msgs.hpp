@@ -191,7 +191,16 @@ namespace Message {
   }  // namespace RXM
 
   namespace INF {
+#if defined(_WIN32) && defined(ERROR)
+#pragma push_macro("ERROR")
+#undef ERROR
+#define UBLOX_MSGS_RESTORE_ERROR_MACRO
+#endif
     static const uint8_t ERROR = 0x00;
+#if defined(UBLOX_MSGS_RESTORE_ERROR_MACRO)
+#pragma pop_macro("ERROR")
+#undef UBLOX_MSGS_RESTORE_ERROR_MACRO
+#endif
     static const uint8_t WARNING = 0x01;
     static const uint8_t NOTICE = 0x02;
     static const uint8_t TEST = 0x03;
