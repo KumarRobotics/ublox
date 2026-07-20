@@ -142,11 +142,13 @@ void Gps::initializeSerial(const std::string & port, unsigned int baudrate,
 
   RCLCPP_INFO(logger_, "U-Blox: Opened serial port %s", port.c_str());
 
+#ifndef _WIN32
   int fd = serial->native_handle();
   termios tio{};
   tcgetattr(fd, &tio);
   cfmakeraw(&tio);
   tcsetattr(fd, TCSANOW, &tio);
+#endif
 
   // Set the I/O worker
   if (worker_) {

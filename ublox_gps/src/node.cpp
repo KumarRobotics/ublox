@@ -73,6 +73,12 @@
 #include <ublox_gps/ublox_firmware8.hpp>
 #include <ublox_gps/ublox_firmware9.hpp>
 
+#if defined(_WIN32) && defined(ERROR)
+#pragma push_macro("ERROR")
+#undef ERROR
+#define UBLOX_GPS_RESTORE_ERROR_MACRO
+#endif
+
 namespace ublox_node {
 
 /**
@@ -653,8 +659,8 @@ void UbloxNode::processMonVer() {
     RCLCPP_DEBUG(this->get_logger(), "%s",
                  std::string(monVer.extension[i].field.begin(), monVer.extension[i].field.end()).c_str());
     // Find the end of the string (null character)
-    unsigned char* end = std::find(monVer.extension[i].field.begin(),
-                                   monVer.extension[i].field.end(), '\0');
+    auto end = std::find(
+      monVer.extension[i].field.begin(), monVer.extension[i].field.end(), '\0');
     extensions.emplace_back(std::string(monVer.extension[i].field.begin(), end));
   }
 
@@ -939,5 +945,10 @@ UbloxNode::~UbloxNode() {
 }
 
 }  // namespace ublox_node
+
+#ifdef UBLOX_GPS_RESTORE_ERROR_MACRO
+#pragma pop_macro("ERROR")
+#undef UBLOX_GPS_RESTORE_ERROR_MACRO
+#endif
 
 RCLCPP_COMPONENTS_REGISTER_NODE(ublox_node::UbloxNode)

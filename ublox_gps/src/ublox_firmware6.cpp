@@ -22,6 +22,12 @@
 #include <ublox_gps/ublox_firmware6.hpp>
 #include <ublox_gps/utils.hpp>
 
+#if defined(_WIN32) && defined(ERROR)
+#pragma push_macro("ERROR")
+#undef ERROR
+#define UBLOX_GPS_RESTORE_ERROR_MACRO
+#endif
+
 namespace ublox_node {
 
 //
@@ -244,3 +250,8 @@ void UbloxFirmware6::callbackNavSol(const ublox_msgs::msg::NavSOL& m) {
 }
 
 }  // namespace ublox_node
+
+#ifdef UBLOX_GPS_RESTORE_ERROR_MACRO
+#pragma pop_macro("ERROR")
+#undef UBLOX_GPS_RESTORE_ERROR_MACRO
+#endif

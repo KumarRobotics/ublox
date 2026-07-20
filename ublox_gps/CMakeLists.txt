@@ -67,6 +67,9 @@ target_link_libraries(ublox_gps PUBLIC
   ${ublox_msgs_TARGETS}
   ublox_serialization::ublox_serialization
 )
+if(MSVC)
+  target_compile_definitions(ublox_gps PRIVATE _USE_MATH_DEFINES)
+endif()
 
 install(TARGETS ublox_gps EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
