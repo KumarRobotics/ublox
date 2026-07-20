@@ -16,6 +16,12 @@
 #include <ublox_gps/rtcm.hpp>
 #include <ublox_gps/utils.hpp>
 
+#if defined(_WIN32) && defined(ERROR)
+#pragma push_macro("ERROR")
+#undef ERROR
+#define UBLOX_GPS_RESTORE_ERROR_MACRO
+#endif
+
 namespace ublox_node {
 
 //
@@ -256,3 +262,8 @@ void HpgRefProduct::tmode3Diagnostics(
 }
 
 }  // namespace ublox_node
+
+#ifdef UBLOX_GPS_RESTORE_ERROR_MACRO
+#pragma pop_macro("ERROR")
+#undef UBLOX_GPS_RESTORE_ERROR_MACRO
+#endif
