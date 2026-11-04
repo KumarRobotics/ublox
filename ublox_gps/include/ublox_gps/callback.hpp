@@ -203,11 +203,37 @@ class CallbackHandlers final {
     size_t nmea_end = buffer.find('\n', nmea_start);
     while(nmea_start != std::string::npos && nmea_end != std::string::npos) {
       std::string sentence = buffer.substr(nmea_start, nmea_end - nmea_start + 1);
-      callback_nmea_(sentence);
+      if (valid_nmea_checksum(sentence)) {
+        callback_nmea_(sentence);
+      }
 
       nmea_start = buffer.find('$', nmea_end + 1);
       nmea_end = buffer.find('\n', nmea_start);
     }
+  }
+
+  static bool valid_nmea_checksum(const std::string& s) {
+    size_t star = s.rfind('*');
+    if (star < 1 || star + 3 > s.size()) {
+      return false;
+    }
+
+    auto hex_val = [](char c) -> int {
+      if (c >= '0' && c <= '9') return c - '0';
+      if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+      return -1;
+    };
+    int h1 = hex_val(s[star + 1]);
+    int h2 = hex_val(s[star + 2]);
+    if (h1 < 0 || h2 < 0) {
+      return false;
+    }
+
+    uint8_t computed = 0;
+    for (size_t i = 1; i < star; ++i) {
+      computed ^= static_cast<uint8_t>(s[i]);
+    }
+    return computed == static_cast<uint8_t>((h1 << 4) | h2);
   }
 
   /**
